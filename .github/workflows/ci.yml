@@ -33,3 +33,12 @@ jobs:
 
       - name: Workflow YAML
         run: python3 -c "import yaml; [yaml.safe_load(open(f, encoding='utf-8')) for f in ['.github/workflows/ci.yml', '.github/workflows/release.yml']] and print('workflows OK')"
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Behavioral suite (Qoder discovery + non-ASCII path handoff)
+        shell: pwsh
+        run: ./tests/qoder-discovery.ps1

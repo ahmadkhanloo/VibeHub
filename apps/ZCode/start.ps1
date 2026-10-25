@@ -47,7 +47,13 @@ if (-not $exe) {
   Say 'ZCode.exe was not found. Install ZCode first.' 16
   exit 1
 }
-if ($Discover) { Say "resolved: $exe"; exit 0 }
+if ($Discover) {
+  # Codepage-proof handoff; see apps/Qoder/start.ps1 for the rationale.
+  $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($exe))
+  Write-Output "RTL_DISCOVER_B64:$b64"
+  Say "resolved: $exe"
+  exit 0
+}
 
 try {
   $node = Get-Command node -ErrorAction Stop

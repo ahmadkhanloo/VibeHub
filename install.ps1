@@ -66,9 +66,18 @@ foreach ($name in $requested) {
     if (-not (Test-Path -LiteralPath (Join-Path $folder $file))) { throw "Missing $file for $name in $folder." }
   }
   if ($name -eq 'qoder') {
-    $discovery = & $powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $folder 'start.ps1') -Discover 2>&1
-    $resolved = @($discovery | Where-Object { $_ -match '^[A-Za-z]:\\' } | Select-Object -Last 1)
-    if ($resolved.Count) { $app.Exe = $resolved[0].Trim() }
+    $discovery = @(& $powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $folder 'start.ps1') -Discover 2>&1)
+    # Prefer the base64 handoff: raw path text is corrupted to '?' whenever the
+    # console codepage cannot represent a character (Persian user folders).
+    $b64Line = @($discovery | Where-Object { $_ -match '^RTL_DISCOVER_B64:' } | Select-Object -Last 1)
+    if ($b64Line.Count) {
+      try { $app.Exe = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String(($b64Line[0] -replace '^RTL_DISCOVER_B64:', ''))) }
+      catch { $app.Exe = $null }
+    }
+    if (-not $app.Exe) {
+      $resolved = @($discovery | Where-Object { $_ -match '^[A-Za-z]:\\' } | Select-Object -Last 1)
+      if ($resolved.Count) { $app.Exe = $resolved[0].Trim() }
+    }
   }
   if (-not $app.Exe -or -not (Test-Path -PathType Leaf $app.Exe)) {
     throw "$($app.Name) was selected, but its app was not found. Install it first."

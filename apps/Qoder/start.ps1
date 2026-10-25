@@ -96,7 +96,15 @@ try {
   exit 1
 }
 
-if ($Discover) { Write-Output $exe; exit 0 }
+if ($Discover) {
+  # Machine-readable handoff for install.ps1: base64(UTF-8) survives consoles
+  # whose codepage cannot represent characters in the path (e.g. Persian user
+  # folders) - raw text gets corrupted to '?' across the process boundary.
+  $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($exe))
+  Write-Output "RTL_DISCOVER_B64:$b64"
+  Write-Output $exe
+  exit 0
+}
 
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
   Say 'Node.js is not on PATH. Install Node 21 or newer.' 16
