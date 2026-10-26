@@ -98,7 +98,9 @@ jobs:
 
       - name: Native Windows behavior and isolated profile rollback
         shell: pwsh
-        run: ./tests/native-windows.ps1
+        run: |
+          ./tests/native-array-results.ps1
+          ./tests/native-windows.ps1
 
   windows-tauri-build:
     runs-on: windows-latest

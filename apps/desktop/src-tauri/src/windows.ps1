@@ -218,7 +218,7 @@ function Terminal-State {
 try {
     $result = switch ($request.operation) {
         'detect' { @(Detect-Apps) }
-        'detect-editors' { @(Detect-Editors) }
+        'detect-editors' { ,@(Detect-Editors) }
         'launch-editor' {
             $id = [string]$request.editorId
             if ($id -notin @('vscode','vscode-insiders','antigravity','antigravity-ide','cursor','windsurf','zed','trae','kiro','vscodium')) { throw 'Unknown detected editor.' }

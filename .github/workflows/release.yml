@@ -103,6 +103,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./tests/rtl-paths.ps1
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./tests/native-array-results.ps1
           ./tests/native-windows.ps1
 
       - name: Prepare checksum-pinned Node.js and RTL installer payload
