@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "id": "zcode",
+  "name": "ZCode",
+  "summary": {
+    "fa": "دستیار هوشمند کدنویسی و محیط توسعه با مسیر دسترسی رایگان؛ پشتیبانی راست‌چین آن در VibeHub تأیید شده است.",
+    "en": "AI coding agent/IDE with a free access path; RTL support verified by VibeHub"
+  },
+  "kind": "desktop_ide",
+  "platforms": ["windows", "linux", "macos"],
+  "websiteUrl": "https://zcode.z.ai/",
+  "docsUrl": "https://zcode.z.ai/",
+  "isOpenSource": null,
+  "freeAccess": "free_tier",
+  "freeAccessDetails": {
+    "fa": "دسترسی رایگان با شرایط و سهمیهٔ متغیر از سرویس‌دهنده؛ جزئیات را در وب‌سایت رسمی ببینید. سهمیه ممکن است تغییر کند.",
+    "en": "Free access with provider-defined terms and quotas; check the official site. Quotas may change over time."
+  },
+  "requiresSignup": true,
+  "requiresPaymentCard": null,
+  "sourceOfFreeAccess": "https://zcode.z.ai/",
+  "lastVerified": "2026-10-26",
+  "capabilities": {
+    "install": "reported",
+    "launch": "verified",
+    "rtl": "verified",
+    "proxy": "unknown",
+    "terminal": "unsupported",
+    "byok": "unknown"
+  },
+  "installMethods": [
+    {
+      "method": "official-installer",
+      "idOrUrl": "https://zcode.z.ai/",
+      "note": {
+        "fa": "دانلود نصبکنندهٔ رسمی از سایت سازنده؛ VibeHub مسیر نصب را هدایت میکند نه جایگزین آن.",
+        "en": "Download the official installer from the vendor site; VibeHub guides the path, it does not replace it."
+      }
+    }
+  ],
+  "eligibility": [
+    {
+      "countryCode": "IR",
+      "networkAccess": "not_tested",
+      "accountPolicy": "unknown",
+      "sourceUrl": "https://zcode.z.ai/",
+      "confidence": "low"
+    }
+  ],
+  "referral": {
+    "url": "https://zcode.z.ai/invite/CF3ZEFJR",
+    "disclosureFa": "این لینک دعوت است و از نگهدارندهٔ VibeHub حمایت میکند؛ استفاده از آن اختیاری است و لینک دانلود رسمی جداگانه موجود است.",
+    "disclosureEn": "This is an invite link that supports the VibeHub maintainer; using it is optional and the official download link is available separately."
+  }
+}

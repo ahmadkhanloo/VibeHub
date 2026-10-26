@@ -3,11 +3,12 @@ import { createServer } from 'node:net';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { buildAutoHeadingDirectionScript, DIRECTION_ALIGNMENT_CSS } from '../rtl-direction.mjs';
 
 const PORT = Number(process.env.DEEPSEEK_HARNESS_RTL_PORT) || 9228;
 const LOCK_PORT = PORT + 1;
 const BASE = `http://127.0.0.1:${PORT}`;
-const STYLE_ID = 'deepseek-harness-rtl-fix';
+const STYLE_ID = 'deepseek-harness-rtl-fix-v2';
 const HERE = dirname(fileURLToPath(import.meta.url));
 
 function fontCss() {
@@ -19,6 +20,7 @@ function fontCss() {
 }
 
 const CSS = `${fontCss()}
+${DIRECTION_ALIGNMENT_CSS}
 :is(p,li,h1,h2,h3,h4,h5,h6,blockquote,td,th,dd,dt,figcaption,summary),
 [class*="_markdown_"] :is(div,span,a,b,strong,em),
 [class*="bubble"] :is(div,span),
@@ -39,6 +41,7 @@ const CSS = `${fontCss()}
 const INJECT = `(() => {
   const id = ${JSON.stringify(STYLE_ID)};
   const css = ${JSON.stringify(CSS)};
+  ${buildAutoHeadingDirectionScript('deepseek-harness-rtl-heading-direction-v1')}
   const apply = () => {
     const root = document.head || document.documentElement;
     if (!root) return false;

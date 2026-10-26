@@ -8,6 +8,8 @@ param([switch]$Gui, [switch]$Discover)
 $ErrorActionPreference = 'Stop'
 $Port   = if ($env:QODER_RTL_PORT) { [int]$env:QODER_RTL_PORT } else { 9225 }
 $Dir    = Split-Path -Parent $PSCommandPath
+$RtlHelpers = Join-Path $Dir '..\rtl-paths.ps1'
+if (Test-Path -LiteralPath $RtlHelpers) { . $RtlHelpers }
 $Log    = Join-Path $env:TEMP 'qoder-rtl.log'
 
 function Say([string]$msg, [int]$icon = 0) {
@@ -56,6 +58,8 @@ function Find-Qoder {
     if (Test-Path -PathType Leaf $env:QODER_RTL_EXE) { return $env:QODER_RTL_EXE }
     throw "QODER_RTL_EXE is set but not a file: $env:QODER_RTL_EXE"
   }
+  $sharedPath = if (Get-Command Get-RtlSavedPath -ErrorAction SilentlyContinue) { Get-RtlSavedPath 'qoder' } else { $null }
+  if ($sharedPath -and [IO.Path]::GetFileName($sharedPath) -in @('Qoder.exe','Qoder IDE.exe')) { return $sharedPath }
   $savedPathFile = Join-Path $Dir 'qoder-path.txt'
   if (Test-Path -LiteralPath $savedPathFile) {
     try { $savedPath = ([System.IO.File]::ReadAllText($savedPathFile, [System.Text.Encoding]::UTF8)).Trim() }
@@ -92,14 +96,37 @@ function Find-Qoder {
 try {
   $exe = Find-Qoder
 } catch {
-  Say $_.Exception.Message 16
+  $exe = $null
+}
+if (-not $exe -and (Get-Command Select-RtlExecutable -ErrorAction SilentlyContinue)) {
+  $exe = Select-RtlExecutable 'qoder' 'Qoder' 'Qoder.exe|Qoder IDE.exe'
+}
+if (-not $exe) {
+  Say 'Qoder was not found. Install Qoder or choose Qoder.exe / Qoder IDE.exe when prompted.' 16
   exit 1
 }
 
-if ($Discover) { Write-Output $exe; exit 0 }
+if ($Discover) {
+  # Machine-readable handoff for install.ps1: base64(UTF-8) survives consoles
+  # whose codepage cannot represent characters in the path (e.g. Persian user
+  # folders) - raw text gets corrupted to '?' across the process boundary.
+  $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($exe))
+  Write-Output "RTL_DISCOVER_B64:$b64"
+  Write-Output $exe
+  exit 0
+}
 
-if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
-  Say 'Node.js is not on PATH. Install Node 21 or newer.' 16
+try {
+  if (Get-Command Get-RtlNodePath -ErrorAction SilentlyContinue) {
+    $nodePath = Get-RtlNodePath $Dir
+  } else {
+    $node = Get-Command node -ErrorAction Stop
+    $nodeVersion = & $node.Source --version
+    if ($LASTEXITCODE -ne 0 -or [version](($nodeVersion -replace '^v', '')) -lt [version]'21.0') { throw 'Node.js 21 or newer is required.' }
+    $nodePath = $node.Source
+  }
+} catch {
+  Say $_.Exception.Message 16
   exit 1
 }
 
@@ -150,8 +177,7 @@ if ($owner) {
   }
 }
 
-$node = (Get-Command node).Source
-Start-Process -FilePath $node -ArgumentList ( '"' + (Join-Path $Dir 'injector.mjs') + '"' ) `
+Start-Process -FilePath $nodePath -ArgumentList ( '"' + (Join-Path $Dir 'injector.mjs') + '"' ) `
   -WorkingDirectory $Dir -WindowStyle Hidden `
   -RedirectStandardOutput (Join-Path $env:TEMP 'qoder-rtl-injector.out.log') `
   -RedirectStandardError (Join-Path $env:TEMP 'qoder-rtl-injector.err.log') | Out-Null

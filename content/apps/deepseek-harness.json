@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "id": "deepseek-harness",
+  "name": "DeepSeek Harness",
+  "summary": {
+    "fa": "دستیار کدنویسی دسکتاپِ DeepSeek؛ پشتیبانی راست‌چین آن در VibeHub تأیید شده است.",
+    "en": "Desktop harness client for the DeepSeek agent; RTL support verified by VibeHub"
+  },
+  "kind": "desktop_agent",
+  "platforms": ["windows"],
+  "websiteUrl": "https://www.deepseek.com/",
+  "isOpenSource": null,
+  "freeAccess": "free_tier",
+  "freeAccessDetails": {
+    "fa": "دسترسی رایگان طبق شرایط جاری سرویس DeepSeek؛ سهمیه و سیاست‌ها را در منابع رسمی بررسی کنید.",
+    "en": "Free access under DeepSeek's current terms; verify quotas and policies in official sources."
+  },
+  "requiresSignup": true,
+  "requiresPaymentCard": null,
+  "sourceOfFreeAccess": "https://www.deepseek.com/",
+  "lastVerified": "2026-10-26",
+  "capabilities": {
+    "install": "reported",
+    "launch": "verified",
+    "rtl": "verified",
+    "proxy": "unknown",
+    "terminal": "unsupported",
+    "byok": "unknown"
+  },
+  "installMethods": [
+    {
+      "method": "guide",
+      "idOrUrl": "https://www.deepseek.com/",
+      "note": {
+        "fa": "نصب از منبع رسمی سازنده.",
+        "en": "Install from the vendor's official source."
+      }
+    }
+  ],
+  "eligibility": [
+    {
+      "countryCode": "IR",
+      "networkAccess": "not_tested",
+      "accountPolicy": "unknown",
+      "confidence": "low"
+    }
+  ]
+}

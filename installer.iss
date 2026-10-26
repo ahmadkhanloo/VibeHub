@@ -1,7 +1,8 @@
-; Keep the original AppId so existing ZCode RTL installs upgrade in place.
-#define MyAppName "AgentRTL"
+; Historical AgentRTL RTL-adapter installer. VibeHub releases use the Tauri bundle.
+; Keep this AppId only so an existing legacy install can still be upgraded safely.
+#define MyAppName "AgentRTL Legacy RTL Adapters"
 #define MyAppPublisher "ahmadkhanloo"
-#define MyAppURL "https://github.com/ahmadkhanloo/AgentRTL"
+#define MyAppURL "https://github.com/ahmadkhanloo/VibeHub"
 #ifndef MyAppVersion
 #define MyAppVersion "1.2.2"
 #endif
@@ -26,7 +27,7 @@ Compression=lzma2
 SolidCompression=yes
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir=dist
-OutputBaseFilename=AgentRTL-Setup-{#MyAppVersion}
+OutputBaseFilename=AgentRTL-Legacy-Setup-{#MyAppVersion}
 
 [Types]
 Name: "full"; Description: "Install all RTL tools"

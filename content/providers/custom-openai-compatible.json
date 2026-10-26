@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "custom-openai-compatible",
+  "name": "Custom OpenAI-compatible endpoint",
+  "officialUrl": "https://platform.openai.com/docs/api-reference",
+  "freeAccess": "unknown",
+  "requiresAccount": null,
+  "requiresApiKey": true,
+  "usageTermsUrl": "https://platform.openai.com/docs/api-reference",
+  "supportedApps": {
+    "zcode": "unknown",
+    "qoder": "unknown",
+    "deepseek-harness": "unknown",
+    "opencode": "reported",
+    "mimocode": "unknown",
+    "freebuff": "unknown"
+  },
+  "eligibilityStatus": "unknown",
+  "lastVerified": "2026-10-26",
+  "notes": {
+    "fa": "هر Endpoint سازگار با OpenAI؛ هزینه و شرایط سرویس را خود Endpoint تعیین میکند و VibeHub آن را تضمین نمیکند.",
+    "en": "Any OpenAI-compatible endpoint; cost and terms are defined by that endpoint and are not guaranteed by VibeHub."
+  }
+}

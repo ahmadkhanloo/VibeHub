@@ -1,0 +1,14 @@
+{
+  "title": "Guides",
+  "subtitle": "Bilingual guides with sources and dates; respect the verified/reported/unknown labels.",
+  "pickApp": "Choose a tool",
+  "pickLang": "Guide language",
+  "untranslated": "This section is not translated to English yet; the Persian version is shown.",
+  "readingTime": "Reading time",
+  "updatedAt": "Last updated",
+  "officialSource": "Official source",
+  "sections": "Sections",
+  "copyCommand": "Copy command",
+  "runCommandNote": "Execution only from an allowlist with separate consent; guides never auto-run commands.",
+  "searchGuides": "Search guides"
+}

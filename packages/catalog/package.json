@@ -1,0 +1,17 @@
+{
+  "name": "@vibehub/catalog",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "node --test tests/*.mjs"
+  },
+  "dependencies": {
+    "@vibehub/core": "workspace:*",
+    "zod": "^3.24.0"
+  }
+}

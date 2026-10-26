@@ -1,0 +1,27 @@
+{
+  "name": "vibehub",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Free & open-source desktop hub for discovering, installing and running free AI coding tools. \u0641\u0627\u0631\u0633\u06cc/English, RTL-aware.",
+  "license": "MIT",
+  "packageManager": "pnpm@12.15.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @vibehub/desktop dev",
+    "build": "pnpm --filter @vibehub/desktop build",
+    "check": "pnpm -r run check",
+    "test": "node --test tests/*.test.mjs packages/core/tests/*.mjs packages/catalog/tests/*.mjs",
+    "i18n:check": "node scripts/check-i18n.mjs",
+    "content:validate": "node scripts/validate-content.mjs",
+    "release:guard": "node scripts/check-native-command-coverage.mjs",
+    "tauri": "pnpm --filter @vibehub/desktop tauri",
+    "test:ui": "playwright test"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.64.1",
+    "typescript": "5.9.3"
+  }
+}

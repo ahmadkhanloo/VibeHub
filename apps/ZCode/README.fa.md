@@ -1,5 +1,7 @@
 # ZCode RTL
 
+> **یادداشت آداپتر قدیمی (۲۰۲۶-۱۰-۲۶):** این سند دربارهٔ آداپتر RTL مبتنی بر سورس AgentRTL است، نه نصب‌کنندهٔ دسکتاپ جدید VibeHub. فایل‌های قدیمی `AgentRTL-Setup` انتشار VibeHub نیستند. نصب‌کنندهٔ عمومی VibeHub و جایگزینی این قابلیت هنوز تأیید نشده‌اند؛ [ماتریس پذیرش انتشار](../../docs/validation/VibeHub_Release_Acceptance_Matrix.md) را ببینید.
+
 <p align="center">
   <img src="../../docs/hero.png" alt="قبل: پاسخ فارسی چپ‌به‌راست و به‌هم‌ریخته. بعد: راست‌به‌چپ درست — با بلاک‌های کد LTR." width="100%">
 </p>
@@ -39,45 +41,25 @@
 
 ‏ZCode RTL **هیچ فایلی از برنامه را تغییر نمی‌دهد**: از پورت DevTools خود کرومیومِ برنامه استفاده می‌کند و یک استایل‌شیت در زمان اجرا تزریق می‌کند. آپدیت‌های برنامه اثری رویش ندارند، دسترسی ادمین نمی‌خواهد و حذفش یک دستور است.
 
-## 🚀 نصب
+## 🚀 نصب آداپتر قدیمی
 
-### نصب خیلی سریع — یک قدم و تمام
+> این راهنمای سورس مربوط به آداپتر RTL قدیمی AgentRTL است و نصب‌کنندهٔ عمومی VibeHub را توصیف نمی‌کند. جایگزینی این قابلیت در VibeHub هنوز تأیید نشده است.
 
-**‏ویندوز** — یا **نصب‌کننده**: `AgentRTL-Setup-*.exe` را از [Releases](https://github.com/ahmadkhanloo/AgentRTL/releases) دانلود و دابل‌کلیک کنید (فایل‌ها و شورتکات **ZCode RTL** را خودش می‌سازد) — یا **یک دستور** در PowerShell:
+**ویندوز** — مخزن VibeHub را دریافت و نصب‌کنندهٔ حفظ‌شدهٔ آداپتر را اجرا کنید:
 
 ```powershell
-irm https://raw.githubusercontent.com/ahmadkhanloo/AgentRTL/main/install.ps1 | iex
+git clone https://github.com/ahmadkhanloo/VibeHub.git
+cd VibeHub
+powershell -ExecutionPolicy Bypass -File install.ps1 -Apps zcode
 ```
 
-**‏لینوکس / مک** — یک دستور در ترمینال:
+**لینوکس / مک** — اسکریپت سورس VibeHub را دریافت و آداپتر حفظ‌شده را نصب می‌کند:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ahmadkhanloo/AgentRTL/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/ahmadkhanloo/VibeHub/main/install.sh | bash
 ```
 
-‏در هر دو حالت یک لانچر **ZCode RTL** خواهید داشت: شورتکات دسکتاپ در ویندوز، گزینهٔ منوی برنامه‌ها (و آیکون دسکتاپ) در لینوکس، و `ZCode RTL.app` در `~/Applications` در مک. ZCode را با همان باز کنید — RTL خودکار است.
-
-> ‏نصب‌کنندهٔ ویندوز امضای دیجیتال ندارد، پس ممکن است SmartScreen اخطار بدهد (*More info → Run anyway*) و بعضی آنتی‌ویروس‌ها هم ممکن است آن را به اشتباه پرچم کنند. در آن صورت از یک‌لاینر استفاده کنید — یا فایل را با `checksums-sha256.txt` موجود در همان Release مقایسه کنید.
-
-### نصب حرفه‌ای — بازبینی کد، شخصی‌سازی، پرتابل
-
-‏اول کلون و بازبینی کنید، بعد از خود مخزن نصب کنید (از روی زیپ [Releases](../../releases) هم دقیقاً همین‌طور است):
-
-```bash
-git clone https://github.com/ahmadkhanloo/AgentRTL.git
-cd AgentRTL
-# worth a look: injector.mjs, launch.vbs / launch.sh, install.ps1 / install.sh
-powershell -ExecutionPolicy Bypass -File install.ps1   # Windows
-bash install.sh                                        # Linux / macOS
-```
-
-‏امکانات حرفه‌ای:
-
-- ‏**پورت دلخواه** — متغیر محیطی `ZCODE_RTL_PORT` (پیش‌فرض `9222`) را قبل از استفاده از لانچر تنظیم کنید؛ هم برنامه و هم injector از آن پیروی می‌کنند.
-- ‏**اجرا از سورس** — لانچر از هر پوشه‌ای کار می‌کند، پس یک کلون گیت می‌تواند خودش محل نصب باشد.
-- ‏**حذف نصب** — در نصب سورس ویندوز، دستور PowerShell injector را می‌بندد و شورتکات متعلق به همین checkout را حذف می‌کند؛ برای حذف نصب‌کنندهٔ AgentRTL از *Settings → Apps* استفاده کنید. در لینوکس/مک `bash install.sh --uninstall` کپی ZCode RTL را حذف می‌کند.
-
-‏پیش‌نیاز (همهٔ پلتفرم‌ها): نصب‌بودن [ZCode](https://zcode.z.ai/invite/CF3ZEFJR) (هنوز نصبش نکردید؟ این لینک دعوت است 😉) و **Node.js نسخهٔ ۲۱ به بالا** روی PATH (از WebSocket داخلی آن استفاده می‌کند).
+پیش‌نیاز آداپتر قدیمی Node.js نسخهٔ ۲۱ یا جدیدتر است. [وب‌سایت و مسیر دانلود رسمی ZCode](https://zcode.z.ai/) از [لینک دعوت اختیاری ZCode](https://zcode.z.ai/invite/CF3ZEFJR) مستقل است.
 
 ## ▶️ استفاده
 

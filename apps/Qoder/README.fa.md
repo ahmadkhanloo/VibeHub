@@ -1,5 +1,7 @@
 # Qoder RTL
 
+> **یادداشت آداپتر قدیمی (۲۰۲۶-۱۰-۲۶):** این سند دربارهٔ آداپتر Qoder مبتنی بر سورس AgentRTL است. نصب‌کنندهٔ قدیمی AgentRTL انتشار VibeHub نیست و هنوز تأیید نشده که نصب‌کنندهٔ عمومی VibeHub جایگزین این قابلیت باشد. [ماتریس پذیرش انتشار](../../docs/validation/VibeHub_Release_Acceptance_Matrix.md) را ببینید.
+
 <div dir="rtl">
 
 نسخهٔ انگلیسی: [README.md](README.md)
@@ -44,8 +46,8 @@
 ### نصب خیلی سریع — یک قدم و تمام
 
 ```powershell
-git clone https://github.com/ahmadkhanloo/AgentRTL.git
-cd AgentRTL
+git clone https://github.com/ahmadkhanloo/VibeHub.git
+cd VibeHub
 powershell -ExecutionPolicy Bypass -File install.ps1 -Apps qoder
 ```
 
@@ -56,8 +58,8 @@ powershell -ExecutionPolicy Bypass -File install.ps1 -Apps qoder
 ### نصب حرفه‌ای — بازبینی کد، شخصی‌سازی، اجرا از سورس
 
 ```bash
-git clone https://github.com/ahmadkhanloo/AgentRTL.git
-cd AgentRTL
+git clone https://github.com/ahmadkhanloo/VibeHub.git
+cd VibeHub
 # worth a look: style.mjs (the CSS), injector.mjs (CDP client), start.ps1 (the launcher)
 ```
 
@@ -70,7 +72,7 @@ cd AgentRTL
 | `QODER_RTL_PORT` | `9225` | پورت DevTools؛ قفل اینجکتور یک پورت بالاتر است |
 | `QODER_RTL_EXE` | کشف خودکار | مسیر کامل `Qoder.exe` یا `Qoder IDE.exe`، اگر جایش غیرمعمول است |
 
-‏در نصب با AgentRTL Setup، اگر Qoder خودکار پیدا نشد یا در مسیر سفارشی نصب شده، مؤلفهٔ Qoder RTL را انتخاب کنید و در صفحهٔ بعد فایل اجرایی را با Browse معرفی کنید. مسیر انتخاب‌شده برای اجراهای بعدی ذخیره می‌شود.
+‏در نصب موجود و قدیمی AgentRTL Setup، اگر Qoder خودکار پیدا نشد یا در مسیر سفارشی نصب شده، مؤلفهٔ Qoder RTL را انتخاب کنید و در صفحهٔ بعد فایل اجرایی را با Browse معرفی کنید. مسیر انتخاب‌شده برای اجراهای بعدی ذخیره می‌شود.
 
 ‏کشف نسخه فقط پوشه‌ای زیر `.qoder-versions\` را برمی‌گزیند که واقعاً `resources\app.asar` داشته باشد؛ نسخه‌ای که `app.asar.qoder-pending` دارد یک آپدیت نیمه‌کاره است که بالا نمی‌آید، پس به‌جای انتخاب «بالاترین شمارهٔ نسخه» رد می‌شود.
 
@@ -134,7 +136,7 @@ node doctor.mjs --shot      # عکس قبل/بعد از ناحیهٔ چت
 }
 ```
 
-‏`plaintext` به هر پاراگراف اجازه می‌دهد جهت خودش را انتخاب کند؛ پس یک پیام می‌تواند هم پاراگراف فارسی داشته باشد هم انگلیسی و هر دو درست نمایش داده شوند. استایل‌شیت هم به‌صورت یک `CSSStyleSheet` تصویب‌شده و هم به‌صورت یک `<style id="qoder-rtl-fix-v3">` دوقلو اعمال می‌شود، پس روی هر دو مسیر از بررسی CSP رد می‌شود. شناسهٔ نسخه‌دار باعث می‌شود پس از ارتقا، CSS قدیمی که نشست باز Qoder هنوز بعد از reload تزریق می‌کند جایگزین استایل جدید نشود.
+‏`plaintext` به هر پاراگراف اجازه می‌دهد جهت خودش را انتخاب کند؛ پس یک پیام می‌تواند هم پاراگراف فارسی داشته باشد هم انگلیسی و هر دو درست نمایش داده شوند. جهت و تراز هر هدینگ بر اساس اولین نویسهٔ جهت‌دار تعیین می‌شود و خانه‌های جدول وسط‌چین هستند. استایل‌شیت هم به‌صورت یک `CSSStyleSheet` تصویب‌شده و هم به‌صورت یک `<style id="qoder-rtl-fix-v4">` دوقلو اعمال می‌شود، پس روی هر دو مسیر از بررسی CSP رد می‌شود. شناسهٔ نسخه‌دار باعث می‌شود پس از ارتقا، CSS قدیمی که نشست باز Qoder هنوز بعد از reload تزریق می‌کند جایگزین استایل جدید نشود.
 
 ## مجوز
 

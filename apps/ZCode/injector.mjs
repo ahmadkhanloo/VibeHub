@@ -4,12 +4,14 @@
 // Code blocks (pre/code) are excluded on purpose so they stay LTR.
 
 import { createServer } from 'node:net';
+import { buildAutoHeadingDirectionScript, DIRECTION_ALIGNMENT_CSS } from '../rtl-direction.mjs';
 
 const PORT = Number(process.env.ZCODE_RTL_PORT) || 9222; // Chromium DevTools port ZCode is started with
 const LOCK_PORT = PORT + 1; // ensures only one injector instance runs
 const POLL_MS = 2000;   // safety-net sweep; new windows are injected in real time (see watchBrowser)
 
 const CSS = `
+${DIRECTION_ALIGNMENT_CSS}
 :is(p,li,h1,h2,h3,h4,h5,h6,blockquote,td,th,dd,dt,figcaption,summary),
 textarea,
 [contenteditable="true"],
@@ -20,8 +22,9 @@ textarea,
 `;
 
 const INJECT_SOURCE = `(() => {
-  const ID = 'zcode-rtl-fix';
+  const ID = 'zcode-rtl-fix-v2';
   const CSS = ${JSON.stringify(CSS)};
+  ${buildAutoHeadingDirectionScript('zcode-rtl-heading-direction-v1')}
   const add = () => {
     if (document.getElementById(ID)) return;
     const s = document.createElement('style');

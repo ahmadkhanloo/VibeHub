@@ -1,0 +1,31 @@
+{
+  "wizard": {
+    "title": "Guided install",
+    "checking": "Checking prerequisites",
+    "choosing": "Choosing a trusted source",
+    "installing": "Download & install",
+    "verifying": "Detect & verify"
+  },
+  "vendor": "Vendor",
+  "method": "Install method",
+  "winget": "winget (official Windows package)",
+  "npm": "npm (official Node package)",
+  "official": "Official installer from the vendor site",
+  "guideOnly": "Manual guide",
+  "permissions": "Required permissions",
+  "destination": "Destination",
+  "recovery": "Recovery: on failure, re-run the same step; nothing is deleted.",
+  "abort": "Abort",
+  "openLogs": "Open logs",
+  "manualGuide": "Manual guide",
+  "runWinget": "Run winget",
+  "runNpm": "Run npm",
+  "alreadyInstalled": "Already installed — launch instead of reinstalling.",
+  "wingetMissing": "winget is unavailable; use the official installer or the manual guide.",
+  "npmMissing": "npm is unavailable; use another official method.",
+  "opencodeConflict": "OpenCode 1/2 conflict: an `opencode` command already exists. Nothing is auto-overwritten; your decision is required.",
+  "installStarted": "Installation started…",
+  "installDone": "Installed and detected.",
+  "installFailed": "Installation failed",
+  "verifyingAfter": "Detecting the fresh install…"
+}

@@ -4,26 +4,83 @@ on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  checks:
+  frontend-and-content:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
-      - name: POSIX scripts (shellcheck + bash -n)
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 12.15.0
+          run_install: false
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test
+        run: pnpm test
+
+      - name: Type-check all packages
+        run: pnpm check
+
+      - name: Build desktop frontend
+        run: pnpm build
+
+      - name: Install browser for UI acceptance
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Test desktop interface in browser
+        run: pnpm test:ui
+
+      - name: Check translation key parity
+        run: pnpm i18n:check
+
+      - name: Validate bundled content
+        run: pnpm content:validate
+
+      - name: Block release readiness when native commands are missing
+        run: pnpm release:guard
+
+      - name: Validate shell and JavaScript sources
         run: |
           shellcheck -S warning apps/ZCode/launch.sh install.sh
           bash -n apps/ZCode/launch.sh install.sh
+          find apps scripts -name '*.mjs' -print0 | xargs -0 -n1 node --check
 
-      - name: JavaScript (node --check)
-        run: |
-          find apps -name '*.mjs' -print0 | xargs -0 -n1 node --check
+      - name: Validate workflow YAML
+        run: python3 -c "import yaml; [yaml.safe_load(open(f, encoding='utf-8')) for f in ['.github/workflows/ci.yml', '.github/workflows/release.yml', '.github/workflows/publish-content.yml']] and print('workflows OK')"
 
-      - name: PowerShell (parser)
+  windows-legacy-regression:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Parse PowerShell sources
         shell: pwsh
         run: |
-          $files = @('install.ps1', 'cleanup.ps1') + (Get-ChildItem apps -Recurse -Filter '*.ps1' | ForEach-Object FullName)
+          $files = @('install.ps1', 'cleanup.ps1') + (Get-ChildItem apps,scripts -Recurse -Filter '*.ps1' | ForEach-Object FullName)
           foreach ($file in $files) {
             $errors = $null
             [System.Management.Automation.Language.Parser]::ParseFile($file, [ref]$null, [ref]$errors) | Out-Null
@@ -31,5 +88,65 @@ jobs:
           }
           'PowerShell scripts parse OK'
 
-      - name: Workflow YAML
-        run: python3 -c "import yaml; [yaml.safe_load(open(f, encoding='utf-8')) for f in ['.github/workflows/ci.yml', '.github/workflows/release.yml']] and print('workflows OK')"
+      - name: Behavioral suite (Qoder discovery + Persian path handoff)
+        shell: pwsh
+        run: ./tests/qoder-discovery.ps1
+
+      - name: Unicode custom executable path persistence
+        shell: pwsh
+        run: ./tests/rtl-paths.ps1
+
+      - name: Native Windows behavior and isolated profile rollback
+        shell: pwsh
+        run: |
+          ./tests/native-array-results.ps1
+          ./tests/native-windows.ps1
+
+  windows-tauri-build:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 12.15.0
+          run_install: false
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install stable Rust
+        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+
+      - name: Cache Rust dependencies and build artifacts
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/desktop/src-tauri/target
+          key: windows-vibehub-rust-${{ hashFiles('apps/desktop/src-tauri/Cargo.lock') }}
+          restore-keys: windows-vibehub-rust-
+
+      - name: Prepare checksum-pinned Node.js and RTL installer payload
+        shell: pwsh
+        run: ./scripts/prepare-windows-rtl-payload.ps1
+
+      - name: Verify private runtime resolution and Unicode path persistence
+        shell: pwsh
+        run: ./tests/rtl-paths.ps1
+
+      - name: Build the Windows NSIS Setup
+        run: pnpm --filter @vibehub/desktop tauri build --bundles nsis
+
+      - name: Native behavioral tests
+        run: cargo test --locked --manifest-path apps/desktop/src-tauri/Cargo.toml -- --test-threads=1

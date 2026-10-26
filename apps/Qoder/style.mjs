@@ -9,6 +9,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { buildAutoHeadingDirectionScript, DIRECTION_ALIGNMENT_CSS } from '../rtl-direction.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -82,10 +83,11 @@ export function buildCss({ font = true } = {}) {
       rules.push(`${GUARD}{font-family:revert!important}`);
     }
   }
+  rules.push(DIRECTION_ALIGNMENT_CSS);
   return rules.join('\n');
 }
 
-export const STYLE_ID = 'qoder-rtl-fix-v3';
+export const STYLE_ID = 'qoder-rtl-fix-v4';
 
 // Runs in the page. Constructed stylesheet + <style> twin: a CSSOM-built sheet
 // is not gated by `style-src`, and the <style> element keeps working on engines
@@ -94,6 +96,7 @@ export function injectSource(css) {
   return `(() => {
   const ID = ${JSON.stringify(STYLE_ID)};
   const CSS = ${JSON.stringify(css)};
+  ${buildAutoHeadingDirectionScript('qoder-rtl-heading-direction-v1')}
   const apply = () => {
     const root = document.head || document.documentElement;
     if (!root) return false;

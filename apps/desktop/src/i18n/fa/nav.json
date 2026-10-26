@@ -1,0 +1,19 @@
+{
+  "home": "شروع",
+  "discover": "برنامه‌ها",
+  "myApps": "نصب‌شده‌ها",
+  "models": "مدل‌ها و اتصال‌ها",
+  "terminal": "ظاهر PowerShell",
+  "learning": "آموزش",
+  "longRunning": "آموزش",
+  "more": "بیشتر",
+  "offers": "فرصت‌ها",
+  "doctor": "عیب‌یابی",
+  "settings": "تنظیمات",
+  "proxy": "پروکسی",
+  "proxyHint": "وضعیت پروکسی",
+  "notifications": "اعلان‌ها",
+  "collapse": "جمع کردن نوار کناری",
+  "expand": "باز کردن نوار کناری",
+  "catalogCount": "{{count}} ابزار در کاتالوگ"
+}

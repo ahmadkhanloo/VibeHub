@@ -1,5 +1,7 @@
 # Qoder RTL
 
+> **Legacy adapter notice (2026-10-26):** this document covers the source-based AgentRTL Qoder adapter. The old AgentRTL Setup is not a VibeHub release, and replacement coverage in the new public installer has not been verified. See the [release acceptance matrix](../../docs/validation/VibeHub_Release_Acceptance_Matrix.md).
+
 <!--
 GitHub About / description (copy into the repo "About" field):
 Make Qoder chat render Persian, Arabic, Hebrew, Urdu — any RTL language — correctly. Per-paragraph auto-direction, code stays LTR. No app patching, survives updates.
@@ -47,8 +49,8 @@ Windows only. Older Qoder releases install under `%LOCALAPPDATA%\Programs\Qoder`
 ### Quick install — one step, done
 
 ```powershell
-git clone https://github.com/ahmadkhanloo/AgentRTL.git
-cd AgentRTL
+git clone https://github.com/ahmadkhanloo/VibeHub.git
+cd VibeHub
 powershell -ExecutionPolicy Bypass -File install.ps1 -Apps qoder
 ```
 
@@ -59,8 +61,8 @@ Want to see what it would do first? Add `-WhatIf` — it prints the shortcut pat
 ### Professional install — review, customize, run from source
 
 ```bash
-git clone https://github.com/ahmadkhanloo/AgentRTL.git
-cd AgentRTL
+git clone https://github.com/ahmadkhanloo/VibeHub.git
+cd VibeHub
 # worth a look: style.mjs (the CSS), injector.mjs (CDP client), start.ps1 (the launcher)
 ```
 
@@ -73,7 +75,7 @@ cd AgentRTL
 | `QODER_RTL_PORT` | `9225` | DevTools port; the injector's lock sits one port above |
 | `QODER_RTL_EXE` | auto-detected | Full path to `Qoder.exe` or `Qoder IDE.exe`, if you keep it somewhere unusual |
 
-When using AgentRTL Setup, select Qoder RTL and choose the executable with Browse on the next page if automatic detection fails or Qoder is installed in a custom location. The selected path is saved for future launches.
+When using the legacy AgentRTL Setup, select Qoder RTL and choose the executable with Browse on the next page if automatic detection fails or Qoder is installed in a custom location. The selected path is saved for future launches.
 
 Version detection picks only a folder under `.qoder-versions\` that actually contains `resources\app.asar`; a version holding `app.asar.qoder-pending` is a staged update that cannot start, so it is skipped instead of picked by "highest version number".
 
@@ -137,7 +139,7 @@ The injector connects to the Chromium DevTools Protocol and asks for automatic s
 }
 ```
 
-`plaintext` lets every paragraph pick its own direction, so one message can contain a Persian paragraph and an English one — each rendered correctly. The stylesheet is applied both as an adopted `CSSStyleSheet` and as a `<style id="qoder-rtl-fix-v3">` twin, so it survives content-security-policy checks on either path. The versioned style ID lets an upgrade replace CSS that an older running Qoder session may still inject after reload.
+`plaintext` lets every paragraph pick its own direction, so one message can contain a Persian paragraph and an English one — each rendered correctly. Headings use their own first strong character for alignment, and table cells are centered. The stylesheet is applied both as an adopted `CSSStyleSheet` and as a `<style id="qoder-rtl-fix-v4">` twin, so it survives content-security-policy checks on either path. The versioned style ID lets an upgrade replace CSS that an older running Qoder session may still inject after reload.
 
 ## License
 

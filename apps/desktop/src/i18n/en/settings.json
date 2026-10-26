@@ -1,0 +1,64 @@
+{
+  "title": "Settings",
+  "appearance": {
+    "title": "Appearance",
+    "language": "Language",
+    "mode": "Mode",
+    "modeSystem": "System",
+    "modeLight": "Light",
+    "modeDark": "Dark",
+    "family": "Theme family",
+    "families": { "graphite": "Default (Graphite)", "nord": "Nord", "catppuccin": "Catppuccin", "solarized": "Solarized" },
+    "resolvedMode": "Active appearance: {{mode}}",
+    "accent": "Accent",
+    "accents": { "auto": "Auto", "indigo": "Indigo", "emerald": "Emerald", "violet": "Violet", "amber": "Amber" },
+    "gallery": "Theme gallery (live preview)",
+    "density": "Density",
+    "textSize": "Text size"
+  },
+  "network": {
+    "title": "Network",
+    "openProxy": "Open Proxy Center"
+  },
+  "terminal": {
+    "title": "PowerShell appearance",
+    "openTerminal": "Appearance settings",
+    "hint": "Install a coding font and set up a PowerShell prompt for command-line tools."
+  },
+  "updates": {
+    "title": "Updates",
+    "checkNow": "Check for app updates",
+    "checking": "Checking…",
+    "upToDate": "You are on the latest version",
+    "newVersion": "New version available",
+    "downloadInstall": "Download & install",
+    "later": "Later",
+    "currentVersion": "Current version",
+    "contentCheck": "Check content updates (catalog/guides/offers)",
+    "lastSynced": "Content last synced",
+    "autoCheck": "Check automatically at startup (notify only; install needs consent)",
+    "updatePolicy": "Only signed update files are installed; a forged version is rejected."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "inApp": "In-app",
+    "system": "System",
+    "offersOnlyVerified": "Verified offers only"
+  },
+  "privacy": {
+    "title": "Privacy",
+    "diagnostics": "Share diagnostics (off by default)",
+    "wipeCache": "Wipe local cache",
+    "clearCredentials": "Delete all stored keys",
+    "noTelemetry": "VibeHub has no mandatory telemetry."
+  },
+  "about": {
+    "title": "About",
+    "freeOss": "Everything in VibeHub is free & open source",
+    "thirdPartyNote": "Listed services are third-party with their own terms/costs; appearing in VibeHub is not their endorsement.",
+    "license": "MIT license",
+    "source": "Source",
+    "thirdPartyLicenses": "Third-party licenses",
+    "funding": "Transparency: the ZCode invite link supports the maintainer (optional)."
+  }
+}

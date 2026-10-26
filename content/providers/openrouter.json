@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "openrouter",
+  "name": "OpenRouter",
+  "officialUrl": "https://openrouter.ai/",
+  "modelsDocUrl": "https://openrouter.ai/models",
+  "freeAccess": "free_tier",
+  "requiresAccount": true,
+  "requiresApiKey": true,
+  "usageTermsUrl": "https://openrouter.ai/terms",
+  "supportedApps": {
+    "zcode": "unknown",
+    "qoder": "unknown",
+    "deepseek-harness": "unknown",
+    "opencode": "reported",
+    "mimocode": "unknown",
+    "freebuff": "unknown"
+  },
+  "eligibilityStatus": "unknown",
+  "lastVerified": "2026-10-26",
+  "notes": {
+    "fa": "فقط مدلهای با برچسب free را معرفی میکنیم؛ فهرست و سقف رایگان پویاست و در زمان استفاده باید دوباره بررسی شود.",
+    "en": "We only list models tagged free; the free list and daily caps are dynamic and must be re-checked at use time."
+  },
+  "endpoint": {
+    "baseUrl": "https://openrouter.ai/api/v1",
+    "kind": "openrouter"
+  }
+}
