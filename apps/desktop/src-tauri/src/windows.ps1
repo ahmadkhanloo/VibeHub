@@ -13,6 +13,18 @@ function ProfileText { $p = ProfilePath; if (Test-Path -LiteralPath $p) { [IO.Fi
 function ThemeBlockPattern { '(?ms)^' + [regex]::Escape($begin) + '\r?\n.*?^' + [regex]::Escape($end) + '(?:\r?\n)?' }
 
 function Find-App([string]$id) {
+    if ($id -in @('qoder','zcode','deepseek-harness')) {
+        $folder = switch ($id) { 'qoder' {'Qoder'} 'zcode' {'ZCode'} 'deepseek-harness' {'DeepSeekHarness'} }
+        $legacy = Join-Path $root "apps\$folder\start.ps1"
+        if (Test-Path -LiteralPath $legacy) {
+            $lines = & powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $legacy -Discover 2>$null
+            $encoded = $lines | Where-Object { $_ -like 'RTL_DISCOVER_B64:*' } | Select-Object -First 1
+            if ($encoded) {
+                $resolvedExe = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($encoded.Substring(17)))
+                if (Test-Path -LiteralPath $resolvedExe -PathType Leaf) { return $resolvedExe }
+            }
+        }
+    }
     $candidates = @()
     switch ($id) {
         'qoder' {

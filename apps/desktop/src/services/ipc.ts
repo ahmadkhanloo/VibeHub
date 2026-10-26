@@ -12,7 +12,7 @@ import type {
 import { invoke } from '@tauri-apps/api/core';
 import { loadCatalog, type Catalog } from '@catalog';
 import { assertNoExecutablePayload } from '@core';
-import { applyRemoteCatalog } from '@/lib/catalog';
+import { applyRemoteCatalog, validateRemoteGuides } from '@/lib/catalog';
 
 export interface LaunchOutcome {
   ok: boolean;
@@ -50,6 +50,7 @@ export interface FeedSyncResult {
   detail: string;
   generatedAt?: string;
   catalog?: Catalog;
+  guides?: Record<string, string>;
 }
 
 export const ipc = {
@@ -91,7 +92,8 @@ export const ipc = {
     // Shared strict schemas and executable-payload checks run before any data is used.
     assertNoExecutablePayload(JSON.stringify(result.catalog));
     const catalog = loadCatalog(result.catalog);
-    applyRemoteCatalog(catalog);
+    const guides = validateRemoteGuides(result.guides, catalog);
+    applyRemoteCatalog(catalog, guides);
     return { ...result, catalog };
   },
   appVersion: () => invoke<string>('app_version'),

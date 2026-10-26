@@ -28,7 +28,10 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "msi"],
+    "targets": [
+      "nsis",
+      "msi"
+    ],
     "createUpdaterArtifacts": false,
     "resources": {
       "../../../LICENSE": "LICENSE",
@@ -58,7 +61,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "__CONFIGURE_VIBEHUB_TAURI_UPDATER_PUBLIC_KEY__",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEVERjVGQzQ4MzgzMkZEOEIKUldTTC9USTRTUHoxN2RyY2hrTUNIUUQySXlsdHRKMHJlUGRCSktudXdLd2c5di9wZmwydi9pZ1kK",
       "endpoints": [
         "https://github.com/ahmadkhanloo/VibeHub/releases/latest/download/latest.json"
       ],

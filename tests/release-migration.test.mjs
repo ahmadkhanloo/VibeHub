@@ -85,7 +85,9 @@ test('release publishing is tag-only, least-privilege, and signs updater artifac
   assert.match(workflow, /minisign-\$version-win64\.zip/);
   assert.match(workflow, /37B600344E20C19314B2E82813DB2BFDCC408B77B876F7727889DBD46D539479/);
   assert.match(workflow, /minisignPublisherKey = 'RWQf6LRCGA9i53mlYecO4IzT51TGPpvWucNSCh1CBM0QTaLn73Y7GFO3'/);
-  assert.match(workflow, /& \$minisign -Vm \$payloadPath -x \$signature\.FullName -p \$publicKeyPath/);
+  assert.match(workflow, /FromBase64String\(\$env:TAURI_UPDATER_PUBLIC_KEY\.Trim\(\)\)/);
+  assert.match(workflow, /FromBase64String\(\(Get-Content -LiteralPath \$signature\.FullName -Raw\)\.Trim\(\)\)/);
+  assert.match(workflow, /& \$minisign -Vm \$payloadPath -x \$decodedSignaturePath -p \$publicKeyPath/);
   assert.match(workflow, /latest\.json version does not match release tag/);
   assert.match(workflow, /Updater URL has no matching Release asset/);
   assert.match(workflow, /Updater JSON signature does not match the signed Release asset/);

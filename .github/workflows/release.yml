@@ -26,6 +26,16 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
 
+      - name: Cache Rust dependencies and build artifacts
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/desktop/src-tauri/target
+          key: windows-vibehub-rust-${{ hashFiles('apps/desktop/src-tauri/Cargo.lock') }}
+          restore-keys: windows-vibehub-rust-
+
       - name: Confirm release tag and protected-branch ancestry
         shell: pwsh
         run: |
@@ -58,13 +68,21 @@ jobs:
       - name: Run release preflight
         run: |
           pnpm test
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           pnpm check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           pnpm build
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           pnpm i18n:check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           pnpm content:validate
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           pnpm release:guard
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cargo check --locked --manifest-path apps/desktop/src-tauri/Cargo.toml
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cargo test --locked --manifest-path apps/desktop/src-tauri/Cargo.toml
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./tests/native-windows.ps1
 
       - name: Require updater signing configuration
@@ -146,17 +164,29 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Minisign verifier archive publisher signature is invalid' }
           'Minisign 0.12 verifier archive checksum and publisher signature verified.'
 
+      - name: Verify signing roundtrip and reject tampered payload
+        shell: pwsh
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          TAURI_UPDATER_PUBLIC_KEY: ${{ vars.TAURI_UPDATER_PUBLIC_KEY }}
+        run: |
+          $minisign = Join-Path $env:RUNNER_TEMP 'minisign-verifier/minisign-win64/x86_64/minisign.exe'
+          ./tests/updater-signature.ps1 -Minisign $minisign
+
       - name: Verify draft artifacts and prepare SHA-256 manifest
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_UPDATER_PUBLIC_KEY: ${{ vars.TAURI_UPDATER_PUBLIC_KEY }}
         run: |
+          $minisign = Join-Path $env:RUNNER_TEMP 'minisign-verifier/minisign-win64/x86_64/minisign.exe'
           $tag = $env:GITHUB_REF_NAME
           $downloadDir = Join-Path $env:RUNNER_TEMP 'vibehub-release-draft'
           $publicKeyPath = Join-Path $env:RUNNER_TEMP 'vibehub-updater-public-key.txt'
           New-Item -ItemType Directory -Path $downloadDir -Force | Out-Null
-          [System.IO.File]::WriteAllText($publicKeyPath, $env:TAURI_UPDATER_PUBLIC_KEY.Trim() + "`n", [System.Text.UTF8Encoding]::new($false))
+          $decodedPublicKey = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($env:TAURI_UPDATER_PUBLIC_KEY.Trim()))
+          [System.IO.File]::WriteAllText($publicKeyPath, $decodedPublicKey, [System.Text.UTF8Encoding]::new($false))
           gh release download $tag --dir $downloadDir --repo $env:GITHUB_REPOSITORY
           if ($LASTEXITCODE -ne 0) { throw 'Could not download all draft Release assets for verification' }
 
@@ -194,7 +224,10 @@ jobs:
           foreach ($signature in @($assets | Where-Object Name -like '*.sig')) {
             $payloadPath = $signature.FullName.Substring(0, $signature.FullName.Length - 4)
             if (-not (Test-Path -LiteralPath $payloadPath)) { throw "Signature has no matching payload: $($signature.Name)" }
-            & $minisign -Vm $payloadPath -x $signature.FullName -p $publicKeyPath
+            $decodedSignaturePath = Join-Path $env:RUNNER_TEMP 'vibehub-signature.minisig'
+            $decodedSignature = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String((Get-Content -LiteralPath $signature.FullName -Raw).Trim()))
+            [IO.File]::WriteAllText($decodedSignaturePath, $decodedSignature, [Text.UTF8Encoding]::new($false))
+            & $minisign -Vm $payloadPath -x $decodedSignaturePath -p $publicKeyPath
             if ($LASTEXITCODE -ne 0) { throw "Minisign verification failed for $($signature.Name)" }
           }
 
@@ -221,6 +254,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_UPDATER_PUBLIC_KEY: ${{ vars.TAURI_UPDATER_PUBLIC_KEY }}
         run: |
+          $minisign = Join-Path $env:RUNNER_TEMP 'minisign-verifier/minisign-win64/x86_64/minisign.exe'
           $tag = $env:GITHUB_REF_NAME
           $release = gh release view $tag --json assets,isDraft,url --repo $env:GITHUB_REPOSITORY | ConvertFrom-Json
           if ($LASTEXITCODE -ne 0) { throw 'Could not inspect the published Release' }
@@ -228,7 +262,8 @@ jobs:
           $publicDir = Join-Path $env:RUNNER_TEMP 'vibehub-public-release'
           $publicKeyPath = Join-Path $env:RUNNER_TEMP 'vibehub-updater-public-key.txt'
           New-Item -ItemType Directory -Path $publicDir -Force | Out-Null
-          [System.IO.File]::WriteAllText($publicKeyPath, $env:TAURI_UPDATER_PUBLIC_KEY.Trim() + "`n", [System.Text.UTF8Encoding]::new($false))
+          $decodedPublicKey = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($env:TAURI_UPDATER_PUBLIC_KEY.Trim()))
+          [System.IO.File]::WriteAllText($publicKeyPath, $decodedPublicKey, [System.Text.UTF8Encoding]::new($false))
 
           foreach ($asset in $release.assets) {
             $url = $asset.browserDownloadUrl
@@ -250,7 +285,10 @@ jobs:
           }
           foreach ($signature in @(Get-ChildItem -LiteralPath $publicDir -File | Where-Object Name -like '*.sig')) {
             $payloadPath = $signature.FullName.Substring(0, $signature.FullName.Length - 4)
-            & $minisign -Vm $payloadPath -x $signature.FullName -p $publicKeyPath
+            $decodedSignaturePath = Join-Path $env:RUNNER_TEMP 'vibehub-public-signature.minisig'
+            $decodedSignature = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String((Get-Content -LiteralPath $signature.FullName -Raw).Trim()))
+            [IO.File]::WriteAllText($decodedSignaturePath, $decodedSignature, [Text.UTF8Encoding]::new($false))
+            & $minisign -Vm $payloadPath -x $decodedSignaturePath -p $publicKeyPath
             if ($LASTEXITCODE -ne 0) { throw "Public updater signature verification failed for $($signature.Name)" }
           }
           "Verified publicly downloadable Release: $($release.url)" | Add-Content $env:GITHUB_STEP_SUMMARY

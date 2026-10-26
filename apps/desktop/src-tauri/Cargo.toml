@@ -27,7 +27,8 @@ tauri-plugin-notification = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-process = "2"
 tauri-plugin-updater = "2"
-reqwest = { version = "0.13.5", features = ["json", "socks"] }
+reqwest = { version = "0.13.5", default-features = false, features = ["json", "socks", "rustls-no-provider", "system-proxy"] }
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
 keyring = { version = "3", features = ["windows-native"] }
 chrono = "0.4"
 semver = "1"

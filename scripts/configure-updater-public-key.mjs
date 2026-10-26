@@ -12,6 +12,12 @@ export function withUpdaterPublicKey(config, publicKey) {
     throw new Error('private key material is forbidden in the updater public-key setting');
   }
   if (key.length < 40) throw new Error('TAURI_UPDATER_PUBLIC_KEY does not look like a Tauri public key');
+  const decoded = Buffer.from(key, 'base64');
+  const lines = decoded.toString('utf8').trim().split(/\r?\n/);
+  const raw = Buffer.from(lines[1] ?? '', 'base64');
+  if (decoded.toString('base64') !== key || !lines[0]?.startsWith('untrusted comment:') || raw.length !== 42 || raw.subarray(0, 2).toString() !== 'Ed') {
+    throw new Error('TAURI_UPDATER_PUBLIC_KEY must be a base64-encoded Minisign public key');
+  }
 
   const result = structuredClone(config);
   const current = result?.plugins?.updater?.pubkey;

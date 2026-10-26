@@ -26,18 +26,37 @@ export const bundledCatalog: Catalog = loadCatalog({
 export const apps: AppManifest[] = bundledCatalog.apps;
 export const providers: ProviderManifest[] = bundledCatalog.providers;
 
-export function applyRemoteCatalog(catalog: Catalog): void {
+const remoteGuides: Record<string, string> = {};
+
+export function validateRemoteGuides(raw: unknown, catalog: Catalog): Record<string, string> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('Incomplete guide feed');
+  const guides: Record<string, string> = {};
+  for (const app of catalog.apps) for (const lang of ['fa', 'en']) {
+    const key = `${app.id}/${lang}`;
+    const text = (raw as Record<string, unknown>)[key];
+    if (typeof text !== 'string' || !text.trim() || text.length > 128 * 1024) throw new Error(`Invalid guide: ${key}`);
+    assertNoExecutablePayload(text);
+    guides[key] = text;
+  }
+  return guides;
+}
+
+export function applyRemoteCatalog(catalog: Catalog, guides: Record<string, string>): void {
   apps.splice(0, apps.length, ...catalog.apps);
   providers.splice(0, providers.length, ...catalog.providers);
   bundledCatalog.offers.splice(0, bundledCatalog.offers.length, ...catalog.offers);
-  try { localStorage.setItem('vibehub.catalog.v1', JSON.stringify(catalog)); } catch { /* Current in-memory content remains usable. */ }
+  for (const key of Object.keys(remoteGuides)) delete remoteGuides[key];
+  Object.assign(remoteGuides, guides);
+  try { localStorage.setItem('vibehub.content.v1', JSON.stringify({ catalog, guides })); } catch { /* Current in-memory content remains usable. */ }
 }
 
 try {
-  const cached = localStorage.getItem('vibehub.catalog.v1');
+  const cached = localStorage.getItem('vibehub.content.v1');
   if (cached) {
     assertNoExecutablePayload(cached);
-    applyRemoteCatalog(loadCatalog(JSON.parse(cached)));
+    const raw = JSON.parse(cached);
+    const catalog = loadCatalog(raw.catalog);
+    applyRemoteCatalog(catalog, validateRemoteGuides(raw.guides, catalog));
   }
 } catch { /* Invalid cache or unavailable storage: use the bundled snapshot. */ }
 
@@ -52,6 +71,8 @@ export const guideModules = import.meta.glob('../../../content/guides/**/*.md', 
 }) as Record<string, string>;
 
 export function guideText(appId: string, lang: 'fa' | 'en'): string | null {
+  const remote = remoteGuides[`${appId}/${lang}`];
+  if (remote) return remote;
   const hit = Object.entries(guideModules).find(([p]) => p.includes(`/${appId}/${lang}.md`));
   return hit ? hit[1] : null;
 }

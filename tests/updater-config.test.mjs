@@ -11,11 +11,15 @@ test('production updater configuration requires a public key and never accepts p
 });
 
 test('production updater configuration replaces only the public key placeholder', () => {
-  const publicKey = 'untrusted comment: VibeHub updater key\nRWQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
-  const configured = withUpdaterPublicKey(config, publicKey);
+  const publicKey = config.plugins.updater.pubkey;
+  const fixture = structuredClone(config);
+  fixture.plugins.updater.pubkey = '__CONFIGURE_VIBEHUB_TAURI_UPDATER_PUBLIC_KEY__';
+  const configured = withUpdaterPublicKey(fixture, publicKey);
 
   assert.equal(configured.plugins.updater.pubkey, publicKey);
   assert.equal(configured.plugins.updater.endpoints[0], 'https://github.com/ahmadkhanloo/VibeHub/releases/latest/download/latest.json');
   assert.match(JSON.stringify(configured), /VibeHub/);
   assert.doesNotMatch(JSON.stringify(configured), /PRIVATE KEY/);
+  assert.deepEqual(withUpdaterPublicKey(config, publicKey), config);
+  assert.throws(() => withUpdaterPublicKey(fixture, 'invalid-public-key'.repeat(5)), /public key/);
 });

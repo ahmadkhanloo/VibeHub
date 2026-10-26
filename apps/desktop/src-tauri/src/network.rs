@@ -24,6 +24,8 @@ pub fn proxy_url(profile: &Value) -> Result<String> {
 }
 
 pub fn client(profile: Option<&Value>) -> Result<reqwest::Client> {
+    // Share Tauri updater's ring provider, including debug builds without the updater plugin.
+    let _ = rustls::crypto::ring::default_provider().install_default();
     let mut builder = reqwest::Client::builder()
         .timeout(Duration::from_secs(25))
         .connect_timeout(Duration::from_secs(6))
@@ -195,7 +197,7 @@ pub async fn api_test(
     }
 }
 
-async fn bounded_json(mut response: reqwest::Response, limit: usize) -> Result<Value> {
+async fn bounded_bytes(mut response: reqwest::Response, limit: usize) -> Result<Vec<u8>> {
     let mut bytes = Vec::new();
     while let Some(chunk) = response
         .chunk()
@@ -207,7 +209,12 @@ async fn bounded_json(mut response: reqwest::Response, limit: usize) -> Result<V
         }
         bytes.extend_from_slice(&chunk);
     }
-    serde_json::from_slice(&bytes).map_err(|_| "Invalid JSON response".into())
+    Ok(bytes)
+}
+
+async fn bounded_json(response: reqwest::Response, limit: usize) -> Result<Value> {
+    serde_json::from_slice(&bounded_bytes(response, limit).await?)
+        .map_err(|_| "Invalid JSON response".into())
 }
 
 pub async fn feed_sync(profile: Option<Value>, base: String) -> Result<Value> {
@@ -248,9 +255,26 @@ pub async fn feed_sync(profile: Option<Value>, base: String) -> Result<Value> {
                 .push(document);
         }
     }
+    let mut guides = serde_json::Map::new();
+    for id in index["apps"].as_array().ok_or("Missing apps")? {
+        let id = id.as_str().ok_or("Invalid app id")?;
+        for lang in ["fa", "en"] {
+            let response = client
+                .get(format!("{root}guides/{id}/{lang}.md"))
+                .send()
+                .await
+                .map_err(|_| "Feed guide unavailable")?;
+            if !response.status().is_success() {
+                return Err("Feed guide returned an HTTP error".into());
+            }
+            let text = String::from_utf8(bounded_bytes(response, 128 * 1024).await?)
+                .map_err(|_| "Feed guide is not UTF-8")?;
+            guides.insert(format!("{id}/{lang}"), json!(text));
+        }
+    }
     // The UI applies the shared strict Zod schemas before accepting this data.
     // Downloads never provide executable commands or package mappings.
     Ok(
-        json!({"ok":true,"updated":true,"detail":"Downloaded feed; shared schema validation required before use","generatedAt":index["generatedAt"],"catalog":catalog}),
+        json!({"ok":true,"updated":true,"detail":"Downloaded feed; shared schema validation required before use","generatedAt":index["generatedAt"],"catalog":catalog,"guides":guides}),
     )
 }

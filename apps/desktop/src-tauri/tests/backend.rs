@@ -1,8 +1,11 @@
 #[path = "../src/domain.rs"]
+#[allow(dead_code)]
 mod domain;
 #[path = "../src/network.rs"]
+#[allow(dead_code)]
 mod network;
 #[path = "../src/storage.rs"]
+#[allow(dead_code)]
 mod storage;
 
 use domain::*;
@@ -181,4 +184,65 @@ fn api_errors_are_redacted_and_do_not_validate_auth_or_model() {
     assert_eq!(result["modelResponded"], false);
     assert!(!result.to_string().contains("do-not-return-provider-secret"));
     server.join().unwrap();
+}
+
+#[test]
+fn feed_downloads_the_catalog_and_bilingual_guides_from_a_real_http_server() {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    listener.set_nonblocking(true).unwrap();
+    let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../content");
+    let server = std::thread::spawn(move || {
+        use std::io::{Read, Write};
+        let start = std::time::Instant::now();
+        let mut requests = 0;
+        while requests < 23 && start.elapsed().as_secs() < 10 {
+            let Ok((mut stream, _)) = listener.accept() else {
+                std::thread::sleep(std::time::Duration::from_millis(5));
+                continue;
+            };
+            stream
+                .set_read_timeout(Some(std::time::Duration::from_secs(3)))
+                .unwrap();
+            let mut request = [0; 4096];
+            let size = stream.read(&mut request).unwrap();
+            let request = String::from_utf8_lossy(&request[..size]);
+            let path = request
+                .split_whitespace()
+                .nth(1)
+                .unwrap()
+                .trim_start_matches('/');
+            let file = if path == "index.json" {
+                root.join("offers/index.json")
+            } else {
+                root.join(path)
+            };
+            let body = std::fs::read(file).unwrap();
+            write!(
+                stream,
+                "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                body.len()
+            )
+            .unwrap();
+            stream.write_all(&body).unwrap();
+            requests += 1;
+        }
+        requests
+    });
+    let direct = Some(json!({"id":"direct","name":"Direct","mode":"direct"}));
+    let result = tauri::async_runtime::block_on(network::feed_sync(
+        direct,
+        format!("http://127.0.0.1:{port}"),
+    ))
+    .unwrap();
+    assert_eq!(result["catalog"]["apps"].as_array().unwrap().len(), 6);
+    assert_eq!(result["catalog"]["providers"].as_array().unwrap().len(), 4);
+    assert_eq!(result["guides"].as_object().unwrap().len(), 12);
+    assert!(
+        result["guides"]["qoder/fa"]
+            .as_str()
+            .unwrap()
+            .contains("Qoder")
+    );
+    assert_eq!(server.join().unwrap(), 23);
 }
