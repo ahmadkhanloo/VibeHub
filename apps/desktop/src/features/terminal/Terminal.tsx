@@ -1,116 +1,96 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle2, Download, Package, Undo2, XCircle } from 'lucide-react';
-import { Badge, Button, Card, SectionTitle } from '@/components/ui';
-import { ipc, type FontInstallResult, type InstallRunResult } from '@/services/ipc';
+import { Button, Card, ErrorNotice, Modal, SectionTitle } from '@/components/ui';
+import { ipc } from '@/services/ipc';
 import type { TerminalSetupState } from '@core';
 
 const PROMPT_PREVIEW = `  3.14.7  main ≡ ?2  C:/Projects/VibeHub  0ms
 ❯ _`;
+type Action = 'omp' | 'nerd' | 'vazir' | 'apply' | 'undo';
 
 export function TerminalPage() {
-  const { t } = useTranslation(['terminal', 'common']);
+  const { t } = useTranslation(['terminal', 'common', 'journeyUx']);
   const [state, setState] = useState<TerminalSetupState | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
+  const [detecting, setDetecting] = useState(true);
+  const [busy, setBusy] = useState<Action | null>(null);
+  const [confirmation, setConfirmation] = useState<Action | null>(null);
   const [log, setLog] = useState<string[]>([]);
-  const say = useCallback((line: string) => setLog((l) => [...l.slice(-8), line]), []);
-
-  const detect = () =>
-    ipc.terminalDetect().then(setState).catch((e) => say(`detect: ${e}`));
-  useEffect(() => void detect(), []);
-
-  const run = async (key: string, fn: () => Promise<{ detail?: string; outputTail?: string[] }>) => {
-    setBusy(key);
+  const [error, setError] = useState<unknown>(null);
+  const [completed, setCompleted] = useState(false);
+  const actionLock = useRef(false);
+  const say = useCallback((line: string) => setLog((lines) => [...lines.slice(-8), line]), []);
+  const detect = useCallback(async () => {
+    setDetecting(true); setError(null);
+    try { setState(await ipc.terminalDetect()); }
+    catch (e) { setError(e); }
+    finally { setDetecting(false); }
+  }, []);
+  useEffect(() => { void detect(); }, [detect]);
+  const run = async (action: Action) => {
+    if (actionLock.current) return;
+    actionLock.current = true; setBusy(action); setCompleted(false); setError(null);
     try {
-      const r = await fn();
-      say(r.detail ?? r.outputTail?.join('\n') ?? key);
-      await detect();
-    } catch (e) {
-      say(`${key}: ${e}`);
-    } finally {
-      setBusy(null);
-    }
+      const result = action === 'omp' ? await ipc.terminalInstallOhMyPosh()
+        : action === 'nerd' ? await ipc.terminalInstallFont('nerd')
+        : action === 'vazir' ? await ipc.terminalInstallFont('vazirmatn')
+        : action === 'apply' ? await ipc.terminalApplyTheme() : await ipc.terminalUndo();
+      const detail = 'detail' in result ? result.detail : result.outputTail.join('\n');
+      if (!result.ok) throw new Error(detail || t('journeyUx:terminal.actionFailed'));
+      say(detail || t('journeyUx:terminal.actionComplete'));
+      setState(await ipc.terminalDetect());
+      setCompleted(true); setConfirmation(null);
+    } catch (e) { setError(e); }
+    finally { actionLock.current = false; setBusy(null); }
   };
+  const Row = ({ ok, label, value }: { ok: boolean; label: string; value?: string }) => <div className="flex flex-wrap items-center gap-2 text-sm">
+    {ok ? <CheckCircle2 size={16} aria-hidden="true" className="text-success" /> : <XCircle size={16} aria-hidden="true" className="text-muted" />}
+    <span>{label}</span><span className="text-muted">{ok ? t('common:yes') : t('common:no')}</span>{value && <bdi className="ltr-tech break-all text-xs text-muted">{value}</bdi>}
+  </div>;
+  const blocked = !!busy || detecting || !state;
 
-  const Row = ({ ok, label, value }: { ok: boolean | null; label: string; value?: string }) => (
-    <div className="flex items-center gap-2 text-sm">
-      {ok === true ? <CheckCircle2 size={15} className="text-success" /> : ok === false ? <XCircle size={15} className="text-muted" /> : null}
-      <span className="text-muted">{label}</span>
-      {value && <span className="ltr-tech text-xs">{value}</span>}
-    </div>
-  );
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold">{t('terminal:title')}</h1>
-        <p className="mt-1 max-w-2xl text-sm text-muted">{t('terminal:subtitle')}</p>
+  return <section className="space-y-6" aria-busy={detecting || !!busy}>
+    <p className="text-sm leading-7 text-muted">{t('terminal:subtitle')}</p>
+    {error != null && confirmation === null && <ErrorNotice error={error} onRetry={() => void detect()} />}
+    {completed && <p role="status" className="text-sm text-success">{t('journeyUx:terminal.actionComplete')}</p>}
+    <Card className="space-y-3">
+      <SectionTitle>{t('terminal:steps.detect')}</SectionTitle>
+      {detecting ? <p role="status" className="text-sm text-muted">{t('common:loading')}</p> : state ? <>
+        <Row ok={state.hasOhMyPosh} label={t('terminal:detected.ohmyposh')} value={state.ohMyPoshVersion} />
+        <Row ok={state.hasNerdFont} label={t('terminal:detected.nerdFont')} value={state.nerdFontName} />
+        <Row ok={!!state.profilePath} label={t('terminal:detected.profile')} value={state.profilePath} />
+        <Row ok={state.themeApplied} label={t('terminal:themeApplied')} value={state.backupPath} />
+        <p className="text-xs text-muted">{t('terminal:errors.ideMayNotApply')}</p>
+      </> : <p className="text-sm text-muted">{t('journeyUx:terminal.detectionFailed')}</p>}
+      <Button size="sm" loading={detecting} disabled={!!busy} onClick={() => void detect()}>{t('journeyUx:terminal.retry')}</Button>
+    </Card>
+    <Card className="space-y-3">
+      <SectionTitle>{t('terminal:steps.preview')}</SectionTitle>
+      <p className="text-sm text-muted">{t('terminal:themeDesc')}</p>
+      <pre className="ltr-tech overflow-auto rounded-lg border border-border bg-bg p-4 text-sm leading-7">{PROMPT_PREVIEW}</pre>
+      <p className="text-xs text-muted">{t('terminal:previewNote')}</p>
+    </Card>
+    <Card className="space-y-3">
+      <SectionTitle>{t('terminal:steps.install')}</SectionTitle>
+      <div className="flex flex-wrap gap-3">
+        <Button disabled={blocked || state?.hasOhMyPosh} onClick={() => setConfirmation('omp')}><Package size={16} aria-hidden="true" />{t('terminal:installOmp')}</Button>
+        <Button disabled={blocked || state?.hasNerdFont} onClick={() => setConfirmation('nerd')}><Download size={16} aria-hidden="true" />{t('terminal:installFont')}</Button>
+        <Button disabled={blocked} onClick={() => setConfirmation('vazir')}><Download size={16} aria-hidden="true" />{t('terminal:installVazir')}</Button>
       </div>
-
-      <Card className="space-y-2">
-        <SectionTitle>{t('terminal:steps.detect')}</SectionTitle>
-        {state === null ? (
-          <p className="text-sm text-muted">{t('common:loading')}</p>
-        ) : (
-          <>
-            <Row ok label={t('terminal:detected.ohmyposh')} value={state.ohMyPoshVersion ?? t('common:no')} />
-            <Row ok={state.hasNerdFont} label={t('terminal:detected.nerdFont')} value={state.nerdFontName ?? undefined} />
-            <Row ok label={t('terminal:detected.profile')} value={state.profilePath} />
-            <Row ok={state.themeApplied} label={t('terminal:themeApplied') + (state.backupPath ? ` (${t('terminal:backupAt')}: ${state.backupPath})` : '')} />
-            {state.profilePath && <p className="text-xs text-muted">{t('terminal:errors.ideMayNotApply')}</p>}
-          </>
-        )}
-      </Card>
-
-      <Card>
-        <SectionTitle>{t('terminal:steps.preview')} — {t('terminal:themeName')}</SectionTitle>
-        <p className="mb-3 text-sm text-muted">{t('terminal:themeDesc')}</p>
-        <pre className="ltr-tech overflow-auto rounded-[10px] border border-border bg-bg p-4 text-sm leading-6">{PROMPT_PREVIEW}</pre>
-        <p className="mt-2 text-xs text-muted">{t('terminal:previewNote')}</p>
-      </Card>
-
-      <Card className="space-y-3">
-        <SectionTitle>{t('terminal:steps.install')}</SectionTitle>
-        <div className="flex flex-wrap gap-2">
-          <Button loading={busy === 'omp'} disabled={state?.hasOhMyPosh} onClick={() => void run('omp', () => ipc.terminalInstallOhMyPosh())}>
-            <Package size={14} /> {t('terminal:installOmp')}
-          </Button>
-          <Button loading={busy === 'nerd'} disabled={state?.hasNerdFont} onClick={() => void run('nerd', () => ipc.terminalInstallFont('nerd'))}>
-            <Download size={14} /> {t('terminal:installFont')}
-          </Button>
-          <Button loading={busy === 'vazir'} onClick={() => void run('vazir', () => ipc.terminalInstallFont('vazirmatn'))}>
-            <Download size={14} /> {t('terminal:installVazir')}
-          </Button>
-        </div>
-        <p className="text-xs text-muted">{t('terminal:fontSource')}</p>
-        <p className="ltr-tech text-xs text-muted">winget install JanDeDobbeleer.OhMyPosh --source winget</p>
-      </Card>
-
-      <Card className="space-y-3">
-        <SectionTitle>{t('terminal:steps.apply')}</SectionTitle>
-        <p className="text-sm text-muted">{t('terminal:applyWhat')}</p>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="primary" loading={busy === 'apply'} disabled={state?.themeApplied} onClick={() => void run('apply', () => ipc.terminalApplyTheme())}>
-            {t('terminal:applyTheme')}
-          </Button>
-          <Button variant="danger" loading={busy === 'undo'} disabled={!state?.themeApplied} onClick={() => void run('undo', () => ipc.terminalUndo())}>
-            <Undo2 size={14} /> {t('terminal:undo')}
-          </Button>
-        </div>
-        <p className="text-xs text-muted">{t('terminal:undoNote')}</p>
-      </Card>
-
-      <Card>
-        <SectionTitle>{t('terminal:steps.verify')}</SectionTitle>
-        <p className="text-sm text-muted">{t('terminal:verifyHint')}</p>
-      </Card>
-
-      {!!log.length && (
-        <Card>
-          <SectionTitle>log</SectionTitle>
-          <pre className="ltr-tech space-y-1 text-xs text-muted">{log.join('\n')}</pre>
-        </Card>
-      )}
-    </div>
-  );
+      <p className="text-xs leading-6 text-muted">{t('terminal:fontSource')}</p>
+    </Card>
+    <Card className="space-y-3">
+      <SectionTitle>{t('terminal:steps.apply')}</SectionTitle>
+      <p className="text-sm leading-7 text-muted">{t('terminal:applyWhat')}</p>
+      <div className="flex flex-wrap gap-3"><Button variant="primary" disabled={blocked || state?.themeApplied || !state?.hasOhMyPosh} onClick={() => setConfirmation('apply')}>{t('terminal:applyTheme')}</Button><Button disabled={blocked || !state?.themeApplied} onClick={() => setConfirmation('undo')}><Undo2 size={16} aria-hidden="true" />{t('terminal:undo')}</Button></div>
+      <p className="text-xs leading-6 text-muted">{t('terminal:undoNote')}</p>
+    </Card>
+    <Card className="space-y-3"><SectionTitle>{t('terminal:steps.verify')}</SectionTitle><p className="text-sm leading-7 text-muted">{t('terminal:verifyHint')}</p></Card>
+    {!!log.length && <details className="rounded-lg border border-border p-4"><summary className="cursor-pointer text-sm font-medium">{t('journeyUx:terminal.details')}</summary><pre dir="ltr" className="ltr-tech mt-3 whitespace-pre-wrap break-all text-xs text-muted">{log.join('\n')}</pre></details>}
+    <Modal open={confirmation !== null} title={t(confirmation === 'apply' ? 'journeyUx:terminal.confirmApplyTitle' : confirmation === 'undo' ? 'journeyUx:terminal.confirmRestoreTitle' : 'journeyUx:terminal.confirmInstallTitle')} busy={!!busy} onClose={() => { setConfirmation(null); setError(null); }}>
+      <p className="text-sm leading-7">{t(confirmation === 'apply' ? 'journeyUx:terminal.confirmApply' : confirmation === 'undo' ? 'journeyUx:terminal.confirmRestore' : 'journeyUx:terminal.confirmInstall')}</p>
+      {error != null && <ErrorNotice error={error} />}
+      <div className="flex justify-end gap-3"><Button data-autofocus disabled={!!busy} onClick={() => { setConfirmation(null); setError(null); }}>{t('common:cancel')}</Button><Button variant="primary" loading={!!busy} onClick={() => { if (confirmation) void run(confirmation); }}>{t('common:confirm')}</Button></div>
+    </Modal>
+  </section>;
 }

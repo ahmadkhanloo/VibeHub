@@ -152,3 +152,5 @@ export const APP_IDS = ['zcode', 'qoder', 'deepseek-harness', 'opencode', 'mimoc
 export type AppId = (typeof APP_IDS)[number];
 
 export { appManifestSchema, providerManifestSchema, offerSchema, feedIndexSchema, assertNoExecutablePayload } from './schemas.ts';
+
+export { preferredLaunchMode, launchBlocked, normalizeSearch, type LaunchMode } from './ux.ts';

@@ -3,7 +3,7 @@
   "id": "mimocode",
   "name": "MiMo Code",
   "summary": {
-    "fa": "ایجنت کدنویسی CLI شیائومی با کد MIT و محدودیتهای استفادهٔ جداگانه",
+    "fa": "دستیار خط فرمان شیائومی با مجوز MIT و محدودیت‌های استفادهٔ جداگانه.",
     "en": "Xiaomi's CLI coding agent; MIT-licensed code with separate use restrictions"
   },
   "kind": "cli_agent",
@@ -15,7 +15,7 @@
   "licenseSpdx": "MIT",
   "freeAccess": "unknown",
   "freeAccessDetails": {
-    "fa": "کد تحت MIT است، اما شرایط سرویس میزبانی و Use Restrictions جداگانهاند؛ سهمیههای معرفیشده بهعنوان «موقت» را دائمی فرض نکنید.",
+    "fa": "کد با مجوز MIT منتشر شده است؛ اما شرایط سرویس میزبانی و محدودیت‌های استفاده جداگانه‌اند. سهمیه‌های موقت اعلام‌شده را دائمی فرض نکنید.",
     "en": "Code is MIT, but hosted-service terms and Use Restrictions are separate; do not assume quotas introduced as 'temporary' are permanent."
   },
   "requiresSignup": null,

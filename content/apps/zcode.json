@@ -3,7 +3,7 @@
   "id": "zcode",
   "name": "ZCode",
   "summary": {
-    "fa": "ایجنت کدنویسی هوش مصنوعی و IDE با مسیر دسترسی رایگان؛ پشتیبانی RTL تأییدشده توسط VibeHub",
+    "fa": "دستیار هوشمند کدنویسی و محیط توسعه با مسیر دسترسی رایگان؛ پشتیبانی راست‌چین آن در VibeHub تأیید شده است.",
     "en": "AI coding agent/IDE with a free access path; RTL support verified by VibeHub"
   },
   "kind": "desktop_ide",
@@ -13,7 +13,7 @@
   "isOpenSource": null,
   "freeAccess": "free_tier",
   "freeAccessDetails": {
-    "fa": "دسترسی رایگان با شرایط و سهمیهٔ متغیر از سرویسدهنده؛ جزئیات را در سایت رسمی ببینید. سهمیهها ممکن است تغییر کنند.",
+    "fa": "دسترسی رایگان با شرایط و سهمیهٔ متغیر از سرویس‌دهنده؛ جزئیات را در وب‌سایت رسمی ببینید. سهمیه ممکن است تغییر کند.",
     "en": "Free access with provider-defined terms and quotas; check the official site. Quotas may change over time."
   },
   "requiresSignup": true,

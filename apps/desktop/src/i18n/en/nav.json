@@ -1,16 +1,19 @@
 {
   "home": "Home",
-  "discover": "Discover",
-  "myApps": "My Apps",
-  "models": "Models & APIs",
-  "terminal": "Terminal Setup",
-  "guides": "Guides",
-  "offers": "Offers & News",
-  "doctor": "Doctor",
+  "discover": "Apps",
+  "myApps": "Installed",
+  "models": "Models & connections",
+  "terminal": "PowerShell appearance",
+  "learning": "Learn",
+  "longRunning": "Learn",
+  "more": "More",
+  "offers": "Opportunities",
+  "doctor": "Diagnostics",
   "settings": "Settings",
-  "proxy": "Proxy Center",
+  "proxy": "Proxy",
   "proxyHint": "Proxy status",
   "notifications": "Notifications",
   "collapse": "Collapse sidebar",
-  "expand": "Expand sidebar"
+  "expand": "Expand sidebar",
+  "catalogCount": "{{count}} tools in catalog"
 }

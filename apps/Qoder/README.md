@@ -139,7 +139,7 @@ The injector connects to the Chromium DevTools Protocol and asks for automatic s
 }
 ```
 
-`plaintext` lets every paragraph pick its own direction, so one message can contain a Persian paragraph and an English one — each rendered correctly. The stylesheet is applied both as an adopted `CSSStyleSheet` and as a `<style id="qoder-rtl-fix-v3">` twin, so it survives content-security-policy checks on either path. The versioned style ID lets an upgrade replace CSS that an older running Qoder session may still inject after reload.
+`plaintext` lets every paragraph pick its own direction, so one message can contain a Persian paragraph and an English one — each rendered correctly. Headings use their own first strong character for alignment, and table cells are centered. The stylesheet is applied both as an adopted `CSSStyleSheet` and as a `<style id="qoder-rtl-fix-v4">` twin, so it survives content-security-policy checks on either path. The versioned style ID lets an upgrade replace CSS that an older running Qoder session may still inject after reload.
 
 ## License
 

@@ -10,6 +10,10 @@ VibeHub's own source is MIT licensed (see the root `LICENSE`). Runtime and build
 |---|---|---|
 | Vazirmatn | Bundled Persian UI font files | SIL Open Font License 1.1; notice is included beside the font files under `apps/desktop/src/assets/fonts/OFL.txt` |
 
+## Private Windows runtime
+
+The Windows Setup includes the Node.js 24.22.1 x64 executable for the RTL injectors. The build downloads the official Node.js archive, verifies its SHA-256, and includes the upstream `LICENSE` file as `NODE-LICENSE.md`. The runtime is installed privately under VibeHub and does not modify the system PATH. Confirm the exact release artifact and its complete upstream notices as part of the release SBOM review.
+
 ## Direct application dependencies
 
 The following direct dependencies are used by the desktop frontend. The release SBOM must include their resolved versions and transitive dependencies; license metadata must be checked from the exact locked packages.

@@ -6,9 +6,15 @@ import { initReactI18next } from 'react-i18next';
 const fa = import.meta.glob('./fa/*.json', { eager: true, import: 'default' }) as Record<string, Record<string, unknown>>;
 const en = import.meta.glob('./en/*.json', { eager: true, import: 'default' }) as Record<string, Record<string, unknown>>;
 
+function toNamespaces(files: Record<string, Record<string, unknown>>) {
+  return Object.fromEntries(
+    Object.entries(files).map(([path, messages]) => [path.split('/').at(-1)!.replace(/\.json$/, ''), messages]),
+  );
+}
+
 const resources = {
-  fa: Object.fromEntries(Object.entries(fa).map(([p, v]) => [p.replace('./', '').replace('.json', ''), { translation: v }])),
-  en: Object.fromEntries(Object.entries(en).map(([p, v]) => [p.replace('./', '').replace('.json', ''), { translation: v }])),
+  fa: toNamespaces(fa),
+  en: toNamespaces(en),
 };
 
 export type AppLanguage = 'fa' | 'en';

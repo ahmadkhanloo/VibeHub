@@ -15,6 +15,68 @@ pub fn resource_root(app: &tauri::AppHandle) -> Result<std::path::PathBuf> {
     }
 }
 
+pub fn rtl_runtime_available(root: &std::path::Path) -> bool {
+    [
+        "runtime/node.exe",
+        "apps/desktop/src-tauri/windows/payload/node.exe",
+    ]
+    .iter()
+    .any(|relative| root.join(relative).is_file())
+}
+
+#[cfg(test)]
+mod rtl_runtime_tests {
+    use super::rtl_runtime_available;
+    use std::{
+        fs,
+        path::PathBuf,
+        time::{SystemTime, UNIX_EPOCH},
+    };
+
+    fn temp_root(label: &str) -> PathBuf {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!(
+            "vibehub-rtl-{label}-{}-{nonce}",
+            std::process::id()
+        ));
+        fs::create_dir_all(&root).unwrap();
+        root
+    }
+
+    #[test]
+    fn detects_bundled_runtime_in_release_resources() {
+        let root = temp_root("release");
+        let executable = root.join("runtime/node.exe");
+        fs::create_dir_all(executable.parent().unwrap()).unwrap();
+        fs::write(&executable, b"test").unwrap();
+
+        assert!(rtl_runtime_available(&root));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn detects_bundled_runtime_in_development_payload() {
+        let root = temp_root("development");
+        let executable = root.join("apps/desktop/src-tauri/windows/payload/node.exe");
+        fs::create_dir_all(executable.parent().unwrap()).unwrap();
+        fs::write(&executable, b"test").unwrap();
+
+        assert!(rtl_runtime_available(&root));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn reports_unavailable_when_no_bundled_runtime_exists() {
+        let root = temp_root("missing");
+
+        assert!(!rtl_runtime_available(&root));
+        fs::remove_dir_all(root).unwrap();
+    }
+}
+
 pub fn hidden(command: &mut Command) {
     #[cfg(windows)]
     {

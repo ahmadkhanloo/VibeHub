@@ -3,7 +3,7 @@
   "id": "qoder",
   "name": "Qoder",
   "summary": {
-    "fa": "IDE ایجنتمحور با پلن Community/BYOK رایگان؛ پشتیبانی RTL تأییدشده توسط VibeHub",
+    "fa": "محیط توسعهٔ هوشمند با طرح رایگان Community و امکان استفاده از کلید شخصی؛ پشتیبانی راست‌چین آن در VibeHub تأیید شده است.",
     "en": "Agentic IDE with a free Community/BYOK plan; RTL support verified by VibeHub"
   },
   "kind": "desktop_ide",
@@ -13,7 +13,7 @@
   "isOpenSource": null,
   "freeAccess": "free_tier",
   "freeAccessDetails": {
-    "fa": "پلن Community با قابلیت BYOK (کلید خودتان) طبق شرایط جاری سازنده؛ شرایط ممکن است تغییر کند.",
+    "fa": "طرح Community با امکان استفاده از کلید شخصی، طبق شرایط جاری سازنده ارائه می‌شود؛ شرایط ممکن است تغییر کند.",
     "en": "Community plan with BYOK (bring your own key) under the vendor's current terms; terms may change."
   },
   "requiresSignup": true,

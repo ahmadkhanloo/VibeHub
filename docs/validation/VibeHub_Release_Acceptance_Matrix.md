@@ -21,24 +21,32 @@
 | Gate 16 — actual GitHub repository rename | PASS | — | — | — | — | Authorized rename completed; repository ID `1408902399`, now [ahmadkhanloo/VibeHub](https://github.com/ahmadkhanloo/VibeHub). Pages enabled with workflow builds; deployment is separate |
 | Gate 17 — protected-branch merge and official tag | SKIPPED | — | — | — | — | Authorized; waiting for current CI before merge and tag |
 | Gate 17 — public production release and artifact validation | SKIPPED | — | Not published | No public artifacts | — | No public Release or signature/checksum evidence exists |
-| Gate 18 — public installer on clean Windows 10 | SKIPPED | — | Not published | No public installer | — | Requires Gate 17 and a clean Windows 10 environment |
-| Gate 18 — public installer on clean Windows 11 | SKIPPED | — | Not published | No public installer | — | Requires Gate 17 and a clean Windows 11 environment |
+| Gate 18 — beta Setup on clean Windows 10 | UNVERIFIED | — | No beta Release | No beta Setup | — | Requires the first beta Release and a clean Windows 10 environment |
+| Gate 18 — beta Setup on clean Windows 11 | UNVERIFIED | — | No beta Release | No beta Setup | — | Requires the first beta Release and a clean Windows 11 environment |
+| Gate 18 — full and RTL-only setup modes, individual/combine selection, no-app/no-system-Node install, upgrade, and owned-file removal | UNVERIFIED | — | Not published | No built Setup | — | Installer source and payload checks pass, but the NSIS bundle and interactive install lifecycle have not run |
+| Gate 18 — standalone ZCode, Qoder, and DeepSeek launch with real vendor apps; repeat run and custom executable path | UNVERIFIED | — | Not published | No built Setup | — | Existing discovery/helper regressions pass; the three real vendor applications were not launched in this turn |
 | Gate 18 — Persian usernames/paths, locale, themes, proxy, terminal, feeds, uninstall | UNVERIFIED | — | Not published | No public installer | — | Must be run from the public Release on clean machines; local evidence is not a substitute |
+| Gate 18 — signed beta update, invalid signature, interruption, and settings preservation | UNVERIFIED | — | No beta Release | No updater artifacts | — | Requires two signed beta builds and an installed first beta on clean Windows |
 | Gate 19 — signed follow-up update from installed public version | SKIPPED | — | No initial or follow-up Release | No updater artifacts | — | Authorized; waiting for Gate 17/18 |
 | Gate 19 — invalid signature, offline endpoint, interrupted/failed update, data preservation | UNVERIFIED | — | No initial or follow-up Release | No updater artifacts | — | No real updater run has occurred |
 | Gate 19 — independent catalog/guide/offer refresh | UNVERIFIED | — | Not published | No public content feed | — | Must be tested separately from the binary updater |
+| Windows publisher Authenticode signature for `VibeHub-Setup.exe` | UNVERIFIED | — | Not published | No public Setup | — | No Windows publisher certificate or Authenticode sign command is configured; Tauri's updater archive signature is a separate mechanism |
 
 ## Current local evidence
 
 | Check | Result | Evidence |
 |---|---|---|
-| Workspace tests | PASS, 16/16 | `corepack pnpm test`; includes core/catalog, Gate 16 metadata, updater-key guard, native-coverage guard unit test, and Pages-artifact tests |
-| Locked dependency install | PASS | `corepack pnpm install --frozen-lockfile` with pnpm 12.15.0 |
-| Workspace TypeScript checks | PASS | `corepack pnpm check`; desktop, core, and catalog checks |
-| Desktop frontend build | PASS, Vite output produced; one 617.29 kB JS chunk warning remains | `corepack pnpm build`; this is frontend evidence only |
+| Workspace tests | PASS, 17/17 | `pnpm.cmd test`; includes the Setup mode/resource contract, release workflow gates, core/catalog and updater-key checks |
+| Locked dependency install | PASS locally with pnpm 11.25.0 | `pnpm.cmd install --frozen-lockfile`; this host has no Corepack, while CI is pinned to pnpm 12.15.0 |
+| Workspace TypeScript checks | PASS | `pnpm.cmd check`; desktop, core, and catalog checks |
+| Desktop frontend build | PASS, Vite output produced; one 618.10 kB JS chunk warning remains | `pnpm.cmd build`; this is frontend evidence only |
 | Translation key parity | PASS, 419 keys; seven identical-value warnings | `corepack pnpm i18n:check` |
 | Bundled content validation | PASS, six apps, four providers, zero current offers, twelve bilingual guide files | `corepack pnpm content:validate` |
 | Legacy Qoder discovery/Persian path regression | PASS, 8/8 assertions | `./tests/qoder-discovery.ps1` on this Windows checkout |
+| Unicode custom-path persistence and AgentRTL Qoder-path import | PASS | `./tests/rtl-paths.ps1`; isolated temporary profile verifies UTF-8 path round-trip outside the install directory, schemaVersion 1, and safe legacy path import |
+| Pinned Windows Node.js runtime payload | PASS, Node.js v24.22.1 LTS | `./scripts/prepare-windows-rtl-payload.ps1`; official archive and `node.exe` SHA-256 checks passed; staged `node.exe --version` returned v24.22.1; isolated PATH check confirms the private runtime is selected without system Node |
+| Beta tag versioning and prerelease publication path | PASS, static contract and local tag-overlay checks | Release workflow injects the tag version into the release-only Tauri config and marks hyphenated semantic-version tags as prereleases; no actual draft/public Release was created |
+| VibeHub custom NSIS Setup compilation and interactive install/upgrade/removal | UNVERIFIED | This Windows host lacks Cargo/Rust and NSIS; the Windows CI build is configured but no current GitHub run exists |
 | Workflow YAML parsing and local policy tests | PASS, all three workflow YAML files parse; Gate 16 tests pass | `python -c "import yaml; ..."` and included `corepack pnpm test`; not a GitHub Actions run |
 | Release workflow PowerShell syntax | PASS, all seven inline `pwsh` blocks parse | `System.Management.Automation.Language.Parser::ParseFile` against temporary extracted workflow blocks |
 | Minisign verifier bootstrap | PASS, Minisign 0.12 archive SHA-256 and upstream release signature both verified | SHA-256 `37b600344e20c19314b2e82813db2bfdcc408b77b876f7727889dbd46d539479`; local Windows run, not a GitHub Actions run |
@@ -46,7 +54,7 @@
 | Native Rust validation | PASS, `cargo check --locked` | `apps/desktop/src-tauri`; compilation check only, not product feature validation |
 | Native Tauri executable build | PASS, Windows x64 `vibehub.exe` produced by `pnpm --filter @vibehub/desktop tauri build --no-bundle` | `apps/desktop/src-tauri/target/release/vibehub.exe`; no installer bundle was produced or tested |
 | Native command coverage | PASS — all 24 UI IPC commands have registered Rust handlers | `corepack pnpm release:guard`; [behavioral evidence and unsupported combinations](native-backend.md). Registration does not establish full feature acceptance |
-| Native behavior tests | PASS, 10 Rust tests and 14 isolated Windows assertions | `cargo test --locked --manifest-path apps/desktop/src-tauri/Cargo.toml`; `./tests/native-windows.ps1`; [scope and limitations](native-backend.md) |
+| Native behavior tests | PASS, 10 Rust tests in prior local evidence; 14 isolated Windows assertions re-run | `cargo test --locked --manifest-path apps/desktop/src-tauri/Cargo.toml` (prior evidence); `./tests/native-windows.ps1` (this turn); [scope and limitations](native-backend.md) |
 | Local app window/screenshot smoke | UNVERIFIED — executable launch was observed and a VibeHub window was enumerated, but activation/screenshot capture did not return usable evidence | Computer-use output was truncated after retry; not counted as a UI acceptance test |
 | Repository whitespace validation | PASS, no diff whitespace errors | `git diff --check` |
 | GitHub CI / Pages workflow runs | UNVERIFIED | No remote push or live GitHub run URL exists |

@@ -8,7 +8,8 @@
     "modeLight": "روشن",
     "modeDark": "تاریک",
     "family": "خانوادهٔ تم",
-    "families": { "graphite": "پیش‌فرض (Graphite)", "nord": "Nord", "catppuccin": "Catppuccin", "solarized": "Solarized" },
+    "families": { "graphite": "گرافیت", "nord": "نورد", "catppuccin": "کاتوچین", "solarized": "سولاریزه" },
+    "resolvedMode": "حالت فعال: {{mode}}",
     "accent": "رنگ تأکید",
     "accents": { "auto": "خودکار", "indigo": "نیلی", "emerald": "زمردی", "violet": "بنفش", "amber": "کهربایی" },
     "gallery": "گالری تم (پیش‌نمایش زنده)",
@@ -20,8 +21,9 @@
     "openProxy": "بازکردن مرکز پروکسی"
   },
   "terminal": {
-    "title": "ترمینال",
-    "openTerminal": "بازکردن راه‌اندازی ترمینال"
+    "title": "ظاهر PowerShell",
+    "openTerminal": "تنظیمات ظاهر",
+    "hint": "نصب فونت برنامه‌نویسی و تنظیم پوستهٔ PowerShell برای ابزارهای خط فرمان."
   },
   "updates": {
     "title": "به‌روزرسانی",
@@ -48,12 +50,12 @@
     "diagnostics": "ارسال دادهٔ تشخیصی (خاموش پیش‌فرض)",
     "wipeCache": "پاک‌کردن کش محلی",
     "clearCredentials": "حذف همهٔ کلیدهای ذخیره‌شده",
-    "noTelemetry": "VibeHub هیچ Telemetry اجباری ندارد."
+    "noTelemetry": "VibeHub هیچ دادهٔ تله‌متری اجباری جمع‌آوری نمی‌کند."
   },
   "about": {
     "title": "درباره",
     "freeOss": "همه‌چیز در VibeHub رایگان و متن‌باز است",
-    "thirdPartyNote": "سرویسهای معرفیشده ثالثاند و شرایط/هزینه خودشان را دارند؛ نمایش در VibeHub به معنی تأیید رسمی آنها نیست.",
+    "thirdPartyNote": "سرویس‌های معرفی‌شده متعلق به طرف‌های دیگرند و شرایط و هزینهٔ خودشان را دارند؛ نمایش در VibeHub به معنی تأیید رسمی آن‌ها نیست.",
     "license": "مجوز MIT",
     "source": "سورس",
     "thirdPartyLicenses": "مجوزهای ثالث",

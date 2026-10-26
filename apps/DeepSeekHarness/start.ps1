@@ -3,6 +3,8 @@ param([switch]$Gui, [switch]$Discover)
 $ErrorActionPreference = 'Stop'
 $Port = if ($env:DEEPSEEK_HARNESS_RTL_PORT) { [int]$env:DEEPSEEK_HARNESS_RTL_PORT } else { 9228 }
 $Dir = Split-Path -Parent $PSCommandPath
+$RtlHelpers = Join-Path $Dir '..\rtl-paths.ps1'
+if (Test-Path -LiteralPath $RtlHelpers) { . $RtlHelpers }
 $Log = Join-Path $env:TEMP 'deepseek-harness-rtl.log'
 
 function Say([string]$Message, [int]$Icon = 0) {
@@ -18,6 +20,9 @@ function Say([string]$Message, [int]$Icon = 0) {
 }
 
 function Find-Harness {
+  if ($env:DEEPSEEK_HARNESS_RTL_EXE -and (Test-Path -LiteralPath $env:DEEPSEEK_HARNESS_RTL_EXE -PathType Leaf)) { return $env:DEEPSEEK_HARNESS_RTL_EXE }
+  $saved = if (Get-Command Get-RtlSavedPath -ErrorAction SilentlyContinue) { Get-RtlSavedPath 'deepseek-harness' } else { $null }
+  if ($saved -and [IO.Path]::GetFileName($saved) -ieq 'DeepSeek Harness.exe') { return $saved }
   $path = "$env:LOCALAPPDATA\Programs\DeepSeek Harness\DeepSeek Harness.exe"
   if (Test-Path -PathType Leaf $path) { return $path }
   return $null
@@ -40,8 +45,11 @@ function Owns-InjectorLock($Owner, [string]$InjectorPath) {
 }
 
 $exe = Find-Harness
+if (-not $exe -and (Get-Command Select-RtlExecutable -ErrorAction SilentlyContinue)) {
+  $exe = Select-RtlExecutable 'deepseek-harness' 'DeepSeek Harness' 'DeepSeek Harness.exe'
+}
 if (-not $exe) {
-  Say 'DeepSeek Harness was not found in its standard installation folder. Install it first.' 16
+  Say 'DeepSeek Harness was not found. Install it or choose its executable when prompted.' 16
   exit 1
 }
 if ($Discover) {
@@ -53,11 +61,16 @@ if ($Discover) {
 }
 
 try {
-  $node = Get-Command node -ErrorAction Stop
-  $nodeVersion = [version]((node --version) -replace '^v', '')
-  if ($nodeVersion.Major -lt 21) { throw "Node.js 21 or newer is required (found v$nodeVersion)." }
+  if (Get-Command Get-RtlNodePath -ErrorAction SilentlyContinue) {
+    $nodePath = Get-RtlNodePath $Dir
+  } else {
+    $node = Get-Command node -ErrorAction Stop
+    $nodeVersion = [version]((node --version) -replace '^v', '')
+    if ($nodeVersion.Major -lt 21) { throw 'Node.js 21 or newer is required.' }
+    $nodePath = $node.Source
+  }
 } catch {
-  Say 'Node.js 21 or newer is required. Install it from https://nodejs.org.' 16
+  Say $_.Exception.Message 16
   exit 1
 }
 
@@ -111,7 +124,7 @@ if ($lockOwner -and -not (Owns-InjectorLock $lockOwner $injector)) {
 if (-not (Owns-InjectorLock $lockOwner $injector)) {
   $out = Join-Path $env:TEMP 'deepseek-harness-rtl-injector.out.log'
   $err = Join-Path $env:TEMP 'deepseek-harness-rtl-injector.err.log'
-  Start-Process -FilePath $node.Source -ArgumentList ('"' + $injector + '"') -WorkingDirectory $Dir -WindowStyle Hidden -RedirectStandardOutput $out -RedirectStandardError $err | Out-Null
+  Start-Process -FilePath $nodePath -ArgumentList ('"' + $injector + '"') -WorkingDirectory $Dir -WindowStyle Hidden -RedirectStandardOutput $out -RedirectStandardError $err | Out-Null
   $injectorReady = $false
   for ($i = 0; $i -lt 20; $i++) {
     Start-Sleep -Milliseconds 250

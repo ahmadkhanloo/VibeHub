@@ -1,5 +1,5 @@
 {
-  "title": "Terminal Setup",
+  "title": "PowerShell appearance",
   "subtitle": "A readable, modern PowerShell terminal for CLI agents — fully optional and fully reversible.",
   "steps": {
     "detect": "1) Detect",

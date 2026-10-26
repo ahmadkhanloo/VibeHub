@@ -28,24 +28,32 @@
   },
   "bundle": {
     "active": true,
-    "targets": [
-      "nsis",
-      "msi"
-    ],
+    "targets": ["nsis"],
     "createUpdaterArtifacts": false,
     "resources": {
       "../../../LICENSE": "LICENSE",
       "../../../docs/legal/THIRD_PARTY_LICENSES.md": "THIRD_PARTY_LICENSES.md",
       "../../../themes/terminal/mak-devline.omp.json": "themes/terminal/mak-devline.omp.json",
+      "../../../apps/rtl-direction.mjs": "apps/rtl-direction.mjs",
       "../../../apps/Qoder/start.ps1": "apps/Qoder/start.ps1",
+      "../../../apps/Qoder/launch.vbs": "apps/Qoder/launch.vbs",
       "../../../apps/Qoder/injector.mjs": "apps/Qoder/injector.mjs",
       "../../../apps/Qoder/style.mjs": "apps/Qoder/style.mjs",
+      "../../../apps/Qoder/doctor.mjs": "apps/Qoder/doctor.mjs",
+      "../../../apps/Qoder/LICENSE": "apps/Qoder/LICENSE",
       "../../../apps/Qoder/assets/": "apps/Qoder/assets/",
       "../../../apps/ZCode/start.ps1": "apps/ZCode/start.ps1",
+      "../../../apps/ZCode/launch.vbs": "apps/ZCode/launch.vbs",
       "../../../apps/ZCode/injector.mjs": "apps/ZCode/injector.mjs",
       "../../../apps/DeepSeekHarness/start.ps1": "apps/DeepSeekHarness/start.ps1",
+      "../../../apps/DeepSeekHarness/launch.vbs": "apps/DeepSeekHarness/launch.vbs",
       "../../../apps/DeepSeekHarness/injector.mjs": "apps/DeepSeekHarness/injector.mjs",
-      "../../../apps/DeepSeekHarness/assets/": "apps/DeepSeekHarness/assets/"
+      "../../../apps/DeepSeekHarness/assets/": "apps/DeepSeekHarness/assets/",
+      "../../../apps/rtl-paths.ps1": "apps/rtl-paths.ps1",
+      "../../../apps/migrate-agentrtl-paths.ps1": "apps/migrate-agentrtl-paths.ps1",
+      "../../../cleanup.ps1": "cleanup.ps1",
+      "windows/payload/node.exe": "runtime/node.exe",
+      "windows/payload/NODE-LICENSE.md": "licenses/NODE-LICENSE.md"
     },
     "icon": [
       "icons/32x32.png",
@@ -55,7 +63,15 @@
     ],
     "windows": {
       "nsis": {
-        "displayLanguageSelector": false
+        "displayLanguageSelector": true,
+        "languages": ["English", "Farsi"],
+        "customLanguageFiles": {
+          "Farsi": "windows/Farsi.nsh"
+        },
+        "installMode": "currentUser",
+        "startMenuFolder": "VibeHub",
+        "installerHooks": "windows/installer-hooks.nsh",
+        "template": "windows/installer.nsi"
       }
     }
   },

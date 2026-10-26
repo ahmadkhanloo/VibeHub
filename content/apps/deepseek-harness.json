@@ -3,7 +3,7 @@
   "id": "deepseek-harness",
   "name": "DeepSeek Harness",
   "summary": {
-    "fa": "کلاینت دسکتاپ ایجنت DeepSeek؛ پشتیبانی RTL تأییدشده توسط VibeHub",
+    "fa": "دستیار کدنویسی دسکتاپِ DeepSeek؛ پشتیبانی راست‌چین آن در VibeHub تأیید شده است.",
     "en": "Desktop harness client for the DeepSeek agent; RTL support verified by VibeHub"
   },
   "kind": "desktop_agent",
@@ -12,7 +12,7 @@
   "isOpenSource": null,
   "freeAccess": "free_tier",
   "freeAccessDetails": {
-    "fa": "دسترسی رایگان طبق شرایط جاری سرویس DeepSeek؛ سهمیه و سیاستها را در منابع رسمی بررسی کنید.",
+    "fa": "دسترسی رایگان طبق شرایط جاری سرویس DeepSeek؛ سهمیه و سیاست‌ها را در منابع رسمی بررسی کنید.",
     "en": "Free access under DeepSeek's current terms; verify quotas and policies in official sources."
   },
   "requiresSignup": true,
@@ -32,8 +32,8 @@
       "method": "guide",
       "idOrUrl": "https://www.deepseek.com/",
       "note": {
-        "fa": "نصب از منبع رسمی؛ راهنمای گامبهگام در بخش Guides.",
-        "en": "Install from the official source; step-by-step guide in the Guides section."
+        "fa": "نصب از منبع رسمی سازنده.",
+        "en": "Install from the vendor's official source."
       }
     }
   ],

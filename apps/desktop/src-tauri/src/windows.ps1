@@ -3,7 +3,10 @@ $ErrorActionPreference = 'Stop'
 [Console]::InputEncoding = [Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
 $request = [Console]::In.ReadToEnd() | ConvertFrom-Json
-$root = $request.resourceRoot
+$root = [string]$request.resourceRoot
+# Tauri can return extended-length paths; Windows PowerShell providers reject them.
+if ($root.StartsWith('\\?\UNC\', [StringComparison]::OrdinalIgnoreCase)) { $root = '\\' + $root.Substring(8) }
+elseif ($root.StartsWith('\\?\', [StringComparison]::Ordinal)) { $root = $root.Substring(4) }
 $utf8 = [Text.UTF8Encoding]::new($true)
 $begin = '# >>> VibeHub managed prompt >>>'
 $end = '# <<< VibeHub managed prompt <<<'
@@ -11,6 +14,102 @@ $end = '# <<< VibeHub managed prompt <<<'
 function ProfilePath { $PROFILE.CurrentUserAllHosts }
 function ProfileText { $p = ProfilePath; if (Test-Path -LiteralPath $p) { [IO.File]::ReadAllText($p) } else { '' } }
 function ThemeBlockPattern { '(?ms)^' + [regex]::Escape($begin) + '\r?\n.*?^' + [regex]::Escape($end) + '(?:\r?\n)?' }
+
+function Read-UninstallEntries {
+    $views = @(
+        @{ hive = [Microsoft.Win32.RegistryHive]::CurrentUser; view = [Microsoft.Win32.RegistryView]::Registry64 },
+        @{ hive = [Microsoft.Win32.RegistryHive]::CurrentUser; view = [Microsoft.Win32.RegistryView]::Registry32 },
+        @{ hive = [Microsoft.Win32.RegistryHive]::LocalMachine; view = [Microsoft.Win32.RegistryView]::Registry64 },
+        @{ hive = [Microsoft.Win32.RegistryHive]::LocalMachine; view = [Microsoft.Win32.RegistryView]::Registry32 }
+    )
+    foreach ($view in $views) {
+        $baseKey = $null
+        $uninstallKey = $null
+        try {
+            $baseKey = [Microsoft.Win32.RegistryKey]::OpenBaseKey($view.hive, $view.view)
+            $uninstallKey = $baseKey.OpenSubKey('Software\Microsoft\Windows\CurrentVersion\Uninstall')
+            if (-not $uninstallKey) { continue }
+            foreach ($name in $uninstallKey.GetSubKeyNames()) {
+                $entryKey = $uninstallKey.OpenSubKey($name)
+                if (-not $entryKey) { continue }
+                try {
+                    $displayName = [string]$entryKey.GetValue('DisplayName')
+                    if (-not $displayName) { continue }
+                    [pscustomobject]@{
+                        DisplayName = $displayName
+                        InstallLocation = [string]$entryKey.GetValue('InstallLocation')
+                        DisplayIcon = [string]$entryKey.GetValue('DisplayIcon')
+                        UninstallString = [string]$entryKey.GetValue('UninstallString')
+                        DisplayVersion = [string]$entryKey.GetValue('DisplayVersion')
+                    }
+                } finally {
+                    $entryKey.Dispose()
+                }
+            }
+        } catch {
+            # Restricted registry views must not block path-based detection.
+        } finally {
+            if ($uninstallKey) { $uninstallKey.Dispose() }
+            if ($baseKey) { $baseKey.Dispose() }
+        }
+    }
+}
+
+function Find-RegisteredAppPath([string]$id) {
+    $pattern = switch ($id) {
+        'zcode' { '^ZCode(?:\s+.*)?$' }
+        'qoder' { '^Qoder(?:\s+.*)?$' }
+        'deepseek-harness' { '^DeepSeek Harness(?:\s+.*)?$' }
+        default { return $null }
+    }
+    $exeNames = switch ($id) {
+        'zcode' { @('ZCode.exe') }
+        'qoder' { @('Qoder IDE.exe', 'Qoder.exe') }
+        'deepseek-harness' { @('DeepSeek Harness.exe') }
+    }
+    $registrations = @(Read-UninstallEntries | Where-Object { $_.DisplayName -match $pattern })
+    foreach ($entry in $registrations) {
+        $bases = [Collections.Generic.List[string]]::new()
+        if ($entry.InstallLocation) {
+            $location = [Environment]::ExpandEnvironmentVariables(([string]$entry.InstallLocation).Trim('"'))
+            if (Test-Path -LiteralPath $location -PathType Container) { $bases.Add($location) }
+        }
+        foreach ($raw in @($entry.DisplayIcon, $entry.UninstallString)) {
+            if ([string]::IsNullOrWhiteSpace([string]$raw)) { continue }
+            $value = [Environment]::ExpandEnvironmentVariables([string]$raw)
+            $registeredPath = $null
+            if ($value -match '^\s*"(?<path>[^"]+\.(?:exe|ico))"') {
+                $registeredPath = $Matches.path
+            } elseif ($value -match '^\s*(?<path>.*?\.(?:exe|ico))(?:,\d+)?(?:\s|$)') {
+                $registeredPath = $Matches.path.Trim('"')
+            }
+            if (-not $registeredPath) { continue }
+            if ($raw -eq $entry.DisplayIcon -and [IO.Path]::GetExtension($registeredPath) -ieq '.exe' -and [IO.Path]::GetFileName($registeredPath) -in $exeNames -and (Test-Path -LiteralPath $registeredPath -PathType Leaf)) {
+                return $registeredPath
+            }
+            $base = Split-Path -Parent $registeredPath
+            if ($base -and (Test-Path -LiteralPath $base -PathType Container)) { $bases.Add($base) }
+        }
+        foreach ($base in ($bases | Select-Object -Unique)) {
+            if ($id -eq 'qoder') {
+                $versions = Get-ChildItem -LiteralPath (Join-Path $base '.qoder-versions') -Directory -ErrorAction SilentlyContinue |
+                    Where-Object { $_.Name -match '^\d+(\.\d+){2,3}$' -and (Test-Path -LiteralPath (Join-Path $_.FullName 'resources\app.asar')) } |
+                    Sort-Object { [version]$_.Name } -Descending
+                foreach ($version in $versions) {
+                    foreach ($name in $exeNames) {
+                        $candidate = Join-Path $version.FullName $name
+                        if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
+                    }
+                }
+            }
+            foreach ($name in $exeNames) {
+                $candidate = Join-Path $base $name
+                if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
+            }
+        }
+    }
+    return $null
+}
 
 function Find-App([string]$id) {
     if ($id -in @('qoder','zcode','deepseek-harness')) {
@@ -44,7 +143,9 @@ function Find-App([string]$id) {
             if ($command) { $candidates = @($command.Source) }
         }
     }
-    $candidates | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+    $found = $candidates | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+    if ($found) { return $found }
+    Find-RegisteredAppPath $id
 }
 
 function Detect-Apps {
@@ -53,6 +154,46 @@ function Detect-Apps {
         $result = @{ id = $_; installed = [bool]$path; via = 'standard-path-or-PATH' }
         if ($path) { $result.path = $path; $version = (Get-Item -LiteralPath $path).VersionInfo.ProductVersion; if ($version) { $result.version = $version } }
         $result
+    }
+}
+
+function Detect-Editors {
+    $registrations = @(Read-UninstallEntries | Where-Object { $_.DisplayName })
+    $specs = @(
+        @{ id='vscode'; name='Visual Studio Code'; pattern='^Microsoft Visual Studio Code(?: \(User\))?$'; exe='Code.exe'; paths=@("$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe", "$env:ProgramFiles\Microsoft VS Code\Code.exe") },
+        @{ id='vscode-insiders'; name='Visual Studio Code Insiders'; pattern='^(?:Microsoft )?Visual Studio Code Insiders(?: \(User\))?$'; exe='Code - Insiders.exe'; paths=@("$env:LOCALAPPDATA\Programs\Microsoft VS Code Insiders\Code - Insiders.exe") },
+        @{ id='antigravity'; name='Antigravity'; pattern='^Antigravity(?: \d[\w.-]*)?$'; exe='Antigravity.exe'; paths=@("$env:LOCALAPPDATA\Programs\Antigravity\Antigravity.exe", "$env:LOCALAPPDATA\Programs\antigravity\Antigravity.exe") },
+        @{ id='antigravity-ide'; name='Antigravity IDE'; pattern='^Antigravity IDE(?: \(User\))?$'; exe='Antigravity IDE.exe'; paths=@("$env:LOCALAPPDATA\Programs\Antigravity IDE\Antigravity IDE.exe") },
+        @{ id='cursor'; name='Cursor'; pattern='^Cursor(?: \(User\))?$'; exe='Cursor.exe'; paths=@("$env:LOCALAPPDATA\Programs\Cursor\Cursor.exe") },
+        @{ id='windsurf'; name='Windsurf'; pattern='^Windsurf(?: \(User\))?$'; exe='Windsurf.exe'; paths=@("$env:LOCALAPPDATA\Programs\Windsurf\Windsurf.exe") },
+        @{ id='zed'; name='Zed'; pattern='^Zed(?: \(User\))?$'; exe='Zed.exe'; paths=@("$env:LOCALAPPDATA\Programs\Zed\Zed.exe") },
+        @{ id='trae'; name='Trae'; pattern='^Trae(?: \(User\))?$'; exe='Trae.exe'; paths=@("$env:LOCALAPPDATA\Programs\Trae\Trae.exe") },
+        @{ id='kiro'; name='Kiro'; pattern='^Kiro(?: \(User\))?$'; exe='Kiro.exe'; paths=@("$env:LOCALAPPDATA\Programs\Kiro\Kiro.exe") },
+        @{ id='vscodium'; name='VSCodium'; pattern='^VSCodium(?: \(User\))?$'; exe='VSCodium.exe'; paths=@("$env:LOCALAPPDATA\Programs\VSCodium\VSCodium.exe", "$env:ProgramFiles\VSCodium\VSCodium.exe") }
+    )
+
+    foreach ($spec in $specs) {
+        $candidates = [Collections.Generic.List[object]]::new()
+        foreach ($path in $spec.paths) { $candidates.Add(@{ path=$path; via='standard-path' }) }
+        foreach ($entry in ($registrations | Where-Object { $_.DisplayName -match $spec.pattern })) {
+            if ($entry.DisplayIcon) {
+                $icon = [Environment]::ExpandEnvironmentVariables([string]$entry.DisplayIcon)
+                if ($icon -match '^\s*"(?<path>[^"]+\.exe)"') { $candidates.Add(@{ path=$Matches.path; via='registry' }) }
+                elseif ($icon -match '^\s*(?<path>.*?\.exe)(?:,\d+)?\s*$') { $candidates.Add(@{ path=$Matches.path.Trim('"'); via='registry' }) }
+            }
+            if ($entry.InstallLocation) {
+                $location = [Environment]::ExpandEnvironmentVariables([string]$entry.InstallLocation).Trim('"')
+                $candidates.Add(@{ path=(Join-Path $location $spec.exe); via='registry' })
+            }
+        }
+        $found = $candidates | Where-Object { $_.path -and (Test-Path -LiteralPath $_.path -PathType Leaf) } | Select-Object -First 1
+        if ($found) {
+            $version = (Get-Item -LiteralPath $found.path).VersionInfo.ProductVersion
+            if (-not $version) {
+                $version = ($registrations | Where-Object { $_.DisplayName -match $spec.pattern } | Select-Object -First 1).DisplayVersion
+            }
+            @{ id=$spec.id; name=$spec.name; installed=$true; path=$found.path; via=$found.via; version=$version }
+        }
     }
 }
 
@@ -77,6 +218,49 @@ function Terminal-State {
 try {
     $result = switch ($request.operation) {
         'detect' { @(Detect-Apps) }
+        'detect-editors' { @(Detect-Editors) }
+        'launch-editor' {
+            $id = [string]$request.editorId
+            if ($id -notin @('vscode','vscode-insiders','antigravity','antigravity-ide','cursor','windsurf','zed','trae','kiro','vscodium')) { throw 'Unknown detected editor.' }
+            $editor = Detect-Editors | Where-Object { $_.id -eq $id } | Select-Object -First 1
+            if (-not $editor) { throw 'This editor is no longer installed at a recognized path. Refresh the app list.' }
+            $expectedExe = switch ($id) {
+                'vscode' { 'Code.exe' }
+                'vscode-insiders' { 'Code - Insiders.exe' }
+                'antigravity' { 'Antigravity.exe' }
+                'antigravity-ide' { 'Antigravity IDE.exe' }
+                'cursor' { 'Cursor.exe' }
+                'windsurf' { 'Windsurf.exe' }
+                'zed' { 'Zed.exe' }
+                'trae' { 'Trae.exe' }
+                'kiro' { 'Kiro.exe' }
+                'vscodium' { 'VSCodium.exe' }
+            }
+            if ([IO.Path]::GetFileName([string]$editor.path) -ine $expectedExe) { throw 'Detected editor executable did not match its product.' }
+            $cwd = [Environment]::GetFolderPath('UserProfile')
+            $startInfo = [Diagnostics.ProcessStartInfo]::new()
+            $startInfo.FileName = [string]$editor.path
+            $startInfo.WorkingDirectory = $cwd
+            $startInfo.UseShellExecute = $false
+            if ($request.proxyUrl -and $id -in @('vscode','vscode-insiders','antigravity','antigravity-ide','cursor','windsurf','trae','kiro','vscodium')) {
+                $chromiumProxy = ([string]$request.proxyUrl) -replace '^socks5h://','socks5://'
+                $startInfo.Arguments = "--proxy-server=$chromiumProxy"
+            }
+            if ($request.proxyUrl) {
+                foreach ($name in @('HTTP_PROXY','HTTPS_PROXY','ALL_PROXY')) { $startInfo.EnvironmentVariables[$name] = [string]$request.proxyUrl }
+                $startInfo.EnvironmentVariables['NO_PROXY'] = 'localhost,127.0.0.1,::1'
+            } elseif ($request.direct) {
+                foreach ($name in @('HTTP_PROXY','HTTPS_PROXY','ALL_PROXY','NO_PROXY')) { $startInfo.EnvironmentVariables.Remove($name) }
+            }
+            $proc = [Diagnostics.Process]::Start($startInfo)
+            $detail = if ($request.proxyUrl) { 'Opened the detected IDE with proxy settings requested; IDE proxy routing is not verified.' } else { 'Opened the detected IDE' }
+            $launchResult = @{ok=$true;id=$id;pid=$proc.Id;proxyConfigured=[bool]$request.proxyUrl;proxyRoutingVerified=$false;detail=$detail}
+            if ($request.waitForTestExitMs -is [int] -and $request.waitForTestExitMs -ge 1 -and $request.waitForTestExitMs -le 5000) {
+                $launchResult.testProcessCompleted = $proc.WaitForExit($request.waitForTestExitMs)
+                if ($launchResult.testProcessCompleted) { $launchResult.testExitCode = $proc.ExitCode }
+            }
+            $launchResult
+        }
         'terminal-detect' { Terminal-State }
         'terminal-apply' {
             if (-not (Get-Command oh-my-posh -CommandType Application -ErrorAction SilentlyContinue)) { throw 'Install Oh My Posh before applying the theme.' }
@@ -130,7 +314,7 @@ try {
             $id = [string]$request.req.appId
             if ($id -notin @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff')) { throw 'Unknown app' }
             $exe = Find-App $id
-            if (-not $exe) { throw 'App is not installed in a recognized location.' }
+            if (-not $exe -and -not $request.req.rtl) { throw 'App is not installed in a recognized location.' }
             $cwd = if ($request.req.cwd) { [string]$request.req.cwd } else { [Environment]::GetFolderPath('UserProfile') }
             if (-not (Test-Path -LiteralPath $cwd -PathType Container)) { throw 'Working directory does not exist.' }
             if ($request.proxyUrl) { $env:HTTP_PROXY=$request.proxyUrl; $env:HTTPS_PROXY=$request.proxyUrl; $env:ALL_PROXY=$request.proxyUrl; $env:NO_PROXY='localhost,127.0.0.1,::1' }
@@ -139,7 +323,7 @@ try {
                 $folder = switch ($id) { 'zcode' {'ZCode'} 'qoder' {'Qoder'} 'deepseek-harness' {'DeepSeekHarness'} default {throw 'RTL is unavailable for this app'} }
                 $port = switch ($id) { 'zcode' {9222} 'qoder' {9225} 'deepseek-harness' {9228} }
                 $script = Join-Path $root "apps\$folder\start.ps1"
-                & $script
+                & $script -Gui
                 if ($LASTEXITCODE -ne 0) { throw 'RTL launcher failed. Review the app RTL log.' }
                 $injector = Join-Path $root "apps\$folder\injector.mjs"
                 $owner = Get-NetTCPConnection -LocalPort ($port+1) -State Listen -ErrorAction Stop | Select-Object -First 1
@@ -152,10 +336,12 @@ try {
                 $code = "& '$quotedExe'"
                 $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($code))
                 $proc = Start-Process -FilePath powershell.exe -ArgumentList @('-NoLogo','-NoExit','-EncodedCommand',$encoded) -WorkingDirectory $cwd -PassThru
-                @{ok=$true;rtl=$false;pid=$proc.Id;since=[DateTime]::UtcNow.ToString('o');detail='Opened CLI in a terminal'}
+                $detail = if ($request.proxyUrl) { 'Opened CLI in a terminal with proxy settings requested; tool routing is not verified.' } else { 'Opened CLI in a terminal' }
+                @{ok=$true;rtl=$false;pid=$proc.Id;since=[DateTime]::UtcNow.ToString('o');proxyConfigured=[bool]$request.proxyUrl;proxyRoutingVerified=$false;detail=$detail}
             } else {
                 $proc = Start-Process -FilePath $exe -WorkingDirectory $cwd -PassThru
-                @{ok=$true;rtl=$false;pid=$proc.Id;since=[DateTime]::UtcNow.ToString('o');detail='Application process started'}
+                $detail = if ($request.proxyUrl) { 'Application started with proxy settings requested; app routing is not verified.' } else { 'Application process started' }
+                @{ok=$true;rtl=$false;pid=$proc.Id;since=[DateTime]::UtcNow.ToString('o');proxyConfigured=[bool]$request.proxyUrl;proxyRoutingVerified=$false;detail=$detail}
             }
         }
         'launch-state' {

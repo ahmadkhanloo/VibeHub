@@ -69,6 +69,61 @@ test('legacy adapter references are labeled and their active source links target
   assert.match(sourceInstaller, /REPO="https:\/\/github\.com\/ahmadkhanloo\/VibeHub"/);
 });
 
+test('Windows Setup has full and component-selected RTL modes without MSI output', async () => {
+  const [config, releaseConfig, template, payloadBuilder] = await Promise.all([
+    read('../apps/desktop/src-tauri/tauri.conf.json').then(JSON.parse),
+    read('../apps/desktop/src-tauri/tauri.release.conf.json').then(JSON.parse),
+    read('../apps/desktop/src-tauri/windows/installer.nsi'),
+    read('../scripts/prepare-windows-rtl-payload.ps1'),
+  ]);
+  assert.deepEqual(config.bundle.targets, ['nsis']);
+  assert.equal(config.bundle.createUpdaterArtifacts, false);
+  assert.equal(releaseConfig.bundle.createUpdaterArtifacts, 'v1Compatible');
+  assert.equal(config.bundle.windows.nsis.installMode, 'currentUser');
+  assert.equal(config.bundle.windows.nsis.template, 'windows/installer.nsi');
+  assert.deepEqual(config.bundle.windows.nsis.languages, ['English', 'Farsi']);
+  assert.match(template, /Section \/o "VibeHub desktop" SEC_INSTALL/);
+  for (const section of ['ZCode RTL" SEC_ZCODE', 'Qoder RTL" SEC_QODER', 'DeepSeek Harness RTL" SEC_DEEPSEEK']) {
+    assert.ok(template.includes(section), `Setup is missing ${section}`);
+  }
+  for (const resource of [
+    '../../../apps/ZCode/launch.vbs',
+    '../../../apps/rtl-direction.mjs',
+    '../../../apps/Qoder/launch.vbs',
+    '../../../apps/DeepSeekHarness/launch.vbs',
+    '../../../apps/Qoder/doctor.mjs',
+    '../../../apps/migrate-agentrtl-paths.ps1',
+    'windows/payload/NODE-LICENSE.md',
+  ]) {
+    assert.ok(Object.hasOwn(config.bundle.resources, resource), `Full setup is missing ${resource}`);
+  }
+  assert.match(template, /\$InstallMode == "full"[\s\S]*?SectionSetFlags \$\{SEC_INSTALL\} \$\{SF_SELECTED\}/);
+  assert.match(template, /\$InstallMode == "rtl"[\s\S]*?SectionSetFlags \$\{SEC_RUNTIME\} \$\{SF_SELECTED\}/);
+  assert.match(template, /\$UpdateMode = 1[\s\S]*?Abort/);
+  assert.match(template, /Call CreateRtlShortcuts/);
+  assert.match(template, /Inno Setup: Selected Components/);
+  assert.match(template, /Function SeedLegacySelection/);
+  assert.match(template, /Function PageSetupChoice[\s\S]*?nsDialogs::SetRTL/);
+  assert.match(template, /VibeHubRtlSectionTitle[\s\S]*?VibeHubFullCount/);
+  assert.match(template, /Function UpdateModeCount[\s\S]*?\$\{NSD_SetText\} \$ModeCountLabel/);
+  for (const id of ['ModeZCode', 'ModeQoder', 'ModeDeepSeek']) {
+    assert.ok(template.includes(`NSD_OnClick} $${id} UpdateModeCount`), `${id} is missing a live selection counter`);
+  }
+  assert.match(template, /Function PageReinstall[\s\S]*?\$UpdateMode = 1[\s\S]*?Abort/);
+  assert.match(template, /Function DetectModeReplacement[\s\S]*?PreviousComponents/);
+  assert.match(template, /VibeHubReplaceBody/);
+  assert.match(template, /Function PageLeaveReinstall[\s\S]*?ModeReplacement = 1[\s\S]*?NSD_GetState/);
+  assert.match(template, /UpdateModeControls[\s\S]*?PreviousInstallMode == ""[\s\S]*?SeedLegacySelection/);
+  assert.match(template, /migrate-agentrtl-paths\.ps1/);
+  assert.match(payloadBuilder, /24\.22\.1/);
+  assert.match(payloadBuilder, /D2046D28C2C3DCD211AC5145C0BF30E2047EF9DFB306693C8C6E2ECCD8B95FA5/);
+  assert.match(payloadBuilder, /D702DAA815EABBFF763C7D3808E235CF031CF2CA70211B56847BC72F51E240E5/);
+  assert.match(payloadBuilder, /'NODE-LICENSE\.md'/);
+  assert.match(payloadBuilder, /rtl-direction\.mjs/);
+  assert.match(template, /rtl-direction\.mjs/);
+  assert.match(payloadBuilder, /migrate-agentrtl-paths\.ps1/);
+});
+
 test('release publishing is tag-only, least-privilege, and signs updater artifacts', async () => {
   const workflow = await read('../.github/workflows/release.yml');
   assert.match(workflow, /tags:\s*\["v\*"\]/);
@@ -81,7 +136,18 @@ test('release publishing is tag-only, least-privilege, and signs updater artifac
   assert.match(workflow, /configure-updater-public-key\.mjs/);
   assert.match(workflow, /TAURI_UPDATER_PUBLIC_KEY/);
   assert.match(workflow, /pnpm release:guard/);
-  assert.match(workflow, /Updater signature is missing for \$\(\$installer\.Name\)/);
+  assert.match(workflow, /Prepare checksum-pinned Node\.js and RTL installer payload/);
+  assert.match(workflow, /\.\/tests\/qoder-discovery\.ps1/);
+  assert.match(workflow, /\.\/tests\/rtl-paths\.ps1/);
+  assert.match(workflow, /Add-Member -MemberType NoteProperty -Name version -Value \$tagVersion/);
+  assert.match(workflow, /prerelease: \$\{\{ contains\(github\.ref_name, '-'\) \}\}/);
+  assert.match(workflow, /RELEASE_IS_PRERELEASE/);
+  assert.match(workflow, /--prerelease/);
+  assert.match(workflow, /Stable release blocked until Gate 18 is PASS for every scenario/);
+  assert.match(workflow, /Publish Setup as VibeHub-Setup\.exe/);
+  assert.match(workflow, /The user-facing Windows Setup must be named VibeHub-Setup\.exe/);
+  assert.match(workflow, /Updater URL must point to the signed NSIS updater bundle/);
+  assert.doesNotMatch(workflow, /Updater signature is missing for \$\(\$installer\.Name\)/);
   assert.match(workflow, /minisign-\$version-win64\.zip/);
   assert.match(workflow, /37B600344E20C19314B2E82813DB2BFDCC408B77B876F7727889DBD46D539479/);
   assert.match(workflow, /minisignPublisherKey = 'RWQf6LRCGA9i53mlYecO4IzT51TGPpvWucNSCh1CBM0QTaLn73Y7GFO3'/);
@@ -91,8 +157,10 @@ test('release publishing is tag-only, least-privilege, and signs updater artifac
   assert.match(workflow, /latest\.json version does not match release tag/);
   assert.match(workflow, /Updater URL has no matching Release asset/);
   assert.match(workflow, /Updater JSON signature does not match the signed Release asset/);
-  assert.doesNotMatch(workflow, /choco install minisign|\.nsis\.zip|\.msi\.zip/);
-  assert.doesNotMatch(workflow, /\.nsis\.zip|\.msi\.zip/);
+  assert.match(workflow, /exactly one Windows Setup executable/);
+  assert.ok(workflow.includes(String.raw`\.nsis\.zip`));
+  assert.doesNotMatch(workflow, /choco install minisign|\.msi\.zip/);
+  assert.doesNotMatch(workflow, /\.msi\.zip/);
   assert.doesNotMatch(workflow, /pull_request:/);
 });
 

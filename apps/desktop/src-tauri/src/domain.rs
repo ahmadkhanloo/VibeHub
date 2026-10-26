@@ -9,6 +9,18 @@ pub const APP_IDS: [&str; 6] = [
     "mimocode",
     "freebuff",
 ];
+pub const EDITOR_IDS: [&str; 10] = [
+    "vscode",
+    "vscode-insiders",
+    "antigravity",
+    "antigravity-ide",
+    "cursor",
+    "windsurf",
+    "zed",
+    "trae",
+    "kiro",
+    "vscodium",
+];
 
 pub fn identifier(value: &str) -> bool {
     !value.is_empty()
@@ -43,6 +55,15 @@ pub fn validate_profile(v: &Value) -> Result<()> {
             return Err("Unknown profile field".into());
         }
     }
+    if let Some(username) = v.get("username") {
+        let username = username.as_str().ok_or("Proxy username must be text")?;
+        if username.len() > 255 || username.chars().any(char::is_control) {
+            return Err("Invalid proxy username".into());
+        }
+    }
+    if v.get("hasPassword").is_some_and(|value| !value.is_boolean()) {
+        return Err("hasPassword must be boolean".into());
+    }
     match field(v, "mode")? {
         "direct" | "system" => (),
         "http" | "socks5" => {
@@ -66,6 +87,12 @@ pub fn validate_profile(v: &Value) -> Result<()> {
             };
             reqwest::Url::parse(&format!("{scheme}://{host}:{port}"))
                 .map_err(|_| "Invalid proxy address")?;
+            if v["mode"] == "socks5"
+                && v["hasPassword"] == true
+                && v["username"].as_str().unwrap_or("").is_empty()
+            {
+                return Err("SOCKS5 username is required when a password is stored".into());
+            }
         }
         _ => return Err("Unknown proxy mode".into()),
     }
@@ -99,7 +126,7 @@ pub fn validate_config(cfg: &Value, profiles: &[Value]) -> Result<()> {
     }
     if per_app
         .keys()
-        .any(|id| id != "*" && !APP_IDS.contains(&id.as_str()))
+        .any(|id| id != "*" && !APP_IDS.contains(&id.as_str()) && !EDITOR_IDS.contains(&id.as_str()))
     {
         return Err("Unknown app in proxy configuration".into());
     }
@@ -118,6 +145,29 @@ pub fn safe_url(value: &str) -> Result<reqwest::Url> {
         return Err("Use HTTPS, or loopback HTTP, without credentials, query or fragment".into());
     }
     Ok(url)
+}
+
+pub fn validate_provider_connection(connection: &Value) -> Result<()> {
+    let allowed = ["id", "name", "providerId", "baseUrl", "modelId", "hasKey"];
+    let object = connection.as_object().ok_or("Expected connection object")?;
+    if object.keys().any(|key| !allowed.contains(&key.as_str())) {
+        return Err("Unknown provider connection field".into());
+    }
+    let id = field(connection, "id")?;
+    let name = field(connection, "name")?.trim();
+    let provider = field(connection, "providerId")?;
+    let model = field(connection, "modelId")?.trim();
+    if !identifier(id) || !identifier(provider) || name.is_empty() || name.len() > 120 {
+        return Err("Invalid provider connection identity".into());
+    }
+    if model.is_empty() || model.len() > 256 || model.chars().any(char::is_control) {
+        return Err("Invalid model identifier".into());
+    }
+    safe_url(field(connection, "baseUrl")?)?;
+    if connection.get("hasKey").is_some_and(|value| !value.is_boolean()) {
+        return Err("hasKey must be boolean".into());
+    }
+    Ok(())
 }
 
 pub fn validate_index(index: &Value) -> Result<()> {

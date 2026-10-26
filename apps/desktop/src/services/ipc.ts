@@ -29,6 +29,27 @@ export interface InstallRunResult {
   detected: DetectedApp | null;
 }
 
+export interface DetectedEditor {
+  id: string;
+  name: string;
+  installed: true;
+  path: string;
+  via: 'registry' | 'standard-path';
+  version?: string;
+}
+
+export interface RtlComponentStatus {
+  id: string;
+  available: boolean;
+}
+
+export interface EditorLaunchOutcome {
+  ok: boolean;
+  id: string;
+  pid: number;
+  detail: string;
+}
+
 export interface FontInstallResult {
   ok: boolean;
   name: string;
@@ -44,6 +65,26 @@ export interface ApiTestReport {
   redactedError?: string;
 }
 
+export interface ProviderConnection {
+  id: string;
+  name: string;
+  providerId: string;
+  baseUrl: string;
+  modelId: string;
+  hasKey: boolean;
+}
+
+export interface ProviderCredentialInventory {
+  connections: ProviderConnection[];
+  legacyProviderIds: string[];
+}
+
+export interface CredentialClearResult {
+  deletedConnectionIds: string[];
+  deletedLegacyProviderIds: string[];
+  failures: { kind: 'connection' | 'legacy'; id: string; errorKey: string }[];
+}
+
 export interface FeedSyncResult {
   ok: boolean;
   updated: boolean;
@@ -55,6 +96,9 @@ export interface FeedSyncResult {
 
 export const ipc = {
   detectApps: () => invoke<DetectedApp[]>('detect_apps'),
+  detectEditors: () => invoke<DetectedEditor[]>('detect_editors'),
+  rtlComponents: () => invoke<RtlComponentStatus[]>('rtl_components'),
+  launchEditor: (editorId: string) => invoke<EditorLaunchOutcome>('launch_editor', { editorId }),
   launchApp: (req: LaunchRequest) => invoke<LaunchOutcome>('launch_app', { req }),
   launchState: (appId: string) => invoke<LaunchState>('launch_state', { appId }),
   stopRtl: (appId: string) => invoke<boolean>('stop_rtl', { appId }),
@@ -85,6 +129,14 @@ export const ipc = {
 
   apiTest: (providerId: string, baseUrl: string, modelId: string, keyService: string) =>
     invoke<ApiTestReport>('api_test', { providerId, baseUrl, modelId, keyService }),
+  providerConnections: () => invoke<ProviderConnection[]>('provider_connections'),
+  providerConnectionSave: (connection: ProviderConnection, key?: string) =>
+    invoke<ProviderConnection[]>('provider_connection_save', { connection, key }),
+  providerConnectionDelete: (id: string) => invoke<ProviderConnection[]>('provider_connection_delete', { id }),
+  providerCredentialsInventory: () => invoke<ProviderCredentialInventory>('provider_credentials_inventory'),
+  providerCredentialsClear: (connectionIds: string[], legacyProviderIds: string[]) =>
+    invoke<CredentialClearResult>('provider_credentials_clear', { connectionIds, legacyProviderIds }),
+  providerConnectionTest: (id: string) => invoke<ApiTestReport>('provider_connection_test', { id }),
 
   feedSync: async (feedBaseUrl: string): Promise<FeedSyncResult> => {
     const result = await invoke<FeedSyncResult>('feed_sync', { feedBaseUrl });

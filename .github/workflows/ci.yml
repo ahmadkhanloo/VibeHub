@@ -45,6 +45,12 @@ jobs:
       - name: Build desktop frontend
         run: pnpm build
 
+      - name: Install browser for UI acceptance
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Test desktop interface in browser
+        run: pnpm test:ui
+
       - name: Check translation key parity
         run: pnpm i18n:check
 
@@ -74,7 +80,7 @@ jobs:
       - name: Parse PowerShell sources
         shell: pwsh
         run: |
-          $files = @('install.ps1', 'cleanup.ps1') + (Get-ChildItem apps -Recurse -Filter '*.ps1' | ForEach-Object FullName)
+          $files = @('install.ps1', 'cleanup.ps1') + (Get-ChildItem apps,scripts -Recurse -Filter '*.ps1' | ForEach-Object FullName)
           foreach ($file in $files) {
             $errors = $null
             [System.Management.Automation.Language.Parser]::ParseFile($file, [ref]$null, [ref]$errors) | Out-Null
@@ -85,6 +91,10 @@ jobs:
       - name: Behavioral suite (Qoder discovery + Persian path handoff)
         shell: pwsh
         run: ./tests/qoder-discovery.ps1
+
+      - name: Unicode custom executable path persistence
+        shell: pwsh
+        run: ./tests/rtl-paths.ps1
 
       - name: Native Windows behavior and isolated profile rollback
         shell: pwsh
@@ -125,8 +135,16 @@ jobs:
           key: windows-vibehub-rust-${{ hashFiles('apps/desktop/src-tauri/Cargo.lock') }}
           restore-keys: windows-vibehub-rust-
 
-      - name: Compile the Tauri application without bundling an installer
-        run: pnpm --filter @vibehub/desktop tauri build --no-bundle
+      - name: Prepare checksum-pinned Node.js and RTL installer payload
+        shell: pwsh
+        run: ./scripts/prepare-windows-rtl-payload.ps1
+
+      - name: Verify private runtime resolution and Unicode path persistence
+        shell: pwsh
+        run: ./tests/rtl-paths.ps1
+
+      - name: Build the Windows NSIS Setup
+        run: pnpm --filter @vibehub/desktop tauri build --bundles nsis
 
       - name: Native behavioral tests
-        run: cargo test --locked --manifest-path apps/desktop/src-tauri/Cargo.toml
+        run: cargo test --locked --manifest-path apps/desktop/src-tauri/Cargo.toml -- --test-threads=1

@@ -3,7 +3,7 @@
   "id": "opencode",
   "name": "OpenCode",
   "summary": {
-    "fa": "ایجنت کدنویسی متنباز CLI با مدلهای رایگان منتخب از طریق Providerها",
+    "fa": "دستیار کدنویسی متن‌باز در خط فرمان با دسترسی به برخی مدل‌های رایگان از راه سرویس‌های مدل.",
     "en": "Open-source CLI coding agent with selected free models via providers"
   },
   "kind": "cli_agent",
@@ -14,7 +14,7 @@
   "licenseSpdx": "MIT",
   "freeAccess": "free_tier",
   "freeAccessDetails": {
-    "fa": "خود ابزار متنباز است؛ هزینهٔ مدل جدا است: با Providerهای رایگان (مثل مدلهای free در OpenRouter یا مدل محلی Ollama) قابل استفادهٔ رایگان است.",
+    "fa": "خود ابزار متن‌باز است؛ هزینهٔ مدل جداگانه است. می‌توان آن را با سرویس‌های رایگان، مانند مدل‌های رایگان OpenRouter یا مدل محلی Ollama، به‌کار برد.",
     "en": "The tool itself is open-source; model costs are separate: usable for free with free-tier providers (e.g. OpenRouter free models or a local Ollama model)."
   },
   "requiresSignup": false,

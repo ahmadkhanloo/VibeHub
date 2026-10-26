@@ -1,12 +1,13 @@
+import { useMemo, useSyncExternalStore } from 'react';
 // Bundled catalog snapshot — the offline baseline (plan §4.4). Remote refresh
 // overlays this via the feed_sync IPC after schema validation on the Rust side.
 
 import { loadCatalog, classifyOffers, type Catalog, type OfferView } from '@catalog';
 import { assertNoExecutablePayload, type AppManifest, type ProviderManifest } from '@core';
 
-const appModules = import.meta.glob('../../../content/apps/*.json', { eager: true, import: 'default' });
-const providerModules = import.meta.glob('../../../content/providers/*.json', { eager: true, import: 'default' });
-const offerModules = import.meta.glob('../../../content/offers/*.json', { eager: true, import: 'default' });
+const appModules = import.meta.glob('../../../../content/apps/*.json', { eager: true, import: 'default' });
+const providerModules = import.meta.glob('../../../../content/providers/*.json', { eager: true, import: 'default' });
+const offerModules = import.meta.glob('../../../../content/offers/*.json', { eager: true, import: 'default' });
 
 function values<T>(modules: Record<string, unknown>): T[] {
   return Object.values(modules) as T[];
@@ -27,6 +28,21 @@ export const apps: AppManifest[] = bundledCatalog.apps;
 export const providers: ProviderManifest[] = bundledCatalog.providers;
 
 const remoteGuides: Record<string, string> = {};
+let revision = 0;
+const listeners = new Set<() => void>();
+export function useCatalog() {
+ const version = useSyncExternalStore((listener) => {listeners.add(listener);return () => {listeners.delete(listener);};}, () => revision);
+ return useMemo(() => ({apps: [...apps], providers: [...providers], offers: [...bundledCatalog.offers]}), [version]);
+}
+export function clearContentCache() {
+ localStorage.removeItem('vibehub.content.v1');
+ apps.splice(0,apps.length,...initialCatalog.apps);
+ providers.splice(0,providers.length,...initialCatalog.providers);
+ bundledCatalog.offers.splice(0,bundledCatalog.offers.length,...initialCatalog.offers);
+ for (const key of Object.keys(remoteGuides)) delete remoteGuides[key];
+ revision++;listeners.forEach(listener=>listener());
+}
+const initialCatalog = {apps: [...apps], providers: [...providers], offers: [...bundledCatalog.offers]};
 
 export function validateRemoteGuides(raw: unknown, catalog: Catalog): Record<string, string> {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('Incomplete guide feed');
@@ -47,6 +63,8 @@ export function applyRemoteCatalog(catalog: Catalog, guides: Record<string, stri
   bundledCatalog.offers.splice(0, bundledCatalog.offers.length, ...catalog.offers);
   for (const key of Object.keys(remoteGuides)) delete remoteGuides[key];
   Object.assign(remoteGuides, guides);
+  revision++; listeners.forEach(listener=>listener());
+  window.dispatchEvent(new Event('vibehub:catalog-updated'));
   try { localStorage.setItem('vibehub.content.v1', JSON.stringify({ catalog, guides })); } catch { /* Current in-memory content remains usable. */ }
 }
 
@@ -64,7 +82,7 @@ export function appById(id: string): AppManifest | undefined {
   return apps.find((a) => a.id === id);
 }
 
-export const guideModules = import.meta.glob('../../../content/guides/**/*.md', {
+export const guideModules = import.meta.glob('../../../../content/guides/**/*.md', {
   eager: true,
   import: 'default',
   query: '?raw',

@@ -18,6 +18,7 @@ function Run-Adapter($request) {
     $start.StandardInputEncoding = [Text.UTF8Encoding]::new($false)
     $start.EnvironmentVariables['VIBEHUB_TEST_PROFILE'] = $profileFile
     $start.EnvironmentVariables['VIBEHUB_TEST_ADAPTER'] = $adapter
+    $start.EnvironmentVariables['LOCALAPPDATA'] = $sandbox
     $start.EnvironmentVariables['PATH'] = "$sandbox;$env:PATH"
     $code = '$PROFILE.CurrentUserAllHosts = $env:VIBEHUB_TEST_PROFILE; & $env:VIBEHUB_TEST_ADAPTER'
     $start.Arguments = '-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand ' + [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($code))
@@ -32,12 +33,48 @@ function Run-Adapter($request) {
     $line.Substring(13) | ConvertFrom-Json
 }
 try {
+    $developmentNode = Join-Path $repo 'apps\desktop\src-tauri\windows\payload\node.exe'
+    if (Test-Path -LiteralPath $developmentNode -PathType Leaf) {
+        . (Join-Path $repo 'apps\rtl-paths.ps1')
+        $resolvedNode = Get-RtlNodePath (Join-Path $repo 'apps\Qoder')
+        Assert ([IO.Path]::GetFullPath($resolvedNode) -eq [IO.Path]::GetFullPath($developmentNode)) 'RTL development launcher must select its prepared payload runtime'
+    }
     [IO.File]::WriteAllText((Join-Path $sandbox 'oh-my-posh.cmd'), "@echo off`r`necho 99.0.0`r`n")
     $initial = "# original فارسی`r`n"
     [IO.File]::WriteAllText($profileFile, $initial, [Text.UTF8Encoding]::new($true))
     $detected = @(Run-Adapter @{operation='detect'})
     Assert ($detected.Count -eq 6) 'Detection must return all six app records'
     Assert (@($detected | Where-Object { $_.installed -isnot [bool] }).Count -eq 0) 'Detection installed flags must be booleans'
+    $editors = @(Run-Adapter @{operation='detect-editors'})
+    $knownEditorIds = @('vscode','vscode-insiders','antigravity','antigravity-ide','cursor','windsurf','zed','trae','kiro','vscodium')
+    Assert (@($editors | Where-Object { $_.id -notin $knownEditorIds -or $_.installed -ne $true -or -not (Test-Path -LiteralPath $_.path -PathType Leaf) }).Count -eq 0) 'Editor scan must return only known apps with existing executable paths'
+    Assert (@($editors.id | Select-Object -Unique).Count -eq $editors.Count) 'Editor scan must not return duplicate app records'
+    $fakeEditorDir = Join-Path $sandbox 'Programs\Antigravity'
+    $fakeEditor = Join-Path $fakeEditorDir 'Antigravity.exe'
+    [IO.Directory]::CreateDirectory($fakeEditorDir) | Out-Null
+    $probeSource = Join-Path $sandbox 'proxy-probe.rs'
+    $probeOutput = Join-Path $fakeEditorDir 'proxy-env.txt'
+    $probeCode = 'use std::{env, fs}; fn main() { let proxy = env::var("HTTP_PROXY").unwrap_or_else(|_| "unset".to_string()); fs::write(r#"' + $probeOutput + '"#, proxy).unwrap(); }'
+    [IO.File]::WriteAllText($probeSource, $probeCode, [Text.UTF8Encoding]::new($false))
+    & rustc --edition=2021 $probeSource -o $fakeEditor
+    if ($LASTEXITCODE -ne 0) { throw "Could not compile the temporary editor probe (rustc exit $LASTEXITCODE)" }
+    $testEditor = @(Run-Adapter @{operation='detect-editors'} | Where-Object { $_.id -eq 'antigravity' } | Select-Object -First 1)
+    Assert ($testEditor.Count -eq 1 -and $testEditor[0].path -eq $fakeEditor) "The proxy launch test must resolve its sandbox editor; received: $($testEditor | ConvertTo-Json -Compress)"
+    $priorHttpProxy = $env:HTTP_PROXY
+    try {
+        $env:HTTP_PROXY = 'socks5h://127.0.0.1:10808'
+        & $fakeEditor
+        Assert ($LASTEXITCODE -eq 0 -and (Test-Path -LiteralPath $probeOutput)) 'The temporary editor probe must run before testing the adapter launch'
+    } finally {
+        $env:HTTP_PROXY = $priorHttpProxy
+        Remove-Item -LiteralPath $probeOutput -Force -ErrorAction SilentlyContinue
+    }
+    $proxyLaunch = Run-Adapter @{operation='launch-editor';editorId='antigravity';proxyUrl='socks5h://127.0.0.1:10808';waitForTestExitMs=5000}
+    Assert $proxyLaunch.proxyConfigured 'Proxy profile should be passed to the editor launch request'
+    Assert (-not $proxyLaunch.proxyRoutingVerified) 'The adapter must not claim that IDE traffic was verified'
+    Assert ($proxyLaunch.testProcessCompleted -and $proxyLaunch.testExitCode -eq 0) "The proxy child should exit cleanly; launch result=$($proxyLaunch | ConvertTo-Json -Compress)"
+    Assert (Test-Path -LiteralPath $probeOutput) 'The proxy child must record its environment'
+    Assert ([IO.File]::ReadAllText($probeOutput) -eq 'socks5h://127.0.0.1:10808') 'The selected proxy should reach the editor child process environment'
     $state = Run-Adapter @{operation='terminal-detect'}
     Assert ($state.profilePath -eq $profileFile) "Test profile must be isolated. Received: $($state | ConvertTo-Json -Compress)"
     $applied = Run-Adapter @{operation='terminal-apply'}

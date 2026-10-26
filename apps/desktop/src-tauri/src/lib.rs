@@ -3,13 +3,66 @@ mod network;
 mod storage;
 mod system;
 
-use domain::{APP_IDS, Result};
+use domain::{APP_IDS, EDITOR_IDS, Result};
 use serde_json::{Value, json};
 use tauri::Manager;
 
 #[tauri::command]
 async fn detect_apps(app: tauri::AppHandle) -> Result<Value> {
     system::run(app, json!({"operation":"detect"})).await
+}
+
+#[tauri::command]
+async fn detect_editors(app: tauri::AppHandle) -> Result<Value> {
+    system::run(app, json!({"operation":"detect-editors"})).await
+}
+
+#[tauri::command]
+fn rtl_components(app: tauri::AppHandle) -> Result<Value> {
+    let root = system::resource_root(&app)?;
+    let runtime_ready = system::rtl_runtime_available(&root);
+    let components = [
+        ("zcode", "ZCode"),
+        ("qoder", "Qoder"),
+        ("deepseek-harness", "DeepSeekHarness"),
+    ]
+    .into_iter()
+    .map(|(id, folder)| {
+        let adapter = root.join("apps").join(folder);
+        json!({
+            "id": id,
+            "available": runtime_ready
+                && root.join("apps/rtl-paths.ps1").is_file()
+                && adapter.join("start.ps1").is_file()
+                && adapter.join("injector.mjs").is_file()
+                && (folder != "Qoder" || adapter.join("style.mjs").is_file())
+        })
+    })
+    .collect::<Vec<_>>();
+    Ok(json!(components))
+}
+
+#[tauri::command]
+async fn launch_editor(app: tauri::AppHandle, editor_id: String) -> Result<Value> {
+    if !EDITOR_IDS.contains(&editor_id.as_str()) {
+        return Err("Unknown detected editor".into());
+    }
+    let (profile, required) = storage::selected_profile(&storage::settings(&app)?, &editor_id, None)?;
+    let mut request = json!({"operation":"launch-editor", "editorId":editor_id});
+    if let Some(profile) = profile {
+        match profile["mode"].as_str() {
+            Some("http" | "socks5") => {
+                if required { return Err("Required-proxy launch is blocked: editor proxy behavior has not been validated".into()); }
+                if profile["hasPassword"] == true || profile["username"].as_str().is_some_and(|name| !name.is_empty()) {
+                    return Err("Authenticated child-process proxies are unsupported; credentials will not be placed in command lines or environment".into());
+                }
+                request["proxyUrl"] = json!(network::proxy_url(&profile)?);
+            }
+            Some("direct") => request["direct"] = json!(true),
+            _ => (),
+        }
+    }
+    system::run(app, request).await
 }
 
 #[tauri::command]
@@ -70,6 +123,49 @@ fn vault_get(service: String) -> Result<Option<String>> {
 #[tauri::command]
 fn vault_delete(service: String) -> Result<()> {
     storage::vault_delete(&service)
+}
+
+#[tauri::command]
+fn provider_connections(app: tauri::AppHandle) -> Result<Value> {
+    let _lock = storage::SETTINGS_LOCK.lock().map_err(|_| "Settings lock failed")?;
+    storage::provider_connections(&storage::provider_connection_file(&app)?)
+}
+
+#[tauri::command]
+fn provider_connection_save(app: tauri::AppHandle, connection: Value, key: Option<String>) -> Result<Value> {
+    let _lock = storage::SETTINGS_LOCK.lock().map_err(|_| "Settings lock failed")?;
+    storage::save_provider_connection(&storage::provider_connection_file(&app)?, connection, key.as_deref())
+}
+
+#[tauri::command]
+fn provider_connection_delete(app: tauri::AppHandle, id: String) -> Result<Value> {
+    let _lock = storage::SETTINGS_LOCK.lock().map_err(|_| "Settings lock failed")?;
+    storage::delete_provider_connection(&storage::provider_connection_file(&app)?, &id)
+}
+
+#[tauri::command]
+fn provider_credentials_inventory(app: tauri::AppHandle) -> Result<Value> {
+    let _lock = storage::SETTINGS_LOCK.lock().map_err(|_| "Settings lock failed")?;
+    storage::provider_credentials_inventory(&storage::provider_connection_file(&app)?)
+}
+
+#[tauri::command]
+fn provider_credentials_clear(app: tauri::AppHandle, connection_ids: Vec<String>, legacy_provider_ids: Vec<String>) -> Result<Value> {
+    let _lock = storage::SETTINGS_LOCK.lock().map_err(|_| "Settings lock failed")?;
+    storage::provider_credentials_clear(&storage::provider_connection_file(&app)?, &connection_ids, &legacy_provider_ids)
+}
+
+#[tauri::command]
+async fn provider_connection_test(app: tauri::AppHandle, id: String) -> Result<Value> {
+    let (connection, profile) = tauri::async_runtime::spawn_blocking(move || {
+        let path = storage::provider_connection_file(&app)?;
+        let connections = storage::provider_connections(&path)?;
+        let connection = connections.as_array().and_then(|list| list.iter().find(|item| item["id"] == id)).cloned()
+            .ok_or("Provider connection does not exist")?;
+        let (profile, _) = storage::selected_profile(&storage::settings(&app)?, "*", None)?;
+        Ok::<_, String>((connection, profile))
+    }).await.map_err(|_| "Provider connection lookup failed")??;
+    network::connection_test(connection, profile).await
 }
 
 #[tauri::command]
@@ -244,6 +340,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             app_version,
             detect_apps,
+            detect_editors,
+            rtl_components,
+            launch_editor,
             launch_app,
             launch_state,
             stop_rtl,
@@ -264,6 +363,12 @@ pub fn run() {
             vault_set,
             vault_get,
             vault_delete,
+            provider_connections,
+            provider_connection_save,
+            provider_connection_delete,
+            provider_credentials_inventory,
+            provider_credentials_clear,
+            provider_connection_test,
             api_test,
             feed_sync
         ])

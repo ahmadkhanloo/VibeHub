@@ -1,137 +1,185 @@
-// App shell: sidebar (mirrors in RTL), topbar with global search + proxy
-// shortcut + offers bell. Ctrl+K focuses search (plan §3.4, §4.1).
-import { useEffect, useRef, useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { Suspense, useEffect, useRef, useState } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
-  Bell, BookOpen, Compass, Gift, HardDriveDownload, Home, Languages, PanelLeftClose, PanelLeftOpen,
-  Plug, Search, Settings as SettingsIcon, Stethoscope, Terminal as TerminalIcon,
-} from 'lucide-react';
-import { useSettings } from '@/app/settings';
-import { apps } from '@/lib/catalog';
-import { Badge } from '@/components/ui';
-
+  BookOpen,
+  Compass,
+  House,
+  Languages,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Network,
+  Search,
+  Settings,
+  Stethoscope,
+  Boxes,
+  Bell,
+} from "lucide-react";
+import { useSettings } from "./settings";
+import { Button, Spinner } from "@/components/ui";
+import vibeHubMark from "@/assets/vibehub-mark.svg";
 export function AppShell() {
-  const { t } = useTranslation(['nav', 'common']);
+  const { t } = useTranslation(["ux", "nav", "common"]);
   const { settings, update } = useSettings();
-  const [collapsed, setCollapsed] = useState(false);
-  const [langHover, setLangHover] = useState(false);
-  const searchRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
-
+  const location = useLocation();
+  const [collapsed, setCollapsed] = useState(
+    () => matchMedia("(max-width:1199px)").matches,
+  );
+  const [query, setQuery] = useState("");
+  const search = useRef<HTMLInputElement>(null);
+  const main = useRef<HTMLElement>(null);
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+    setQuery(new URLSearchParams(location.search).get("q") ?? "");
+  }, [location.pathname, location.search]);
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        searchRef.current?.focus();
+        search.current?.focus();
       }
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener("keydown", key);
+    const mq = matchMedia("(max-width:1199px)");
+    const resize = () => setCollapsed(mq.matches);
+    mq.addEventListener("change", resize);
+    return () => {
+      window.removeEventListener("keydown", key);
+      mq.removeEventListener("change", resize);
+    };
   }, []);
-
+  useEffect(() => {
+    main.current?.scrollTo(0, 0);
+    const heading = main.current?.querySelector<HTMLElement>("h1");
+    heading?.setAttribute("tabindex", "-1");
+    heading?.focus({ preventScroll: true });
+  }, [location.pathname]);
   const items = [
-    { to: '/', icon: Home, label: t('nav.home') },
-    { to: '/discover', icon: Compass, label: t('nav.discover') },
-    { to: '/my-apps', icon: HardDriveDownload, label: t('nav.myApps') },
-    { to: '/models', icon: Plug, label: t('nav.models') },
-    { to: '/terminal', icon: TerminalIcon, label: t('nav.terminal') },
-    { to: '/guides', icon: BookOpen, label: t('nav.guides') },
-    { to: '/offers', icon: Gift, label: t('nav.offers') },
-    { to: '/doctor', icon: Stethoscope, label: t('nav.doctor') },
-    { to: '/settings', icon: SettingsIcon, label: t('nav.settings') },
+    { to: "/", icon: House, label: t("ux:workspace") },
+    { to: "/discover", icon: Compass, label: t("ux:discover") },
+    { to: "/models", icon: Boxes, label: t("ux:models") },
+    { to: "/proxy", icon: Network, label: t("ux:proxy") },
+    { to: "/guides", icon: BookOpen, label: t("ux:guides") },
+    { to: "/doctor", icon: Stethoscope, label: t("ux:doctor") },
   ];
-
+  const link = (item: (typeof items)[number]) => (
+    <NavLink
+      key={item.to}
+      to={item.to}
+      end={item.to === "/"}
+      aria-label={item.label}
+      title={collapsed ? item.label : undefined}
+      className="vh-nav-link"
+    >
+      <item.icon aria-hidden="true" size={20} />
+      <span className="vh-nav-label">{item.label}</span>
+    </NavLink>
+  );
   return (
-    <div className="flex h-full">
-      <aside
-        className={`flex shrink-0 flex-col border-border bg-surface transition-[width] duration-150 border-e ${
-          collapsed ? 'w-[68px]' : 'w-[248px]'
-        }`}
+    <div className="flex h-full overflow-hidden">
+      <a
+        className="vh-skip"
+        href="#main-content"
+        onClick={(e) => {
+          e.preventDefault();
+          main.current?.focus();
+        }}
       >
-        <div className="flex h-16 items-center gap-2 px-4">
-          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-primary font-bold text-primary-foreground">V</div>
-          {!collapsed && <span className="text-lg font-bold">VibeHub</span>}
+        {t("ux:skipMain")}
+      </a>
+      <aside className={"vh-sidebar " + (collapsed ? "collapsed" : "")}>
+        <div className="mb-8 flex items-center gap-3 px-2 pt-1">
+          <img
+            src={vibeHubMark}
+            alt=""
+            aria-hidden="true"
+            width={32}
+            height={32}
+          />
+          {!collapsed && (
+            <span className="text-lg font-bold" dir="ltr">
+              VibeHub
+            </span>
+          )}
         </div>
-        <nav className="flex-1 space-y-1 overflow-y-auto px-2 pb-2">
-          {items.map(({ to, icon: Icon, label }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === '/'}
-              title={label}
-              className={({ isActive }) =>
-                `flex items-center gap-3 rounded-[10px] px-3 py-2 text-sm transition-colors ${
-                  isActive ? 'bg-primary/15 text-primary font-medium' : 'text-text hover:bg-surface-alt'
-                }`
-              }
-            >
-              <Icon size={18} className="shrink-0" />
-              {!collapsed && <span className="truncate">{label}</span>}
-            </NavLink>
-          ))}
+        <nav aria-label={t("ux:mainNav")} className="flex-1 space-y-1">
+          {items.map(link)}
         </nav>
-        <div className="border-t border-border p-2">
-          <button
-            type="button"
-            onClick={() => setCollapsed((c) => !c)}
-            className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2 text-sm text-muted hover:bg-surface-alt"
-            title={collapsed ? t('nav.expand') : t('nav.collapse')}
+        <div className="mt-6 space-y-1 border-t border-border pt-4">
+          {link({ to: "/offers", icon: Bell, label: t("ux:offers") })}
+          {link({ to: "/settings", icon: Settings, label: t("ux:settings") })}
+          <Button
+            variant="ghost"
+            className="w-full"
+            aria-expanded={!collapsed}
+            aria-label={t(collapsed ? "nav:expand" : "nav:collapse")}
+            onClick={() => setCollapsed(!collapsed)}
           >
-            {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
-            {!collapsed && <span>{t('nav.collapse')}</span>}
-          </button>
+            {collapsed ? (
+              <PanelLeftOpen aria-hidden="true" size={18} />
+            ) : (
+              <PanelLeftClose aria-hidden="true" size={18} />
+            )}
+            <span className="vh-nav-label">{t("nav:collapse")}</span>
+          </Button>
         </div>
       </aside>
-
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-surface px-4">
-          <div className="relative min-w-0 flex-1 max-w-xl">
-            <Search size={15} className="pointer-events-none absolute top-1/2 -translate-y-1/2 text-muted ltr:left-3 rtl:right-3" />
-            <input
-              ref={searchRef}
-              placeholder={t('common.searchPlaceholder')}
-              onKeyDown={(e) => {
-                if (e.key !== 'Enter') return;
-                const q = (e.target as HTMLInputElement).value.trim();
-                if (q) navigate(`/discover?q=${encodeURIComponent(q)}`);
-              }}
-              className="h-9 w-full rounded-[10px] border border-border bg-bg ps-9 pe-3 text-sm outline-none focus:border-primary"
+        <header className="flex h-16 shrink-0 items-center gap-4 border-b border-border bg-surface px-6">
+          <form
+            role="search"
+            className="relative max-w-2xl flex-1"
+            onSubmit={(e) => {
+              e.preventDefault();
+              navigate("/search?q=" + encodeURIComponent(query.trim()));
+            }}
+          >
+            <label className="sr-only" htmlFor="global-search">
+              {t("ux:searchLabel")}
+            </label>
+            <Search
+              aria-hidden="true"
+              size={18}
+              className="pointer-events-none absolute start-3 top-3 text-muted"
             />
-          </div>
-          <div className="flex-1" />
-          <NavLink to="/proxy" title={t('nav.proxyHint')} className="flex items-center gap-2 rounded-[10px] px-3 py-2 text-sm text-muted hover:bg-surface-alt">
-            <Plug size={16} />
-            <span className="hidden md:inline">{t('nav.proxy')}</span>
-          </NavLink>
-          <NavLink to="/offers" title={t('nav.notifications')} className="relative rounded-[10px] p-2 text-muted hover:bg-surface-alt">
-            <Bell size={17} />
-          </NavLink>
-          <div className="relative">
-            <button
-              type="button"
-              onMouseEnter={() => setLangHover(true)}
-              onMouseLeave={() => setLangHover(false)}
-              onClick={() => update({ language: settings.language === 'fa' ? 'en' : 'fa' })}
-              className="flex items-center gap-1.5 rounded-[10px] px-3 py-2 text-sm text-muted hover:bg-surface-alt"
-              title={settings.language === 'fa' ? 'English' : 'فارسی'}
+            <input
+              id="global-search"
+              ref={search}
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t("ux:searchLabel")}
+              className="vh-input vh-global-search"
+            />
+            <kbd
+              aria-hidden="true"
+              className="absolute end-3 top-3 text-xs text-muted"
             >
-              <Languages size={16} />
-              {settings.language === 'fa' ? 'EN' : 'فا'}
-            </button>
-          </div>
+              <bdi>Ctrl K</bdi>
+            </kbd>
+          </form>
+          <Button
+            variant="ghost"
+            aria-label={t(
+              settings.language === "fa"
+                ? "common:switchLanguageToEnglish"
+                : "common:switchLanguageToPersian",
+            )}
+            onClick={() =>
+              update({ language: settings.language === "fa" ? "en" : "fa" })
+            }
+          >
+            <Languages aria-hidden="true" size={18} />
+            {settings.language === "fa" ? "English" : "فارسی"}
+          </Button>
         </header>
-        <main className="min-h-0 flex-1 overflow-y-auto p-6">
-          <div className="mx-auto max-w-5xl vh-fade-in" key={settings.language}>
-            <Outlet />
+        <main id="main-content" ref={main} tabIndex={-1} className="vh-main">
+          <div className="vh-content">
+            <Suspense fallback={<Spinner />}>
+              <Outlet />
+            </Suspense>
           </div>
         </main>
-        <footer className="flex h-8 shrink-0 items-center justify-between border-t border-border px-4 text-[11px] text-muted">
-          <span>VibeHub — {t('common.freeOpenSource')} · MIT</span>
-          <span className="flex items-center gap-1">
-            <Badge tone="success">{apps.length}</Badge> {t('nav.discover')}
-          </span>
-        </footer>
       </div>
     </div>
   );

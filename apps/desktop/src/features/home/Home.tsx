@@ -1,125 +1,148 @@
-import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Compass, Play, Plug } from 'lucide-react';
-import { apps, bundledCatalog } from '@/lib/catalog';
-import { Badge, Button, Card, EmptyState, SectionTitle, VerificationBadge } from '@/components/ui';
-import { ipc, type LaunchOutcome } from '@/services/ipc';
-import type { DetectedApp, ProxyTestResult } from '@core';
-
+import { useState } from 'react';
+import { ToolProxy } from '@/features/proxy/ToolProxy';
+import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { Plus, RefreshCw, ArrowUpRight } from "lucide-react";
+import { useToolContext } from "@/app/tool-context";
+import { useCatalog } from "@/lib/catalog";
+import { AppLogo } from "@/components/AppLogo";
+import { LaunchControls } from "@/components/LaunchControls";
+import {
+  Badge,
+  Button,
+  EmptyState,
+  ErrorNotice,
+  PageHeader,
+  Spinner,
+  Modal,
+} from "@/components/ui";
 export function HomePage() {
-  const { t, i18n } = useTranslation(['home', 'common', 'apps']);
-  const lang = i18n.language === 'fa' ? 'fa' : 'en';
-  const navigate = useNavigate();
-  const [detected, setDetected] = useState<DetectedApp[]>([]);
-  const [proxyState, setProxyState] = useState<'ok' | 'fail' | 'unknown'>('unknown');
-  const [launching, setLaunching] = useState<string | null>(null);
-  const [launchMsg, setLaunchMsg] = useState<string | null>(null);
-
-  useEffect(() => {
-    void ipc.detectApps().then(setDetected).catch(() => setDetected([]));
-    void ipc
-      .proxyTest({ id: 'global', name: '', mode: 'direct' }, 'tcp')
-      .then((r: ProxyTestResult) => setProxyState('ok'))
-      .catch(() => setProxyState('unknown'));
-  }, []);
-
-  const installed = detected.filter((d) => d.installed);
-  const featured = apps.filter((a) => a.freeAccess === 'free_tier' || a.freeAccess === 'free_forever' || a.freeAccess === 'ad_supported').slice(0, 4);
-
-  const quickLaunch = async (appId: string, rtl: boolean) => {
-    setLaunching(appId);
-    setLaunchMsg(null);
-    try {
-      const out: LaunchOutcome = await ipc.launchApp({ appId, rtl });
-      setLaunchMsg(out.detail || (out.ok ? t('common:running') : t('common:failed')));
-    } catch (e) {
-      setLaunchMsg(String(e));
-    } finally {
-      setLaunching(null);
-    }
-  };
-
+  const { t } = useTranslation("ux");
+  const ctx = useToolContext();
+  const [editor, setEditor] = useState<{id:string;name:string}|null>(null);
+  const catalog = useCatalog();
+  const tools = [
+    ...ctx.apps
+      .filter((a) => a.installed)
+      .map((a) => ({
+        ...a,
+        name: catalog.apps.find((c) => c.id === a.id)?.name ?? a.id,
+        kind: "app" as const,
+      })),
+    ...ctx.editors.map((e) => ({ ...e, kind: "editor" as const })),
+  ];
   return (
-    <div className="space-y-8">
-      <section>
-        <h1 className="text-2xl font-bold">{t('home:headerTitle')}</h1>
-        <p className="mt-1 max-w-2xl text-sm text-muted">{t('home:headerSub')}</p>
-      </section>
-
-      <section>
-        <SectionTitle>{t('home:quickLaunch')}</SectionTitle>
-        {installed.length === 0 ? (
-          <EmptyState icon={<Compass size={22} />} title={t('home:quickLaunchEmpty')} />
-        ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {installed.map((d) => {
-              const app = apps.find((a) => a.id === d.id);
-              const rtlOk = app?.capabilities.rtl === 'verified';
-              return (
-                <Card key={d.id} className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold">{app?.name ?? d.id}</span>
-                    {d.version && <Badge tone="muted">{d.version}</Badge>}
-                  </div>
-                  <div className="flex gap-2">
-                    {rtlOk && (
-                      <Button size="sm" variant="primary" loading={launching === d.id} onClick={() => void quickLaunch(d.id, true)}>
-                        <Play size={13} /> {t('common:launchRtl')}
-                      </Button>
-                    )}
-                    <Button size="sm" loading={launching === `${d.id}-plain`} onClick={() => void quickLaunch(d.id, false)}>
-                      <Play size={13} /> {t('common:launch')}
-                    </Button>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-        {launchMsg && <p className="mt-2 text-sm text-muted">{launchMsg}</p>}
-      </section>
-
-      <section>
-        <SectionTitle action={<Link to="/discover" className="flex items-center gap-1 text-sm text-primary"><ArrowRight size={14} className="rtl:rotate-180" />{t('home:openDiscover')}</Link>}>
-          {t('home:featured')}
-        </SectionTitle>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {featured.map((app) => (
-            <Link key={app.id} to={`/app/${app.id}`} className="block">
-              <Card className="h-full transition-colors hover:border-primary/50">
-                <div className="mb-1 flex items-center justify-between">
-                  <span className="font-semibold">{app.name}</span>
-                  {app.isOpenSource === true && <Badge tone="success">OSS</Badge>}
-                </div>
-                <p className="line-clamp-2 min-h-[2.5rem] text-xs text-muted">{app.summary[lang]}</p>
-                <div className="mt-2 flex items-center gap-1.5">
-                  <Badge tone="primary">{t(`apps:card.freeAccess`)}</Badge>
-                  <VerificationBadge status={app.capabilities.rtl} />
-                </div>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <Card>
-          <SectionTitle>{t('home:recommendedSetup')}</SectionTitle>
-          <p className="text-sm text-muted">{t('home:recommendedSetupBody')}</p>
-        </Card>
-        <Card>
-          <SectionTitle>{t('home:proxyStatus')}</SectionTitle>
-          <div className="flex items-center gap-3">
-            <Plug size={18} className={proxyState === 'ok' ? 'text-success' : 'text-muted'} />
-            <Badge tone={proxyState === 'ok' ? 'success' : 'muted'}>{proxyState === 'ok' ? t('common:pass') : t('common:unknown')}</Badge>
-            <Button size="sm" variant="ghost" onClick={() => navigate('/proxy')}>
-              {t('nav:proxy', { ns: 'nav' })}
+    <div className="space-y-6">
+      <Modal open={!!editor} title={editor?.name??t('prepare')} onClose={()=>setEditor(null)}>
+       {editor&&<><p className="text-sm text-muted">{t('editorUnknown')}</p><ToolProxy appId={editor.id}/><Link className="vh-link" to={'/doctor?tool='+editor.id+'&kind=editor'} onClick={()=>setEditor(null)}>{t('doctor')}</Link></>}
+      </Modal>
+      <PageHeader
+        title={t("workspace")}
+        description={t("workspaceSub")}
+        actions={
+          <>
+            <Button loading={ctx.loading} onClick={() => void ctx.refresh()}>
+              <RefreshCw size={16} aria-hidden="true" />
+              {t("refresh")}
             </Button>
+            <Link to="/discover" className="vh-button vh-button-primary">
+              <Plus size={16} aria-hidden="true" />
+              {t("discover")}
+            </Link>
+          </>
+        }
+      />
+      {ctx.errors.length > 0 &&
+        (ctx.detectionFailed ? (
+          <ErrorNotice
+            error={ctx.errors.join("\n")}
+            onRetry={() => void ctx.refresh()}
+          />
+        ) : (
+          <div className="space-y-2">
+            <p role="status" className="text-sm text-warning">
+              {t("partial")}
+            </p>
+            <ErrorNotice
+              error={ctx.errors.join("\n")}
+              onRetry={() => void ctx.refresh()}
+            />
           </div>
-          <p className="mt-3 text-sm text-muted">{bundledCatalog.offers.length === 0 ? t('home:noOffers') : t('home:offersTeaser')}</p>
-        </Card>
-      </section>
+        ))}
+      {ctx.loading && !tools.length ? (
+        <Spinner />
+      ) : tools.length === 0 && !ctx.detectionFailed ? (
+        <EmptyState
+          title={t("noInstalled")}
+          sub={t("noInstalledSub")}
+          action={
+            <Link to="/discover" className="vh-button vh-button-primary">
+              {t("discover")}
+            </Link>
+          }
+        />
+      ) : (
+        tools.length > 0 && (
+          <>
+            <p className="vh-section-kicker">
+              {t("count", { count: tools.length })}
+            </p>
+            <div className="vh-tool-list">
+              {tools.map((tool) => {
+                const app =
+                  tool.kind === "app"
+                    ? catalog.apps.find((a) => a.id === tool.id)
+                    : undefined;
+                return (
+                  <article key={tool.kind + tool.id} className="vh-tool-row">
+                    <AppLogo appId={tool.id} name={tool.name} size={48} />
+                    <div className="min-w-0 flex-1">
+                      <h2 className="font-bold">
+                        <bdi>{tool.name}</bdi>
+                      </h2>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
+                        {tool.version && <bdi>{tool.version}</bdi>}
+                        <span>
+                          {ctx.states[tool.id]?.phase === "running"
+                            ? t("running")
+                            : t("installed")}
+                        </span>
+                        {app?.capabilities.rtl === "verified" &&
+                          ctx.components.some(
+                            (c) => c.id === tool.id && c.available,
+                          ) && <Badge tone="primary">{t("rtlReady")}</Badge>}
+                      </div>
+                    </div>
+                    <div className="vh-row-actions">
+                      <LaunchControls
+                        id={tool.id}
+                        name={tool.name}
+                        kind={tool.kind}
+                        supportsRtl={app?.capabilities.rtl === "verified"}
+                      />
+                      {tool.kind === "app" ? (
+                        <Link
+                          className="vh-button vh-button-ghost"
+                          to={"/app/" + tool.id}
+                          aria-label={t("prepare") + " " + tool.name}
+                        >
+                          {t("prepare")}
+                          <ArrowUpRight size={16} aria-hidden="true" />
+                        </Link>
+                      ) : (
+                        <Button variant="ghost" onClick={()=>setEditor(tool)} aria-label={t('prepare')+' '+tool.name}>{t('prepare')}</Button>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+            <p className="max-w-3xl text-xs leading-6 text-muted">
+              {t("launchNote")}
+            </p>
+          </>
+        )
+      )}
     </div>
   );
 }

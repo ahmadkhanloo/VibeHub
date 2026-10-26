@@ -3,7 +3,7 @@
   "id": "freebuff",
   "name": "Freebuff",
   "summary": {
-    "fa": "ایجنت کدنویسی با کد Apache-2.0 و دسترسی رایگان تبلیغپشتیبانی در کلاینتهای رسمی",
+    "fa": "دستیار کدنویسی متن‌باز با مجوز Apache-2.0 و دسترسی رایگان همراه با تبلیغات در برنامهٔ رسمی.",
     "en": "Coding agent with Apache-2.0 code and ad-supported free access in official clients"
   },
   "kind": "cli_agent",
@@ -15,7 +15,7 @@
   "licenseSpdx": "Apache-2.0",
   "freeAccess": "ad_supported",
   "freeAccessDetails": {
-    "fa": "کد تحت Apache-2.0 و استفادهٔ رایگان در کلاینتهای رسمی با تبلیغات پشتیبانی میشود. شرایط سرویس، اتصال به Endpointهای غیررسمی، دسترسی رباتیک و جازدن موقعیت جغرافیایی برای مزایای نامجاز را ممنوع میکند.",
+    "fa": "کد برنامه با مجوز Apache-2.0 منتشر شده است. استفادهٔ رایگان از برنامهٔ رسمی با تبلیغات پشتیبانی می‌شود. شرایط سرویس، اتصال به نشانی‌های غیررسمی، دسترسی خودکار و تغییر موقعیت جغرافیایی برای دریافت مزایای نامجاز را ممنوع می‌کند.",
     "en": "Code is Apache-2.0 and free use is supported in official clients via ads. The terms of service forbid non-official endpoints, bot access, and misrepresenting your location for unauthorized benefits."
   },
   "requiresSignup": true,

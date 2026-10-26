@@ -9,6 +9,7 @@
     "modeDark": "Dark",
     "family": "Theme family",
     "families": { "graphite": "Default (Graphite)", "nord": "Nord", "catppuccin": "Catppuccin", "solarized": "Solarized" },
+    "resolvedMode": "Active appearance: {{mode}}",
     "accent": "Accent",
     "accents": { "auto": "Auto", "indigo": "Indigo", "emerald": "Emerald", "violet": "Violet", "amber": "Amber" },
     "gallery": "Theme gallery (live preview)",
@@ -20,8 +21,9 @@
     "openProxy": "Open Proxy Center"
   },
   "terminal": {
-    "title": "Terminal",
-    "openTerminal": "Open Terminal Setup"
+    "title": "PowerShell appearance",
+    "openTerminal": "Appearance settings",
+    "hint": "Install a coding font and set up a PowerShell prompt for command-line tools."
   },
   "updates": {
     "title": "Updates",

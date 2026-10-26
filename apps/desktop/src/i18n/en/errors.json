@@ -3,6 +3,7 @@
   "commandFailed": "The command failed",
   "notFound": "Not found",
   "appNotDetected": "This app was not detected",
+  "detectionFailed": "Could not scan installed apps",
   "exeMissing": "The executable is not at the expected path",
   "portBusy": "The port is busy",
   "portBusyHint": "Close the occupying app or set another port in settings.",

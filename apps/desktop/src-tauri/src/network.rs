@@ -76,16 +76,44 @@ fn handshake(profile: &Value) -> Result<()> {
     use std::io::{Read, Write};
     let mut stream = connect(profile)?;
     if profile["mode"] == "socks5" {
-        // Negotiation proves SOCKS support. Authenticated request is tested separately.
-        stream
-            .write_all(&[5, 1, 0])
-            .map_err(|_| "SOCKS greeting failed")?;
+        let username = profile["username"].as_str().unwrap_or("");
+        let password = storage::vault_get(&format!("vibehub.proxy.{}", field(profile, "id")?))?;
+        let has_credentials = !username.is_empty() || password.is_some();
+        if has_credentials && (username.is_empty() || password.is_none()) {
+            return Err("SOCKS5 requires both a username and a stored password".into());
+        }
+        let methods = if has_credentials { [5, 1, 2] } else { [5, 1, 0] };
+        stream.write_all(&methods).map_err(|_| "SOCKS greeting failed")?;
         let mut reply = [0u8; 2];
         stream
             .read_exact(&mut reply)
             .map_err(|_| "SOCKS response failed")?;
-        if reply != [5, 0] {
-            return Err("SOCKS handshake requires authentication or was rejected".into());
+        if reply[0] != 5 {
+            return Err("Invalid SOCKS response".into());
+        }
+        match reply[1] {
+            0 if !has_credentials => (),
+            2 if has_credentials => {
+                let username = username.as_bytes();
+                let password = password.as_deref().unwrap_or_default().as_bytes();
+                if username.is_empty() || username.len() > 255 || password.is_empty() || password.len() > 255 {
+                    return Err("SOCKS5 username and password must each be 1 to 255 bytes".into());
+                }
+                let mut auth = Vec::with_capacity(username.len() + password.len() + 3);
+                auth.extend_from_slice(&[1, username.len() as u8]);
+                auth.extend_from_slice(username);
+                auth.push(password.len() as u8);
+                auth.extend_from_slice(password);
+                stream.write_all(&auth).map_err(|_| "SOCKS authentication failed")?;
+                let mut auth_reply = [0u8; 2];
+                stream.read_exact(&mut auth_reply).map_err(|_| "SOCKS authentication response failed")?;
+                if auth_reply != [1, 0] {
+                    return Err("SOCKS5 authentication was rejected".into());
+                }
+            }
+            0 => return Err("SOCKS5 did not request the configured credentials".into()),
+            2 => return Err("SOCKS5 proxy requires a username and password".into()),
+            _ => return Err("SOCKS authentication method was rejected".into()),
         }
     } else {
         let password = storage::vault_get(&format!("vibehub.proxy.{}", field(profile, "id")?))?;
@@ -194,6 +222,87 @@ pub async fn api_test(
         Err(error) => Ok(
             json!({"dnsResolved":false,"httpResponse":false,"authValidated":false,"modelResponded":false,"redactedError": if error.is_timeout() { "Request timed out" } else { "Connection or TLS failed; DNS status is unconfirmed" }}),
         ),
+    }
+}
+
+pub async fn connection_test(connection: Value, profile: Option<Value>) -> Result<Value> {
+    crate::domain::validate_provider_connection(&connection)?;
+    let id = field(&connection, "id")?;
+    let provider = field(&connection, "providerId")?;
+    let model = field(&connection, "modelId")?;
+    let base = safe_url(field(&connection, "baseUrl")?)?;
+    let service = format!("vibehub.provider-key.connection.{id}");
+    let needs_key = provider != "ollama";
+    let secret = if needs_key {
+        storage::vault_get(&service)?
+    } else {
+        None
+    };
+    if needs_key && secret.is_none() {
+        return Ok(json!({
+            "dnsResolved":false,"httpResponse":false,"authValidated":false,"modelResponded":false,
+            "redactedError":"Save an API key for this connection before testing"
+        }));
+    }
+
+    let client = client(profile.as_ref())?;
+    let base = base.as_str().trim_end_matches('/');
+    let is_anthropic = provider == "anthropic";
+    let is_google = matches!(provider, "google" | "gemini");
+    let (endpoint, body) = if is_google {
+        let mut endpoint = base.parse::<reqwest::Url>().map_err(|_| "Invalid provider URL")?;
+        endpoint.path_segments_mut().map_err(|_| "Invalid provider URL")?
+            .push("models").push(&format!("{model}:generateContent"));
+        (
+            endpoint.to_string(),
+            json!({"contents":[{"parts":[{"text":"Reply with OK."}]}],"generationConfig":{"maxOutputTokens":8}}),
+        )
+    } else if is_anthropic {
+        (
+            format!("{base}/messages"),
+            json!({"model":model,"max_tokens":8,"messages":[{"role":"user","content":"Reply with OK."}]}),
+        )
+    } else {
+        (
+            format!("{base}/chat/completions"),
+            json!({"model":model,"messages":[{"role":"user","content":"Reply with OK."}],"max_tokens":8,"stream":false}),
+        )
+    };
+    let mut request = client.post(endpoint).json(&body);
+    if let Some(key) = secret.as_deref() {
+        request = if is_anthropic {
+            request.header("x-api-key", key).header("anthropic-version", "2023-06-01")
+        } else if is_google {
+            request.header("x-goog-api-key", key)
+        } else {
+            request.bearer_auth(key)
+        };
+    }
+    match request.send().await {
+        Ok(response) => {
+            let status = response.status();
+            let response_body = bounded_json(response, 1024 * 1024).await.ok();
+            let responded = status.is_success() && response_body.as_ref().is_some_and(|body| {
+                if is_google {
+                    body["candidates"].as_array().is_some_and(|items| items.iter().any(|item|
+                        item["content"]["parts"].as_array().is_some_and(|parts| parts.iter().any(|part| part["text"].is_string()))
+                    ))
+                } else if is_anthropic {
+                    body["content"].as_array().is_some_and(|items| items.iter().any(|item| item["type"] == "text" && item["text"].is_string()))
+                } else {
+                    body["choices"].as_array().is_some_and(|items| items.iter().any(|item| item["message"]["content"].is_string()))
+                }
+            });
+            Ok(json!({
+                "dnsResolved":true,"httpResponse":true,"authValidated":!needs_key || (secret.is_some() && status.is_success()),
+                "modelResponded":responded,"httpStatus":status.as_u16(),
+                "redactedError":if responded { Value::Null } else { json!("Provider returned an error or an invalid model response") }
+            }))
+        }
+        Err(error) => Ok(json!({
+            "dnsResolved":false,"httpResponse":false,"authValidated":false,"modelResponded":false,
+            "redactedError":if error.is_timeout() { "Request timed out" } else { "Connection or TLS failed; DNS status is unconfirmed" }
+        })),
     }
 }
 

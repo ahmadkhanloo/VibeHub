@@ -1,5 +1,25 @@
 {
-  "title": "Models & APIs",
+  "title": "Models & connections",
+  "connectionIntro": "Save and test a model connection here, then enter it in a compatible tool's settings. API keys stay in the Windows credential vault.",
+  "savedConnections": "Saved connections",
+  "providerCatalog": "Providers",
+  "addConnection": "Add connection",
+  "noConnections": "No connections saved yet.",
+  "newConnection": "New connection",
+  "editConnection": "Edit connection",
+  "connectionName": "Display name",
+  "provider": "Provider and connection type",
+  "saveConnection": "Save connection",
+  "useProvider": "Set up connection",
+  "whereToUse": "Where can I use this?",
+  "manualSetup": "In a tool that supports custom endpoints, open its model settings, choose the {{provider}} protocol, and enter the base URL and model ID “{{model}}”. If the tool requires a key, get one from the provider's official console and enter it in that tool; VibeHub never displays its saved copy.",
+  "supportedTools": "Compatibility recorded in the catalog",
+  "compatibilityStatus": { "verified": "Tested", "reported": "Reported; not tested in VibeHub", "unknown": "Unknown" },
+  "noVerifiedTools": "No confirmed compatible tool is listed in the catalog; check the tool's manual setup first.",
+  "noAutomaticInjection": "VibeHub does not copy keys into other tools. Automatic setup is enabled only for tools with a tested adapter.",
+  "keyMissing": "No key saved",
+  "replaceApiKey": "Replace API key (optional)",
+  "leaveBlankToKeep": "Leave blank to keep the saved key",
   "tabs": { "freeProviders": "Free providers", "localModels": "Local models", "apiConnections": "API connections" },
   "filters": {
     "noSignup": "No signup",
@@ -17,6 +37,7 @@
   "nvidiaBadge": "Free development access (subject to eligibility/limits)",
   "apiKey": "API key",
   "apiKeyStoredVault": "The key is stored only in the Windows Credential Manager — never in files or logs.",
+  "keyScopeChange": "Changing the provider or base URL host clears the saved key. Enter a key for the new service.",
   "baseUrl": "Base URL",
   "modelId": "Model ID",
   "testConnection": "Test connection",
@@ -36,5 +57,5 @@
   "noKeyStored": "No key stored",
   "customEndpoint": "Custom OpenAI-compatible endpoint",
   "customNote": "Cost and terms are defined by the endpoint itself.",
-  "agentIntegration": "Connecting to tools happens only through each tool's official config path; 'configuration prepared' is not the same as 'tested inside the agent'."
+  "agentIntegration": "Connections are entered through each tool's own settings; 'ready to configure' is different from 'tested inside the tool'."
 }

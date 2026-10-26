@@ -5,3 +5,8 @@ docs/shot-*.png
 dist/
 node_modules/
 apps/desktop/dist/
+apps/desktop/src-tauri/windows/payload/
+/release-artifacts/
+/output/
+/.playwright-mcp/
+/.repowise/
