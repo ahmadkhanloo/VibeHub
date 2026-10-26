@@ -1,0 +1,70 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "VibeHub",
+  "version": "0.1.0",
+  "identifier": "com.ahmadkhanloo.vibehub",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "pnpm dev",
+    "beforeBuildCommand": "pnpm build"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "VibeHub",
+        "width": 1280,
+        "height": 860,
+        "minWidth": 960,
+        "minHeight": 640,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' asset: http://asset.localhost blob: data:; font-src 'self' asset: data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src ipc: http://ipc.localhost; object-src 'none'; base-uri 'self'; frame-src 'none'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "msi"],
+    "createUpdaterArtifacts": false,
+    "resources": {
+      "../../../LICENSE": "LICENSE",
+      "../../../docs/legal/THIRD_PARTY_LICENSES.md": "THIRD_PARTY_LICENSES.md",
+      "../../../themes/terminal/mak-devline.omp.json": "themes/terminal/mak-devline.omp.json",
+      "../../../apps/Qoder/start.ps1": "apps/Qoder/start.ps1",
+      "../../../apps/Qoder/injector.mjs": "apps/Qoder/injector.mjs",
+      "../../../apps/Qoder/style.mjs": "apps/Qoder/style.mjs",
+      "../../../apps/Qoder/assets/": "apps/Qoder/assets/",
+      "../../../apps/ZCode/start.ps1": "apps/ZCode/start.ps1",
+      "../../../apps/ZCode/injector.mjs": "apps/ZCode/injector.mjs",
+      "../../../apps/DeepSeekHarness/start.ps1": "apps/DeepSeekHarness/start.ps1",
+      "../../../apps/DeepSeekHarness/injector.mjs": "apps/DeepSeekHarness/injector.mjs",
+      "../../../apps/DeepSeekHarness/assets/": "apps/DeepSeekHarness/assets/"
+    },
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "displayLanguageSelector": false
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "__CONFIGURE_VIBEHUB_TAURI_UPDATER_PUBLIC_KEY__",
+      "endpoints": [
+        "https://github.com/ahmadkhanloo/VibeHub/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "basicUi"
+      }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "title": "Doctor",
+  "subtitle": "Real environment diagnostics; nothing untested is ever marked as passed.",
+  "runChecks": "Run checks",
+  "running": "Checking…",
+  "copyReport": "Copy sanitized report",
+  "repair": "Repair with consent",
+  "checks": {
+    "runtime": "Bundled RTL engine (Node sidecar)",
+    "apps": "Installed apps and paths",
+    "rtlState": "RTL injection state",
+    "ports": "CDP ports and conflicts",
+    "proxy": "Proxy port/protocol",
+    "fonts": "Vazirmatn font and Nerd Font glyphs",
+    "ohmyposh": "Oh My Posh and shell profile",
+    "catalog": "Catalog validity",
+    "network": "Network and update signature",
+    "updater": "Signed updater status"
+  },
+  "noSecrets": "The report contains no keys, tokens, or your project paths."
+}

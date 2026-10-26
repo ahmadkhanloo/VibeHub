@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "qoder",
+  "name": "Qoder",
+  "summary": {
+    "fa": "IDE ایجنتمحور با پلن Community/BYOK رایگان؛ پشتیبانی RTL تأییدشده توسط VibeHub",
+    "en": "Agentic IDE with a free Community/BYOK plan; RTL support verified by VibeHub"
+  },
+  "kind": "desktop_ide",
+  "platforms": ["windows"],
+  "websiteUrl": "https://qoder.com/",
+  "docsUrl": "https://qoder.com/docs",
+  "isOpenSource": null,
+  "freeAccess": "free_tier",
+  "freeAccessDetails": {
+    "fa": "پلن Community با قابلیت BYOK (کلید خودتان) طبق شرایط جاری سازنده؛ شرایط ممکن است تغییر کند.",
+    "en": "Community plan with BYOK (bring your own key) under the vendor's current terms; terms may change."
+  },
+  "requiresSignup": true,
+  "requiresPaymentCard": null,
+  "sourceOfFreeAccess": "https://qoder.com/",
+  "lastVerified": "2026-10-26",
+  "capabilities": {
+    "install": "reported",
+    "launch": "verified",
+    "rtl": "verified",
+    "proxy": "unknown",
+    "terminal": "unsupported",
+    "byok": "reported"
+  },
+  "installMethods": [
+    {
+      "method": "official-installer",
+      "idOrUrl": "https://qoder.com/",
+      "note": {
+        "fa": "نصبکنندهٔ رسمی از سایت سازنده.",
+        "en": "Official installer from the vendor site."
+      }
+    }
+  ],
+  "eligibility": [
+    {
+      "countryCode": "IR",
+      "networkAccess": "proxy_may_be_needed",
+      "accountPolicy": "review_terms",
+      "sourceUrl": "https://qoder.com/",
+      "testedAt": "2026-10-26",
+      "networkType": "community report",
+      "confidence": "low",
+      "verifiedBy": "community",
+      "regionNotes": {
+        "fa": "گزارش جامعه: ثبت‌نام گاهی با پروکسی انجام شده و پس از آن اتصال مستقیم ممکن بوده است؛ نتیجهٔ تجربی و تاریخ‌دار است، نه تضمین.",
+        "en": "Community reports say signup sometimes used a proxy but direct connectivity worked later; this is anecdotal and date-specific, not a guarantee."
+      }
+    }
+  ]
+}

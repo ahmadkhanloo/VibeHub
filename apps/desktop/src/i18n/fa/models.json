@@ -1,0 +1,40 @@
+{
+  "title": "مدل‌ها و APIها",
+  "tabs": { "freeProviders": "پروایدرهای رایگان", "localModels": "مدلهای محلی", "apiConnections": "اتصالهای API" },
+  "filters": {
+    "noSignup": "بدون ثبتنام",
+    "byok": "BYOK",
+    "local": "محلی",
+    "freeQuota": "سهمیهٔ رایگان",
+    "compatible": "سازگار با {{app}}"
+  },
+  "officialUrl": "آدرس رسمی",
+  "getKeySteps": "مراحل دریافت کلید",
+  "requiresCard": "نیاز به کارت بانکی",
+  "terms": "شرایط استفاده",
+  "countryStatus": "وضعیت کشور",
+  "lastVerified": "آخرین راستیآزمایی",
+  "nvidiaBadge": "دسترسی توسعهٔ رایگان (تابع پذیرش/سهمیه)",
+  "apiKey": "کلید API",
+  "apiKeyStoredVault": "کلید فقط در Credential Manager ویندوز ذخیره می‌شود؛ نه در فایل، نه در لاگ.",
+  "baseUrl": "Base URL",
+  "modelId": "شناسه مدل",
+  "testConnection": "تست اتصال",
+  "testConsent": "تست یعنی یک درخواست واقعی به سرویس می‌رود و ممکن است از سهمیه بخورد. ادامه می‌دهید؟",
+  "testing": "در حال تست…",
+  "testResult": "نتیجهٔ تست",
+  "testLevels": {
+    "dnsResolved": "DNS",
+    "httpResponse": "پاسخ HTTP",
+    "authValidated": "احراز کلید",
+    "modelResponded": "پاسخ مدل"
+  },
+  "redacted": "کلید/جزئیات حساس در گزارش حذف شده است.",
+  "saveKey": "ذخیرهٔ کلید در خزانه",
+  "deleteKey": "حذف کلید از خزانه",
+  "keyStored": "کلید ذخیره شد",
+  "noKeyStored": "کلیدی ذخیره نشده",
+  "customEndpoint": "Endpoint سفارشی سازگار با OpenAI",
+  "customNote": "هزینه و شرایط را خود Endpoint تعیین می‌کند.",
+  "agentIntegration": "اتصال به ابزارها فقط از مسیر رسمی config خود ابزار؛ «آمادهٔ تنظیم» با «آزمون‌شده در ایجنت» فرق دارد."
+}

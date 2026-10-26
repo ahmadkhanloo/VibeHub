@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "ollama",
+  "name": "Ollama (local models)",
+  "officialUrl": "https://ollama.com/",
+  "modelsDocUrl": "https://ollama.com/library",
+  "freeAccess": "free_forever",
+  "requiresAccount": false,
+  "requiresApiKey": false,
+  "usageTermsUrl": "https://github.com/ollama/ollama/blob/main/LICENSE",
+  "supportedApps": {
+    "zcode": "unknown",
+    "qoder": "unknown",
+    "deepseek-harness": "unknown",
+    "opencode": "reported",
+    "mimocode": "unknown",
+    "freebuff": "unknown"
+  },
+  "eligibilityStatus": "verified",
+  "lastVerified": "2026-10-26",
+  "notes": {
+    "fa": "اجرای محلی مدلها؛ هزینهٔ اشتراک ندارد اما مصرف RAM/VRAM و مجوز وزن هر مدل جداگانه است.",
+    "en": "Runs models locally; no subscription cost, but RAM/VRAM usage and each model's weights license are separate concerns."
+  },
+  "endpoint": {
+    "baseUrl": "http://127.0.0.1:11434",
+    "kind": "ollama"
+  }
+}

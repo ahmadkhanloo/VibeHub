@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-26",
+  "minClientVersion": "0.1.0",
+  "apps": ["zcode", "qoder", "deepseek-harness", "opencode", "mimocode", "freebuff"],
+  "providers": ["nvidia-build", "openrouter", "ollama", "custom-openai-compatible"],
+  "offers": []
+}

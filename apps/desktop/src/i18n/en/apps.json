@@ -1,0 +1,67 @@
+{
+  "title": "Discover",
+  "filters": "Filters",
+  "openSourceOnly": "Open-source only",
+  "freeAccessType": "Free access type",
+  "allAccess": "All",
+  "freeForever": "Free forever",
+  "freeTier": "Free tier",
+  "trial": "Time-limited",
+  "adSupported": "Ad-supported",
+  "unknownAccess": "Unknown access",
+  "platform": "Platform",
+  "guiCli": "Interface",
+  "allKinds": "All",
+  "guiOnly": "GUI only",
+  "cliOnly": "CLI only",
+  "rtlVerified": "RTL verified",
+  "installedOnly": "Installed only",
+  "tabs": { "all": "All", "ide": "IDEs", "cli": "CLI agents", "providers": "Providers", "installed": "Installed" },
+  "resultsOne": "{{count}} tool",
+  "resultsMany": "{{count}} tools",
+  "noResults": "Nothing matches the filters.",
+  "card": {
+    "freeAccess": "Free access",
+    "license": "License",
+    "openSource": "Open-source",
+    "proprietary": "Proprietary",
+    "licenseUnknown": "License unknown"
+  },
+  "detailsTitle": "App details",
+  "officialSite": "Official website",
+  "officialDownload": "Official download",
+  "sections": {
+    "overview": "Overview",
+    "freeAccess": "Free access conditions",
+    "setup": "Setup steps",
+    "iran": "Iran availability evidence",
+    "capabilities": "Capabilities",
+    "troubleshoot": "Troubleshooting"
+  },
+  "capabilities": {
+    "install": "Install",
+    "launch": "Launch",
+    "rtl": "RTL",
+    "proxy": "Proxy",
+    "terminal": "Terminal",
+    "byok": "BYOK"
+  },
+  "networkAccess": {
+    "direct_tested": "Direct tested",
+    "proxy_may_be_needed": "Proxy may be needed",
+    "blocked": "Blocked or unavailable",
+    "not_tested": "Not tested"
+  },
+  "accountPolicy": {
+    "supported": "Supported",
+    "restricted": "Restricted",
+    "unknown": "Unknown",
+    "review_terms": "Review terms"
+  },
+  "communityEvidence": "Community report (unverified)",
+  "referralTitle": "Invite link (optional)",
+  "referralUses": "Use invite link",
+  "referralSkip": "Official download without invite",
+  "installedVersion": "Installed version",
+  "detectedVia": "Detected via"
+}

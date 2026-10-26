@@ -1,5 +1,7 @@
 # Qoder RTL
 
+> **یادداشت آداپتر قدیمی (۲۰۲۶-۱۰-۲۶):** این سند دربارهٔ آداپتر Qoder مبتنی بر سورس AgentRTL است. نصب‌کنندهٔ قدیمی AgentRTL انتشار VibeHub نیست و هنوز تأیید نشده که نصب‌کنندهٔ عمومی VibeHub جایگزین این قابلیت باشد. [ماتریس پذیرش انتشار](../../docs/validation/VibeHub_Release_Acceptance_Matrix.md) را ببینید.
+
 <div dir="rtl">
 
 نسخهٔ انگلیسی: [README.md](README.md)
@@ -44,8 +46,8 @@
 ### نصب خیلی سریع — یک قدم و تمام
 
 ```powershell
-git clone https://github.com/ahmadkhanloo/AgentRTL.git
-cd AgentRTL
+git clone https://github.com/ahmadkhanloo/VibeHub.git
+cd VibeHub
 powershell -ExecutionPolicy Bypass -File install.ps1 -Apps qoder
 ```
 
@@ -56,8 +58,8 @@ powershell -ExecutionPolicy Bypass -File install.ps1 -Apps qoder
 ### نصب حرفه‌ای — بازبینی کد، شخصی‌سازی، اجرا از سورس
 
 ```bash
-git clone https://github.com/ahmadkhanloo/AgentRTL.git
-cd AgentRTL
+git clone https://github.com/ahmadkhanloo/VibeHub.git
+cd VibeHub
 # worth a look: style.mjs (the CSS), injector.mjs (CDP client), start.ps1 (the launcher)
 ```
 
@@ -70,7 +72,7 @@ cd AgentRTL
 | `QODER_RTL_PORT` | `9225` | پورت DevTools؛ قفل اینجکتور یک پورت بالاتر است |
 | `QODER_RTL_EXE` | کشف خودکار | مسیر کامل `Qoder.exe` یا `Qoder IDE.exe`، اگر جایش غیرمعمول است |
 
-‏در نصب با AgentRTL Setup، اگر Qoder خودکار پیدا نشد یا در مسیر سفارشی نصب شده، مؤلفهٔ Qoder RTL را انتخاب کنید و در صفحهٔ بعد فایل اجرایی را با Browse معرفی کنید. مسیر انتخاب‌شده برای اجراهای بعدی ذخیره می‌شود.
+‏در نصب موجود و قدیمی AgentRTL Setup، اگر Qoder خودکار پیدا نشد یا در مسیر سفارشی نصب شده، مؤلفهٔ Qoder RTL را انتخاب کنید و در صفحهٔ بعد فایل اجرایی را با Browse معرفی کنید. مسیر انتخاب‌شده برای اجراهای بعدی ذخیره می‌شود.
 
 ‏کشف نسخه فقط پوشه‌ای زیر `.qoder-versions\` را برمی‌گزیند که واقعاً `resources\app.asar` داشته باشد؛ نسخه‌ای که `app.asar.qoder-pending` دارد یک آپدیت نیمه‌کاره است که بالا نمی‌آید، پس به‌جای انتخاب «بالاترین شمارهٔ نسخه» رد می‌شود.
 

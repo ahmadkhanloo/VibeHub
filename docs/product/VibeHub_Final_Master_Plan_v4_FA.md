@@ -1,6 +1,7 @@
 # VibeHub — برنامه نهایی محصول، طراحی رابط و دستور اجرای مرحله‌به‌مرحله (v4)
 
-**مبنای توسعه:** https://github.com/ahmadkhanloo/AgentRTL  
+**مخزن مبدأ پیش از مهاجرت:** https://github.com/ahmadkhanloo/AgentRTL
+**مخزن مقصد پس از مجوز و تغییر نام:** https://github.com/ahmadkhanloo/VibeHub
 **تاریخ تدوین:** ۲۶ اکتبر ۲۰۲۶  
 **ورودی طراحی ترمینال:** `mak-devline.omp.json` ارسالی مالک محصول  
 **وضعیت:** سند الزامات و پذیرش؛ این سند به‌تنهایی به معنی اجرای تغییرات در GitHub نیست.  
@@ -97,7 +98,7 @@
 ### ۲.۱ ساختار مطلوب مخزن
 
 ```text
-AgentRTL/                         # repository URL may remain unchanged
+VibeHub/                          # target repository name after authorized rename
 ├─ apps/
 │  └─ desktop/
 │     ├─ src/
@@ -391,7 +392,7 @@ Provider TestResult باید **ثابت کند چه چیزی تست شده**: `d
 
 ### ۶.۱ GitHub Release و آپدیت برنامه
 
-- Product identifier جدید: `dev.vibehub.app` یا شناسه نهایی پایدار و یکتا؛ نمایش نام `VibeHub` در Installer، Start Menu، Uninstaller، Window title و Log.
+- Product identifier پایدار و یکتا: `com.ahmadkhanloo.vibehub`؛ نمایش نام `VibeHub` در Installer، Start Menu، Uninstaller، Window title و Log.
 - یک فایل Setup قابل دانلود در صفحه Releases؛ در صورت امکان Portable جداگانه که Updater خودکار آن غیرفعال یا مطابق قابلیت واقعی باشد.
 - Tauri 2 Signed Updater: تولید جفت کلید، قرارگیری **Public key** در Client و **Private key** صرفاً در GitHub Secrets، مانع اجرا/نصب بسته بدون امضای معتبر.
 - Manifest مسیر ثابت VibeHub (مثلاً GitHub Pages `/updates/stable/latest.json`)، جدا از releases نسخه‌های تاریخی AgentRTL و جدا از content feed؛ `stable` و `beta` جدا (beta opt-in).
@@ -511,11 +512,50 @@ Provider TestResult باید **ثابت کند چه چیزی تست شده**: `d
 **اقدام‌ها:** Git tag فقط با تأیید مالک، README فارسی/انگلیسی، CONTRIBUTING، build/test instructions، screenshots واقعی، supported versions، CHANGELOG، release artifact signing، contributor template برای Adapter/Guide/Offer.  
 **Done:** کاربر Windows x64 به‌صورت رایگان از Release، VibeHub را نصب و راه‌اندازی کند، یک CLI یا IDE را پیدا کند، با یک مسیر پشتیبانی‌شده اجرا کند و بداند چگونه راهنما/آفر اضافه کند.
 
+### مرحله ۱۶ — مهاجرت مخزن به VibeHub
+
+**هدف:** آماده‌سازی تغییر نام مخزن `ahmadkhanloo/AgentRTL` به `ahmadkhanloo/VibeHub` و هماهنگ‌کردن همهٔ مراجع محصول. این مرحله به‌تنهایی اجازهٔ تغییر نام مخزن GitHub را نمی‌دهد.
+
+**اقدام‌ها:** جست‌وجوی سراسری و ثبت همهٔ ارجاع‌های مخزن در READMEها، badgeها، لینک‌های دانلود مستقل از referral، installer metadata، App ID، URLهای updater، GitHub Pages/feed، release notes، مستندات و workflowها؛ بازبینی remoteهای Git؛ بازبینی triggerها، `permissions` حداقلی، environmentها، نام Secretهای لازم، تنظیم انتشار Pages و فرایند انتشار Release؛ آماده‌سازی فهرست تغییرات و rollback.
+
+**مجوز:** تغییر نام واقعی Repository فقط پس از اجازهٔ صریح مالک انجام می‌شود. پیش از آن، هیچ درخواست rename، تنظیم GitHub، merge شاخهٔ محافظت‌شده، tag یا انتشار عمومی اجرا نمی‌شود. مقدار Secretها هرگز در لاگ/گزارش چاپ نمی‌شود. نشانی‌های قدیمی که صرفاً برای provenance تاریخی یا حفظ کارکرد AgentRTL لازم‌اند باید به‌عنوان legacy مشخص شوند، نه اینکه اشتباهاً به‌عنوان مقصد VibeHub نمایش داده شوند.
+
+**Done:** پس از rename مجاز، remote و همهٔ مقصدهای قابل‌نمایش به URL جدید برسند؛ Actions/Pages و URLهای مستقل از referral از تنظیم زندهٔ GitHub و artifactهای buildشده راستی‌آزمایی شوند؛ گزارش پیش/پس و rollback موجود باشد.
+
+### مرحله ۱۷ — انتشار Production
+
+**پیش‌نیاز:** Gate 16 کامل، مجوز صریح انتشار دریافت‌شده، شاخهٔ نامزد ادغام بازبینی‌شده، CI لازم سبز، Secret امضای updater در GitHub Actions تنظیم و کلید خصوصی فقط همان‌جا نگهداری شود.
+
+**اقدام‌ها:** پس از اجازه، ادغام کد معتبر به شاخهٔ محافظت‌شده، ساخت tag رسمی نسخه، انتشار از GitHub Actions و ساخت Release با یادداشت‌های فارسی/انگلیسی؛ ضمیمه‌کردن Windows installer، portable فقط در صورت پشتیبانی/آزمون واقعی، SHA-256، فایل‌های امضاشدهٔ Tauri updater و امضاها، سورس، مجوزها و SBOM. انتشار باید از مسیر رسمی workflow و همان commit بررسی‌شده ساخته شود.
+
+**راستی‌آزمایی:** URL عمومی هر asset را در یک نشست/محیط تمیز دانلود کن؛ فایل را با checksum منتشرشده تطبیق بده؛ امضای updater را با کلید عمومی تعبیه‌شده در برنامه verify کن؛ تعداد، نام، اندازه و hash همهٔ فایل‌ها را با خروجی CI و صفحهٔ Release تطبیق بده. artifact محلی به‌تنهایی مدرک انتشار نیست.
+
+**Done:** Release عمومی از لینک مستقیم `github.com/ahmadkhanloo/VibeHub/releases` قابل دسترسی باشد، تمام artifactهای اعلام‌شده دانلود شوند، checksum و signature درست باشند و CI URL/شمارهٔ اجرا و provenance ثبت شوند.
+
+### مرحله ۱۸ — QA پس از انتشار
+
+**پیش‌نیاز:** Gate 17 موفق. Installer حتماً از GitHub Release عمومی دانلود شود، نه از `dist/`، cache یا artifact محلی CI.
+
+**محیط‌ها و سناریوها:** آزمون clean Windows 10 و Windows 11؛ حساب کاربری و پوشه‌هایی با نویسه‌های فارسی؛ نصب، startup و حذف؛ تغییر fa/en؛ Vazirmatn آفلاین؛ هر ۸ ترکیب تم روشن/تیره؛ discovery و نصب harness؛ اجرای RTL؛ پروفایل HTTP و SOCKS5؛ نصب تم ترمینال و rollback دقیق؛ حالت آفلاین؛ راهنما، آفر و اعلان‌ها. برای هر آزمایش OS/build، installer URL، نام مسیر، نتیجه، log و screenshot ثبت شود.
+
+**محدودیت ادعا:** سرویس ثالث یا وضعیت دسترسی منطقه‌ای فقط وقتی PASS می‌گیرد که همان مورد در همان نسخه/شبکه واقعاً آزمایش شده باشد. دسترسی به Windows VM، حساب سرویس یا شبکهٔ منطقه‌ای که فراهم نیست `SKIPPED` یا `UNVERIFIED` است؛ هرگز PASS محسوب نمی‌شود.
+
+**Done:** همهٔ سناریوهای Critical در ماشین‌های پاک طبق ماتریس شواهد داشته باشند؛ خطای بحرانی در نصب، شروع برنامه، launcher، امنیت updater، ایمنی پروکسی، rollback یا حفظ داده وجود نداشته باشد.
+
+### مرحله ۱۹ — راستی‌آزمایی واقعی به‌روزرسانی
+
+**پیش‌نیاز:** Gate 17 و Gate 18، اجازهٔ صریح انتشار نسخهٔ follow-up، و نصب قبلی همان نسخهٔ عمومی Release.
+
+**اقدام‌ها:** انتشار کنترل‌شدهٔ follow-up؛ برنامهٔ نصب‌شده باید نسخهٔ موجود را تشخیص دهد، metadata امضاشده را دریافت و اعتبارسنجی کند، دانلود/اعمال update را با تأیید کاربر کامل کند و پس از restart نسخهٔ جدید را نشان دهد. تنظیمات، زبان، theme، پروفایل‌های ذخیره‌شدهٔ proxy و سایر داده‌های محلی باید حفظ شوند. تست‌های منفی شامل امضای نامعتبر، GitHub endpoint غیرقابل‌دسترسی، دانلود قطع‌شده و شکست نصب/rollback است. feed کاتالوگ، راهنما و آفر جدا از binary update به‌طور مستقل به‌روزرسانی شود.
+
+**Done:** upgrade واقعی از Release عمومی قبلی تا Release follow-up و همهٔ تست‌های منفی با log/screenshot/checksum/signature ثبت شوند؛ دادهٔ کاربر حفظ شود؛ feed محتوا بدون تعویض binary به‌روزرسانی شود. شکست در بررسی امضا، rollback یا حفظ داده پذیرش انتشار را متوقف می‌کند.
+
 ### گیت‌های بین مراحل
 
 - هر مرحله باید Native/Frontend tests و screenshots واقعی (وقتی ابزار UI در دسترس است) داشته باشد؛ عدم دسترسی Windows VM مجوز ادعای آزمون Windows نیست.
 - از تولید Mock API، Dummy Install، Static fake statuses به‌عنوان Feature نهایی جلوگیری شود؛ Mock در Storybook/fixtures مجاز و برچسب‌دار است.
-- مراحل ۰ تا ۴ پایه UX است، ۵ تا ۸ عملکرد اصلی، ۹ تا ۱۲ محتوا/آموزش، ۱۳ تا ۱۵ انتشار.
+- مراحل ۰ تا ۴ پایه UX است، ۵ تا ۸ عملکرد اصلی، ۹ تا ۱۲ محتوا/آموزش، ۱۳ تا ۱۵ نامزد انتشار، و ۱۶ تا ۱۹ مهاجرت تا پذیرش واقعی انتشار.
+- **Build برنامه یا ساخت installer محلی پایان پروژه نیست.** تعریف اتمام فقط پس از Release عمومی، QA پس از انتشار و راستی‌آزمایی update واقعی Gateهای ۱۷ تا ۱۹ برقرار می‌شود.
 - فاز تکمیلی Linux/macOS با جدول قابلیت/Adapter جداگانه پس از RC Windows شروع شود؛ نباید با ادعای Unsupported OS منتشر شود.
 
 ---
@@ -556,6 +596,12 @@ Provider TestResult باید **ثابت کند چه چیزی تست شده**: `d
 
 **معیار حداقلی نسخه پایدار:** هیچ خطای Critical در Installer، Launcher، Updater، Proxy، Restore و امنیت وجود نداشته باشد. نقص سازگاری RTL یا Proxy در یک ابزار ثالث باید به‌جای دروغ، Capability صحیح و راهنمای محدودیت داشته باشد.
 
+### ۹.۱ ماتریس پذیرش Release، وضعیت شواهد و توقف
+
+فایل عملیاتی `docs/validation/VibeHub_Release_Acceptance_Matrix.md` باید برای هر اجرای Gateهای ۱۶ تا ۱۹ وضعیت دقیق `PASS`، `FAIL`، `SKIPPED` یا `UNVERIFIED`، لینک CI، URL عمومی Release، نام و checksum artifact، screenshot و log را نگه دارد. مقدار نامعلوم یا اجرا‌نشده را به PASS تبدیل نکن.
+
+**مانع پذیرش نهایی:** شکست بحرانی در نصب، امنیت امضای updater، launch، ایمنی proxy، rollback یا حفظ دادهٔ کاربر، انتشار را مردود می‌کند. فهرست محدودیت‌های باقی‌مانده و موارد تست‌نشده باید در گزارش نهایی صریح باشد.
+
 ---
 
 ## ۱۰. گزارش مرحله‌ای اجباری ایجنت
@@ -569,13 +615,15 @@ Provider TestResult باید **ثابت کند چه چیزی تست شده**: `d
 5. `Security/license changes`: چه Permission/Installer/Font/Dependency اضافه شده.
 6. `Next stage`: پیش‌نیازهای گیت بعدی.
 
-**قاعده:** هیچ Push، Merge، Tag، Release، تغییر تنظیمات دائمی سیستم میزبان یا نصب ابزار ناخواسته بدون رضایت صریح مالک مخزن مجاز نیست. برای خروجی Repository فقط تغییرات داخل branch انجام شود؛ artefactهای build باید در مسیر شناخته‌شده قابل بررسی باشند.
+**قاعده:** هیچ Push، Merge، Tag، Release یا rename واقعی مخزن، تغییر تنظیمات دائمی سیستم میزبان یا نصب ابزار ناخواسته بدون رضایت صریح مالک مخزن مجاز نیست. برای خروجی Repository فقط تغییرات داخل branch انجام شود؛ artefactهای build باید در مسیر شناخته‌شده قابل بررسی باشند.
 
 ---
 
 ## ۱۱. منابع مرجع و لینک‌های لازم برای صحت داده‌ها
 
-- AgentRTL: https://github.com/ahmadkhanloo/AgentRTL
+- مخزن مبدأ و تاریخچهٔ مهاجرت AgentRTL (نشانی تاریخی پیش از مهاجرت): https://github.com/ahmadkhanloo/AgentRTL
+- نشانی مقصد VibeHub پس از تغییر نام مجاز: https://github.com/ahmadkhanloo/VibeHub
+- مخزن مقصد پس از rename مجاز: https://github.com/ahmadkhanloo/VibeHub
 - ZCode referral: https://zcode.z.ai/invite/CF3ZEFJR
 - OpenCode: https://opencode.ai/ ; V2 docs: https://dev.opencode.ai/v2/docs
 - MiMo Code: https://github.com/XiaomiMiMo/MiMo-Code ; Docs: https://mimo.xiaomi.com/mimocode/start

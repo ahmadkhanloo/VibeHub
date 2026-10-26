@@ -1,35 +1,33 @@
-# AgentRTL
+# VibeHub
 
-RTL fixes for AI coding apps. Choose the apps you use in one Windows installer; each app keeps its own launcher and CSS rules.
+VibeHub is a free, open-source desktop companion for discovering and configuring AI coding tools. It separates each tool's license, free-access terms, regional eligibility, and VibeHub capabilities; it does not provide model hosting or a proxy service.
 
-نسخهٔ فارسی: [README.fa.md](README.fa.md)
+**Release status:** VibeHub has not been publicly released. Do not treat a local build or the historical AgentRTL installer as the VibeHub production release. Release evidence and remaining gates are tracked in the [acceptance matrix](docs/validation/VibeHub_Release_Acceptance_Matrix.md). The planned public home is [github.com/ahmadkhanloo/VibeHub](https://github.com/ahmadkhanloo/VibeHub), pending the repository migration authorization and completion of Gates 16–19.
 
-| App | Windows | Linux / macOS |
-|---|---:|---:|
-| [ZCode](apps/ZCode/README.md) | Yes | Yes |
-| [Qoder](apps/Qoder/README.md) | Yes | — |
-| [DeepSeek Harness](apps/DeepSeekHarness/README.md) | Yes | — |
+## Development
 
-## Install
-
-Download `AgentRTL-Setup-*.exe` from [Releases](https://github.com/ahmadkhanloo/AgentRTL/releases), choose the apps to add, then finish setup. The installer checks that each selected app and Node.js 21 or newer are installed. It does not close an already-running app; fully quit it and open it from the new RTL shortcut.
-
-For a source checkout, run PowerShell from the repository folder:
+Requirements: Node.js 20 or newer, pnpm 12.15.0, a stable Rust toolchain, and WebView2 on Windows.
 
 ```powershell
-.\install.ps1 -Apps zcode,qoder,deepseek
+corepack pnpm install --frozen-lockfile
+corepack pnpm test
+corepack pnpm check
+corepack pnpm build
+corepack pnpm --filter @vibehub/desktop tauri dev
 ```
 
-The source installer creates desktop shortcuts that point into the checkout. `-WhatIf` previews them; `-Uninstall` stops injectors from this checkout and removes only shortcuts that point back to it. The source files remain in place. On Linux or macOS, the existing ZCode installer remains available:
+The web build verifies the frontend only. The Tauri runtime, native adapters, signed updater, production installer, and post-release behavior require their own gates and must not be inferred from a successful web build.
 
-```bash
-bash install.sh
-```
+## Privacy and safety
 
-## Ports and security
+- No VibeHub account, subscription, telemetry, hosted model API, or internal VPN is part of the product plan.
+- Third-party free access, open-source licensing, and regional availability are separate properties and can change.
+- Catalog and guide feeds are data; they cannot provide commands or executable code.
+- Referral signup and a tool's official download route are separate, optional actions. For ZCode, the non-referral route is [zcode.z.ai](https://zcode.z.ai/).
 
-The launchers use DevTools ports 9222 (ZCode), 9225 (Qoder), and 9228 (DeepSeek Harness). These are bound to localhost and allow local processes to inspect and control the app's windows while the app is running.
+## Project documents
 
-## License
-
-The project code is MIT licensed. Bundled Vazirmatn font files are under the SIL Open Font License 1.1; see the license files in each app folder.
+- [Persian master plan](docs/product/VibeHub_Final_Master_Plan_v4_FA.md)
+- [English implementation directive](docs/product/VibeHub_Final_Agent_Prompt_EN_v4.md)
+- [Release acceptance matrix](docs/validation/VibeHub_Release_Acceptance_Matrix.md)
+- [MIT license](LICENSE)

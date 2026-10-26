@@ -1,0 +1,18 @@
+{
+  "generic": "Something went wrong",
+  "commandFailed": "The command failed",
+  "notFound": "Not found",
+  "appNotDetected": "This app was not detected",
+  "exeMissing": "The executable is not at the expected path",
+  "portBusy": "The port is busy",
+  "portBusyHint": "Close the occupying app or set another port in settings.",
+  "alreadyRunningNoPort": "The app is already running without the debug port. Fully quit it (including the system tray) and relaunch from VibeHub.",
+  "injectorFailed": "The RTL injector could not start",
+  "proxyRequiredUnavailable": "The 'Require proxy' policy is on but the proxy is unavailable; launch was blocked.",
+  "offlineFeed": "The online feed is unreachable; bundled data is being used.",
+  "invalidUpdate": "The update file lacks a valid signature and was not installed.",
+  "downloadFailed": "Download failed",
+  "secretError": "Working with the OS vault failed",
+  "profileWriteError": "Writing the shell profile failed (read-only?)",
+  "execPolicy": "Execution Policy blocks this; adjust it yourself deliberately (we never auto-set Unrestricted)."
+}

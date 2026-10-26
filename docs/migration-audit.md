@@ -1,5 +1,7 @@
 # VibeHub Migration Audit — Gate 0
 
+> **Historical baseline:** this Gate 0 inventory describes the repository before the VibeHub implementation. Its `AgentRTL` names and the linked 2026-10-18 Windows Release are provenance for the legacy adapters, not current VibeHub installer or release instructions. See the Gate 16 migration record at the end of this document.
+
 **Date:** 2026-10-26 · **Branch:** `feat/vibehub-final` (from `main` @ `eda65ab`) · **Scope:** Phase 0 of the VibeHub master plan (`docs/product/VibeHub_Final_Master_Plan_v4_FA.md`)
 
 > **خلاصهٔ فارسی:** مخزن AgentRTL در وضعیت پایدار است: سه Adapter واقعی RTL (ZCode، Qoder، DeepSeek Harness) با شواهد آزمون زندهٔ ۱۸ اکتبر ۲۰۲۶، CI سبک، و بدون تست رفتاری در CI. سه نقص ثبت شد: (۱) خرابی مسیرهای غیر ASCII هنگام عبور خروجی فرایند فرزند با codepage قدیمی، (۲) ناهمگونی نسل Adapterها (ZCode قدیمی‌ترین و بدون فونت)، (۳) اجرا نشدن تست‌های رفتاری در CI. تم `mak-devline.omp.json` پذیرفته و فقط با یک اصلاح مجاز به `themes/terminal/` منتقل شد؛ رندر واقعی Oh My Posh 29.21.0 هر دو نسخه را مقایسه و اصلاح را اثبات کرد.
@@ -75,7 +77,7 @@ The 3 "failures" are not product-logic failures — see Defect D1. CI runs the f
 | ID | Risk | Mitigation |
 |---|---|---|
 | R1 | Node.js ≥ 21 hard prerequisite for end users (installers hard-fail without it) | Plan Gate 6: bundle as Tauri sidecar or port to Rust; no external Node at ship time |
-| R2 | Inno Setup → Tauri 2 migration; old AppId `A7E3F1B2-…` kept "so existing installs upgrade in place" conflicts with new AppID decision | Plan §6.1 allows new AppID (`dev.vibehub.app`) since no user base needs migration; record decision, keep old installer artifacts untouched in history |
+| R2 | Inno Setup → Tauri 2 migration; old AppId `A7E3F1B2-…` kept "so existing installs upgrade in place" conflicts with new AppID decision | Plan §6.1 allows a new product identifier (`com.ahmadkhanloo.vibehub`) since no user base needs migration; record decision, keep old installer artifacts untouched in history |
 | R3 | Unsigned releases today; VibeHub requires signed updater | Gate 13: Tauri updater keys (public in client, private in GitHub Secrets) |
 | R4 | Fixed CDP ports (9222/9225/9228) can conflict; env override exists but no auto-selection | Keep explicit-port policy in `packages/launcher`, detect and report conflicts (NET-02) |
 | R5 | CDP opens full window control to any local process while running | Document in-app (plan §7.5); ports bound to localhost only |
@@ -88,7 +90,7 @@ The 3 "failures" are not product-logic failures — see Defect D1. CI runs the f
 1. **History & branch:** all VibeHub work on `feat/vibehub-final`; no force-push, no history rewrite; existing `apps/*` stay functional until their `packages/*` replacements pass the same regression evidence (live-test doc + suite).
 2. **Target tree:** adopt `apps/desktop` + `packages/{core,catalog,launcher,rtl,proxy,terminal}` + `content/` per plan §2.1; additive first, delete legacy only after parity.
 3. **RTL core:** generalize Qoder's generation (style module, auto-attach, doctor) as `packages/rtl`; ZCode and DeepSeek adapters become configs + selectors on top of it.
-4. **Identity:** product id `dev.vibehub.app`, display name VibeHub, MIT stays; old AgentRTL AppId not reused.
+4. **Identity:** product id `com.ahmadkhanloo.vibehub`, display name VibeHub, MIT stays; old AgentRTL AppId not reused.
 5. **Theme:** `themes/terminal/mak-devline.omp.json` is the single accepted source; any further change needs a documented diff + render proof like §5.
 6. **Content is data, never code:** no command/URL execution from future `content/` feeds (plan §5.3) — enforce with schema validation from Gate 4.
 7. **Test wiring:** every gate adds its tests to CI; behavioral suites run on Windows runners with UTF-8 console (D1/D3).
@@ -102,3 +104,30 @@ Of the §9 matrix (28 cases): 3 partially evidenced today via `docs/validation/`
 - Toolchain: Node (have 24.20.0), pnpm, Rust toolchain + Tauri 2 CLI (to be installed with owner consent if missing).
 - Scaffold `apps/desktop` (Tauri 2 + React + TS + Vite + Tailwind) inside this branch; brand assets; safe IPC skeleton; runnable Windows dev build = Gate 1 exit.
 - Carry D1 fix into any new discovery code from day one; port the qoder-discovery suite to run under the new CI matrix.
+
+## 10. Gate 16 local repository migration preparation — 2026-10-26
+
+**Local Git remote:** `origin` fetch/push now target `https://github.com/ahmadkhanloo/VibeHub.git`. This is only the local checkout configuration; it does not rename or modify a GitHub repository.
+
+**Reference scan:** a repository-wide search for old GitHub/raw-content URLs, old clone commands, and old installer download patterns found no active VibeHub download or updater target still pointing to `AgentRTL`. Product READMEs, Cargo metadata, updater configuration, release workflows, content Pages URLs, and referral-independent ZCode download guidance now name the VibeHub target.
+
+| Retained AgentRTL reference | Classification | Handling |
+|---|---|---|
+| Source-repository labels in the Persian plan and English directive | Migration provenance | Explicitly labeled as the source URL before migration; the VibeHub target is listed separately. |
+| `docs/validation/windows-live-test.md` and the matching release URL | Historical test evidence | Banner states it is AgentRTL v1.2.0 evidence, not VibeHub Gate 18 evidence. |
+| `installer.iss`, `install.ps1`, and the three adapter directories | Preserved legacy implementation | Inno metadata is labeled legacy and its support URL points to VibeHub. The new production workflow builds Tauri bundles and does not publish the legacy installer. |
+| `AgentRTL` names within old adapter instructions | Legacy product identity | Each user-facing adapter README has a legacy notice; source checkout commands target the VibeHub repository. |
+
+**Workflow review:** local YAML inspection confirms a read-only CI workflow, a tag-only release workflow with contents write scoped to its publishing job, and a Pages deployment job scoped to `pages:write` and `id-token:write`. The release job preflights the tag against `main`, prepares a draft, validates Tauri signatures and checksums, publishes it, and then checks anonymous public downloads. The content workflow validates data before building the static feed.
+
+**Live GitHub checks:** the connected GitHub read-only metadata call confirms the current public repository is still `ahmadkhanloo/AgentRTL`, default branch `main`, with the authenticated account reporting admin permission. The branch-protection API returned `403 Resource not accessible by integration`; Pages and Actions workflow-permission settings were rejected by the connector, and secret/variable APIs are not available. Therefore branch protection, Pages source/configuration, workflow default permissions, production environment reviewers, and presence (not values) of the release key names remain `UNVERIFIED`. No secret values were requested or printed.
+
+Repository rename, protected merge, tag push, public release, and controlled follow-up release remain gated on the owner's explicit authorization.
+
+## 11. Gate 16–17 workflow hardening — 2026-10-26
+
+- Replaced the native-command coverage regex with the TypeScript AST. The previous scanner missed `proxy_config` because its return type contains nested generics; the corrected guard now reports all **23** unregistered commands and blocks release.
+- The release job now installs the same pinned Rust toolchain used by CI and runs `cargo check --locked` before packaging. The local PowerShell parser accepted all seven inline PowerShell blocks in `release.yml`.
+- `createUpdaterArtifacts: true` is the configured Tauri mode. The release workflow therefore requires and verifies signatures for the actual NSIS `.exe` and MSI `.msi` assets, rather than the ZIP assets used by Tauri's separate `v1Compatible` mode. This matches the [Tauri updater build documentation](https://v2.tauri.app/plugin/updater/).
+- Replaced the 2018 Chocolatey Minisign 0.8 verifier with upstream Minisign 0.12. The release workflow pins the archive SHA-256 published by the [Microsoft winget manifest](https://github.com/microsoft/winget-pkgs/blob/master/manifests/j/jedisct1/minisign/0.12/jedisct1.minisign.installer.yaml), then checks the upstream Minisign release signature before using it to verify VibeHub updater signatures. Local Windows verification of the archive hash and upstream signature passed.
+- Current local checks: workspace tests 16/16, TypeScript checks, content and translation validation, YAML parsing, Rust `cargo check --locked`, and Tauri `--no-bundle` executable build passed. The frontend bundle still triggers a 617.29 kB chunk warning. No remote CI run, signed installer, or public release has been produced; the native-command coverage failure remains a release blocker.

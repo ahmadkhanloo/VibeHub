@@ -1,0 +1,40 @@
+{
+  "title": "Models & APIs",
+  "tabs": { "freeProviders": "Free providers", "localModels": "Local models", "apiConnections": "API connections" },
+  "filters": {
+    "noSignup": "No signup",
+    "byok": "BYOK",
+    "local": "Local",
+    "freeQuota": "Free quota",
+    "compatible": "Compatible with {{app}}"
+  },
+  "officialUrl": "Official URL",
+  "getKeySteps": "How to get a key",
+  "requiresCard": "Requires a payment card",
+  "terms": "Usage terms",
+  "countryStatus": "Country status",
+  "lastVerified": "Last verified",
+  "nvidiaBadge": "Free development access (subject to eligibility/limits)",
+  "apiKey": "API key",
+  "apiKeyStoredVault": "The key is stored only in the Windows Credential Manager — never in files or logs.",
+  "baseUrl": "Base URL",
+  "modelId": "Model ID",
+  "testConnection": "Test connection",
+  "testConsent": "Testing sends a real request to the service and may consume quota. Continue?",
+  "testing": "Testing…",
+  "testResult": "Test result",
+  "testLevels": {
+    "dnsResolved": "DNS",
+    "httpResponse": "HTTP response",
+    "authValidated": "Key authenticated",
+    "modelResponded": "Model responded"
+  },
+  "redacted": "Sensitive keys/details are redacted from the report.",
+  "saveKey": "Save key to vault",
+  "deleteKey": "Delete key from vault",
+  "keyStored": "Key saved",
+  "noKeyStored": "No key stored",
+  "customEndpoint": "Custom OpenAI-compatible endpoint",
+  "customNote": "Cost and terms are defined by the endpoint itself.",
+  "agentIntegration": "Connecting to tools happens only through each tool's official config path; 'configuration prepared' is not the same as 'tested inside the agent'."
+}

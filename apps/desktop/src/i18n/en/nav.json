@@ -1,0 +1,16 @@
+{
+  "home": "Home",
+  "discover": "Discover",
+  "myApps": "My Apps",
+  "models": "Models & APIs",
+  "terminal": "Terminal Setup",
+  "guides": "Guides",
+  "offers": "Offers & News",
+  "doctor": "Doctor",
+  "settings": "Settings",
+  "proxy": "Proxy Center",
+  "proxyHint": "Proxy status",
+  "notifications": "Notifications",
+  "collapse": "Collapse sidebar",
+  "expand": "Expand sidebar"
+}

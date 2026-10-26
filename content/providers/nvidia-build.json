@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "nvidia-build",
+  "name": "NVIDIA API Catalog (build.nvidia.com)",
+  "officialUrl": "https://build.nvidia.com/",
+  "modelsDocUrl": "https://docs.api.nvidia.com/nim/docs/product",
+  "freeAccess": "free_tier",
+  "requiresAccount": true,
+  "requiresApiKey": true,
+  "usageTermsUrl": "https://docs.api.nvidia.com/nim/docs/product",
+  "supportedApps": {
+    "zcode": "unknown",
+    "qoder": "unknown",
+    "deepseek-harness": "unknown",
+    "opencode": "unknown",
+    "mimocode": "unknown",
+    "freebuff": "unknown"
+  },
+  "eligibilityStatus": "unknown",
+  "lastVerified": "2026-10-26",
+  "notes": {
+    "fa": "دسترسی توسعهٔ رایگان طبق شرایط پذیرش و سهمیه؛ خود سرویس API متن‌باز نیست. مجوز تجاری هر مدل و دسترسی منطقه‌ای را زمان استفاده بررسی کنید. در صورت محدودیت حساب/منطقه، توضیح میدهیم نه دور زدن آن.",
+    "en": "Free development access subject to eligibility and limits; the API service itself is not open source. Check each model's commercial license and regional availability at use time. If your account/region is restricted, we explain it, never bypass it."
+  },
+  "endpoint": {
+    "baseUrl": "https://integrate.api.nvidia.com/",
+    "kind": "nvidia-nim"
+  }
+}

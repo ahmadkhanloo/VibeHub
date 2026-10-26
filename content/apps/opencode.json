@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "id": "opencode",
+  "name": "OpenCode",
+  "summary": {
+    "fa": "ایجنت کدنویسی متنباز CLI با مدلهای رایگان منتخب از طریق Providerها",
+    "en": "Open-source CLI coding agent with selected free models via providers"
+  },
+  "kind": "cli_agent",
+  "platforms": ["windows", "linux", "macos"],
+  "websiteUrl": "https://opencode.ai/",
+  "docsUrl": "https://dev.opencode.ai/v2/docs",
+  "isOpenSource": true,
+  "licenseSpdx": "MIT",
+  "freeAccess": "free_tier",
+  "freeAccessDetails": {
+    "fa": "خود ابزار متنباز است؛ هزینهٔ مدل جدا است: با Providerهای رایگان (مثل مدلهای free در OpenRouter یا مدل محلی Ollama) قابل استفادهٔ رایگان است.",
+    "en": "The tool itself is open-source; model costs are separate: usable for free with free-tier providers (e.g. OpenRouter free models or a local Ollama model)."
+  },
+  "requiresSignup": false,
+  "requiresPaymentCard": false,
+  "sourceOfFreeAccess": "https://opencode.ai/",
+  "lastVerified": "2026-10-26",
+  "capabilities": {
+    "install": "reported",
+    "launch": "reported",
+    "rtl": "unknown",
+    "proxy": "unknown",
+    "terminal": "reported",
+    "byok": "reported"
+  },
+  "installMethods": [
+    {
+      "method": "guide",
+      "idOrUrl": "https://dev.opencode.ai/v2/docs",
+      "note": {
+        "fa": "نصب طبق مستندات رسمی؛ OpenCode 1 و 2 فرمان opencode را اشغال میکنند و نباید کنار هم نصب شوند.",
+        "en": "Install per the official docs; OpenCode 1 and 2 share the `opencode` command and must not be installed side by side."
+      }
+    }
+  ],
+  "eligibility": [
+    {
+      "countryCode": "IR",
+      "networkAccess": "not_tested",
+      "accountPolicy": "unknown",
+      "confidence": "low"
+    }
+  ]
+}

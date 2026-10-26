@@ -1,0 +1,26 @@
+{
+  "title": "Offers & News",
+  "subtitle": "Only offers with a citable source; nothing fabricated and no expired offer shown as active.",
+  "verified": "Verified",
+  "reportedNeedsCheck": "Reported / needs verification",
+  "active": "Active",
+  "upcoming": "Upcoming",
+  "expired": "Expired",
+  "readUnread": "Read/unread",
+  "markAllRead": "Mark all as read",
+  "markRead": "Mark as read",
+  "empty": "No offers in the feed. Offers are added via PR with maintainer review.",
+  "sourceUrl": "Source",
+  "eligibility": "Eligibility",
+  "regionNotes": "Region notes",
+  "notifications": {
+    "inApp": "In-app notifications",
+    "native": "System notifications (optional)",
+    "nativeHint": "Only 'verified' and 'active' offers get a system notification.",
+    "quietHours": "Quiet hours",
+    "from": "From",
+    "to": "To",
+    "checkNow": "Check offers feed",
+    "lastSynced": "Last synced"
+  }
+}

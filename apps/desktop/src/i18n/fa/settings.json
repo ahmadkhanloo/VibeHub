@@ -1,0 +1,62 @@
+{
+  "title": "تنظیمات",
+  "appearance": {
+    "title": "ظاهر",
+    "language": "زبان",
+    "mode": "حالت",
+    "modeSystem": "همراه سیستم",
+    "modeLight": "روشن",
+    "modeDark": "تاریک",
+    "family": "خانوادهٔ تم",
+    "families": { "graphite": "پیش‌فرض (Graphite)", "nord": "Nord", "catppuccin": "Catppuccin", "solarized": "Solarized" },
+    "accent": "رنگ تأکید",
+    "accents": { "auto": "خودکار", "indigo": "نیلی", "emerald": "زمردی", "violet": "بنفش", "amber": "کهربایی" },
+    "gallery": "گالری تم (پیش‌نمایش زنده)",
+    "density": "تراکم",
+    "textSize": "اندازهٔ متن"
+  },
+  "network": {
+    "title": "شبکه",
+    "openProxy": "بازکردن مرکز پروکسی"
+  },
+  "terminal": {
+    "title": "ترمینال",
+    "openTerminal": "بازکردن راه‌اندازی ترمینال"
+  },
+  "updates": {
+    "title": "به‌روزرسانی",
+    "checkNow": "بررسی به‌روزرسانی برنامه",
+    "checking": "در حال بررسی…",
+    "upToDate": "شما آخرین نسخه را دارید",
+    "newVersion": "نسخهٔ جدید موجود است",
+    "downloadInstall": "دانلود و نصب",
+    "later": "بعداً",
+    "currentVersion": "نسخهٔ فعلی",
+    "contentCheck": "بررسی به‌روزرسانی محتوا (کاتالوگ/راهنما/آفر)",
+    "lastSynced": "آخرین همگام‌سازی محتوا",
+    "autoCheck": "بررسی خودکار در شروع (فقط اطلاع، نصب با تأیید)",
+    "updatePolicy": "فایلهای به‌روزرسانی امضا‌شده نصب می‌شوند؛ نسخهٔ جعلی رد می‌شود."
+  },
+  "notifications": {
+    "title": "اعلانها",
+    "inApp": "درون‌برنامه‌ای",
+    "system": "سیستمی",
+    "offersOnlyVerified": "فقط آفرهای تأییدشده"
+  },
+  "privacy": {
+    "title": "حریم خصوصی",
+    "diagnostics": "ارسال دادهٔ تشخیصی (خاموش پیش‌فرض)",
+    "wipeCache": "پاک‌کردن کش محلی",
+    "clearCredentials": "حذف همهٔ کلیدهای ذخیره‌شده",
+    "noTelemetry": "VibeHub هیچ Telemetry اجباری ندارد."
+  },
+  "about": {
+    "title": "درباره",
+    "freeOss": "همه‌چیز در VibeHub رایگان و متن‌باز است",
+    "thirdPartyNote": "سرویسهای معرفیشده ثالثاند و شرایط/هزینه خودشان را دارند؛ نمایش در VibeHub به معنی تأیید رسمی آنها نیست.",
+    "license": "مجوز MIT",
+    "source": "سورس",
+    "thirdPartyLicenses": "مجوزهای ثالث",
+    "funding": "شفافیت: لینک دعوت ZCode از نگهدارنده حمایت می‌کند (اختیاری)."
+  }
+}

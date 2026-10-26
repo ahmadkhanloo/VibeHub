@@ -1,0 +1,33 @@
+{
+  "title": "Proxy Center",
+  "subtitle": "Register your own local proxy (e.g. v2rayN); VibeHub is not a VPN and does not guarantee tunneling all traffic.",
+  "profiles": "Profiles",
+  "newProfile": "New profile",
+  "mode": {
+    "direct": "Direct",
+    "system": "System",
+    "http": "Local HTTP",
+    "socks5": "Local SOCKS5"
+  },
+  "host": "Host",
+  "port": "Port",
+  "username": "Username",
+  "password": "Password",
+  "passwordStoredVault": "Passwords are stored only in the Windows Credential Manager.",
+  "globalProfile": "Global profile",
+  "perApp": "Per-app override",
+  "inherit": "Inherit global",
+  "requireProxy": "Require proxy",
+  "requireProxyHint": "If the proxy is unavailable, launch is blocked (fail-closed at launch time). This does not guarantee all app traffic is tunneled.",
+  "healthTitle": "Health test (3 levels)",
+  "tcp": "1) TCP connect to the local port",
+  "handshake": "2) Protocol handshake (HTTP CONNECT / SOCKS5)",
+  "request": "3) Actual request through the selected route (optional, consent-based)",
+  "testAll": "Run all three tests",
+  "testRunning": "Testing…",
+  "proxyHealthy": "Proxy is healthy",
+  "proxyUnhealthy": "Proxy did not answer",
+  "scopeNote": "A healthy proxy means exactly these three tests passed — it does not mean every IDE request is tunneled.",
+  "termsNote": "Some services (e.g. Freebuff) forbid using proxies to change your apparent location; respect each service's terms yourself.",
+  "credentialsInVault": "Credentials are kept in the OS vault (Credential Manager)."
+}

@@ -1,35 +1,33 @@
-# AgentRTL
+# VibeHub
 
-ابزارهای نمایش راست‌به‌چپ برای محیط‌های برنامه‌نویسی هوش مصنوعی. در یک نصب‌کنندهٔ ویندوز برنامه‌هایی را که می‌خواهید انتخاب کنید؛ هر برنامه لانچر و CSS جداگانهٔ خودش را دارد.
+VibeHub یک همراه دسکتاپ رایگان و متن‌باز برای پیدا کردن و پیکربندی ابزارهای AI Coding است. مجوز ابزارها، نوع دسترسی رایگان، شرایط منطقه‌ای و قابلیت‌های خود VibeHub جداگانه نمایش داده می‌شوند؛ VibeHub میزبان مدل یا سرویس پروکسی نیست.
 
-English: [README.md](README.md)
+**وضعیت انتشار:** VibeHub هنوز به‌صورت عمومی منتشر نشده است. Build محلی یا نصب‌کنندهٔ تاریخی AgentRTL را انتشار Production و نهایی VibeHub در نظر نگیرید. وضعیت شواهد و گیت‌های باقی‌مانده در [ماتریس پذیرش](docs/validation/VibeHub_Release_Acceptance_Matrix.md) ثبت می‌شود. مقصد عمومی برنامه [github.com/ahmadkhanloo/VibeHub](https://github.com/ahmadkhanloo/VibeHub) است و تغییر نام مخزن تا دریافت مجوز صریح و تکمیل گیت‌های ۱۶ تا ۱۹ انجام نمی‌شود.
 
-| برنامه | ویندوز | لینوکس / مک |
-|---|---:|---:|
-| [ZCode](apps/ZCode/README.fa.md) | بله | بله |
-| [Qoder](apps/Qoder/README.fa.md) | بله | — |
-| [DeepSeek Harness](apps/DeepSeekHarness/README.fa.md) | بله | — |
+## توسعه
 
-## نصب
-
-`AgentRTL-Setup-*.exe` را از [صفحهٔ انتشار](https://github.com/ahmadkhanloo/AgentRTL/releases) بگیرید، برنامه‌های موردنیاز را تیک بزنید و نصب را تمام کنید. نصب‌کننده وجود برنامه‌های انتخاب‌شده و Node.js نسخهٔ ۲۱ یا جدیدتر را بررسی می‌کند. برنامه‌ای که از قبل باز است بسته نمی‌شود؛ آن را کامل ببندید و از شورتکات RTL دوباره اجرا کنید.
-
-برای نصب از سورس، در PowerShell و پوشهٔ ریپو:
+پیش‌نیازها: Node.js نسخهٔ ۲۰ یا جدیدتر، pnpm نسخهٔ ۱۲٫۱۵٫۰، Rust پایدار و در ویندوز WebView2.
 
 ```powershell
-.\install.ps1 -Apps zcode,qoder,deepseek
+corepack pnpm install --frozen-lockfile
+corepack pnpm test
+corepack pnpm check
+corepack pnpm build
+corepack pnpm --filter @vibehub/desktop tauri dev
 ```
 
-این اسکریپت شورتکات‌هایی می‌سازد که مستقیم به checkout اشاره می‌کنند. `-WhatIf` پیش‌نمایش می‌دهد؛ `-Uninstall` injectorهای همین checkout را می‌بندد و فقط شورتکات‌های متعلق به آن را حذف می‌کند. فایل‌های سورس باقی می‌مانند. نصب فعلی ZCode در لینوکس و مک هم حفظ شده است:
+Build وب فقط رابط را بررسی می‌کند. اجرای Tauri، adapterهای بومی، updater امضاشده، نصب‌کنندهٔ Production و رفتار پس از انتشار گیت‌های جداگانه دارند و از موفقیت Build وب نتیجه نمی‌شوند.
 
-```bash
-bash install.sh
-```
+## حریم خصوصی و ایمنی
 
-## پورت و امنیت
+- حساب VibeHub، اشتراک، telemetry، API مدل میزبانی‌شده یا VPN داخلی جزو طرح محصول نیست.
+- دسترسی رایگان، مجوز متن‌باز و دسترسی منطقه‌ای سرویس‌های ثالث ویژگی‌های جداگانه‌اند و ممکن است تغییر کنند.
+- فید کاتالوگ و راهنما داده است و نمی‌تواند فرمان یا کد اجرایی ارائه کند.
+- ثبت‌نام referral و دانلود رسمی هر ابزار دو کار اختیاری و جدا هستند. مسیر بدون referral برای ZCode در [zcode.z.ai](https://zcode.z.ai/) قرار دارد.
 
-لانچرها برای ZCode از پورت `9222`، برای Qoder از `9225` و برای DeepSeek Harness از `9228` استفاده می‌کنند. این پورت‌ها فقط روی localhost باز می‌شوند، اما در زمان اجرای برنامه، پردازه‌های محلی می‌توانند پنجره‌های آن را بخوانند و کنترل کنند.
+## اسناد پروژه
 
-## مجوز
-
-کد پروژه تحت مجوز MIT است. فایل‌های فونت Vazirmatn مجوز SIL Open Font License 1.1 دارند؛ فایل مجوز هرکدام در پوشهٔ برنامه آمده است.
+- [پلن جامع فارسی](docs/product/VibeHub_Final_Master_Plan_v4_FA.md)
+- [دستور اجرای انگلیسی](docs/product/VibeHub_Final_Agent_Prompt_EN_v4.md)
+- [ماتریس پذیرش Release](docs/validation/VibeHub_Release_Acceptance_Matrix.md)
+- [مجوز MIT](LICENSE)

@@ -1,5 +1,7 @@
 # ZCode RTL
 
+> **Legacy adapter notice (2026-10-26):** this document covers the source-based AgentRTL RTL adapter, not the new VibeHub desktop installer. The old `AgentRTL-Setup` binaries are not VibeHub releases. VibeHub's public installer and replacement coverage remain unverified; see the [release acceptance matrix](../../docs/validation/VibeHub_Release_Acceptance_Matrix.md).
+
 <p align="center">
   <img src="../../docs/hero.png" alt="Before: a Persian answer rendered LTR and scrambled. After: correct RTL — while code blocks stay LTR." width="100%">
 </p>
@@ -46,29 +48,29 @@ ZCode RTL **touches nothing inside the app**: it uses the app's own Chromium Dev
 
 ### Quick install — one step, done
 
-**Windows** — either the **installer**: download `AgentRTL-Setup-*.exe` from [Releases](https://github.com/ahmadkhanloo/AgentRTL/releases) and double-click it (it installs the files and creates the **ZCode RTL** shortcut for you) — or the **one-liner** in PowerShell:
+**Windows legacy source install** — clone VibeHub and run the preserved adapter installer:
 
 ```powershell
-irm https://raw.githubusercontent.com/ahmadkhanloo/AgentRTL/main/install.ps1 | iex
+git clone https://github.com/ahmadkhanloo/VibeHub.git
+cd VibeHub
+powershell -ExecutionPolicy Bypass -File install.ps1 -Apps zcode
 ```
 
-**Linux / macOS** — one command in a terminal:
+**Linux / macOS legacy source install** — the script downloads the VibeHub source archive and installs the preserved adapter:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ahmadkhanloo/AgentRTL/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/ahmadkhanloo/VibeHub/main/install.sh | bash
 ```
 
-Either way you end up with a **ZCode RTL** launcher: the desktop shortcut on Windows, an applications-menu entry (plus a desktop icon) on Linux, a `ZCode RTL.app` in `~/Applications` on macOS. Start ZCode from it and RTL just works.
-
-> The Windows installer is unsigned, so SmartScreen may warn about it (choose *More info → Run anyway*), and some antivirus tools may flag it as a false positive. If that happens, use the one-liner instead — or verify the file against the `checksums-sha256.txt` attached to the release.
+These are legacy adapter instructions. They require Node.js ≥ 21 and do not claim that the adapter is included in a VibeHub public release.
 
 ### Professional install — review, customize, portable
 
-Clone and inspect the source first, then install from the checkout (identical from an extracted [Releases](../../releases) zip):
+Clone and inspect the source first, then install the preserved legacy adapter from this checkout:
 
 ```bash
-git clone https://github.com/ahmadkhanloo/AgentRTL.git
-cd AgentRTL
+git clone https://github.com/ahmadkhanloo/VibeHub.git
+cd VibeHub
 # worth a look: injector.mjs, launch.vbs / launch.sh, install.ps1 / install.sh
 powershell -ExecutionPolicy Bypass -File install.ps1   # Windows
 bash install.sh                                        # Linux / macOS
@@ -78,9 +80,9 @@ What professionals get:
 
 - **Custom DevTools port** — set `ZCODE_RTL_PORT` (default `9222`) in the environment before using the launcher; app and injector both follow it.
 - **Run from source** — the launcher works from any folder, so a git checkout can be the install location itself.
-- **Uninstall** — the source-checkout PowerShell command stops its injector and removes only its shortcut; use *Settings → Apps* to remove an AgentRTL Setup installation. On Linux/macOS, `bash install.sh --uninstall` removes the ZCode RTL copy.
+- **Uninstall** — the source-checkout PowerShell command stops its injector and removes only its shortcut; an existing installation of the retired AgentRTL Setup can be removed through *Settings → Apps*. On Linux/macOS, `bash install.sh --uninstall` removes the ZCode RTL copy.
 
-Requirements (all platforms): [ZCode](https://zcode.z.ai/invite/CF3ZEFJR) installed (new here? that's an invite link 😉) and **Node.js ≥ 21** on PATH (its built-in WebSocket is used).
+Requirements (all platforms): [ZCode official site](https://zcode.z.ai/) and download path; the optional [ZCode invite](https://zcode.z.ai/invite/CF3ZEFJR) is separate. The legacy source adapter also requires **Node.js ≥ 21** on PATH (its built-in WebSocket is used).
 
 ## ▶️ Use
 
@@ -93,7 +95,7 @@ Fully quit ZCode (also from the system tray), then start it with the new **ZCode
 - **Still LTR?** ZCode was started from the normal icon. Close it completely and start via **ZCode RTL**.
 - **Worked before, stopped after an update?** The updater relaunched ZCode without the port. Same fix: close fully → start via the shortcut.
 - **Is it running?** Windows: Task Manager → look for `node.exe` (the hidden injector). Linux/macOS: `pgrep -f injector.mjs`.
-- **Uninstall:** source checkout on Windows: `powershell -ExecutionPolicy Bypass -File install.ps1 -Uninstall`; Setup installation: remove **AgentRTL** through *Settings → Apps*; Linux/macOS: `bash install.sh --uninstall`.
+- **Uninstall:** source checkout on Windows: `powershell -ExecutionPolicy Bypass -File install.ps1 -Uninstall`; existing legacy Setup installation: remove **AgentRTL Legacy RTL Adapters** through *Settings → Apps*; Linux/macOS: `bash install.sh --uninstall`.
 
 ## 🔒 Security note
 

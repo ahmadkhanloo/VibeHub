@@ -1,0 +1,33 @@
+{
+  "title": "مرکز پروکسی",
+  "subtitle": "پروکسی محلی خودت (مثل v2rayN) را معرفی کن؛ VibeHub VPN نمی‌سازد و ترافیک را تضمینی تونل نمی‌کند.",
+  "profiles": "پروفایل‌ها",
+  "newProfile": "پروفایل جدید",
+  "mode": {
+    "direct": "مستقیم",
+    "system": "سیستم",
+    "http": "HTTP محلی",
+    "socks5": "SOCKS5 محلی"
+  },
+  "host": "میزبان",
+  "port": "پورت",
+  "username": "نام کاربری",
+  "password": "رمز",
+  "passwordStoredVault": "رمز فقط در Credential Manager ویندوز ذخیره می‌شود.",
+  "globalProfile": "پروفایل سراسری",
+  "perApp": " Override هر برنامه",
+  "inherit": "ارث‌بری از سراسری",
+  "requireProxy": "پروکسی الزامی",
+  "requireProxyHint": "اگر پروکسی در دسترس نباشد، اجرای برنامه متوقف می‌شود (fail-closed در لحظهٔ اجرا). این تضمین تونل‌شدن همهٔ ترافیک برنامه نیست.",
+  "healthTitle": "آزمون سلامت (۳ سطح)",
+  "tcp": "۱) اتصال TCP به پورت محلی",
+  "handshake": "۲) handshake پروتکل (HTTP CONNECT / SOCKS5)",
+  "request": "۳) درخواست واقعی از مسیر انتخابی (اختیاری، با اطلاع)",
+  "testAll": "اجرای هر سه آزمون",
+  "testRunning": "در حال آزمون…",
+  "proxyHealthy": "پروکسی سالم است",
+  "proxyUnhealthy": "پروکسی پاسخ نداد",
+  "scopeNote": "سالم‌بودن پروکسی یعنی همین سه آزمون؛ یعنی همهٔ درخواست‌های IDE تونل شده‌اند نیست.",
+  "termsNote": "برخی سرویس‌ها (مثل Freebuff) استفاده از پروکسی برای تغییر موقعیت جغرافیایی را ممنوع کرده‌اند؛ شرایط هر سرویس را خودتان رعایت کنید.",
+  "credentialsInVault": "رمزها در خزانهٔ سیستم (Credential Manager) نگهداری می‌شوند."
+}

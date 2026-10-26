@@ -3,3 +3,5 @@ Thumbs.db
 Desktop.ini
 docs/shot-*.png
 dist/
+node_modules/
+apps/desktop/dist/

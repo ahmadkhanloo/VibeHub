@@ -1,0 +1,272 @@
+mod domain;
+mod network;
+mod storage;
+mod system;
+
+use domain::{APP_IDS, Result};
+use serde_json::{Value, json};
+use tauri::Manager;
+
+#[tauri::command]
+async fn detect_apps(app: tauri::AppHandle) -> Result<Value> {
+    system::run(app, json!({"operation":"detect"})).await
+}
+
+#[tauri::command]
+fn proxy_list(app: tauri::AppHandle) -> Result<Value> {
+    let _lock = storage::SETTINGS_LOCK
+        .lock()
+        .map_err(|_| "Settings lock failed")?;
+    Ok(storage::load(&storage::settings(&app)?)?["profiles"].clone())
+}
+#[tauri::command]
+fn proxy_config(app: tauri::AppHandle) -> Result<Value> {
+    let _lock = storage::SETTINGS_LOCK
+        .lock()
+        .map_err(|_| "Settings lock failed")?;
+    Ok(storage::load(&storage::settings(&app)?)?["config"].clone())
+}
+#[tauri::command]
+fn proxy_save(app: tauri::AppHandle, profile: Value, password: Option<String>) -> Result<Value> {
+    let _lock = storage::SETTINGS_LOCK
+        .lock()
+        .map_err(|_| "Settings lock failed")?;
+    storage::save_profile(&storage::settings(&app)?, profile, password)
+}
+#[tauri::command]
+fn proxy_delete(app: tauri::AppHandle, id: String) -> Result<Value> {
+    let _lock = storage::SETTINGS_LOCK
+        .lock()
+        .map_err(|_| "Settings lock failed")?;
+    storage::delete_profile(&storage::settings(&app)?, &id)
+}
+#[tauri::command]
+fn proxy_set_config(app: tauri::AppHandle, cfg: Value) -> Result<()> {
+    let _lock = storage::SETTINGS_LOCK
+        .lock()
+        .map_err(|_| "Settings lock failed")?;
+    let path = storage::settings(&app)?;
+    let mut state = storage::load(&path)?;
+    domain::validate_config(
+        &cfg,
+        state["profiles"].as_array().ok_or("Invalid profiles")?,
+    )?;
+    state["config"] = cfg;
+    storage::write(&path, &state)
+}
+#[tauri::command]
+async fn proxy_test(profile: Value, level: String) -> Result<Value> {
+    network::proxy_test(profile, level).await
+}
+
+#[tauri::command]
+fn vault_set(service: String, key: String) -> Result<()> {
+    storage::vault_set(&service, &key)
+}
+#[tauri::command]
+fn vault_get(service: String) -> Result<Option<String>> {
+    storage::vault_get(&service)
+}
+#[tauri::command]
+fn vault_delete(service: String) -> Result<()> {
+    storage::vault_delete(&service)
+}
+
+#[tauri::command]
+async fn terminal_detect(app: tauri::AppHandle) -> Result<Value> {
+    system::run(app, json!({"operation":"terminal-detect"})).await
+}
+#[tauri::command]
+async fn terminal_install_ohmyposh(app: tauri::AppHandle) -> Result<Value> {
+    system::install(app, "terminal".into(), "winget", None).await
+}
+#[tauri::command]
+async fn terminal_install_font(app: tauri::AppHandle, which: String) -> Result<Value> {
+    system::run(app, json!({"operation":"font-install", "which":which})).await
+}
+#[tauri::command]
+async fn terminal_apply_theme(app: tauri::AppHandle) -> Result<Value> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let _lock = storage::SETTINGS_LOCK
+            .lock()
+            .map_err(|_| "Settings lock failed")?;
+        system::powershell(&app, json!({"operation":"terminal-apply"}))
+    })
+    .await
+    .map_err(|_| "Terminal operation failed")?
+}
+#[tauri::command]
+async fn terminal_undo(app: tauri::AppHandle) -> Result<Value> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let _lock = storage::SETTINGS_LOCK
+            .lock()
+            .map_err(|_| "Settings lock failed")?;
+        system::powershell(&app, json!({"operation":"terminal-undo"}))
+    })
+    .await
+    .map_err(|_| "Terminal operation failed")?
+}
+#[tauri::command]
+async fn doctor_run(app: tauri::AppHandle) -> Result<Value> {
+    system::run(app, json!({"operation":"doctor"})).await
+}
+#[tauri::command]
+async fn install_winget(app: tauri::AppHandle, app_id: String) -> Result<Value> {
+    system::install(app, app_id, "winget", None).await
+}
+#[tauri::command]
+async fn install_npm(app: tauri::AppHandle, app_id: String, package_name: String) -> Result<Value> {
+    system::install(app, app_id, "npm", Some(package_name)).await
+}
+
+#[tauri::command]
+async fn api_test(
+    app: tauri::AppHandle,
+    provider_id: String,
+    base_url: String,
+    model_id: String,
+    key_service: String,
+) -> Result<Value> {
+    let (profile, _) = storage::selected_profile(&storage::settings(&app)?, "*", None)?;
+    network::api_test(profile, provider_id, base_url, model_id, key_service).await
+}
+#[tauri::command]
+async fn feed_sync(app: tauri::AppHandle, feed_base_url: String) -> Result<Value> {
+    let (profile, _) = storage::selected_profile(&storage::settings(&app)?, "*", None)?;
+    network::feed_sync(profile, feed_base_url).await
+}
+
+fn launch_file(app: &tauri::AppHandle) -> Result<std::path::PathBuf> {
+    app.path()
+        .app_config_dir()
+        .map(|p| p.join("launch.json"))
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn launch_app(app: tauri::AppHandle, req: Value) -> Result<Value> {
+    let id = domain::field(&req, "appId")?.to_owned();
+    if !APP_IDS.contains(&id.as_str()) || !req["rtl"].is_boolean() {
+        return Err("Invalid launch request".into());
+    }
+    tauri::async_runtime::spawn_blocking(move || {
+        let _lock = storage::SETTINGS_LOCK.lock().map_err(|_| "Settings lock failed")?;
+        let (profile, required) = storage::selected_profile(&storage::settings(&app)?, &id, req["proxyProfileId"].as_str())?;
+        let mut request = json!({"operation":"launch", "req":req});
+        if let Some(p) = profile {
+            match p["mode"].as_str() {
+                Some("http" | "socks5") => {
+                    // An environment variable is not evidence that an Electron/CLI app honors a proxy.
+                    // Refuse required proxy launches until each app has a validated adapter.
+                    if required { return Err("Required-proxy launch is blocked: this app has no validated proxy adapter".into()); }
+                    if p["hasPassword"] == true || p["username"].as_str().is_some_and(|s| !s.is_empty()) { return Err("Authenticated child-process proxies are unsupported; credentials will not be placed in command lines or environment".into()); }
+                    request["proxyUrl"] = json!(network::proxy_url(&p)?);
+                },
+                Some("direct") => request["direct"] = json!(true),
+                _ => (),
+            }
+        }
+        let path = launch_file(&app)?;
+        let mut states = storage::read(&path, json!({}))?;
+        match system::powershell(&app, request) {
+            Ok(outcome) => { states[&id] = outcome.clone(); storage::write(&path, &states)?; Ok(outcome) },
+            Err(error) => { states[&id] = json!({"phase":"failed","error":error}); storage::write(&path, &states)?; Err(error) },
+        }
+    }).await.map_err(|_| "Launch task failed")?
+}
+#[tauri::command]
+async fn launch_state(app: tauri::AppHandle, app_id: String) -> Result<Value> {
+    let states = storage::read(&launch_file(&app)?, json!({}))?;
+    let state = &states[&app_id];
+    if state.is_null() {
+        return Ok(json!({"phase":"idle"}));
+    }
+    if state["phase"] == "failed" {
+        return Ok(state.clone());
+    }
+    system::run(app, json!({"operation":"launch-state","state":state})).await
+}
+#[tauri::command]
+async fn stop_rtl(app: tauri::AppHandle, app_id: String) -> Result<Value> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let _lock = storage::SETTINGS_LOCK
+            .lock()
+            .map_err(|_| "Settings lock failed")?;
+        let path = launch_file(&app)?;
+        let mut states = storage::read(&path, json!({}))?;
+        if states[&app_id].is_null() {
+            return Ok(json!(false));
+        }
+        let result = system::powershell(
+            &app,
+            json!({"operation":"stop-rtl","state":states[&app_id]}),
+        )?;
+        states
+            .as_object_mut()
+            .ok_or("Invalid launch state")?
+            .remove(&app_id);
+        storage::write(&path, &states)?;
+        Ok(result)
+    })
+    .await
+    .map_err(|_| "Stop task failed")?
+}
+
+#[tauri::command]
+fn app_version(app: tauri::AppHandle) -> String {
+    app.package_info().version.to_string()
+}
+
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    let builder = tauri::Builder::default()
+        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_process::init())
+        .setup(|app| {
+            if cfg!(debug_assertions) {
+                app.handle().plugin(
+                    tauri_plugin_log::Builder::default()
+                        .level(log::LevelFilter::Info)
+                        .build(),
+                )?;
+            }
+            Ok(())
+        });
+
+    #[cfg(not(debug_assertions))]
+    let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
+
+    #[cfg(debug_assertions)]
+    let builder = builder;
+
+    builder
+        .invoke_handler(tauri::generate_handler![
+            app_version,
+            detect_apps,
+            launch_app,
+            launch_state,
+            stop_rtl,
+            install_winget,
+            install_npm,
+            proxy_list,
+            proxy_save,
+            proxy_delete,
+            proxy_config,
+            proxy_set_config,
+            proxy_test,
+            terminal_detect,
+            terminal_install_ohmyposh,
+            terminal_install_font,
+            terminal_apply_theme,
+            terminal_undo,
+            doctor_run,
+            vault_set,
+            vault_get,
+            vault_delete,
+            api_test,
+            feed_sync
+        ])
+        .run(tauri::generate_context!())
+        .expect("error while building tauri application");
+}

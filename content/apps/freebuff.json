@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "id": "freebuff",
+  "name": "Freebuff",
+  "summary": {
+    "fa": "ایجنت کدنویسی با کد Apache-2.0 و دسترسی رایگان تبلیغپشتیبانی در کلاینتهای رسمی",
+    "en": "Coding agent with Apache-2.0 code and ad-supported free access in official clients"
+  },
+  "kind": "cli_agent",
+  "platforms": ["windows", "linux", "macos"],
+  "websiteUrl": "https://freebuff.com/",
+  "docsUrl": "https://github.com/CodebuffAI/freebuff",
+  "sourceRepoUrl": "https://github.com/CodebuffAI/freebuff",
+  "isOpenSource": true,
+  "licenseSpdx": "Apache-2.0",
+  "freeAccess": "ad_supported",
+  "freeAccessDetails": {
+    "fa": "کد تحت Apache-2.0 و استفادهٔ رایگان در کلاینتهای رسمی با تبلیغات پشتیبانی میشود. شرایط سرویس، اتصال به Endpointهای غیررسمی، دسترسی رباتیک و جازدن موقعیت جغرافیایی برای مزایای نامجاز را ممنوع میکند.",
+    "en": "Code is Apache-2.0 and free use is supported in official clients via ads. The terms of service forbid non-official endpoints, bot access, and misrepresenting your location for unauthorized benefits."
+  },
+  "requiresSignup": true,
+  "requiresPaymentCard": null,
+  "sourceOfFreeAccess": "https://github.com/CodebuffAI/freebuff",
+  "lastVerified": "2026-10-26",
+  "capabilities": {
+    "install": "reported",
+    "launch": "reported",
+    "rtl": "unknown",
+    "proxy": "unknown",
+    "terminal": "reported",
+    "byok": "unknown"
+  },
+  "installMethods": [
+    {
+      "method": "guide",
+      "idOrUrl": "https://github.com/CodebuffAI/freebuff",
+      "note": {
+        "fa": "نصب از مخزن/سایت رسمی؛ فقط از کلاینت رسمی CLI/Desktop/Web استفاده کنید.",
+        "en": "Install from the official repo/site; use only the official CLI/Desktop/Web clients."
+      }
+    }
+  ],
+  "eligibility": [
+    {
+      "countryCode": "IR",
+      "networkAccess": "not_tested",
+      "accountPolicy": "review_terms",
+      "sourceUrl": "https://freebuff.com/terms-of-service",
+      "confidence": "low"
+    }
+  ]
+}

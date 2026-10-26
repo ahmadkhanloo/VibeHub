@@ -1,0 +1,67 @@
+{
+  "title": "کشف ابزارها",
+  "filters": "فیلترها",
+  "openSourceOnly": "فقط متن‌باز",
+  "freeAccessType": "نوع دسترسی رایگان",
+  "allAccess": "همه",
+  "freeForever": "رایگان همیشگی",
+  "freeTier": "پلن رایگان",
+  "trial": "آزمایشی",
+  "adSupported": "تبلیغ‌پشتیبانی",
+  "unknownAccess": "دسترسی نامشخص",
+  "platform": "پلتفرم",
+  "guiCli": "رابط",
+  "allKinds": "همه",
+  "guiOnly": "فقط گرافیکی",
+  "cliOnly": "فقط CLI",
+  "rtlVerified": "RTL تأییدشده",
+  "installedOnly": "فقط نصب‌شده‌ها",
+  "tabs": { "all": "همه", "ide": "IDEها", "cli": "ایجنتهای CLI", "providers": "پروایدرها", "installed": "نصب‌شده" },
+  "resultsOne": "{{count}} ابزار",
+  "resultsMany": "{{count}} ابزار",
+  "noResults": "چیزی مطابق فیلترها پیدا نشد.",
+  "card": {
+    "freeAccess": "دسترسی رایگان",
+    "license": "مجوز",
+    "openSource": "متن‌باز",
+    "proprietary": "اختصاصی",
+    "licenseUnknown": "مجوز نامشخص"
+  },
+  "detailsTitle": "جزئیات برنامه",
+  "officialSite": "وب‌سایت رسمی",
+  "officialDownload": "دانلود رسمی",
+  "sections": {
+    "overview": "نمای کلی",
+    "freeAccess": "شرایط دسترسی رایگان",
+    "setup": "مراحل نصب",
+    "iran": "شواهد دسترسی از ایران",
+    "capabilities": "قابلیت‌ها",
+    "troubleshoot": "عیب‌یابی"
+  },
+  "capabilities": {
+    "install": "نصب",
+    "launch": "اجرا",
+    "rtl": "RTL",
+    "proxy": "پروکسی",
+    "terminal": "ترمینال",
+    "byok": "BYOK"
+  },
+  "networkAccess": {
+    "direct_tested": "مستقیم آزمون‌شده",
+    "proxy_may_be_needed": "ممکن است پروکسی لازم باشد",
+    "blocked": "مسدود/ناموجود",
+    "not_tested": "آزمون‌نشده"
+  },
+  "accountPolicy": {
+    "supported": "پشتیبانی‌شده",
+    "restricted": "محدود",
+    "unknown": "نامشخص",
+    "review_terms": "بررسی شرایط"
+  },
+  "communityEvidence": "گزارش جامعه (اثبات‌نشده)",
+  "referralTitle": "لینک دعوت (اختیاری)",
+  "referralUses": "استفاده از لینک دعوت",
+  "referralSkip": "دانلود رسمی بدون دعوت",
+  "installedVersion": "نسخهٔ نصب‌شده",
+  "detectedVia": "شناسایی از"
+}

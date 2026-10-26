@@ -1,0 +1,15 @@
+{
+  "headerTitle": "Build more. Spend less.",
+  "headerSub": "Discover, install and run AI coding tools with free access — everything in VibeHub itself is free & open source; model services are third-party with their own terms.",
+  "quickLaunch": "Quick Launch",
+  "quickLaunchEmpty": "No installed apps detected yet. Start from Discover.",
+  "featured": "Featured free tools",
+  "recommendedSetup": "Recommended setup",
+  "recommendedSetupBody": "1) Detect your installed apps 2) Set up your local proxy if needed 3) Prepare the terminal for CLI tools.",
+  "proxyStatus": "Proxy",
+  "gettingStarted": "Getting started",
+  "offersTeaser": "Verified offers",
+  "noOffers": "No verified offers right now.",
+  "openDiscover": "Go to Discover",
+  "referralSupport": "Support the maintainer"
+}

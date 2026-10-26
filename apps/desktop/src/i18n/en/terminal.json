@@ -1,0 +1,49 @@
+{
+  "title": "Terminal Setup",
+  "subtitle": "A readable, modern PowerShell terminal for CLI agents — fully optional and fully reversible.",
+  "steps": {
+    "detect": "1) Detect",
+    "preview": "2) Preview",
+    "install": "3) Install prerequisites",
+    "apply": "4) Apply",
+    "verify": "5) Verify & restore"
+  },
+  "detected": {
+    "shell": "Shell",
+    "windowsTerminal": "Windows Terminal",
+    "ohmyposh": "Oh My Posh",
+    "nerdFont": "Nerd Font",
+    "vazirmatn": "Vazirmatn font",
+    "profile": "$PROFILE path",
+    "existingTheme": "Existing configuration"
+  },
+  "themeName": "mak-devline theme",
+  "themeDesc": "Two-line prompt with Python, Git, path, status and execution-time segments; Catppuccin-adjacent colors.",
+  "previewNote": "The preview is static; the real result appears in PowerShell after applying.",
+  "installOmp": "Install Oh My Posh (winget)",
+  "ompCommand": "Install command:",
+  "installFont": "Install JetBrainsMono Nerd Font Mono",
+  "installVazir": "Install Vazirmatn (for Persian UI and terminal fallback)",
+  "fontSource": "Source: official Nerd Fonts & Vazirmatn repositories — OFL 1.1 license",
+  "applyTheme": "Apply theme to the PowerShell profile",
+  "applyWhat": "What happens: your $PROFILE is backed up and a marked idempotent block is added; no duplicate lines are created.",
+  "applyFont": "Set the selected Windows Terminal profile font",
+  "applyFontNote": "Only the selected profile, with a backup and reversible.",
+  "undo": "Fully undo VibeHub changes",
+  "undoNote": "Only the VibeHub-owned block is removed; your other customizations stay untouched.",
+  "themeApplied": "Theme applied",
+  "themeNotApplied": "Theme not applied",
+  "backupAt": "Backup at",
+  "verifyHint": "Open a test PowerShell and check the icons and Git/Python segments render correctly.",
+  "errors": {
+    "noWinget": "No winget — install Oh My Posh from ohmyposh.dev.",
+    "ompExists": "Oh My Posh is already installed.",
+    "noNerdFont": "No Nerd Font installed; icons will show as boxes without one.",
+    "profileReadonly": "The profile file is read-only.",
+    "ideMayNotApply": "IDE terminals are affected only if they load $PROFILE; this may not apply."
+  },
+  "downloadFonts": "Download fonts from the official source",
+  "downloading": "Downloading…",
+  "fontInstalled": "Installed",
+  "fontFailed": "Font download/install failed"
+}

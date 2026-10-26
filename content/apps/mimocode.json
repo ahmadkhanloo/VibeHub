@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "id": "mimocode",
+  "name": "MiMo Code",
+  "summary": {
+    "fa": "ایجنت کدنویسی CLI شیائومی با کد MIT و محدودیتهای استفادهٔ جداگانه",
+    "en": "Xiaomi's CLI coding agent; MIT-licensed code with separate use restrictions"
+  },
+  "kind": "cli_agent",
+  "platforms": ["windows", "linux", "macos"],
+  "websiteUrl": "https://mimo.xiaomi.com/mimocode/start",
+  "docsUrl": "https://mimo.xiaomi.com/mimocode/start",
+  "sourceRepoUrl": "https://github.com/XiaomiMiMo/MiMo-Code",
+  "isOpenSource": true,
+  "licenseSpdx": "MIT",
+  "freeAccess": "unknown",
+  "freeAccessDetails": {
+    "fa": "کد تحت MIT است، اما شرایط سرویس میزبانی و Use Restrictions جداگانهاند؛ سهمیههای معرفیشده بهعنوان «موقت» را دائمی فرض نکنید.",
+    "en": "Code is MIT, but hosted-service terms and Use Restrictions are separate; do not assume quotas introduced as 'temporary' are permanent."
+  },
+  "requiresSignup": null,
+  "requiresPaymentCard": null,
+  "sourceOfFreeAccess": "https://github.com/XiaomiMiMo/MiMo-code",
+  "lastVerified": "2026-10-26",
+  "capabilities": {
+    "install": "reported",
+    "launch": "reported",
+    "rtl": "unknown",
+    "proxy": "unknown",
+    "terminal": "reported",
+    "byok": "unknown"
+  },
+  "installMethods": [
+    {
+      "method": "guide",
+      "idOrUrl": "https://mimo.xiaomi.com/mimocode/start",
+      "note": {
+        "fa": "نصب از مستندات رسمی شیائومی.",
+        "en": "Install from Xiaomi's official documentation."
+      }
+    }
+  ],
+  "eligibility": [
+    {
+      "countryCode": "IR",
+      "networkAccess": "not_tested",
+      "accountPolicy": "unknown",
+      "confidence": "low"
+    }
+  ]
+}

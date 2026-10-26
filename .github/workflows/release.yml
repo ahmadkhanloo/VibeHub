@@ -1,38 +1,256 @@
-name: Release
+name: Production Release
 
 on:
   push:
     tags: ["v*"]
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  build:
+  publish:
     runs-on: windows-latest
+    environment: production
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout tagged source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
 
-      - name: Build Setup.exe and portable zip
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+
+      - name: Confirm release tag and protected-branch ancestry
         shell: pwsh
         run: |
-          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
-          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress }
-          if (-not (Test-Path $iscc)) { throw "ISCC.exe not found after installing Inno Setup" }
-          $ver = $env:GITHUB_REF_NAME -replace '^v', ''
-          & $iscc "/DMyAppVersion=$ver" installer.iss
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          tar -a -cf "dist/AgentRTL-$($env:GITHUB_REF_NAME).zip" install.ps1 cleanup.ps1 install.sh installer.iss LICENSE README.md README.fa.md apps docs
-          Get-ChildItem dist -File |
-            ForEach-Object { "{0}  {1}" -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash, $_.Name } |
-            Set-Content dist/checksums-sha256.txt
+          $tag = $env:GITHUB_REF_NAME
+          if ($tag -notmatch '^v(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$') {
+            throw "Release tag must be a semantic version: $tag"
+          }
+          git fetch origin main --depth=1
+          if ($LASTEXITCODE -ne 0) { throw 'Could not fetch protected main branch for ancestry validation' }
+          git merge-base --is-ancestor $env:GITHUB_SHA origin/main
+          if ($LASTEXITCODE -ne 0) { throw 'Release tag must point to a commit already reachable from main' }
 
-      - name: Publish GitHub release
-        uses: softprops/action-gh-release@v2
+          $config = Get-Content apps/desktop/src-tauri/tauri.conf.json -Raw | ConvertFrom-Json
+          if ("v$($config.version)" -ne $tag) { throw "Tag $tag does not match Tauri version $($config.version)" }
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
-          body_path: .github/release-body.md
-          files: |
-            dist/AgentRTL-Setup-*.exe
-            dist/AgentRTL-*.zip
-            dist/checksums-sha256.txt
-          generate_release_notes: true
+          node-version: 24
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 12.15.0
+          run_install: false
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run release preflight
+        run: |
+          pnpm test
+          pnpm check
+          pnpm build
+          pnpm i18n:check
+          pnpm content:validate
+          pnpm release:guard
+          cargo check --locked --manifest-path apps/desktop/src-tauri/Cargo.toml
+          cargo test --locked --manifest-path apps/desktop/src-tauri/Cargo.toml
+          ./tests/native-windows.ps1
+
+      - name: Require updater signing configuration
+        shell: pwsh
+        env:
+          TAURI_UPDATER_PUBLIC_KEY: ${{ vars.TAURI_UPDATER_PUBLIC_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY)) { throw 'Set the TAURI_SIGNING_PRIVATE_KEY production secret before releasing.' }
+          if ([string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD)) { throw 'Set the TAURI_SIGNING_PRIVATE_KEY_PASSWORD production secret before releasing.' }
+          node scripts/configure-updater-public-key.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build signed Windows installers and create a draft Release
+        id: tauri
+        uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: apps/desktop
+          tagName: ${{ github.ref_name }}
+          releaseName: VibeHub ${{ github.ref_name }}
+          releaseBody: |
+            VibeHub Windows release. The NSIS and MSI installers, signed updater bundles, `latest.json`, SHA-256 manifest, source archive, SBOM, and license notices are attached below.
+
+            انتشار ویندوز VibeHub. نصب‌کننده‌های NSIS و MSI، فایل‌های امضاشدهٔ به‌روزرسانی، `latest.json`، فهرست SHA-256، سورس، SBOM و اطلاعیه‌های مجوز در پیوست‌ها هستند.
+          releaseDraft: true
+          prerelease: false
+          generateReleaseNotes: true
+          uploadUpdaterJson: true
+          uploadUpdaterSignatures: true
+          args: --config src-tauri/tauri.release.conf.json
+
+      - name: Generate and attach CycloneDX SBOM
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: VibeHub-SBOM.cdx.json
+          upload-release-assets: true
+
+      - name: Attach source and license notices
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $sourceArchive = Join-Path $env:RUNNER_TEMP "VibeHub-$env:GITHUB_REF_NAME-source.zip"
+          git archive --format=zip --output=$sourceArchive $env:GITHUB_SHA
+          if ($LASTEXITCODE -ne 0) { throw 'Could not create the tagged source archive' }
+          gh release upload $env:GITHUB_REF_NAME $sourceArchive LICENSE docs/legal/THIRD_PARTY_LICENSES.md --clobber --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -ne 0) { throw 'Could not upload the source archive and license notices to the draft Release' }
+
+      - name: Install Minisign verifier
+        shell: pwsh
+        run: |
+          $version = '0.12'
+          $archiveName = "minisign-$version-win64.zip"
+          $releaseBase = "https://github.com/jedisct1/minisign/releases/download/$version"
+          $archivePath = Join-Path $env:RUNNER_TEMP $archiveName
+          $signaturePath = "$archivePath.minisig"
+          $extractPath = Join-Path $env:RUNNER_TEMP 'minisign-verifier'
+          Invoke-WebRequest -Uri "$releaseBase/$archiveName" -OutFile $archivePath
+          Invoke-WebRequest -Uri "$releaseBase/$archiveName.minisig" -OutFile $signaturePath
+
+          $expectedHash = '37B600344E20C19314B2E82813DB2BFDCC408B77B876F7727889DBD46D539479'
+          $actualHash = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash
+          if ($actualHash -ne $expectedHash) { throw "Minisign verifier archive SHA-256 mismatch: $actualHash" }
+
+          Expand-Archive -LiteralPath $archivePath -DestinationPath $extractPath -Force
+          $minisign = Join-Path $extractPath 'minisign-win64\x86_64\minisign.exe'
+          if (-not (Test-Path -LiteralPath $minisign -PathType Leaf)) { throw 'Minisign executable is missing from the pinned release archive' }
+          $minisignPublisherKey = 'RWQf6LRCGA9i53mlYecO4IzT51TGPpvWucNSCh1CBM0QTaLn73Y7GFO3'
+          & $minisign -Vm $archivePath -x $signaturePath -P $minisignPublisherKey
+          if ($LASTEXITCODE -ne 0) { throw 'Minisign verifier archive publisher signature is invalid' }
+          'Minisign 0.12 verifier archive checksum and publisher signature verified.'
+
+      - name: Verify draft artifacts and prepare SHA-256 manifest
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_UPDATER_PUBLIC_KEY: ${{ vars.TAURI_UPDATER_PUBLIC_KEY }}
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          $downloadDir = Join-Path $env:RUNNER_TEMP 'vibehub-release-draft'
+          $publicKeyPath = Join-Path $env:RUNNER_TEMP 'vibehub-updater-public-key.txt'
+          New-Item -ItemType Directory -Path $downloadDir -Force | Out-Null
+          [System.IO.File]::WriteAllText($publicKeyPath, $env:TAURI_UPDATER_PUBLIC_KEY.Trim() + "`n", [System.Text.UTF8Encoding]::new($false))
+          gh release download $tag --dir $downloadDir --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -ne 0) { throw 'Could not download all draft Release assets for verification' }
+
+          $assets = @(Get-ChildItem -LiteralPath $downloadDir -File)
+          $installers = @($assets | Where-Object { $_.Name -match '\.msi$|setup\.exe$' })
+          if ($installers.Count -lt 2) { throw 'Expected both MSI and NSIS Windows installers in the draft Release' }
+          if (-not ($installers.Name -match '\.msi$')) { throw 'MSI installer is missing' }
+          if (-not ($installers.Name -match 'setup\.exe$')) { throw 'NSIS setup installer is missing' }
+          foreach ($installer in $installers) {
+            if (-not (Test-Path -LiteralPath "$($installer.FullName).sig")) { throw "Updater signature is missing for $($installer.Name)" }
+          }
+          if (-not ($assets.Name -contains 'latest.json')) { throw 'Tauri updater latest.json is missing' }
+          if (-not ($assets.Name -contains 'VibeHub-SBOM.cdx.json')) { throw 'CycloneDX SBOM is missing' }
+          if (-not ($assets.Name -contains 'LICENSE')) { throw 'MIT license notice is missing' }
+          if (-not ($assets.Name -contains 'THIRD_PARTY_LICENSES.md')) { throw 'Third-party license notice is missing' }
+          if (-not (@($assets | Where-Object Name -like '*-source.zip').Count)) { throw 'Tagged source archive is missing' }
+
+          $latest = Get-Content (Join-Path $downloadDir 'latest.json') -Raw | ConvertFrom-Json
+          if (-not $latest.platforms) { throw 'latest.json has no updater platforms' }
+          $expectedVersion = $tag.Substring(1)
+          if (($latest.version -replace '^v', '') -ne $expectedVersion) { throw "latest.json version does not match release tag $tag" }
+          foreach ($platform in $latest.platforms.PSObject.Properties) {
+            if ([string]::IsNullOrWhiteSpace([string]$platform.Value.url) -or [string]::IsNullOrWhiteSpace([string]$platform.Value.signature)) {
+              throw "latest.json has an incomplete updater entry for $($platform.Name)"
+            }
+            $updaterUri = [Uri]$platform.Value.url
+            $assetName = [Uri]::UnescapeDataString(($updaterUri.AbsolutePath -split '/')[-1])
+            if (-not ($assets.Name -contains $assetName)) { throw "Updater URL has no matching Release asset: $assetName" }
+            $assetSignaturePath = Join-Path $downloadDir "$assetName.sig"
+            if (-not (Test-Path -LiteralPath $assetSignaturePath)) { throw "Updater JSON has no signed Release asset: $assetName" }
+            $assetSignature = (Get-Content -LiteralPath $assetSignaturePath -Raw).Trim()
+            if ($assetSignature -ne ([string]$platform.Value.signature).Trim()) { throw "Updater JSON signature does not match the signed Release asset: $assetName" }
+          }
+
+          foreach ($signature in @($assets | Where-Object Name -like '*.sig')) {
+            $payloadPath = $signature.FullName.Substring(0, $signature.FullName.Length - 4)
+            if (-not (Test-Path -LiteralPath $payloadPath)) { throw "Signature has no matching payload: $($signature.Name)" }
+            & $minisign -Vm $payloadPath -x $signature.FullName -p $publicKeyPath
+            if ($LASTEXITCODE -ne 0) { throw "Minisign verification failed for $($signature.Name)" }
+          }
+
+          $manifestPath = Join-Path $downloadDir 'checksums-sha256.txt'
+          $lines = @($assets | Sort-Object Name | ForEach-Object {
+            $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $($_.Name)"
+          })
+          [System.IO.File]::WriteAllLines($manifestPath, $lines, [System.Text.UTF8Encoding]::new($false))
+          gh release upload $tag $manifestPath --clobber --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -ne 0) { throw 'Could not upload the SHA-256 manifest' }
+
+      - name: Publish the verified Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release edit $env:GITHUB_REF_NAME --draft=false --latest --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -ne 0) { throw 'Could not publish the verified draft Release' }
+
+      - name: Verify public downloads, checksums, and signatures
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_UPDATER_PUBLIC_KEY: ${{ vars.TAURI_UPDATER_PUBLIC_KEY }}
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          $release = gh release view $tag --json assets,isDraft,url --repo $env:GITHUB_REPOSITORY | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { throw 'Could not inspect the published Release' }
+          if ($release.isDraft) { throw 'Release is still a draft' }
+          $publicDir = Join-Path $env:RUNNER_TEMP 'vibehub-public-release'
+          $publicKeyPath = Join-Path $env:RUNNER_TEMP 'vibehub-updater-public-key.txt'
+          New-Item -ItemType Directory -Path $publicDir -Force | Out-Null
+          [System.IO.File]::WriteAllText($publicKeyPath, $env:TAURI_UPDATER_PUBLIC_KEY.Trim() + "`n", [System.Text.UTF8Encoding]::new($false))
+
+          foreach ($asset in $release.assets) {
+            $url = $asset.browserDownloadUrl
+            if ([string]::IsNullOrWhiteSpace($url)) { throw "Release asset has no browser download URL: $($asset.name)" }
+            $target = Join-Path $publicDir $asset.name
+            Invoke-WebRequest -Uri $url -OutFile $target -MaximumRedirection 10
+          }
+          $checksumPath = Join-Path $publicDir 'checksums-sha256.txt'
+          if (-not (Test-Path $checksumPath)) { throw 'Published SHA-256 manifest cannot be downloaded publicly' }
+          $expected = @{}
+          foreach ($line in Get-Content $checksumPath) {
+            if ($line -match '^([0-9a-fA-F]{64})  (.+)$') { $expected[$Matches[2]] = $Matches[1].ToLowerInvariant() }
+            else { throw "Invalid SHA-256 manifest line: $line" }
+          }
+          foreach ($asset in $release.assets | Where-Object name -ne 'checksums-sha256.txt') {
+            if (-not $expected.ContainsKey($asset.name)) { throw "Published checksum missing for $($asset.name)" }
+            $actual = (Get-FileHash -LiteralPath (Join-Path $publicDir $asset.name) -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($actual -ne $expected[$asset.name]) { throw "Public download checksum mismatch for $($asset.name)" }
+          }
+          foreach ($signature in @(Get-ChildItem -LiteralPath $publicDir -File | Where-Object Name -like '*.sig')) {
+            $payloadPath = $signature.FullName.Substring(0, $signature.FullName.Length - 4)
+            & $minisign -Vm $payloadPath -x $signature.FullName -p $publicKeyPath
+            if ($LASTEXITCODE -ne 0) { throw "Public updater signature verification failed for $($signature.Name)" }
+          }
+          "Verified publicly downloadable Release: $($release.url)" | Add-Content $env:GITHUB_STEP_SUMMARY

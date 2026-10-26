@@ -22,10 +22,10 @@ if [ "${1:-}" = "--uninstall" ]; then
 fi
 
 # --- resolve source: this checkout, or a fresh download (curl | bash mode) ---
-REPO="https://github.com/ahmadkhanloo/AgentRTL"
+REPO="https://github.com/ahmadkhanloo/VibeHub"
 SRC="$(cd "$(dirname "$0")" && pwd)"
 if [ ! -f "$SRC/apps/ZCode/injector.mjs" ]; then
-  echo "Downloading AgentRTL..."
+  echo "Downloading VibeHub source for the legacy ZCode RTL adapter..."
   TMP="$(mktemp -d)"
   trap 'rm -rf "$TMP"' EXIT
   if command -v curl >/dev/null 2>&1; then
@@ -34,15 +34,15 @@ if [ ! -f "$SRC/apps/ZCode/injector.mjs" ]; then
     wget -qO "$TMP/src.tar.gz" "$REPO/archive/refs/heads/main.tar.gz"
   else
     echo "Neither curl nor wget found. Clone and run instead:" >&2
-    echo "  git clone $REPO.git && cd AgentRTL && bash install.sh" >&2
+    echo "  git clone $REPO.git && cd VibeHub && bash install.sh" >&2
     exit 1
   fi
   tar -xzf "$TMP/src.tar.gz" -C "$TMP"
-  SRC_GLOB=("$TMP"/AgentRTL-*/)
+  SRC_GLOB=("$TMP"/VibeHub-*/)
   SRC="${SRC_GLOB[0]:%/}"
   if [ ! -d "$SRC" ]; then
     echo "Unexpected archive layout. Clone and run instead:" >&2
-    echo "  git clone $REPO.git && cd AgentRTL && bash install.sh" >&2
+    echo "  git clone $REPO.git && cd VibeHub && bash install.sh" >&2
     exit 1
   fi
 fi
