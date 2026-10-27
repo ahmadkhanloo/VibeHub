@@ -81,6 +81,10 @@ jobs:
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Prepare checksum-pinned Node.js and RTL installer payload
+        shell: pwsh
+        run: ./scripts/prepare-windows-rtl-payload.ps1
+
       - name: Run release preflight
         run: |
           pnpm test
@@ -105,10 +109,6 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./tests/native-array-results.ps1
           ./tests/native-windows.ps1
-
-      - name: Prepare checksum-pinned Node.js and RTL installer payload
-        shell: pwsh
-        run: ./scripts/prepare-windows-rtl-payload.ps1
 
       - name: Verify private runtime resolution and Unicode path persistence
         shell: pwsh

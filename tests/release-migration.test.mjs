@@ -4,6 +4,13 @@ import test from 'node:test';
 
 const read = (path) => readFile(new URL(path, import.meta.url), 'utf8');
 
+test('release prepares bundled resources before Rust preflight needs them', async () => {
+  const workflow = await read('../.github/workflows/release.yml');
+  const prepare = workflow.indexOf('run: ./scripts/prepare-windows-rtl-payload.ps1');
+  const preflight = workflow.indexOf('- name: Run release preflight');
+  assert.ok(prepare >= 0 && prepare < preflight);
+});
+
 test('the Persian plan and English agent directive require gates 16 through 19', async () => {
   const [plan, directive] = await Promise.all([
     read('../docs/product/VibeHub_Final_Master_Plan_v4_FA.md'),
