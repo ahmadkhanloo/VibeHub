@@ -100,6 +100,7 @@ jobs:
         shell: pwsh
         run: |
           ./tests/native-array-results.ps1
+          ./tests/updater-signature-exit.ps1
           ./tests/native-windows.ps1
 
   windows-tauri-build:

@@ -108,6 +108,7 @@ jobs:
           ./tests/rtl-paths.ps1
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./tests/native-array-results.ps1
+          ./tests/updater-signature-exit.ps1
           ./tests/native-windows.ps1
 
       - name: Verify private runtime resolution and Unicode path persistence
