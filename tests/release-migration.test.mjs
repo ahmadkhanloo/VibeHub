@@ -11,6 +11,12 @@ test('release prepares bundled resources before Rust preflight needs them', asyn
   assert.ok(prepare >= 0 && prepare < preflight);
 });
 
+test('release SBOM attachment uses the filename required by artifact verification', async () => {
+  const workflow = await read('../.github/workflows/release.yml');
+  assert.match(workflow, /artifact-name: VibeHub-SBOM\.cdx\.json/);
+  assert.match(workflow, /assets\.Name -contains 'VibeHub-SBOM\.cdx\.json'/);
+});
+
 test('the Persian plan and English agent directive require gates 16 through 19', async () => {
   const [plan, directive] = await Promise.all([
     read('../docs/product/VibeHub_Final_Master_Plan_v4_FA.md'),

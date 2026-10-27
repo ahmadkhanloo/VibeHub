@@ -211,6 +211,7 @@ jobs:
         with:
           path: .
           format: cyclonedx-json
+          artifact-name: VibeHub-SBOM.cdx.json
           output-file: VibeHub-SBOM.cdx.json
           upload-release-assets: true
 
