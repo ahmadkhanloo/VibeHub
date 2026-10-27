@@ -21,6 +21,8 @@ try {
     [IO.File]::AppendAllText($payload, ' tampered')
     & $Minisign -Vm $payload -x $signaturePath -p $keyPath 2>&1 | Out-Null
     if ($LASTEXITCODE -eq 0) { throw 'Tampered updater payload was accepted' }
+    # The rejected tampered payload is expected; do not fail the caller's shell.
+    $global:LASTEXITCODE = 0
     'Updater signing roundtrip passed; tampered payload rejected. Private material not printed.'
 } finally {
     $resolved = [IO.Path]::GetFullPath($sandbox)
