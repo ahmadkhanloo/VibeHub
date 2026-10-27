@@ -170,6 +170,14 @@ jobs:
           New-Item -ItemType Directory -Path $verifyDir -Force | Out-Null
           gh release download $tag --pattern 'latest.json' --dir $verifyDir --repo $env:GITHUB_REPOSITORY
           if ($LASTEXITCODE -ne 0) { throw 'Could not inspect latest.json before renaming the standard Setup asset' }
+          gh release download $tag --pattern '*.sig' --dir $verifyDir --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -ne 0) { throw 'Could not download updater signatures' }
+          $releasePath = Join-Path $verifyDir 'release.json'
+          [IO.File]::WriteAllText($releasePath, ($release | ConvertTo-Json -Depth 20), [Text.UTF8Encoding]::new($false))
+          node scripts/normalize-updater-release.mjs (Join-Path $verifyDir 'latest.json') $releasePath $verifyDir
+          if ($LASTEXITCODE -ne 0) { throw 'Could not normalize public signed updater URLs' }
+          gh release upload $tag (Join-Path $verifyDir 'latest.json') --clobber --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -ne 0) { throw 'Could not upload normalized updater metadata' }
           $latest = Get-Content (Join-Path $verifyDir 'latest.json') -Raw | ConvertFrom-Json
           foreach ($platform in $latest.platforms.PSObject.Properties) {
             $updaterUri = [Uri]$platform.Value.url
@@ -186,6 +194,14 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Could not remove the versioned Setup asset from the draft Release' }
           gh release upload $tag $stableSetup --repo $env:GITHUB_REPOSITORY
           if ($LASTEXITCODE -ne 0) { throw 'Could not upload VibeHub-Setup.exe to the draft Release' }
+          $versionedSignature = Join-Path $verifyDir "$($setups[0].name).sig"
+          if (-not (Test-Path -LiteralPath $versionedSignature)) { throw 'Setup signature is missing' }
+          $stableSignature = "$stableSetup.sig"
+          Copy-Item -LiteralPath $versionedSignature -Destination $stableSignature
+          gh release delete-asset $tag "$($setups[0].name).sig" --yes --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -ne 0) { throw 'Could not rename the versioned Setup signature' }
+          gh release upload $tag $stableSignature --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -ne 0) { throw 'Could not upload VibeHub-Setup.exe.sig' }
 
       - name: Generate and attach CycloneDX SBOM
         uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
@@ -336,7 +352,7 @@ jobs:
           [System.IO.File]::WriteAllText($publicKeyPath, $decodedPublicKey, [System.Text.UTF8Encoding]::new($false))
 
           foreach ($asset in $release.assets) {
-            $url = $asset.browserDownloadUrl
+            $url = $asset.url
             if ([string]::IsNullOrWhiteSpace($url)) { throw "Release asset has no browser download URL: $($asset.name)" }
             $target = Join-Path $publicDir $asset.name
             Invoke-WebRequest -Uri $url -OutFile $target -MaximumRedirection 10
