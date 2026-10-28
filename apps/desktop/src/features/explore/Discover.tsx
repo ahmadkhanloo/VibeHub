@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { SlidersHorizontal } from 'lucide-react';
 import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { filterApps } from "@catalog";
@@ -18,6 +20,8 @@ export function DiscoverPage() {
   const [params, setParams] = useSearchParams();
   const catalog = useCatalog();
   const ctx = useToolContext();
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const activeFilters = Number(params.get('oss') === '1') + Number(params.get('rtl') === '1');
   const tabs = ["all", "ide", "cli", "providers", "installed"];
   const tab = tabs.includes(params.get("tab") ?? "")
     ? params.get("tab")!
@@ -51,7 +55,7 @@ export function DiscoverPage() {
     });
   return (
     <div className="space-y-6">
-      <PageHeader title={t("ux:discover")} description={t("ux:discoverSub")} />
+      <PageHeader title={t("ux:discover")} actions={<Button aria-expanded={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)}><SlidersHorizontal size={16} aria-hidden="true" />{t("ux:filters")}{activeFilters > 0 && <> <span>({activeFilters})</span></>}</Button>} />
       <Tabs
         panelId="discover-results"
         label={t("apps:filters")}
@@ -59,7 +63,7 @@ export function DiscoverPage() {
         onChange={(v) => change("tab", v === "all" ? "" : v)}
         items={tabs.map((value) => ({ value, label: t("apps:tabs." + value) }))}
       />
-      <div className="flex flex-wrap gap-4 text-sm">
+      {filtersOpen && <div className="flex flex-wrap gap-4 rounded-lg border border-border bg-surface p-4 text-sm">
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -76,18 +80,14 @@ export function DiscoverPage() {
           />
           {t("apps:rtlVerified")}
         </label>
-        {query && (
-          <Button size="sm" onClick={() => change("q", "")}>
-            {t("ux:clearSearch")}: {query}
-          </Button>
-        )}
-      </div>
+      </div>}
       {tab === "installed" && ctx.errors.length > 0 && (
         <ErrorNotice
           error={ctx.errors.join("\n")}
           onRetry={() => void ctx.refresh()}
         />
       )}
+      {query && <Button size="sm" onClick={() => change("q", "")}>{t("ux:clearSearch")}: {query}</Button>}
       <p role="status" className="vh-section-kicker">
         {t("ux:searchCount", {
           count: tab === "providers" ? services.length : results.length,
@@ -120,7 +120,7 @@ export function DiscoverPage() {
           ))}
         </div>
       ) : results.length ? (
-        <div className="vh-tool-list">
+        <div className="vh-app-grid">
           {results.map((app) => (
             <CatalogRow
               key={app.id}

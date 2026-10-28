@@ -1,0 +1,46 @@
+{
+  "reviewedOn": "2026-10-27",
+  "notice": "Brand marks belong to their respective owners and identify the listed third-party applications.",
+  "assets": [
+    {
+      "file": "zcode.png",
+      "source": "https://zcode.z.ai/",
+      "note": "Existing bundled favicon; visually reviewed."
+    },
+    {
+      "file": "qoder.png",
+      "source": "https://qoder.com/favIcon.svg",
+      "note": "Existing bundled favicon matches the official SVG."
+    },
+    {
+      "file": "deepseek.png",
+      "source": "https://www.deepseek.com/",
+      "note": "Existing bundled DeepSeek mark; visually reviewed."
+    },
+    {
+      "file": "freebuff.png",
+      "source": "https://freebuff.com/favicon/apple-touch-icon.png?v=2026-09-21",
+      "note": "Existing bundled app icon; visually reviewed."
+    },
+    {
+      "file": "mimocode.png",
+      "source": "https://cdn.cnbj1.fds.api.mi-img.com/aife/mimo-blog-fe/doc_build/mimo.ico",
+      "note": "Existing bundled icon matches the official MiMo favicon."
+    },
+    {
+      "file": "opencode.png",
+      "source": "https://opencode.ai/",
+      "note": "Existing bundled OpenCode mark; visually reviewed."
+    },
+    {
+      "file": "antigravity.png",
+      "source": "https://antigravity.google/",
+      "note": "Copied unchanged from the installed official Antigravity IDE resources/app/resources/win32/code_150x150.png."
+    },
+    {
+      "file": "chatgpt.svg",
+      "source": "https://github.com/openai/openai-realtime-console/blob/main/client/assets/openai-logomark.svg",
+      "note": "Unmodified official OpenAI logomark, retrieved using the GitHub contents API; brand guidance https://openai.com/brand/."
+    }
+  ]
+}

@@ -46,7 +46,12 @@ export interface RtlComponentStatus {
 export interface EditorLaunchOutcome {
   ok: boolean;
   id: string;
-  pid: number;
+  pid?: number;
+  rtl?: boolean;
+  port?: number;
+  injectorPid?: number;
+  injectorPath?: string;
+  since?: string;
   detail: string;
 }
 
@@ -57,6 +62,7 @@ export interface FontInstallResult {
 }
 
 export interface ApiTestReport {
+  authRequired?: boolean;
   dnsResolved: boolean;
   httpResponse: boolean;
   authValidated: boolean;
@@ -94,12 +100,23 @@ export interface FeedSyncResult {
   guides?: Record<string, string>;
 }
 
+const feedFlights = new Map<string, Promise<FeedSyncResult>>();
+const accountReads = new Map<string, Promise<DesktopAccountsSnapshot>>();
+
 export const ipc = {
+  appAccounts: (appId: string, action: string, payload: Record<string, unknown> = {}) => {
+    if (action !== 'list') return invoke<DesktopAccountsSnapshot>('app_accounts', { appId, action, payload });
+    const current = accountReads.get(appId); if (current) return current;
+    const pending = invoke<DesktopAccountsSnapshot>('app_accounts', { appId, action, payload }).finally(() => { if (accountReads.get(appId) === pending) accountReads.delete(appId); });
+    accountReads.set(appId, pending); return pending;
+  },
+  codexAccounts: (action: AccountsAction, payload: Record<string, unknown> = {}) => invoke<AccountsSnapshot>('codex_accounts', { action, payload }),
   detectApps: () => invoke<DetectedApp[]>('detect_apps'),
   detectEditors: () => invoke<DetectedEditor[]>('detect_editors'),
   rtlComponents: () => invoke<RtlComponentStatus[]>('rtl_components'),
-  launchEditor: (editorId: string) => invoke<EditorLaunchOutcome>('launch_editor', { editorId }),
+  launchEditor: (editorId: string, rtl = false) => invoke<EditorLaunchOutcome>('launch_editor', { editorId, rtl }),
   launchApp: (req: LaunchRequest) => invoke<LaunchOutcome>('launch_app', { req }),
+  launchStates: (appIds: string[]) => invoke<Record<string, LaunchState>>('launch_states', { appIds }),
   launchState: (appId: string) => invoke<LaunchState>('launch_state', { appId }),
   stopRtl: (appId: string) => invoke<boolean>('stop_rtl', { appId }),
 
@@ -139,6 +156,8 @@ export const ipc = {
   providerConnectionTest: (id: string) => invoke<ApiTestReport>('provider_connection_test', { id }),
 
   feedSync: async (feedBaseUrl: string): Promise<FeedSyncResult> => {
+    const existing = feedFlights.get(feedBaseUrl); if (existing) return existing;
+    const pending = (async () => {
     const result = await invoke<FeedSyncResult>('feed_sync', { feedBaseUrl });
     if (!result.ok || !result.catalog) throw new Error(result.detail || 'Incomplete content feed');
     // Shared strict schemas and executable-payload checks run before any data is used.
@@ -146,7 +165,39 @@ export const ipc = {
     const catalog = loadCatalog(result.catalog);
     const guides = validateRemoteGuides(result.guides, catalog);
     applyRemoteCatalog(catalog, guides);
+    try { const stamps = JSON.parse(localStorage.getItem('vibehub.feed.success.v1') ?? '{}'); stamps[feedBaseUrl] = Date.now(); localStorage.setItem('vibehub.feed.success.v1', JSON.stringify(stamps)); localStorage.removeItem('vibehub.feed.failure.v1'); } catch { /* Valid in-memory catalog remains available. */ }
+    window.dispatchEvent(new Event('vibehub:feed-synced'));
     return { ...result, catalog };
+    })();
+    feedFlights.set(feedBaseUrl, pending);
+    try { return await pending; }
+    catch (error) {
+      try { localStorage.setItem('vibehub.feed.failure.v1', JSON.stringify({ url: feedBaseUrl, at: Date.now() })); } catch { /* Cache remains usable. */ }
+      window.dispatchEvent(new Event('vibehub:feed-failed'));
+      throw error;
+    } finally { feedFlights.delete(feedBaseUrl); }
   },
   appVersion: () => invoke<string>('app_version'),
 };
+
+export type AccountsAction = 'list' | 'login' | 'cancel' | 'import' | 'importJson' | 'refresh' | 'rename' | 'delete' | 'switch' | 'dismiss' | 'settings';
+export interface CodexAccount {
+  id: string; name: string; email: string; plan: string | null; checkedAt: number | null; error: string | null;
+  windows: { bucket: string; name: string; remaining: number | null; minutes: number | null; resetsAt: number | null }[];
+}
+export interface AccountsSnapshot {
+  accounts: CodexAccount[]; activeId: string | null; pendingId: string | null; notice: string | null;
+  settings: { enabled: boolean; threshold: number }; lastSwitch: number; cliReady: boolean; nativePreview?: boolean;
+  supportedVersion: string; desktopRunning: boolean; desktopVerified: boolean; loginPending: boolean;
+}
+
+export interface DesktopAccount {
+  id: string; name: string; email: string; plan: string; checkedAt: number | null; error: string | null;
+  quotaError?: string | null; expiresAt?: number | null;
+  usage: { label: string; remaining?: number | null; granted?: number | string | null; unit: string; resetsAt?: number | string | null }[];
+}
+export interface DesktopAccountsSnapshot {
+  appId: string; accounts: DesktopAccount[]; activeId: string | null; notice: string | null;
+  version: string; supportedVersion: string; desktopRunning: boolean; liveSwitchVerified: boolean;
+  capabilities: { canImport: boolean; canLogin: boolean; canRefresh: boolean; canSwitch: boolean };
+}

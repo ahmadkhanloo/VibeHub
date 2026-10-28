@@ -1,3 +1,4 @@
+import { Tooltip } from '@/components/Tooltip';
 import { useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -62,7 +63,7 @@ export function ProxyProfileEditor({ profile, onClose, onSaved }: {
           {field('password', t('proxy:password'), <Input id={`${id}-password`} dir="ltr" type="password" autoComplete="new-password" value={password} placeholder={draft.hasPassword ? t('connectionsUx:keepPassword') : ''} onChange={(e) => setPassword(e.target.value)} />)}
         </>}
       </fieldset>
-      <p className="text-sm leading-6 text-muted">{t('proxy:passwordStoredVault')}</p>
+      <Tooltip text={t('proxy:passwordStoredVault')} />
       {local && (draft.username || password || draft.hasPassword) && <p className="text-sm text-warning">{t('connectionsUx:authenticatedLaunch')}</p>}
       {error != null && <ErrorNotice error={error} />}
       <div className="flex justify-end gap-2"><Button disabled={busy} onClick={onClose}>{t('common:cancel')}</Button><Button type="submit" variant="primary" loading={busy}>{t('common:save')}</Button></div>
@@ -86,7 +87,7 @@ export function ToolProxy({ appId }: { appId: string }) {
     finally { setBusy(false); }
   };
   return <div className="space-y-3" data-testid="tool-proxy">
-    <p className="text-sm leading-6 text-muted">{t('connectionsUx:toolProxyIntro')}</p>
+    <Tooltip text={t('connectionsUx:toolProxyIntro')} />
     {!proxyConfig ? <ErrorNotice error={t('connectionsUx:proxyReadFailed')} onRetry={() => { void refreshProxy().catch(setError); }} /> : <>
       <div className="flex flex-wrap items-end gap-3">
         <label className="block min-w-56 flex-1 space-y-2 text-sm"><span className="block font-medium">{t('connectionsUx:thisToolProxy')}</span>
@@ -101,7 +102,7 @@ export function ToolProxy({ appId }: { appId: string }) {
       {saved && <p role="status" className="text-sm text-success">{t('connectionsUx:toolProxySaved')}</p>}
     </>}
     {error != null && <ErrorNotice error={error} />}
-    <p className="text-sm leading-6 text-muted">{t('connectionsUx:proxyScope')}</p>
+    <p className="text-sm leading-7 text-muted">{t('connectionsUx:proxyScope')}</p>
     <Link className="text-sm text-primary underline underline-offset-4" to="/proxy">{t('connectionsUx:manageProxy')}</Link>
     {editing && <ProxyProfileEditor key={editing.id} profile={editing} onClose={() => setEditing(null)} onSaved={async (profile) => {
       await refreshProxy();

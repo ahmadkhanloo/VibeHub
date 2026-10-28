@@ -10,7 +10,7 @@ export async function buildContentSite(destination = join(projectRoot, 'dist-pag
   const contentRoot = join(projectRoot, 'content');
   await mkdir(feedRoot, { recursive: true });
 
-  for (const name of ['apps', 'providers', 'guides', 'schemas', 'snapshots']) {
+  for (const name of ['apps', 'providers', 'guides', 'learning', 'schemas', 'snapshots']) {
     const source = join(contentRoot, name);
     try {
       await cp(source, join(feedRoot, name), { recursive: true, force: true });

@@ -7,6 +7,8 @@ $root = [string]$request.resourceRoot
 # Tauri can return extended-length paths; Windows PowerShell providers reject them.
 if ($root.StartsWith('\\?\UNC\', [StringComparison]::OrdinalIgnoreCase)) { $root = '\\' + $root.Substring(8) }
 elseif ($root.StartsWith('\\?\', [StringComparison]::Ordinal)) { $root = $root.Substring(4) }
+$helpers = Join-Path $root 'apps\rtl-paths.ps1'
+if (Test-Path -LiteralPath $helpers) { . $helpers }
 $utf8 = [Text.UTF8Encoding]::new($true)
 $begin = '# >>> VibeHub managed prompt >>>'
 $end = '# <<< VibeHub managed prompt <<<'
@@ -16,6 +18,11 @@ function ProfileText { $p = ProfilePath; if (Test-Path -LiteralPath $p) { [IO.Fi
 function ThemeBlockPattern { '(?ms)^' + [regex]::Escape($begin) + '\r?\n.*?^' + [regex]::Escape($end) + '(?:\r?\n)?' }
 
 function Read-UninstallEntries {
+    if ($null -eq $script:UninstallEntries) { $script:UninstallEntries = @(Read-UninstallEntriesUncached) }
+    $script:UninstallEntries
+}
+
+function Read-UninstallEntriesUncached {
     $views = @(
         @{ hive = [Microsoft.Win32.RegistryHive]::CurrentUser; view = [Microsoft.Win32.RegistryView]::Registry64 },
         @{ hive = [Microsoft.Win32.RegistryHive]::CurrentUser; view = [Microsoft.Win32.RegistryView]::Registry32 },
@@ -111,18 +118,78 @@ function Find-RegisteredAppPath([string]$id) {
     return $null
 }
 
-function Find-App([string]$id) {
-    if ($id -in @('qoder','zcode','deepseek-harness')) {
-        $folder = switch ($id) { 'qoder' {'Qoder'} 'zcode' {'ZCode'} 'deepseek-harness' {'DeepSeekHarness'} }
-        $legacy = Join-Path $root "apps\$folder\start.ps1"
-        if (Test-Path -LiteralPath $legacy) {
-            $lines = & powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $legacy -Discover 2>$null
-            $encoded = $lines | Where-Object { $_ -like 'RTL_DISCOVER_B64:*' } | Select-Object -First 1
-            if ($encoded) {
-                $resolvedExe = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($encoded.Substring(17)))
-                if (Test-Path -LiteralPath $resolvedExe -PathType Leaf) { return $resolvedExe }
-            }
+function Find-DesktopProduct([string]$id, [switch]$All) {
+    $names = if ($id -eq 'antigravity') { @('Antigravity.exe') } else { @('ChatGPT.exe','Codex.exe') }
+    $pattern = if ($id -eq 'antigravity') { '^Antigravity(?: \d[\w.-]*)?$' } else { '^(?:OpenAI )?(?:ChatGPT|Codex)(?: \(User\))?$' }
+    $locations = if ($id -eq 'antigravity') { @("$env:LOCALAPPDATA\Programs\Antigravity", "$env:LOCALAPPDATA\Programs\antigravity") } else { @("$env:LOCALAPPDATA\Programs\ChatGPT", "$env:LOCALAPPDATA\Programs\Codex", "$env:LOCALAPPDATA\Programs\OpenAI Codex", "$env:ProgramFiles\ChatGPT", "$env:ProgramFiles\Codex") }
+    $candidates = [Collections.Generic.List[string]]::new()
+    foreach ($location in $locations) { foreach ($name in $names) {
+        $candidate = Join-Path $location $name
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) { $candidates.Add($candidate) }
+    } }
+    foreach ($entry in (Read-UninstallEntries | Where-Object { $_.DisplayName -match $pattern })) {
+        if ($entry.InstallLocation) { $locations += [Environment]::ExpandEnvironmentVariables($entry.InstallLocation).Trim('"') }
+        if ($entry.DisplayIcon -match '^\s*"?([^"]+?\.exe)(?:"|,|$)') {
+            $candidate = [Environment]::ExpandEnvironmentVariables($Matches[1])
+            if ([IO.Path]::GetFileName($candidate) -in $names -and (Test-Path -LiteralPath $candidate -PathType Leaf)) { $candidates.Add($candidate) }
         }
+    }
+    if ($id -eq 'chatgpt') {
+        foreach ($package in (Get-AppxPackage -ErrorAction SilentlyContinue | Where-Object { $_.Name -match '^OpenAI\.(ChatGPT|Codex)' })) {
+            $locations += $package.InstallLocation
+            $locations += Join-Path $package.InstallLocation 'app'
+        }
+    }
+    foreach ($location in ($locations | Select-Object -Unique)) { foreach ($name in $names) {
+        $candidate = Join-Path $location $name
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) { $candidates.Add($candidate) }
+    } }
+    $found = @($candidates | Select-Object -Unique)
+    if ($All) { return $found }
+    if ($id -eq 'chatgpt') {
+        $running = Get-Process -Name ChatGPT,Codex -ErrorAction SilentlyContinue | Where-Object { try { $_.Path -in $found } catch { $false } } | Select-Object -First 1
+        if ($running) { return $running.Path }
+    }
+    if ($found.Count) { return $found[0] }
+    return $null
+}
+
+function Codex-DesktopState {
+    $paths = @(Find-DesktopProduct 'chatgpt' -All)
+    $processes = @(Get-Process -Name ChatGPT,Codex -ErrorAction SilentlyContinue)
+    $known = @($processes | Where-Object { try { $_.Path -in $paths } catch { $false } })
+    $unknown = @($processes | Where-Object { try { $_.MainWindowHandle -ne 0 -and $_.Path -notin $paths } catch { $true } })
+    $runningPaths = @($known | ForEach-Object { $_.Path } | Select-Object -Unique)
+    $selected = if ($runningPaths.Count) { $runningPaths[0] } elseif ($paths.Count) { $paths[0] } else { $null }
+    @{installed=($paths.Count -gt 0);running=($known.Count -gt 0 -or $unknown.Count -gt 0);ambiguous=($runningPaths.Count -gt 1 -or $unknown.Count -gt 0);launchPath=$selected}
+}
+
+function Invoke-HubRtlLauncher([string]$launcherPath) {
+    $launcherOutput = @()
+    $failed = $false
+    try {
+        $global:LASTEXITCODE = 0
+        # Hub errors belong in the app design system, not a blocking Windows popup.
+        $launcherOutput = @(& $launcherPath *>&1)
+        $failed = $LASTEXITCODE -ne 0
+    } catch {
+        $failed = $true
+        $launcherOutput += $_.Exception.Message
+    }
+    if ($failed) {
+        $detail = ($launcherOutput | ForEach-Object { [string]$_ }) -join "`n"
+        if ($detail -match '(?is)port.{0,100}(already used|belongs|in use|busy)') { throw 'VIBEHUB_LAUNCH_PORT_BUSY' }
+        if ($detail -match '(?is)already (running|open)') { throw 'VIBEHUB_LAUNCH_ALREADY_OPEN' }
+        throw 'VIBEHUB_RTL_LAUNCH_FAILED'
+    }
+}
+
+function Find-App([string]$id) {
+    if ($id -in @('antigravity','chatgpt')) { return Find-DesktopProduct $id }
+    if ($id -in @('qoder','zcode','deepseek-harness') -and (Get-Command Get-RtlExecutable -ErrorAction SilentlyContinue)) {
+        $folder = switch ($id) { 'qoder' {'Qoder'} 'zcode' {'ZCode'} 'deepseek-harness' {'DeepSeekHarness'} }
+        $resolved = Get-RtlExecutable $id (Join-Path $root "apps\$folder")
+        if ($resolved) { return $resolved }
     }
     $candidates = @()
     switch ($id) {
@@ -139,8 +206,15 @@ function Find-App([string]$id) {
         'zcode' { $candidates = @("$env:ProgramFiles\ZCode\ZCode.exe", "${env:ProgramFiles(x86)}\ZCode\ZCode.exe", "$env:LOCALAPPDATA\Programs\ZCode\ZCode.exe") }
         'deepseek-harness' { $candidates = @("$env:LOCALAPPDATA\Programs\DeepSeek Harness\DeepSeek Harness.exe") }
         default {
-            $command = Get-Command $id -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
-            if ($command) { $candidates = @($command.Source) }
+            # Native file checks avoid module discovery for missing CLI commands.
+            foreach ($directory in ($env:PATH -split ';')) {
+                if (-not $directory) { continue }
+                foreach ($extension in ($env:PATHEXT -split ';')) {
+                    if (-not $extension) { continue }
+                    try { $candidate = [IO.Path]::Combine([Environment]::ExpandEnvironmentVariables($directory.Trim('"')), "$id$extension") } catch { continue }
+                    if ([IO.File]::Exists($candidate)) { return $candidate }
+                }
+            }
         }
     }
     $found = $candidates | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
@@ -149,7 +223,7 @@ function Find-App([string]$id) {
 }
 
 function Detect-Apps {
-    @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff') | ForEach-Object {
+    @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','antigravity','chatgpt') | ForEach-Object {
         $path = Find-App $_
         $result = @{ id = $_; installed = [bool]$path; via = 'standard-path-or-PATH' }
         if ($path) { $result.path = $path; $version = (Get-Item -LiteralPath $path).VersionInfo.ProductVersion; if ($version) { $result.version = $version } }
@@ -157,44 +231,33 @@ function Detect-Apps {
     }
 }
 
-function Detect-Editors {
-    $registrations = @(Read-UninstallEntries | Where-Object { $_.DisplayName })
-    $specs = @(
-        @{ id='vscode'; name='Visual Studio Code'; pattern='^Microsoft Visual Studio Code(?: \(User\))?$'; exe='Code.exe'; paths=@("$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe", "$env:ProgramFiles\Microsoft VS Code\Code.exe") },
-        @{ id='vscode-insiders'; name='Visual Studio Code Insiders'; pattern='^(?:Microsoft )?Visual Studio Code Insiders(?: \(User\))?$'; exe='Code - Insiders.exe'; paths=@("$env:LOCALAPPDATA\Programs\Microsoft VS Code Insiders\Code - Insiders.exe") },
-        @{ id='antigravity'; name='Antigravity'; pattern='^Antigravity(?: \d[\w.-]*)?$'; exe='Antigravity.exe'; paths=@("$env:LOCALAPPDATA\Programs\Antigravity\Antigravity.exe", "$env:LOCALAPPDATA\Programs\antigravity\Antigravity.exe") },
-        @{ id='antigravity-ide'; name='Antigravity IDE'; pattern='^Antigravity IDE(?: \(User\))?$'; exe='Antigravity IDE.exe'; paths=@("$env:LOCALAPPDATA\Programs\Antigravity IDE\Antigravity IDE.exe") },
-        @{ id='cursor'; name='Cursor'; pattern='^Cursor(?: \(User\))?$'; exe='Cursor.exe'; paths=@("$env:LOCALAPPDATA\Programs\Cursor\Cursor.exe") },
-        @{ id='windsurf'; name='Windsurf'; pattern='^Windsurf(?: \(User\))?$'; exe='Windsurf.exe'; paths=@("$env:LOCALAPPDATA\Programs\Windsurf\Windsurf.exe") },
-        @{ id='zed'; name='Zed'; pattern='^Zed(?: \(User\))?$'; exe='Zed.exe'; paths=@("$env:LOCALAPPDATA\Programs\Zed\Zed.exe") },
-        @{ id='trae'; name='Trae'; pattern='^Trae(?: \(User\))?$'; exe='Trae.exe'; paths=@("$env:LOCALAPPDATA\Programs\Trae\Trae.exe") },
-        @{ id='kiro'; name='Kiro'; pattern='^Kiro(?: \(User\))?$'; exe='Kiro.exe'; paths=@("$env:LOCALAPPDATA\Programs\Kiro\Kiro.exe") },
-        @{ id='vscodium'; name='VSCodium'; pattern='^VSCodium(?: \(User\))?$'; exe='VSCodium.exe'; paths=@("$env:LOCALAPPDATA\Programs\VSCodium\VSCodium.exe", "$env:ProgramFiles\VSCodium\VSCodium.exe") }
-    )
+function Detect-Editors { @() }
 
-    foreach ($spec in $specs) {
-        $candidates = [Collections.Generic.List[object]]::new()
-        foreach ($path in $spec.paths) { $candidates.Add(@{ path=$path; via='standard-path' }) }
-        foreach ($entry in ($registrations | Where-Object { $_.DisplayName -match $spec.pattern })) {
-            if ($entry.DisplayIcon) {
-                $icon = [Environment]::ExpandEnvironmentVariables([string]$entry.DisplayIcon)
-                if ($icon -match '^\s*"(?<path>[^"]+\.exe)"') { $candidates.Add(@{ path=$Matches.path; via='registry' }) }
-                elseif ($icon -match '^\s*(?<path>.*?\.exe)(?:,\d+)?\s*$') { $candidates.Add(@{ path=$Matches.path.Trim('"'); via='registry' }) }
-            }
-            if ($entry.InstallLocation) {
-                $location = [Environment]::ExpandEnvironmentVariables([string]$entry.InstallLocation).Trim('"')
-                $candidates.Add(@{ path=(Join-Path $location $spec.exe); via='registry' })
-            }
+function Get-LaunchState($state, [string]$appId) {
+    if (-not $state) { return @{phase='idle'} }
+    if ($state.phase -eq 'failed') { return $state }
+    if ($state.rtl) {
+        $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$([int]$state.injectorPid)" -ErrorAction SilentlyContinue
+        $alive = $proc -and $proc.Name -ieq 'node.exe' -and $proc.CommandLine -match [regex]::Escape([string]$state.injectorPath)
+        if ($alive) {
+            if (-not $appId) { $appId = [string]$state.id }
+            $names = @(switch ($appId) {
+                'zcode' { 'ZCode.exe' }
+                'qoder' { 'Qoder.exe'; 'Qoder IDE.exe' }
+                'deepseek-harness' { 'DeepSeek Harness.exe' }
+                'antigravity' { 'Antigravity.exe' }
+            })
+            if (-not $names.Count) { throw 'Cannot verify the application for this RTL session.' }
+            $nameFilter = ($names | ForEach-Object { "Name='$_'" }) -join ' OR '
+            $sessionId = [Diagnostics.Process]::GetCurrentProcess().SessionId
+            # Injectors reconnect after a window exits and can outlive the application.
+            # Their existence alone must not permanently block launching it again.
+            $application = Get-CimInstance Win32_Process -Filter "($nameFilter) AND SessionId=$sessionId" -ErrorAction Stop |
+                Where-Object { $_.CommandLine -notmatch '--type=' } | Select-Object -First 1
+            $alive = [bool]$application
         }
-        $found = $candidates | Where-Object { $_.path -and (Test-Path -LiteralPath $_.path -PathType Leaf) } | Select-Object -First 1
-        if ($found) {
-            $version = (Get-Item -LiteralPath $found.path).VersionInfo.ProductVersion
-            if (-not $version) {
-                $version = ($registrations | Where-Object { $_.DisplayName -match $spec.pattern } | Select-Object -First 1).DisplayVersion
-            }
-            @{ id=$spec.id; name=$spec.name; installed=$true; path=$found.path; via=$found.via; version=$version }
-        }
-    }
+    } else { $alive = $state.pid -and [bool](Get-Process -Id ([int]$state.pid) -ErrorAction SilentlyContinue) }
+    if ($alive) { @{phase='running';rtl=[bool]$state.rtl;since=$state.since;port=$state.port} } else { @{phase='idle'} }
 }
 
 function Terminal-State {
@@ -217,6 +280,74 @@ function Terminal-State {
 
 try {
     $result = switch ($request.operation) {
+        'account-app-state' {
+            $accountId = [string]$request.appId
+            if ($accountId -notin @('qoder','zcode')) { throw 'Unknown account app' }
+            $folder = if ($accountId -eq 'qoder') { 'Qoder' } else { 'ZCode' }
+            $accountExe = Join-Path $env:LOCALAPPDATA "Programs\$folder\$folder.exe"
+            if (-not (Test-Path -LiteralPath $accountExe)) { throw 'Account application was not found' }
+            $processes = @(Get-Process -Name $folder -ErrorAction SilentlyContinue | Where-Object { try { $_.Path -ieq $accountExe } catch { $false } })
+            @{running=($processes.Count -gt 0);path=$accountExe;version=(Get-Item -LiteralPath $accountExe).VersionInfo.ProductVersion}
+        }
+        'account-app-close' {
+            $accountId = [string]$request.appId
+            if ($accountId -notin @('qoder','zcode')) { throw 'Unknown account app' }
+            $folder = if ($accountId -eq 'qoder') { 'Qoder' } else { 'ZCode' }
+            $accountExe = Join-Path $env:LOCALAPPDATA "Programs\$folder\$folder.exe"
+            $processes = @(Get-Process -Name $folder -ErrorAction SilentlyContinue | Where-Object { try { $_.Path -ieq $accountExe } catch { $false } })
+            foreach ($proc in $processes) { if ($proc.MainWindowHandle -ne 0) { [void]$proc.CloseMainWindow() } }
+            $deadline = [DateTime]::UtcNow.AddSeconds(10)
+            do {
+                $remaining = @(Get-Process -Name $folder -ErrorAction SilentlyContinue | Where-Object { try { $_.Path -ieq $accountExe } catch { $false } })
+                if (-not $remaining.Count) { break }
+                Start-Sleep -Milliseconds 150
+            } while ([DateTime]::UtcNow -lt $deadline)
+            if ($remaining.Count) { throw 'accounts:closeRequired' }
+            @{ok=$true}
+        }
+        'account-app-open' {
+            $accountId = [string]$request.appId
+            if ($accountId -notin @('qoder','zcode')) { throw 'Unknown account app' }
+            $folder = if ($accountId -eq 'qoder') { 'Qoder' } else { 'ZCode' }
+            $accountExe = Join-Path $env:LOCALAPPDATA "Programs\$folder\$folder.exe"
+            Start-Process -FilePath $accountExe -WindowStyle Hidden
+            @{ok=$true}
+        }
+        'codex-desktop' { Codex-DesktopState }
+        'codex-desktop-close' {
+            $state = Codex-DesktopState
+            if ($state.ambiguous -or -not $state.launchPath) { throw 'Close other or unrecognized Codex desktop installations before switching.' }
+            $exe = $state.launchPath
+            $processes = @(Get-Process -Name ChatGPT,Codex -ErrorAction SilentlyContinue | Where-Object { try { $_.Path -ieq $exe } catch { $false } })
+            foreach ($proc in $processes) { if ($proc.MainWindowHandle -ne 0) { [void]$proc.CloseMainWindow() } }
+            $deadline = [DateTime]::UtcNow.AddSeconds(10)
+            do {
+                $alive = @(Get-Process -Name ChatGPT,Codex -ErrorAction SilentlyContinue | Where-Object { try { $_.Path -ieq $exe } catch { $false } })
+                if ($alive.Count -eq 0) { break }
+                Start-Sleep -Milliseconds 100
+            } while ([DateTime]::UtcNow -lt $deadline)
+            if ($alive.Count -gt 0) { throw 'Codex desktop is still open; finish ongoing work and close it before switching.' }
+            @{ok=$true}
+        }
+        'codex-desktop-open' {
+            $paths = @(Find-DesktopProduct 'chatgpt' -All)
+            $exe = if ($request.path -and $request.path -in $paths) { [string]$request.path } else { Find-DesktopProduct 'chatgpt' }
+            if (-not $exe) { throw 'Codex desktop executable could not be identified.' }
+            $null = Start-Process -FilePath $exe -PassThru
+            @{ok=$true}
+        }
+        'pick-account-json' {
+            Add-Type -AssemblyName System.Windows.Forms
+            $picker = New-Object System.Windows.Forms.OpenFileDialog
+            try {
+                $picker.Filter = 'Codex account JSON (*.json)|*.json'
+                $picker.Multiselect = $false
+                $picker.CheckFileExists = $true
+                $picker.Title = 'Import Codex account JSON'
+                if ($picker.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { @{path=$picker.FileName} }
+                else { @{path=$null} }
+            } finally { $picker.Dispose() }
+        }
         'detect' { @(Detect-Apps) }
         'detect-editors' { ,@(Detect-Editors) }
         'launch-editor' {
@@ -237,6 +368,20 @@ try {
                 'vscodium' { 'VSCodium.exe' }
             }
             if ([IO.Path]::GetFileName([string]$editor.path) -ine $expectedExe) { throw 'Detected editor executable did not match its product.' }
+            if ($request.rtl) {
+                if ($id -ne 'antigravity') { throw 'RTL is unavailable for this editor.' }
+                if ($request.proxyUrl) { foreach ($name in @('HTTP_PROXY','HTTPS_PROXY','ALL_PROXY')) { [Environment]::SetEnvironmentVariable($name, [string]$request.proxyUrl, 'Process') }; $env:NO_PROXY='localhost,127.0.0.1,::1' }
+                elseif ($request.direct) { foreach ($name in @('HTTP_PROXY','HTTPS_PROXY','ALL_PROXY','NO_PROXY')) { [Environment]::SetEnvironmentVariable($name,$null,'Process') } }
+                $env:ANTIGRAVITY_RTL_EXE = [string]$editor.path
+                & (Join-Path $root 'apps\Antigravity\start.ps1') -Gui -ProxyUrl ([string]$request.proxyUrl)
+                $port = if ($env:ANTIGRAVITY_RTL_PORT) { [int]$env:ANTIGRAVITY_RTL_PORT } else { 9231 }
+                $injector = Join-Path $root 'apps\Antigravity\injector.mjs'
+                $owner = Get-NetTCPConnection -LocalPort ($port+1) -State Listen -ErrorAction Stop | Select-Object -First 1
+                $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$($owner.OwningProcess)"
+                if ($proc.Name -ine 'node.exe' -or $proc.CommandLine -notmatch [regex]::Escape($injector)) { throw 'RTL injector ownership verification failed.' }
+                @{ok=$true;id=$id;rtl=$true;port=$port;injectorPid=$proc.ProcessId;injectorPath=$injector;since=[DateTime]::UtcNow.ToString('o');detail='Standalone Antigravity RTL injector started; live rendering is experimental.'}
+                break
+            }
             $cwd = [Environment]::GetFolderPath('UserProfile')
             $startInfo = [Diagnostics.ProcessStartInfo]::new()
             $startInfo.FileName = [string]$editor.path
@@ -254,7 +399,7 @@ try {
             }
             $proc = [Diagnostics.Process]::Start($startInfo)
             $detail = if ($request.proxyUrl) { 'Opened the detected IDE with proxy settings requested; IDE proxy routing is not verified.' } else { 'Opened the detected IDE' }
-            $launchResult = @{ok=$true;id=$id;pid=$proc.Id;proxyConfigured=[bool]$request.proxyUrl;proxyRoutingVerified=$false;detail=$detail}
+            $launchResult = @{ok=$true;id=$id;pid=$proc.Id;rtl=$false;since=[DateTime]::UtcNow.ToString('o');proxyConfigured=[bool]$request.proxyUrl;proxyRoutingVerified=$false;detail=$detail}
             if ($request.waitForTestExitMs -is [int] -and $request.waitForTestExitMs -ge 1 -and $request.waitForTestExitMs -le 5000) {
                 $launchResult.testProcessCompleted = $proc.WaitForExit($request.waitForTestExitMs)
                 if ($launchResult.testProcessCompleted) { $launchResult.testExitCode = $proc.ExitCode }
@@ -312,7 +457,7 @@ try {
         }
         'launch' {
             $id = [string]$request.req.appId
-            if ($id -notin @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff')) { throw 'Unknown app' }
+            if ($id -notin @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','antigravity','chatgpt')) { throw 'Unknown app' }
             $exe = Find-App $id
             if (-not $exe -and -not $request.req.rtl) { throw 'App is not installed in a recognized location.' }
             $cwd = if ($request.req.cwd) { [string]$request.req.cwd } else { [Environment]::GetFolderPath('UserProfile') }
@@ -320,11 +465,11 @@ try {
             if ($request.proxyUrl) { $env:HTTP_PROXY=$request.proxyUrl; $env:HTTPS_PROXY=$request.proxyUrl; $env:ALL_PROXY=$request.proxyUrl; $env:NO_PROXY='localhost,127.0.0.1,::1' }
             elseif ($request.direct) { foreach ($name in @('HTTP_PROXY','HTTPS_PROXY','ALL_PROXY','NO_PROXY')) { [Environment]::SetEnvironmentVariable($name,$null,'Process') } }
             if ($request.req.rtl) {
-                $folder = switch ($id) { 'zcode' {'ZCode'} 'qoder' {'Qoder'} 'deepseek-harness' {'DeepSeekHarness'} default {throw 'RTL is unavailable for this app'} }
-                $port = switch ($id) { 'zcode' {9222} 'qoder' {9225} 'deepseek-harness' {9228} }
+                $folder = switch ($id) { 'zcode' {'ZCode'} 'qoder' {'Qoder'} 'deepseek-harness' {'DeepSeekHarness'} 'antigravity' {'Antigravity'} default {throw 'RTL is unavailable for this app'} }
+                $port = switch ($id) { 'zcode' {9222} 'qoder' {9225} 'deepseek-harness' {9228} 'antigravity' {9231} }
                 $script = Join-Path $root "apps\$folder\start.ps1"
-                & $script -Gui
-                if ($LASTEXITCODE -ne 0) { throw 'RTL launcher failed. Review the app RTL log.' }
+                if ($id -eq 'antigravity') { $env:ANTIGRAVITY_RTL_EXE = $exe }
+                Invoke-HubRtlLauncher $script
                 $injector = Join-Path $root "apps\$folder\injector.mjs"
                 $owner = Get-NetTCPConnection -LocalPort ($port+1) -State Listen -ErrorAction Stop | Select-Object -First 1
                 $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$($owner.OwningProcess)"
@@ -339,17 +484,28 @@ try {
                 $detail = if ($request.proxyUrl) { 'Opened CLI in a terminal with proxy settings requested; tool routing is not verified.' } else { 'Opened CLI in a terminal' }
                 @{ok=$true;rtl=$false;pid=$proc.Id;since=[DateTime]::UtcNow.ToString('o');proxyConfigured=[bool]$request.proxyUrl;proxyRoutingVerified=$false;detail=$detail}
             } else {
-                $proc = Start-Process -FilePath $exe -WorkingDirectory $cwd -PassThru
+                $startInfo = [Diagnostics.ProcessStartInfo]::new()
+                $startInfo.FileName = $exe
+                $startInfo.WorkingDirectory = $cwd
+                $startInfo.UseShellExecute = $false
+                if ($request.proxyUrl) { $startInfo.Arguments = '--proxy-server=' + (([string]$request.proxyUrl) -replace '^socks5h://','socks5://') }
+                $proc = [Diagnostics.Process]::Start($startInfo)
                 $detail = if ($request.proxyUrl) { 'Application started with proxy settings requested; app routing is not verified.' } else { 'Application process started' }
-                @{ok=$true;rtl=$false;pid=$proc.Id;since=[DateTime]::UtcNow.ToString('o');proxyConfigured=[bool]$request.proxyUrl;proxyRoutingVerified=$false;detail=$detail}
+                $launchResult = @{ok=$true;rtl=$false;pid=$proc.Id;since=[DateTime]::UtcNow.ToString('o');proxyConfigured=[bool]$request.proxyUrl;proxyRoutingVerified=$false;detail=$detail}
+                if ($request.waitForTestExitMs -is [int] -and $request.waitForTestExitMs -ge 1 -and $request.waitForTestExitMs -le 5000) {
+                    $launchResult.testProcessCompleted = $proc.WaitForExit($request.waitForTestExitMs)
+                    if ($launchResult.testProcessCompleted) { $launchResult.testExitCode = $proc.ExitCode }
+                }
+                $launchResult
             }
         }
-        'launch-state' {
-            if ($request.state.rtl) {
-                $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$([int]$request.state.injectorPid)" -ErrorAction SilentlyContinue
-                $alive = $proc -and $proc.Name -ieq 'node.exe' -and $proc.CommandLine -match [regex]::Escape([string]$request.state.injectorPath)
-            } else { $alive = [bool](Get-Process -Id ([int]$request.state.pid) -ErrorAction SilentlyContinue) }
-            if ($alive) { @{phase='running';rtl=[bool]$request.state.rtl;since=$request.state.since;port=$request.state.port} } else { @{phase='idle'} }
+        'launch-state' { Get-LaunchState $request.state ([string]$request.appId) }
+        'launch-states' {
+            $states = @{}
+            foreach ($entry in $request.states.PSObject.Properties) {
+                $states[$entry.Name] = Get-LaunchState $entry.Value ([string]$entry.Name)
+            }
+            $states
         }
         'stop-rtl' {
             $state = $request.state

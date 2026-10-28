@@ -1,13 +1,15 @@
 use serde_json::Value;
 
 pub type Result<T> = std::result::Result<T, String>;
-pub const APP_IDS: [&str; 6] = [
+pub const APP_IDS: [&str; 8] = [
     "zcode",
     "qoder",
     "deepseek-harness",
     "opencode",
     "mimocode",
     "freebuff",
+    "antigravity",
+    "chatgpt",
 ];
 pub const EDITOR_IDS: [&str; 10] = [
     "vscode",
@@ -61,7 +63,9 @@ pub fn validate_profile(v: &Value) -> Result<()> {
             return Err("Invalid proxy username".into());
         }
     }
-    if v.get("hasPassword").is_some_and(|value| !value.is_boolean()) {
+    if v.get("hasPassword")
+        .is_some_and(|value| !value.is_boolean())
+    {
         return Err("hasPassword must be boolean".into());
     }
     match field(v, "mode")? {
@@ -124,10 +128,9 @@ pub fn validate_config(cfg: &Value, profiles: &[Value]) -> Result<()> {
             return Err("Required proxy must use an explicit HTTP or SOCKS5 profile".into());
         }
     }
-    if per_app
-        .keys()
-        .any(|id| id != "*" && !APP_IDS.contains(&id.as_str()) && !EDITOR_IDS.contains(&id.as_str()))
-    {
+    if per_app.keys().any(|id| {
+        id != "*" && !APP_IDS.contains(&id.as_str()) && !EDITOR_IDS.contains(&id.as_str())
+    }) {
         return Err("Unknown app in proxy configuration".into());
     }
     Ok(())
@@ -164,7 +167,10 @@ pub fn validate_provider_connection(connection: &Value) -> Result<()> {
         return Err("Invalid model identifier".into());
     }
     safe_url(field(connection, "baseUrl")?)?;
-    if connection.get("hasKey").is_some_and(|value| !value.is_boolean()) {
+    if connection
+        .get("hasKey")
+        .is_some_and(|value| !value.is_boolean())
+    {
         return Err("hasKey must be boolean".into());
     }
     Ok(())

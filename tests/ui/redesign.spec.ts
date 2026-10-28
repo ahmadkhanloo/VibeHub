@@ -60,7 +60,8 @@ test("daily launch uses RTL once, saves success and remembers explicit normal ch
   ).toHaveLength(1);
   await expect(run).toBeDisabled();
   await page.reload();
-  await page.getByLabel("Launch mode for ZCode").selectOption("normal");
+  await page.getByRole("button", { name: "Launch mode for ZCode", exact: true }).click();
+  await page.getByRole("combobox", { name: "Launch mode for ZCode", exact: true }).selectOption("normal");
   await page.getByRole("button", { name: "Run ZCode", exact: true }).click();
   await expect
     .poll(() =>
@@ -89,7 +90,8 @@ test("missing preferred RTL never silently launches normally", async ({
 }) => {
   await mockNative(page, "missing");
   await page.goto("/");
-  await page.getByLabel("Launch mode for ZCode").selectOption("rtl");
+  await page.getByRole("button", { name: "Launch mode for ZCode", exact: true }).click();
+  await page.getByRole("combobox", { name: "Launch mode for ZCode", exact: true }).selectOption("rtl");
   await expect(
     page.getByRole("button", { name: "Run with RTL ZCode", exact: true }),
   ).toBeDisabled();
@@ -119,6 +121,7 @@ test("contextual proxy creates and assigns without leaving tool", async ({
 }) => {
   await mockNative(page);
   await page.goto("/app/zcode");
+  await page.getByRole("tab", { name: "Connections", exact: true }).click();
   await page
     .getByTestId("tool-proxy")
     .getByRole("button", { name: "New profile" })
@@ -142,6 +145,7 @@ test("content cache clearing preserves preferences, credentials and native confi
 }) => {
   await mockNative(page);
   await page.goto("/settings");
+  await page.getByRole("tab", { name: "Data and about", exact: true }).click();
   await page.evaluate(() =>
     localStorage.setItem("vibehub.content.v1", "cached"),
   );
@@ -169,6 +173,7 @@ test("bulk deletion confirms inventory and retries partial failure", async ({
 }) => {
   await mockNative(page, "bulkPartial");
   await page.goto("/settings");
+  await page.getByRole("tab", { name: "Data and about", exact: true }).click();
   await page.getByRole("button", { name: "Review items to delete" }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toContainText("Local Ollama");
@@ -410,6 +415,7 @@ test("reset preferences is explicit and preserves native connection inventory", 
 }) => {
   await mockNative(page);
   await page.goto("/settings");
+  await page.getByRole("tab", { name: "Data and about", exact: true }).click();
   await page
     .getByRole("button", { name: "Reset interface preferences", exact: true })
     .click();

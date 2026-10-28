@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "antigravity",
+  "name": "Antigravity",
+  "summary": {
+    "fa": "اپ مستقل Antigravity با اجرای عادی، پروکسی و راست‌چین آزمایشی؛ جدا از Antigravity IDE.",
+    "en": "Standalone Antigravity app with normal launch, proxy settings and experimental chat RTL."
+  },
+  "kind": "desktop_agent",
+  "platforms": [
+    "windows"
+  ],
+  "websiteUrl": "https://antigravity.google/",
+  "docsUrl": "https://antigravity.google/",
+  "isOpenSource": false,
+  "freeAccess": "unknown",
+  "freeAccessDetails": {
+    "fa": "دسترسی و سهمیه به حساب، طرح و شرایط جاری سازنده وابسته است.",
+    "en": "Access and quotas depend on your account, plan and current vendor terms."
+  },
+  "requiresSignup": true,
+  "requiresPaymentCard": null,
+  "sourceOfFreeAccess": "https://antigravity.google/",
+  "lastVerified": "2026-10-27",
+  "capabilities": {
+    "install": "reported",
+    "launch": "reported",
+    "rtl": "reported",
+    "proxy": "unknown",
+    "terminal": "unsupported",
+    "byok": "unknown"
+  },
+  "installMethods": [
+    {
+      "method": "guide",
+      "idOrUrl": "https://antigravity.google/"
+    }
+  ]
+}

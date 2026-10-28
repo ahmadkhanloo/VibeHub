@@ -1,3 +1,4 @@
+import { Tooltip } from '@/components/Tooltip';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -72,7 +73,7 @@ export function MyAppsPage() {
       <section className="space-y-3">
         <div>
           <SectionTitle>{t('apps:rtlHub')}</SectionTitle>
-          <p className="mt-1 text-xs text-muted">{t('apps:rtlHubNote')}</p>
+          <Tooltip text={t('apps:rtlHubNote')} />
         </div>
         {detected === null || rtlComponents === null ? (
           <p className="text-sm text-muted">{t('common:loading')}</p>
@@ -187,7 +188,7 @@ export function MyAppsPage() {
       {editors && editors.length > 0 && (
         <Card>
           <SectionTitle>{t('apps:otherEditors')}</SectionTitle>
-          <p className="mb-3 text-xs text-muted">{t('apps:otherEditorsNote')}</p>
+          <Tooltip text={t('apps:otherEditorsNote')} />
           <div className="space-y-2">
             {editors.map((editor) => (
               <div key={editor.id} className="space-y-2">

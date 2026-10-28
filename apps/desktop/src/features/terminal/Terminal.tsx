@@ -1,3 +1,4 @@
+import { Tooltip } from '@/components/Tooltip';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle2, Download, Package, Undo2, XCircle } from 'lucide-react';
@@ -54,36 +55,36 @@ export function TerminalPage() {
     {error != null && confirmation === null && <ErrorNotice error={error} onRetry={() => void detect()} />}
     {completed && <p role="status" className="text-sm text-success">{t('journeyUx:terminal.actionComplete')}</p>}
     <Card className="space-y-3">
-      <SectionTitle>{t('terminal:steps.detect')}</SectionTitle>
+      <SectionTitle action={<Tooltip text={[t('terminal:errors.ideMayNotApply')].join(' ')} />}>{t('terminal:steps.detect')}</SectionTitle>
       {detecting ? <p role="status" className="text-sm text-muted">{t('common:loading')}</p> : state ? <>
         <Row ok={state.hasOhMyPosh} label={t('terminal:detected.ohmyposh')} value={state.ohMyPoshVersion} />
         <Row ok={state.hasNerdFont} label={t('terminal:detected.nerdFont')} value={state.nerdFontName} />
         <Row ok={!!state.profilePath} label={t('terminal:detected.profile')} value={state.profilePath} />
         <Row ok={state.themeApplied} label={t('terminal:themeApplied')} value={state.backupPath} />
-        <p className="text-xs text-muted">{t('terminal:errors.ideMayNotApply')}</p>
+
       </> : <p className="text-sm text-muted">{t('journeyUx:terminal.detectionFailed')}</p>}
       <Button size="sm" loading={detecting} disabled={!!busy} onClick={() => void detect()}>{t('journeyUx:terminal.retry')}</Button>
     </Card>
     <Card className="space-y-3">
-      <SectionTitle>{t('terminal:steps.preview')}</SectionTitle>
-      <p className="text-sm text-muted">{t('terminal:themeDesc')}</p>
+      <SectionTitle action={<Tooltip text={t('terminal:themeDesc')} />}>{t('terminal:steps.preview')}</SectionTitle><p className="text-sm leading-7 text-muted">{t('terminal:previewNote')}</p>
+
       <pre className="ltr-tech overflow-auto rounded-lg border border-border bg-bg p-4 text-sm leading-7">{PROMPT_PREVIEW}</pre>
-      <p className="text-xs text-muted">{t('terminal:previewNote')}</p>
+
     </Card>
     <Card className="space-y-3">
-      <SectionTitle>{t('terminal:steps.install')}</SectionTitle>
+      <SectionTitle action={<Tooltip text={[t('terminal:fontSource')].join(' ')} />}>{t('terminal:steps.install')}</SectionTitle>
       <div className="flex flex-wrap gap-3">
         <Button disabled={blocked || state?.hasOhMyPosh} onClick={() => setConfirmation('omp')}><Package size={16} aria-hidden="true" />{t('terminal:installOmp')}</Button>
         <Button disabled={blocked || state?.hasNerdFont} onClick={() => setConfirmation('nerd')}><Download size={16} aria-hidden="true" />{t('terminal:installFont')}</Button>
         <Button disabled={blocked} onClick={() => setConfirmation('vazir')}><Download size={16} aria-hidden="true" />{t('terminal:installVazir')}</Button>
       </div>
-      <p className="text-xs leading-6 text-muted">{t('terminal:fontSource')}</p>
+
     </Card>
     <Card className="space-y-3">
-      <SectionTitle>{t('terminal:steps.apply')}</SectionTitle>
-      <p className="text-sm leading-7 text-muted">{t('terminal:applyWhat')}</p>
-      <div className="flex flex-wrap gap-3"><Button variant="primary" disabled={blocked || state?.themeApplied || !state?.hasOhMyPosh} onClick={() => setConfirmation('apply')}>{t('terminal:applyTheme')}</Button><Button disabled={blocked || !state?.themeApplied} onClick={() => setConfirmation('undo')}><Undo2 size={16} aria-hidden="true" />{t('terminal:undo')}</Button></div>
-      <p className="text-xs leading-6 text-muted">{t('terminal:undoNote')}</p>
+      <SectionTitle>{t('terminal:steps.apply')}</SectionTitle><p className="text-sm leading-7 text-muted">{t('terminal:applyWhat')}</p>
+
+      <div className="flex flex-wrap gap-3"><Button variant="primary" disabled={blocked || state?.themeApplied || !state?.hasOhMyPosh} onClick={() => setConfirmation('apply')}>{t('terminal:applyTheme')}</Button><Button disabled={blocked || !state?.themeApplied} onClick={() => setConfirmation('undo')}><Undo2 size={16} aria-hidden="true" />{t('terminal:undo')}</Button></div><p className="text-sm leading-7 text-muted">{t('terminal:undoNote')}</p>
+
     </Card>
     <Card className="space-y-3"><SectionTitle>{t('terminal:steps.verify')}</SectionTitle><p className="text-sm leading-7 text-muted">{t('terminal:verifyHint')}</p></Card>
     {!!log.length && <details className="rounded-lg border border-border p-4"><summary className="cursor-pointer text-sm font-medium">{t('journeyUx:terminal.details')}</summary><pre dir="ltr" className="ltr-tech mt-3 whitespace-pre-wrap break-all text-xs text-muted">{log.join('\n')}</pre></details>}

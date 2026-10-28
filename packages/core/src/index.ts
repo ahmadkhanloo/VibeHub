@@ -3,6 +3,13 @@
 // Remote catalog data is DATA ONLY: no commands, no URLs to execute, no HTML.
 
 export type Verification = 'verified' | 'reported' | 'unknown' | 'unsupported';
+
+export function launchFailureKind(error: unknown): 'portBusy' | 'alreadyOpen' | undefined {
+  const message = String(error);
+  if (/VIBEHUB_LAUNCH_PORT_BUSY|port.{0,100}(already used|belongs|in use|busy)/is.test(message)) return 'portBusy';
+  if (/VIBEHUB_LAUNCH_ALREADY_OPEN|already (running|open)/i.test(message)) return 'alreadyOpen';
+  return undefined;
+}
 export type Capability = 'install' | 'launch' | 'rtl' | 'proxy' | 'terminal' | 'byok';
 export type FreeAccess = 'free_forever' | 'free_tier' | 'trial' | 'ad_supported' | 'unknown';
 
@@ -71,6 +78,12 @@ export interface Offer {
   regionNotes?: LocalizedText;
   freeAccessChange?: boolean;
   status: 'verified' | 'reported';
+  checkedAt?: string;
+  sourceState?: 'fresh' | 'stale' | 'unavailable';
+  revision?: string;
+  benefit?: { quantity?: number; unit: 'credits' | 'tokens' | 'free-model'; model?: string };
+  claim?: { required: boolean; url: string; dailyAt?: string; timeZone?: string; expiresAfterDays?: number };
+  usageWindow?: { from: string; to: string; timeZone: string };
 }
 
 export interface GuideMeta {
@@ -154,3 +167,5 @@ export type AppId = (typeof APP_IDS)[number];
 export { appManifestSchema, providerManifestSchema, offerSchema, feedIndexSchema, assertNoExecutablePayload } from './schemas.ts';
 
 export { preferredLaunchMode, launchBlocked, normalizeSearch, type LaunchMode } from './ux.ts';
+
+export { claimWindow, notificationEvents } from './offer-events.ts';

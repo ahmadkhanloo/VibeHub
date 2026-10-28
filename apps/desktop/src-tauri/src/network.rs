@@ -24,6 +24,22 @@ pub fn proxy_url(profile: &Value) -> Result<String> {
 }
 
 pub fn client(profile: Option<&Value>) -> Result<reqwest::Client> {
+    if let Some(profile) = profile {
+        validate_profile(profile)?;
+    }
+    let password = match profile {
+        Some(p) if matches!(p["mode"].as_str(), Some("http" | "socks5")) => {
+            storage::vault_get(&format!("vibehub.proxy.{}", field(p, "id")?))?
+        }
+        _ => None,
+    };
+    client_with_password(profile, password.as_deref())
+}
+
+fn client_with_password(
+    profile: Option<&Value>,
+    password: Option<&str>,
+) -> Result<reqwest::Client> {
     // Share Tauri updater's ring provider, including debug builds without the updater plugin.
     let _ = rustls::crypto::ring::default_provider().install_default();
     let mut builder = reqwest::Client::builder()
@@ -36,10 +52,16 @@ pub fn client(profile: Option<&Value>) -> Result<reqwest::Client> {
             "direct" => builder = builder.no_proxy(),
             "http" | "socks5" => {
                 let mut proxy = reqwest::Proxy::all(proxy_url(p)?).map_err(|_| "Invalid proxy")?;
-                if let Some(password) =
-                    storage::vault_get(&format!("vibehub.proxy.{}", field(p, "id")?))?
+                if p["hasPassword"] == true && password.is_none() {
+                    return Err("Stored proxy password is unavailable".into());
+                }
+                if p["mode"] == "socks5"
+                    && (password.is_some() != !p["username"].as_str().unwrap_or("").is_empty())
                 {
-                    proxy = proxy.basic_auth(p["username"].as_str().unwrap_or(""), &password);
+                    return Err("SOCKS5 requires both a username and a stored password".into());
+                }
+                if let Some(password) = password {
+                    proxy = proxy.basic_auth(p["username"].as_str().unwrap_or(""), password);
                 }
                 builder = builder.no_proxy().proxy(proxy);
             }
@@ -73,17 +95,30 @@ fn connect(profile: &Value) -> Result<TcpStream> {
 }
 
 fn handshake(profile: &Value) -> Result<()> {
-    use std::io::{Read, Write};
+    let password = storage::vault_get(&format!("vibehub.proxy.{}", field(profile, "id")?))?;
+    handshake_with_password(profile, password.as_deref())
+}
+
+fn handshake_with_password(profile: &Value, password: Option<&str>) -> Result<()> {
+    use std::io::{BufRead, Read, Write};
+    if profile["hasPassword"] == true && password.is_none() {
+        return Err("Stored proxy password is unavailable".into());
+    }
     let mut stream = connect(profile)?;
     if profile["mode"] == "socks5" {
         let username = profile["username"].as_str().unwrap_or("");
-        let password = storage::vault_get(&format!("vibehub.proxy.{}", field(profile, "id")?))?;
         let has_credentials = !username.is_empty() || password.is_some();
         if has_credentials && (username.is_empty() || password.is_none()) {
             return Err("SOCKS5 requires both a username and a stored password".into());
         }
-        let methods = if has_credentials { [5, 1, 2] } else { [5, 1, 0] };
-        stream.write_all(&methods).map_err(|_| "SOCKS greeting failed")?;
+        let methods = if has_credentials {
+            [5, 1, 2]
+        } else {
+            [5, 1, 0]
+        };
+        stream
+            .write_all(&methods)
+            .map_err(|_| "SOCKS greeting failed")?;
         let mut reply = [0u8; 2];
         stream
             .read_exact(&mut reply)
@@ -95,8 +130,12 @@ fn handshake(profile: &Value) -> Result<()> {
             0 if !has_credentials => (),
             2 if has_credentials => {
                 let username = username.as_bytes();
-                let password = password.as_deref().unwrap_or_default().as_bytes();
-                if username.is_empty() || username.len() > 255 || password.is_empty() || password.len() > 255 {
+                let password = password.unwrap_or_default().as_bytes();
+                if username.is_empty()
+                    || username.len() > 255
+                    || password.is_empty()
+                    || password.len() > 255
+                {
                     return Err("SOCKS5 username and password must each be 1 to 255 bytes".into());
                 }
                 let mut auth = Vec::with_capacity(username.len() + password.len() + 3);
@@ -104,9 +143,13 @@ fn handshake(profile: &Value) -> Result<()> {
                 auth.extend_from_slice(username);
                 auth.push(password.len() as u8);
                 auth.extend_from_slice(password);
-                stream.write_all(&auth).map_err(|_| "SOCKS authentication failed")?;
+                stream
+                    .write_all(&auth)
+                    .map_err(|_| "SOCKS authentication failed")?;
                 let mut auth_reply = [0u8; 2];
-                stream.read_exact(&mut auth_reply).map_err(|_| "SOCKS authentication response failed")?;
+                stream
+                    .read_exact(&mut auth_reply)
+                    .map_err(|_| "SOCKS authentication response failed")?;
                 if auth_reply != [1, 0] {
                     return Err("SOCKS5 authentication was rejected".into());
                 }
@@ -116,7 +159,6 @@ fn handshake(profile: &Value) -> Result<()> {
             _ => return Err("SOCKS authentication method was rejected".into()),
         }
     } else {
-        let password = storage::vault_get(&format!("vibehub.proxy.{}", field(profile, "id")?))?;
         let auth = password
             .map(|p| {
                 format!(
@@ -133,16 +175,17 @@ fn handshake(profile: &Value) -> Result<()> {
         stream
             .write_all(request.as_bytes())
             .map_err(|_| "HTTP proxy handshake failed")?;
-        let mut response = [0u8; 512];
-        let size = stream
-            .read(&mut response)
+        let mut response = Vec::new();
+        std::io::BufReader::new(stream)
+            .take(1024)
+            .read_until(b'\n', &mut response)
             .map_err(|_| "HTTP proxy response failed")?;
-        let status = String::from_utf8_lossy(&response[..size])
-            .lines()
-            .next()
-            .unwrap_or("")
-            .to_owned();
-        if status.split_whitespace().nth(1) != Some("200") {
+        let status = String::from_utf8_lossy(&response);
+        if !matches!(
+            status.split_whitespace().next(),
+            Some("HTTP/1.0" | "HTTP/1.1")
+        ) || status.split_whitespace().nth(1) != Some("200")
+        {
             return Err("HTTP CONNECT tunnel rejected".into());
         }
     }
@@ -155,11 +198,8 @@ pub async fn proxy_test(profile: Value, level: String) -> Result<Value> {
         return Err("Invalid test level".into());
     }
     let result = if level == "request" {
-        match client(Some(&profile))?
-            .get("https://example.com/")
-            .send()
-            .await
-        {
+        let http = crate::system::blocking(move || client(Some(&profile))).await?;
+        match http.get("https://example.com/").send().await {
             Ok(response) if response.status().is_success() => Ok(()),
             _ => Err("HTTPS request through selected proxy failed".into()),
         }
@@ -200,9 +240,12 @@ pub async fn api_test(
     }
     let url = safe_url(&base)?;
     let endpoint = format!("{}/chat/completions", url.as_str().trim_end_matches('/'));
-    let secret = storage::vault_get(&service)?;
+    let (http, secret) = crate::system::blocking(move || {
+        Ok((client(profile.as_ref())?, storage::vault_get(&service)?))
+    })
+    .await?;
     let has_secret = secret.is_some();
-    let mut request = client(profile.as_ref())?.post(endpoint).json(&json!({"model":model,"messages":[{"role":"user","content":"Reply with OK."}],"max_tokens":8,"stream":false}));
+    let mut request = http.post(endpoint).json(&json!({"model":model,"messages":[{"role":"user","content":"Reply with OK."}],"max_tokens":8,"stream":false}));
     if let Some(key) = secret {
         request = request.bearer_auth(key);
     }
@@ -214,7 +257,13 @@ pub async fn api_test(
                 && body
                     .as_ref()
                     .and_then(|v| v["choices"].as_array())
-                    .is_some_and(|a| a.iter().any(|v| v["message"]["content"].is_string()));
+                    .is_some_and(|a| {
+                        a.iter().any(|v| {
+                            v["message"]["content"]
+                                .as_str()
+                                .is_some_and(|s| !s.trim().is_empty())
+                        })
+                    });
             Ok(
                 json!({"dnsResolved":true,"httpResponse":true,"authValidated":has_secret && responded,"modelResponded":responded,"httpStatus":status.as_u16(),"redactedError": if responded { Value::Null } else { json!("Provider returned an error or an invalid model response") }}),
             )
@@ -227,32 +276,51 @@ pub async fn api_test(
 
 pub async fn connection_test(connection: Value, profile: Option<Value>) -> Result<Value> {
     crate::domain::validate_provider_connection(&connection)?;
-    let id = field(&connection, "id")?;
+    let service = format!(
+        "vibehub.provider-key.connection.{}",
+        field(&connection, "id")?
+    );
+    let needs_key = field(&connection, "providerId")? != "ollama";
+    let (http, secret) = crate::system::blocking(move || {
+        let secret = if needs_key {
+            storage::vault_get(&service)?
+        } else {
+            None
+        };
+        Ok((client(profile.as_ref())?, secret))
+    })
+    .await?;
+    connection_test_with_client(connection, http, secret).await
+}
+
+async fn connection_test_with_client(
+    connection: Value,
+    client: reqwest::Client,
+    secret: Option<String>,
+) -> Result<Value> {
+    crate::domain::validate_provider_connection(&connection)?;
     let provider = field(&connection, "providerId")?;
     let model = field(&connection, "modelId")?;
     let base = safe_url(field(&connection, "baseUrl")?)?;
-    let service = format!("vibehub.provider-key.connection.{id}");
     let needs_key = provider != "ollama";
-    let secret = if needs_key {
-        storage::vault_get(&service)?
-    } else {
-        None
-    };
     if needs_key && secret.is_none() {
         return Ok(json!({
-            "dnsResolved":false,"httpResponse":false,"authValidated":false,"modelResponded":false,
+            "dnsResolved":false,"httpResponse":false,"authValidated":false,"authRequired":true,"modelResponded":false,
             "redactedError":"Save an API key for this connection before testing"
         }));
     }
-
-    let client = client(profile.as_ref())?;
     let base = base.as_str().trim_end_matches('/');
     let is_anthropic = provider == "anthropic";
     let is_google = matches!(provider, "google" | "gemini");
     let (endpoint, body) = if is_google {
-        let mut endpoint = base.parse::<reqwest::Url>().map_err(|_| "Invalid provider URL")?;
-        endpoint.path_segments_mut().map_err(|_| "Invalid provider URL")?
-            .push("models").push(&format!("{model}:generateContent"));
+        let mut endpoint = base
+            .parse::<reqwest::Url>()
+            .map_err(|_| "Invalid provider URL")?;
+        endpoint
+            .path_segments_mut()
+            .map_err(|_| "Invalid provider URL")?
+            .push("models")
+            .push(&format!("{model}:generateContent"));
         (
             endpoint.to_string(),
             json!({"contents":[{"parts":[{"text":"Reply with OK."}]}],"generationConfig":{"maxOutputTokens":8}}),
@@ -271,7 +339,9 @@ pub async fn connection_test(connection: Value, profile: Option<Value>) -> Resul
     let mut request = client.post(endpoint).json(&body);
     if let Some(key) = secret.as_deref() {
         request = if is_anthropic {
-            request.header("x-api-key", key).header("anthropic-version", "2023-06-01")
+            request
+                .header("x-api-key", key)
+                .header("anthropic-version", "2023-06-01")
         } else if is_google {
             request.header("x-goog-api-key", key)
         } else {
@@ -282,31 +352,49 @@ pub async fn connection_test(connection: Value, profile: Option<Value>) -> Resul
         Ok(response) => {
             let status = response.status();
             let response_body = bounded_json(response, 1024 * 1024).await.ok();
-            let responded = status.is_success() && response_body.as_ref().is_some_and(|body| {
-                if is_google {
-                    body["candidates"].as_array().is_some_and(|items| items.iter().any(|item|
-                        item["content"]["parts"].as_array().is_some_and(|parts| parts.iter().any(|part| part["text"].is_string()))
-                    ))
-                } else if is_anthropic {
-                    body["content"].as_array().is_some_and(|items| items.iter().any(|item| item["type"] == "text" && item["text"].is_string()))
-                } else {
-                    body["choices"].as_array().is_some_and(|items| items.iter().any(|item| item["message"]["content"].is_string()))
-                }
-            });
+            let responded = status.is_success()
+                && response_body.as_ref().is_some_and(|body| {
+                    if is_google {
+                        body["candidates"].as_array().is_some_and(|items| {
+                            items.iter().any(|item| {
+                                item["content"]["parts"].as_array().is_some_and(|parts| {
+                                    parts.iter().any(|part| {
+                                        part["text"].as_str().is_some_and(|s| !s.trim().is_empty())
+                                    })
+                                })
+                            })
+                        })
+                    } else if is_anthropic {
+                        body["content"].as_array().is_some_and(|items| {
+                            items.iter().any(|item| {
+                                item["type"] == "text"
+                                    && item["text"].as_str().is_some_and(|s| !s.trim().is_empty())
+                            })
+                        })
+                    } else {
+                        body["choices"].as_array().is_some_and(|items| {
+                            items.iter().any(|item| {
+                                item["message"]["content"]
+                                    .as_str()
+                                    .is_some_and(|s| !s.trim().is_empty())
+                            })
+                        })
+                    }
+                });
             Ok(json!({
-                "dnsResolved":true,"httpResponse":true,"authValidated":!needs_key || (secret.is_some() && status.is_success()),
+                "dnsResolved":true,"httpResponse":true,"authRequired":needs_key,"authValidated":needs_key && secret.is_some() && responded,
                 "modelResponded":responded,"httpStatus":status.as_u16(),
                 "redactedError":if responded { Value::Null } else { json!("Provider returned an error or an invalid model response") }
             }))
         }
         Err(error) => Ok(json!({
-            "dnsResolved":false,"httpResponse":false,"authValidated":false,"modelResponded":false,
+            "dnsResolved":false,"httpResponse":false,"authValidated":false,"authRequired":needs_key,"modelResponded":false,
             "redactedError":if error.is_timeout() { "Request timed out" } else { "Connection or TLS failed; DNS status is unconfirmed" }
         })),
     }
 }
 
-async fn bounded_bytes(mut response: reqwest::Response, limit: usize) -> Result<Vec<u8>> {
+pub(crate) async fn bounded_bytes(mut response: reqwest::Response, limit: usize) -> Result<Vec<u8>> {
     let mut bytes = Vec::new();
     while let Some(chunk) = response
         .chunk()
@@ -387,3 +475,7 @@ pub async fn feed_sync(profile: Option<Value>, base: String) -> Result<Value> {
         json!({"ok":true,"updated":true,"detail":"Downloaded feed; shared schema validation required before use","generatedAt":index["generatedAt"],"catalog":catalog,"guides":guides}),
     )
 }
+
+#[cfg(test)]
+#[path = "network_tests.rs"]
+mod tests;

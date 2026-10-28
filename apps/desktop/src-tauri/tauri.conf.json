@@ -28,7 +28,9 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
+    "targets": [
+      "nsis"
+    ],
     "createUpdaterArtifacts": false,
     "resources": {
       "../../../LICENSE": "LICENSE",
@@ -53,7 +55,11 @@
       "../../../apps/migrate-agentrtl-paths.ps1": "apps/migrate-agentrtl-paths.ps1",
       "../../../cleanup.ps1": "cleanup.ps1",
       "windows/payload/node.exe": "runtime/node.exe",
-      "windows/payload/NODE-LICENSE.md": "licenses/NODE-LICENSE.md"
+      "windows/payload/NODE-LICENSE.md": "licenses/NODE-LICENSE.md",
+      "../../../apps/Antigravity/start.ps1": "apps/Antigravity/start.ps1",
+      "../../../apps/Antigravity/launch.vbs": "apps/Antigravity/launch.vbs",
+      "../../../apps/Antigravity/injector.mjs": "apps/Antigravity/injector.mjs",
+      "../../../apps/Antigravity/style.mjs": "apps/Antigravity/style.mjs"
     },
     "icon": [
       "icons/32x32.png",
@@ -64,7 +70,10 @@
     "windows": {
       "nsis": {
         "displayLanguageSelector": true,
-        "languages": ["English", "Farsi"],
+        "languages": [
+          "English",
+          "Farsi"
+        ],
         "customLanguageFiles": {
           "Farsi": "windows/Farsi.nsh"
         },

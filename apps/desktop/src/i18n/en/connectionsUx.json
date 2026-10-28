@@ -13,7 +13,7 @@
   "proxyReadFailed": "Proxy settings could not be loaded. Try reading them again.",
   "thisToolProxy": "Proxy for this tool",
   "toolProxySaved": "Proxy choice saved for this tool's next launch.",
-  "proxyScope": "Saving a profile does not prove that the tool sends its traffic through it.",
+  "proxyScope": "These settings are passed to the app at launch; routing all app traffic through the proxy is not guaranteed. Profile changes apply on the next launch.",
   "manageProxy": "Manage and test proxy profiles",
   "noKeyNeeded": "No key needed",
   "confirmed": "Confirmed",

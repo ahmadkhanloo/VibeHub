@@ -7,6 +7,9 @@ mod network;
 #[path = "../src/storage.rs"]
 #[allow(dead_code)]
 mod storage;
+#[path = "../src/system.rs"]
+#[allow(dead_code)]
+mod system;
 
 use domain::*;
 use serde_json::json;
@@ -54,7 +57,10 @@ fn provider_connections_require_safe_urls_ids_and_model_names() {
         json!({"id":"x","name":"x","providerId":"openrouter","baseUrl":"https://example.com/v1","modelId":"\n"}),
         json!({"id":"x","name":"x","providerId":"openrouter","baseUrl":"https://example.com/v1","modelId":"m","apiKey":"must-not-be-stored"}),
     ] {
-        assert!(validate_provider_connection(&invalid).is_err(), "accepted {invalid}");
+        assert!(
+            validate_provider_connection(&invalid).is_err(),
+            "accepted {invalid}"
+        );
     }
 }
 
@@ -71,7 +77,10 @@ fn provider_connection_metadata_survives_reload_without_persisting_a_secret() {
     let loaded = storage::provider_connections(&path).unwrap();
     assert_eq!(loaded[0]["name"], "My local model");
     assert_eq!(loaded[0]["modelId"], "qwen2.5-coder:7b");
-    assert_eq!(loaded[0]["hasKey"], false, "stale metadata must not claim a secret exists in the vault");
+    assert_eq!(
+        loaded[0]["hasKey"], false,
+        "stale metadata must not claim a secret exists in the vault"
+    );
     assert!(!std::fs::read_to_string(&path).unwrap().contains("apiKey"));
     std::fs::remove_file(path).unwrap();
 }
@@ -86,7 +95,8 @@ fn credential_inventory_is_read_only_and_never_returns_secrets() {
     let inventory = storage::provider_credentials_inventory_with(&path, |service| {
         reads.push(service.to_owned());
         Ok(service == "vibehub.provider-key.openrouter")
-    }).unwrap();
+    })
+    .unwrap();
     assert_eq!(std::fs::read(&path).unwrap(), bytes);
     assert_eq!(inventory["connections"][0]["hasKey"], false);
     assert_eq!(inventory["legacyProviderIds"], json!(["openrouter"]));
@@ -97,18 +107,38 @@ fn credential_inventory_is_read_only_and_never_returns_secrets() {
 
 #[test]
 fn failed_legacy_delete_blocks_connections_and_reports_partial_progress() {
-    let path = std::env::temp_dir().join(format!("vibehub-clear-legacy-{}.json", std::process::id()));
+    let path =
+        std::env::temp_dir().join(format!("vibehub-clear-legacy-{}.json", std::process::id()));
     let value = json!([{"id":"one","name":"Saved","providerId":"openrouter","baseUrl":"https://openrouter.ai/api/v1","modelId":"test","hasKey":true}]);
     storage::write(&path, &value).unwrap();
     let mut deleted = Vec::new();
-    let report = storage::provider_credentials_clear_with(&path, &["one".into()], &["openrouter".into(), "nvidia-build".into()], |service| {
-        deleted.push(service.to_owned());
-        if service.ends_with("nvidia-build") { Err("Simulated vault unavailable".into()) } else { Ok(()) }
-    }).unwrap();
+    let report = storage::provider_credentials_clear_with(
+        &path,
+        &["one".into()],
+        &["openrouter".into(), "nvidia-build".into()],
+        |service| {
+            deleted.push(service.to_owned());
+            if service.ends_with("nvidia-build") {
+                Err("Simulated vault unavailable".into())
+            } else {
+                Ok(())
+            }
+        },
+    )
+    .unwrap();
     assert_eq!(report["deletedLegacyProviderIds"], json!(["openrouter"]));
-    assert!(report["deletedConnectionIds"].as_array().unwrap().is_empty());
+    assert!(
+        report["deletedConnectionIds"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
     assert_eq!(storage::read(&path, json!([])).unwrap(), value);
-    assert!(!deleted.iter().any(|service| service.contains("connection.")));
+    assert!(
+        !deleted
+            .iter()
+            .any(|service| service.contains("connection."))
+    );
     assert_eq!(report["failures"].as_array().unwrap().len(), 2);
     std::fs::remove_file(path).unwrap();
 }
@@ -118,23 +148,39 @@ fn credential_delete_retains_metadata_on_vault_failure_and_is_scoped() {
     let path = std::env::temp_dir().join(format!("vibehub-clear-key-{}.json", std::process::id()));
     let value = json!([{"id":"one","name":"Saved","providerId":"openai","baseUrl":"https://api.openai.com/v1","modelId":"test","hasKey":true}]);
     storage::write(&path, &value).unwrap();
-    let failed = storage::provider_credentials_clear_with(&path, &["one".into()], &[], |_| Err("Simulated failure".into())).unwrap();
+    let failed = storage::provider_credentials_clear_with(&path, &["one".into()], &[], |_| {
+        Err("Simulated failure".into())
+    })
+    .unwrap();
     assert_eq!(failed["failures"][0]["kind"], "connection");
     assert_eq!(storage::read(&path, json!([])).unwrap(), value);
     let mut deleted = Vec::new();
-    let done = storage::provider_credentials_clear_with(&path, &["one".into()], &[], |service| { deleted.push(service.to_owned()); Ok(()) }).unwrap();
+    let done = storage::provider_credentials_clear_with(&path, &["one".into()], &[], |service| {
+        deleted.push(service.to_owned());
+        Ok(())
+    })
+    .unwrap();
     assert_eq!(deleted, vec!["vibehub.provider-key.connection.one"]);
     assert_eq!(done["deletedConnectionIds"], json!(["one"]));
     assert_eq!(storage::read(&path, json!([])).unwrap(), json!([]));
-    assert!(storage::provider_credentials_clear_with(&path, &[], &["other-app".into()], |_| panic!("invalid IDs must be rejected before deletion")).is_err());
-    let again = storage::provider_credentials_clear_with(&path, &["one".into()], &[], |_| panic!("already removed metadata must not target new credentials")).unwrap();
+    assert!(
+        storage::provider_credentials_clear_with(&path, &[], &["other-app".into()], |_| panic!(
+            "invalid IDs must be rejected before deletion"
+        ))
+        .is_err()
+    );
+    let again = storage::provider_credentials_clear_with(&path, &["one".into()], &[], |_| {
+        panic!("already removed metadata must not target new credentials")
+    })
+    .unwrap();
     assert_eq!(again["deletedConnectionIds"], json!(["one"]));
     std::fs::remove_file(path).unwrap();
 }
 
 #[test]
 fn credential_delete_reports_metadata_failure_and_reconciles_the_removed_key() {
-    let directory = std::env::temp_dir().join(format!("vibehub-delete-write-{}", std::process::id()));
+    let directory =
+        std::env::temp_dir().join(format!("vibehub-delete-write-{}", std::process::id()));
     let path = directory.join("connections.json");
     let value = json!([{"id":"one","name":"Saved","providerId":"openai","baseUrl":"https://api.openai.com/v1","modelId":"test","hasKey":true}]);
     storage::write(&path, &value).unwrap();
@@ -143,14 +189,26 @@ fn credential_delete_reports_metadata_failure_and_reconciles_the_removed_key() {
     let blocked_temp = path.with_extension("json.tmp");
     std::fs::create_dir(&blocked_temp).unwrap();
     let mut key_deleted = false;
-    let result = storage::provider_credentials_clear_with(&path, &["one".into()], &[], |_| { key_deleted = true; Ok(()) }).unwrap();
+    let result = storage::provider_credentials_clear_with(&path, &["one".into()], &[], |_| {
+        key_deleted = true;
+        Ok(())
+    })
+    .unwrap();
     assert!(key_deleted);
     assert_eq!(result["failures"][0]["errorKey"], "connectionDeleteFailed");
-    assert_eq!(storage::read(&path, json!([])).unwrap(), value, "metadata must remain retriable on disk");
+    assert_eq!(
+        storage::read(&path, json!([])).unwrap(),
+        value,
+        "metadata must remain retriable on disk"
+    );
     let inventory = storage::provider_credentials_inventory_with(&path, |_| Ok(false)).unwrap();
-    assert_eq!(inventory["connections"][0]["hasKey"], false, "the UI must not claim the deleted key is still stored");
+    assert_eq!(
+        inventory["connections"][0]["hasKey"], false,
+        "the UI must not claim the deleted key is still stored"
+    );
     std::fs::remove_dir(blocked_temp).unwrap();
-    let retried = storage::provider_credentials_clear_with(&path, &["one".into()], &[], |_| Ok(())).unwrap();
+    let retried =
+        storage::provider_credentials_clear_with(&path, &["one".into()], &[], |_| Ok(())).unwrap();
     assert!(retried["failures"].as_array().unwrap().is_empty());
     std::fs::remove_file(path).unwrap();
     std::fs::remove_dir(directory).unwrap();
@@ -158,29 +216,61 @@ fn credential_delete_reports_metadata_failure_and_reconciles_the_removed_key() {
 
 #[test]
 fn credential_clear_removes_legacy_before_connections_and_preserves_unconfirmed_items() {
-    let path = std::env::temp_dir().join(format!("vibehub-clear-order-{}.json", std::process::id()));
+    let path =
+        std::env::temp_dir().join(format!("vibehub-clear-order-{}.json", std::process::id()));
     let connection = |id: &str| json!({"id":id,"name":id,"providerId":"openrouter","baseUrl":"https://openrouter.ai/api/v1","modelId":"test","hasKey":true});
-    storage::write(&path, &json!([connection("chosen"), connection("unconfirmed")])).unwrap();
+    storage::write(
+        &path,
+        &json!([connection("chosen"), connection("unconfirmed")]),
+    )
+    .unwrap();
     let mut keys = std::collections::HashSet::from([
         "vibehub.provider-key.openrouter".to_owned(),
         "vibehub.provider-key.connection.chosen".to_owned(),
         "vibehub.provider-key.connection.unconfirmed".to_owned(),
     ]);
     let mut order = Vec::new();
-    let result = storage::provider_credentials_clear_with(&path, &["chosen".into()], &["openrouter".into()], |service| {
-        order.push(service.to_owned()); keys.remove(service); Ok(())
-    }).unwrap();
+    let result = storage::provider_credentials_clear_with(
+        &path,
+        &["chosen".into()],
+        &["openrouter".into()],
+        |service| {
+            order.push(service.to_owned());
+            keys.remove(service);
+            Ok(())
+        },
+    )
+    .unwrap();
     assert!(result["failures"].as_array().unwrap().is_empty());
-    assert_eq!(order, vec!["vibehub.provider-key.openrouter", "vibehub.provider-key.connection.chosen"]);
-    assert_eq!(keys, std::collections::HashSet::from(["vibehub.provider-key.connection.unconfirmed".to_owned()]));
-    assert_eq!(storage::read(&path, json!([])).unwrap()[0]["id"], "unconfirmed");
-    assert!(!keys.contains("vibehub.provider-key.openrouter"), "saving a new connection cannot rediscover the deleted legacy key");
+    assert_eq!(
+        order,
+        vec![
+            "vibehub.provider-key.openrouter",
+            "vibehub.provider-key.connection.chosen"
+        ]
+    );
+    assert_eq!(
+        keys,
+        std::collections::HashSet::from(["vibehub.provider-key.connection.unconfirmed".to_owned()])
+    );
+    assert_eq!(
+        storage::read(&path, json!([])).unwrap()[0]["id"],
+        "unconfirmed"
+    );
+    assert!(
+        !keys.contains("vibehub.provider-key.openrouter"),
+        "saving a new connection cannot rediscover the deleted legacy key"
+    );
     std::fs::remove_file(path).unwrap();
 }
 
 #[test]
 fn provider_connection_keys_are_bound_to_provider_and_origin() {
-    let suffix = format!("{}-{}", std::process::id(), chrono::Utc::now().timestamp_nanos_opt().unwrap());
+    let suffix = format!(
+        "{}-{}",
+        std::process::id(),
+        chrono::Utc::now().timestamp_nanos_opt().unwrap()
+    );
     let id = format!("scope-{suffix}");
     let path = std::env::temp_dir().join(format!("vibehub-provider-scope-{suffix}.json"));
     let service = format!("vibehub.provider-key.connection.{id}");
@@ -191,25 +281,41 @@ fn provider_connection_keys_are_bound_to_provider_and_origin() {
         "id":id,"name":"OpenAI","providerId":"openai",
         "baseUrl":"https://api.openai.com/v1","modelId":"gpt-test","hasKey":false
     });
-    let saved = storage::save_provider_connection(&path, openai.clone(), Some("secret-old-host")).unwrap();
+    let saved =
+        storage::save_provider_connection(&path, openai.clone(), Some("secret-old-host")).unwrap();
     assert_eq!(saved[0]["hasKey"], true);
-    assert_eq!(storage::vault_get(&service).unwrap().as_deref(), Some("secret-old-host"));
+    assert_eq!(
+        storage::vault_get(&service).unwrap().as_deref(),
+        Some("secret-old-host")
+    );
 
     let mut changed_origin = openai.clone();
     changed_origin["baseUrl"] = json!("https://gateway.example.test/v1");
     let saved = storage::save_provider_connection(&path, changed_origin, None).unwrap();
     assert_eq!(saved[0]["hasKey"], false);
-    assert_eq!(storage::vault_get(&service).unwrap(), None, "changing endpoint origin must delete the old key");
+    assert_eq!(
+        storage::vault_get(&service).unwrap(),
+        None,
+        "changing endpoint origin must delete the old key"
+    );
 
     storage::vault_set(&service, "secret-openai").unwrap();
     let ollama = json!({
         "id":id,"name":"Local Ollama","providerId":"ollama",
         "baseUrl":"http://127.0.0.1:11434/v1","modelId":"qwen-test","hasKey":true
     });
-    let saved = storage::save_provider_connection(&path, ollama, Some("must-not-be-saved")).unwrap();
+    let saved =
+        storage::save_provider_connection(&path, ollama, Some("must-not-be-saved")).unwrap();
     assert_eq!(saved[0]["hasKey"], false);
-    assert_eq!(storage::vault_get(&service).unwrap(), None, "Ollama must not retain a key");
-    assert_eq!(storage::provider_connections(&path).unwrap()[0]["hasKey"], false);
+    assert_eq!(
+        storage::vault_get(&service).unwrap(),
+        None,
+        "Ollama must not retain a key"
+    );
+    assert_eq!(
+        storage::provider_connections(&path).unwrap()[0]["hasKey"],
+        false
+    );
 
     storage::vault_delete(&service).unwrap();
     std::fs::remove_file(path).unwrap();
@@ -219,7 +325,11 @@ fn provider_connection_keys_are_bound_to_provider_and_origin() {
 fn ollama_connection_test_never_sends_a_stale_vault_key() {
     let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
     let port = listener.local_addr().unwrap().port();
-    let id = format!("ollama-test-{}-{}", std::process::id(), chrono::Utc::now().timestamp_nanos_opt().unwrap());
+    let id = format!(
+        "ollama-test-{}-{}",
+        std::process::id(),
+        chrono::Utc::now().timestamp_nanos_opt().unwrap()
+    );
     let service = format!("vibehub.provider-key.connection.{id}");
     storage::vault_set(&service, "stale-ollama-secret").unwrap();
     let server = std::thread::spawn(move || {
@@ -240,9 +350,11 @@ fn ollama_connection_test_never_sends_a_stale_vault_key() {
     let result = tauri::async_runtime::block_on(network::connection_test(
         connection,
         Some(json!({"id":"direct","name":"Direct","mode":"direct"})),
-    )).unwrap();
+    ))
+    .unwrap();
     assert_eq!(result["modelResponded"], true);
-    assert_eq!(result["authValidated"], true);
+    assert_eq!(result["authValidated"], false);
+    assert_eq!(result["authRequired"], false);
     assert!(!result.to_string().contains("stale-ollama-secret"));
     server.join().unwrap();
     storage::vault_delete(&service).unwrap();
@@ -273,7 +385,8 @@ fn anthropic_connection_uses_its_native_headers_and_redacts_the_key() {
     let result = tauri::async_runtime::block_on(network::connection_test(
         connection,
         Some(json!({"id":"d","name":"direct","mode":"direct"})),
-    )).unwrap();
+    ))
+    .unwrap();
     assert_eq!(result["modelResponded"], true);
     assert!(!result.to_string().contains("secret-test-key"));
     server.join().unwrap();
@@ -295,7 +408,13 @@ fn google_connection_uses_api_key_header_instead_of_url_query() {
         let request = String::from_utf8_lossy(&request[..size]).to_ascii_lowercase();
         assert!(request.starts_with("post /v1beta/models/gemini-test:generatecontent http/1.1"));
         assert!(request.contains("x-goog-api-key: secret-google-test"));
-        assert!(!request.lines().next().unwrap().contains("secret-google-test"));
+        assert!(
+            !request
+                .lines()
+                .next()
+                .unwrap()
+                .contains("secret-google-test")
+        );
         let body = r#"{"candidates":[{"content":{"parts":[{"text":"OK"}]}}]}"#;
         write!(stream, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}", body.len(), body).unwrap();
     });
@@ -306,7 +425,8 @@ fn google_connection_uses_api_key_header_instead_of_url_query() {
     let result = tauri::async_runtime::block_on(network::connection_test(
         connection,
         Some(json!({"id":"direct","name":"Direct","mode":"direct"})),
-    )).unwrap();
+    ))
+    .unwrap();
     assert_eq!(result["authValidated"], true);
     assert_eq!(result["modelResponded"], true);
     assert!(!result.to_string().contains("secret-google-test"));
@@ -345,11 +465,15 @@ fn config_cannot_refer_to_deleted_profile_or_downgrade_required_proxy() {
 
 #[test]
 fn per_app_proxy_can_target_a_detected_editor() {
-    let profiles = vec![json!({"id":"proxy","name":"local","mode":"socks5","host":"127.0.0.1","port":10808})];
-    assert!(validate_config(
-        &json!({"globalProfileId":"","requireProxy":false,"perApp":{"antigravity":"proxy"}}),
-        &profiles
-    ).is_ok());
+    let profiles =
+        vec![json!({"id":"proxy","name":"local","mode":"socks5","host":"127.0.0.1","port":10808})];
+    assert!(
+        validate_config(
+            &json!({"globalProfileId":"","requireProxy":false,"perApp":{"antigravity":"proxy"}}),
+            &profiles
+        )
+        .is_ok()
+    );
 }
 
 #[test]
@@ -448,7 +572,11 @@ fn tcp_success_does_not_count_as_socks_handshake_success() {
 fn socks5_handshake_checks_username_password_authentication() {
     let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
     let port = listener.local_addr().unwrap().port();
-    let id = format!("socks-auth-{}-{}", std::process::id(), chrono::Utc::now().timestamp_nanos_opt().unwrap());
+    let id = format!(
+        "socks-auth-{}-{}",
+        std::process::id(),
+        chrono::Utc::now().timestamp_nanos_opt().unwrap()
+    );
     let service = format!("vibehub.proxy.{id}");
     storage::vault_set(&service, "pass-1").unwrap();
     let server = std::thread::spawn(move || {
@@ -475,7 +603,8 @@ fn socks5_handshake_checks_username_password_authentication() {
         "id":id,"name":"authenticated test","mode":"socks5",
         "host":"127.0.0.1","port":port,"username":"user","hasPassword":true
     });
-    let result = tauri::async_runtime::block_on(network::proxy_test(profile, "handshake".into())).unwrap();
+    let result =
+        tauri::async_runtime::block_on(network::proxy_test(profile, "handshake".into())).unwrap();
     assert_eq!(result["ok"], true, "{}", result["detail"]);
     server.join().unwrap();
     storage::vault_delete(&service).unwrap();
@@ -516,11 +645,15 @@ fn feed_downloads_the_catalog_and_bilingual_guides_from_a_real_http_server() {
     let port = listener.local_addr().unwrap().port();
     listener.set_nonblocking(true).unwrap();
     let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../content");
+    let index: serde_json::Value = serde_json::from_slice(&std::fs::read(root.join("offers/index.json")).unwrap()).unwrap();
+    let app_count = index["apps"].as_array().unwrap().len();
+    let provider_count = index["providers"].as_array().unwrap().len();
+    let request_count = 1 + app_count * 3 + provider_count + index["offers"].as_array().unwrap().len();
     let server = std::thread::spawn(move || {
         use std::io::{Read, Write};
         let start = std::time::Instant::now();
         let mut requests = 0;
-        while requests < 23 && start.elapsed().as_secs() < 10 {
+        while requests < request_count && start.elapsed().as_secs() < 20 {
             let Ok((mut stream, _)) = listener.accept() else {
                 std::thread::sleep(std::time::Duration::from_millis(5));
                 continue;
@@ -560,14 +693,14 @@ fn feed_downloads_the_catalog_and_bilingual_guides_from_a_real_http_server() {
         format!("http://127.0.0.1:{port}"),
     ))
     .unwrap();
-    assert_eq!(result["catalog"]["apps"].as_array().unwrap().len(), 6);
-    assert_eq!(result["catalog"]["providers"].as_array().unwrap().len(), 4);
-    assert_eq!(result["guides"].as_object().unwrap().len(), 12);
+    assert_eq!(result["catalog"]["apps"].as_array().unwrap().len(), app_count);
+    assert_eq!(result["catalog"]["providers"].as_array().unwrap().len(), provider_count);
+    assert_eq!(result["guides"].as_object().unwrap().len(), app_count * 2);
     assert!(
         result["guides"]["qoder/fa"]
             .as_str()
             .unwrap()
             .contains("Qoder")
     );
-    assert_eq!(server.join().unwrap(), 23);
+    assert_eq!(server.join().unwrap(), request_count);
 }

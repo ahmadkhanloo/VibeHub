@@ -1,5 +1,22 @@
 # VibeHub
 
+## Development without reinstalling
+
+- `pnpm dev` or `pnpm dev:browser`: open `http://127.0.0.1:1422/`. Vite updates the UI immediately. The visible preview banner means Windows launch/install/proxy operations are simulated; no real account credentials are available.
+- `pnpm dev:desktop`: run the actual native application from source with hot reload, titled **VibeHub — Development**. It uses a separate development app identifier and settings directory. Use this window for real RTL/Windows tests; UI changes need no installer, while Rust changes rebuild/restart the development process.
+- The existing installed executable is not updated by building the repository. Check the executable path and build date when comparing installed and source behavior.
+- `pnpm test:ui` starts both development servers as needed. Production builds exclude the preview adapter and its fixtures.
+
+### Apps, Codex accounts and learning
+
+The app catalog includes standalone Antigravity and one ChatGPT/legacy Codex entry alongside the existing apps. General IDE discovery is retired. Proxy profiles are requested on the next launch; a healthy proxy check does not establish that every app request uses it.
+
+Open **Codex accounts** to sign in, import your local Codex account, inspect quotas, rename/remove saved accounts, or switch accounts without VS Code. This integration currently supports **Codex CLI 0.148.0**. It manages Codex authentication, including Codex in the desktop app; it does not switch ordinary ChatGPT chat accounts. Saved profiles use Codex's encrypted auth format with the encryption key in Windows Credential Manager. The local Codex credential store continues to use its configured file/keyring mode.
+
+Automatic switching is off by default. When enabled it checks every five minutes while VibeHub is running, uses a 1% remaining-quota threshold by default, and waits at least ten minutes between switches. Open desktop apps require explicit restart confirmation. **Live Windows desktop account switching remains experimental and unverified.**
+
+Under **Guides → Plugins and skills**, searchable bilingual tutorials cover seven starter skills and GitHub, Figma and OpenAI Developers plugins, with original sources and app-specific installation instructions.
+
 VibeHub is a free, open-source desktop companion for discovering and configuring AI coding tools. It separates each tool's license, free-access terms, regional eligibility, and VibeHub capabilities; it does not provide model hosting or a proxy service.
 
 **Release channel:** VibeHub is a beta product; use the [GitHub prereleases](https://github.com/ahmadkhanloo/VibeHub/releases) for testing. Clean Windows installation and upgrade acceptance remain pending. The historical AgentRTL v1.x installers are not VibeHub releases. Track evidence and remaining gates in the [acceptance matrix](docs/validation/VibeHub_Release_Acceptance_Matrix.md).
