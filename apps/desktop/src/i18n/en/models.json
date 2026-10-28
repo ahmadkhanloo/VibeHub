@@ -50,6 +50,7 @@
     "authValidated": "Key authenticated",
     "modelResponded": "Model responded"
   },
+  "authNotRequired": "Not required for this connection",
   "redacted": "Sensitive keys/details are redacted from the report.",
   "saveKey": "Save key to vault",
   "deleteKey": "Delete key from vault",

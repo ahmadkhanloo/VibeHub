@@ -24,10 +24,15 @@ export default defineConfig({
       ? { channel: process.env.PLAYWRIGHT_CHANNEL || "msedge" }
       : {}),
   },
-  webServer: {
+  webServer: [{
     command: "pnpm --filter @vibehub/desktop dev --host 127.0.0.1 --port 1425",
     url: "http://127.0.0.1:1425",
     reuseExistingServer: !process.env.CI,
     timeout: 60000,
-  },
+  }, {
+    command: 'pnpm dev:browser',
+    url: 'http://127.0.0.1:1422',
+    reuseExistingServer: !process.env.CI,
+    timeout: 60000,
+  }],
 });

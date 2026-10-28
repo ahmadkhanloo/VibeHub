@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "offerId": "qoder-deepseek-flash",
+  "appId": "qoder",
+  "title": {
+    "fa": "سهمیهٔ رایگان DeepSeek-Flash در Qoder",
+    "en": "DeepSeek-Flash daily free allowance in Qoder"
+  },
+  "summary": {
+    "fa": "تا پایان ۳۱ اکتبر ۲۰۲۶ به وقت سنگاپور، در محدودهٔ سهمیهٔ روزانه رایگان است؛ پس از اتمام سهمیه هزینه دارد.",
+    "en": "Free within the daily allowance through October 31, 2026, Singapore time. Usage after the allowance is billed."
+  },
+  "sourceUrl": "https://docs.qoder.com/events/deepseek-flash-free",
+  "publishedAt": "2026-10-27T15:55:00.456Z",
+  "verifiedAt": "2026-10-27T15:55:00.456Z",
+  "startAt": "2026-10-19T16:00:00Z",
+  "endAt": "2026-10-31T16:00:00Z",
+  "eligibility": "Individual international accounts; daily allowances differ by plan.",
+  "status": "verified",
+  "checkedAt": "2026-10-27T15:55:00.456Z",
+  "sourceState": "fresh",
+  "revision": "a43798a6e84ee50f87997a230e3ff9af8801593f1ec694aa1cbd2cb191b38c4f",
+  "benefit": {
+    "unit": "free-model",
+    "model": "DeepSeek-V4.1-Flash-1017"
+  },
+  "claim": {
+    "required": false,
+    "url": "https://docs.qoder.com/events/deepseek-flash-free"
+  }
+}

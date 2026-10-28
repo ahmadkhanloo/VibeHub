@@ -45,7 +45,7 @@ function Get-RtlNodePath([string]$AdapterDir) {
     (Join-Path $AdapterDir '..\..\runtime\node.exe')
     (Join-Path $AdapterDir '..\desktop\src-tauri\windows\payload\node.exe')
   ) | ForEach-Object { [IO.Path]::GetFullPath($_) } | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
-  if (Test-Path -LiteralPath $bundled -PathType Leaf) {
+  if ($bundled -and (Test-Path -LiteralPath $bundled -PathType Leaf)) {
     $version = & $bundled --version
     if ($LASTEXITCODE -eq 0 -and [version](($version -replace '^v', '')) -ge [version]'21.0') { return $bundled }
     throw 'The VibeHub bundled Node.js runtime is invalid. Reinstall VibeHub RTL.'
@@ -58,4 +58,60 @@ function Get-RtlNodePath([string]$AdapterDir) {
     } catch {}
   }
   throw 'Node.js 21 or newer was not found. Reinstall VibeHub RTL to add its private runtime.'
+}
+
+
+# Shared discovery; never launches a child PowerShell, opens a dialog or writes state.
+function Get-RtlExecutable([string]$Id, [string]$AdapterDir) {
+  $names = switch ($Id) {
+    'zcode' { @('ZCode.exe') }
+    'qoder' { @('Qoder.exe', 'Qoder IDE.exe') }
+    'deepseek-harness' { @('DeepSeek Harness.exe') }
+    'antigravity' { @('Antigravity.exe') }
+    default { return $null }
+  }
+  $envName = switch ($Id) { 'zcode' {'ZCODE_RTL_EXE'} 'qoder' {'QODER_RTL_EXE'} 'deepseek-harness' {'DEEPSEEK_HARNESS_RTL_EXE'} 'antigravity' {'ANTIGRAVITY_RTL_EXE'} }
+  $override = [Environment]::GetEnvironmentVariable($envName)
+  if ($override) {
+    if (Test-Path -LiteralPath $override -PathType Leaf) { return $override }
+    throw "$envName is set but is not a file."
+  }
+  $saved = Get-RtlSavedPath $Id
+  if ($saved -and [IO.Path]::GetFileName($saved) -in $names) { return $saved }
+  if ($Id -eq 'qoder') {
+    $oldFile = Join-Path $AdapterDir 'qoder-path.txt'
+    if (Test-Path -LiteralPath $oldFile -PathType Leaf) {
+      $old = [IO.File]::ReadAllText($oldFile, [Text.Encoding]::UTF8).Trim()
+      if ($old -and (Test-Path -LiteralPath $old -PathType Leaf)) { return $old }
+    }
+  }
+  $bases = switch ($Id) {
+    'zcode' { @("$env:ProgramFiles\ZCode", "${env:ProgramFiles(x86)}\ZCode", "$env:LOCALAPPDATA\Programs\ZCode") }
+    'qoder' { @("$env:LOCALAPPDATA\Programs\Qoder IDE", "$env:LOCALAPPDATA\Programs\Qoder") }
+    'deepseek-harness' { @("$env:LOCALAPPDATA\Programs\DeepSeek Harness") }
+    'antigravity' { @("$env:LOCALAPPDATA\Programs\antigravity") }
+  }
+  foreach ($base in $bases) {
+    if ($Id -eq 'qoder') {
+      $versions = Get-ChildItem -LiteralPath (Join-Path $base '.qoder-versions') -Directory -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -match '^\d+(\.\d+){2,3}$' -and (Test-Path -LiteralPath (Join-Path $_.FullName 'resources\app.asar')) } |
+        Sort-Object { [version]$_.Name } -Descending
+      foreach ($version in $versions) { foreach ($name in $names) {
+        $candidate = Join-Path $version.FullName $name
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
+      } }
+      if (-not (Test-Path -LiteralPath (Join-Path $base 'resources\app.asar'))) { continue }
+    }
+    foreach ($name in $names) {
+      $candidate = Join-Path $base $name
+      if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
+    }
+  }
+  # Slow custom-path fallback only when saved and standard paths did not resolve.
+  if ($Id -eq 'qoder') {
+    $running = Get-CimInstance Win32_Process -Filter "Name='Qoder.exe' OR Name='Qoder IDE.exe'" -ErrorAction SilentlyContinue |
+      Where-Object { $_.CommandLine -notmatch '--type=' -and $_.ExecutablePath } | Select-Object -First 1
+    if ($running -and (Test-Path -LiteralPath (Join-Path (Split-Path $running.ExecutablePath) 'resources\app.asar'))) { return $running.ExecutablePath }
+  }
+  return $null
 }

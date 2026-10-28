@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "chatgpt",
+  "name": "ChatGPT / Codex",
+  "summary": {
+    "fa": "اپ دسکتاپ ChatGPT و Codex قدیمی؛ پنل مستقل مدیریت حساب‌های Codex در وایب‌هاب.",
+    "en": "ChatGPT desktop and legacy Codex detection, with a standalone Codex account panel in VibeHub."
+  },
+  "kind": "desktop_agent",
+  "platforms": [
+    "windows"
+  ],
+  "websiteUrl": "https://chatgpt.com/download/",
+  "docsUrl": "https://learn.chatgpt.com/docs/",
+  "isOpenSource": false,
+  "freeAccess": "unknown",
+  "freeAccessDetails": {
+    "fa": "دسترسی و سهمیه به حساب، طرح و شرایط جاری سازنده وابسته است.",
+    "en": "Access and quotas depend on your account, plan and current vendor terms."
+  },
+  "requiresSignup": true,
+  "requiresPaymentCard": null,
+  "sourceOfFreeAccess": "https://chatgpt.com/download/",
+  "lastVerified": "2026-10-27",
+  "capabilities": {
+    "install": "reported",
+    "launch": "reported",
+    "rtl": "unsupported",
+    "proxy": "unknown",
+    "terminal": "unsupported",
+    "byok": "unknown"
+  },
+  "installMethods": [
+    {
+      "method": "guide",
+      "idOrUrl": "https://chatgpt.com/download/"
+    }
+  ]
+}

@@ -1,7 +1,9 @@
+import { Tooltip } from '@/components/Tooltip';
+import { Disclosure } from '@/components/Disclosure';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, Download, Moon, RefreshCw, Sun, Terminal as TerminalIcon } from 'lucide-react';
-import { Badge, Button, Card, ErrorNotice, Input, Modal, PageHeader, SectionTitle, Select, Toggle } from '@/components/ui';
+import { Check, Download, Moon, RefreshCw, Sun } from 'lucide-react';
+import { Badge, Button, ErrorNotice, Input, Modal, PageHeader, Select, Toggle, Tabs } from '@/components/ui';
 import { useSettings, type Accent, type ThemeFamily, type ThemeModeSetting } from '@/app/settings';
 import { ipc, type CredentialClearResult, type ProviderCredentialInventory } from '@/services/ipc';
 import { check } from '@tauri-apps/plugin-updater';
@@ -28,10 +30,10 @@ function ThemeGallery() {
           data-theme={family} data-mode={mode} data-accent={settings.accent}
           className={`rounded-xl border p-4 text-start ${active ? 'border-primary ring-1 ring-primary' : 'border-border'}`}
           style={{ background: 'var(--surface)', color: 'var(--text)' }}>
-          <span className="mb-3 flex items-center gap-2" aria-hidden="true">
-            <span className="h-4 w-4 rounded-full" style={{ background: 'var(--primary)' }} />
-            <span className="h-4 w-4 rounded-full border" style={{ background: 'var(--surface-alt)', borderColor: 'var(--border)' }} />
-            {active && <Check size={16} className="ms-auto" />}
+          <span className="vh-theme-preview" aria-hidden="true">
+            <span className="vh-theme-preview-nav"><i /><i /><i /></span>
+            <span className="vh-theme-preview-content"><span className="vh-theme-preview-heading" /><span className="vh-theme-preview-line" /><span className="vh-theme-preview-card"><i /><span /></span><span className="vh-theme-preview-action" /></span>
+            {active && <Check size={16} className="vh-theme-preview-check" />}
           </span>
           <span className="flex items-center justify-between gap-2 text-sm">
             {t(`settings:appearance.families.${family}`)}
@@ -47,8 +49,9 @@ function ThemeGallery() {
 export function SettingsPage() {
   const { t } = useTranslation(['settingsUx', 'settings', 'common']);
   const { settings, update } = useSettings();
-  const [params] = useSearchParams();
-  const [terminalOpen, setTerminalOpen] = useState(params.get('panel') === 'terminal');
+  const [params, setParams] = useSearchParams();
+  const panels = ['appearance', 'terminal', 'updates', 'notifications', 'data'];
+  const selectedPanel = params.get('panel') === 'terminal' ? 'terminal' : panels.includes(params.get('section') ?? '') ? params.get('section')! : 'appearance';
   const [version, setVersion] = useState<string | null>(null);
   const [availableUpdate, setAvailableUpdate] = useState<Awaited<ReturnType<typeof check>>>(null);
   const [checked, setChecked] = useState(false);
@@ -62,7 +65,6 @@ export function SettingsPage() {
   const [credentialError, setCredentialError] = useState<unknown>(null);
 
   useEffect(() => { void ipc.appVersion().then(setVersion).catch(() => setVersion(null)); }, []);
-  useEffect(() => { if (params.get('panel') === 'terminal') setTerminalOpen(true); }, [params]);
 
   const perform = async (name: string, action: () => Promise<void>) => {
     if (busy) return;
@@ -100,13 +102,15 @@ export function SettingsPage() {
   };
   const selectionCount = (inventory?.connections.length ?? 0) + (inventory?.legacyProviderIds.length ?? 0);
 
-  return <div className="space-y-6">
-    <PageHeader title={t('settings:title')} description={t('settingsUx:description')} />
+  return <div className="space-y-6 vh-settings-sections">
+    <PageHeader title={t('settings:title')} />
+    <Tabs panelId="settings-panel" label={t('settings:title')} value={selectedPanel} onChange={value => setParams(current => { const next = new URLSearchParams(current); next.delete('panel'); next.set('section', value); return next; })} items={panels.map(value => ({ value, label: t('ux:' + value + 'Tab') }))} />
+    <div id="settings-panel" role="tabpanel" aria-labelledby={'settings-panel-tab-' + selectedPanel}>
     {error != null && <ErrorNotice error={error} />}
     {message && <p className="rounded-lg border border-success/40 bg-success/10 p-4 text-sm" role="status">{message}</p>}
 
-    <Card className="space-y-6">
-      <SectionTitle>{t('settings:appearance.title')}</SectionTitle>
+    <section hidden={selectedPanel !== 'appearance'} className="vh-settings-panel space-y-4">
+
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <label className="block space-y-2 text-sm"><span>{t('settings:appearance.language')}</span>
           <Select value={settings.language} onChange={(language) => update({ language })} options={[{ value: 'fa', label: t('common:languagePersian') }, { value: 'en', label: t('common:languageEnglish') }]} /></label>
@@ -118,18 +122,12 @@ export function SettingsPage() {
           <Select<Accent> value={settings.accent} onChange={(accent) => update({ accent })} options={ACCENTS.map((accent) => ({ value: accent, label: t(`settings:appearance.accents.${accent}`) }))} /></label>
       </div>
       <ThemeGallery />
-    </Card>
+    </section>
 
-    <Card className="space-y-4">
-      <SectionTitle action={<Button size="sm" aria-expanded={terminalOpen} onClick={() => setTerminalOpen(!terminalOpen)}>{terminalOpen ? t('common:close') : t('settings:terminal.openTerminal')}</Button>}>
-        <span className="flex items-center gap-2"><TerminalIcon size={20} aria-hidden="true" />{t('settings:terminal.title')}</span>
-      </SectionTitle>
-      <p className="text-sm text-muted">{t('settings:terminal.hint')}</p>
-      {terminalOpen && <TerminalPage />}
-    </Card>
+    <section hidden={selectedPanel !== 'terminal'} className="vh-settings-panel">{selectedPanel === 'terminal' && <TerminalPage />}</section>
 
-    <Card className="space-y-4">
-      <SectionTitle>{t('settings:updates.title')}</SectionTitle>
+    <section hidden={selectedPanel !== 'updates'} className="vh-settings-panel space-y-4">
+
       <div className="flex flex-wrap items-center gap-3">
         <Badge>{t('settings:updates.currentVersion')}: <bdi>{version ?? '—'}</bdi></Badge>
         <Button loading={busy === 'check'} disabled={busy !== null} onClick={() => void perform('check', async () => { setAvailableUpdate(await check()); setChecked(true); })}>
@@ -141,7 +139,7 @@ export function SettingsPage() {
       </div>
       {checked && !availableUpdate && !error && <p role="status" className="text-sm">{t('settings:updates.upToDate')}</p>}
       {availableUpdate?.body && <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-surface-alt p-4 text-sm">{availableUpdate.body}</pre>}
-      <p className="text-sm text-muted">{t('settings:updates.updatePolicy')}</p>
+      <Tooltip text={t('settings:updates.updatePolicy')} />
       <div className="space-y-3 border-t border-border pt-4">
         <label className="block max-w-2xl space-y-2 text-sm"><span>{t('settingsUx:feedAddress')}</span>
           <Input dir="ltr" type="url" value={settings.feedBaseUrl} onChange={(event) => update({ feedBaseUrl: event.target.value })} /></label>
@@ -152,11 +150,11 @@ export function SettingsPage() {
         {syncDate && <p className="text-sm text-muted">{t('settings:updates.lastSynced')}: <bdi>{syncDate}</bdi></p>}
       </div>
       <Toggle checked={false} disabled onChange={() => undefined} label={t('settings:updates.autoCheck')} />
-      <p className="text-sm text-muted">{t('settingsUx:manualUpdates')}</p>
-    </Card>
+      <p className="text-sm leading-7 text-muted">{t('settingsUx:manualUpdates')}</p>
+    </section>
 
-    <Card className="space-y-4">
-      <SectionTitle>{t('settings:notifications.title')}</SectionTitle>
+    <section hidden={selectedPanel !== 'notifications'} className="vh-settings-panel space-y-4">
+
       <Toggle checked={settings.nativeNotifications} disabled={busy !== null} onChange={(enabled) => {
         if (!enabled) { update({ nativeNotifications: false }); return; }
         void perform('notifications', async () => {
@@ -165,36 +163,37 @@ export function SettingsPage() {
           update({ nativeNotifications: true });
         });
       }} label={t('settings:notifications.system')} />
-      <p className="text-sm text-muted">{t('settingsUx:notificationsHint')}</p>
+      <p className="text-sm leading-7 text-muted">{t('settingsUx:notificationsHint')}</p>
       <Toggle checked={settings.quietHours.enabled} disabled={busy !== null} onChange={(enabled) => update({ quietHours: { ...settings.quietHours, enabled } })} label={t('settingsUx:quietHours')} />
       {settings.quietHours.enabled && <div className="grid max-w-md grid-cols-2 gap-4">
         <label className="block space-y-2 text-sm"><span>{t('settingsUx:quietFrom')}</span><Input type="time" dir="ltr" value={settings.quietHours.from} onChange={(event) => update({ quietHours: { ...settings.quietHours, from: event.target.value } })} /></label>
         <label className="block space-y-2 text-sm"><span>{t('settingsUx:quietTo')}</span><Input type="time" dir="ltr" value={settings.quietHours.to} onChange={(event) => update({ quietHours: { ...settings.quietHours, to: event.target.value } })} /></label>
       </div>}
-    </Card>
+    </section>
 
-    <Card className="space-y-4">
-      <SectionTitle>{t('settingsUx:dataTitle')}</SectionTitle>
-      <p className="text-sm text-muted">{t('settings:privacy.noTelemetry')}</p>
+    <section hidden={selectedPanel !== 'data'} className="vh-settings-panel space-y-4">
+
+      <Tooltip text={t('settings:privacy.noTelemetry')} />
       <div className="divide-y divide-border">
-        <div className="flex flex-wrap items-center justify-between gap-4 py-4"><div className="max-w-xl"><h3 className="font-semibold">{t('settings:privacy.wipeCache')}</h3><p className="mt-1 text-sm text-muted">{t('settingsUx:cacheHint')}</p></div>
+        <div className="flex flex-wrap items-center justify-between gap-4 py-4"><div className="max-w-xl"><h3 className="font-semibold">{t('settings:privacy.wipeCache')}</h3><p className="text-sm leading-7 text-muted">{t('settingsUx:cacheHint')}</p></div>
           <Button disabled={busy !== null} onClick={() => { localStorage.removeItem('vibehub.content.v1'); location.reload(); }}>{t('settings:privacy.wipeCache')}</Button></div>
-        <div className="flex flex-wrap items-center justify-between gap-4 py-4"><div className="max-w-xl"><h3 className="font-semibold">{t('settingsUx:resetTitle')}</h3><p className="mt-1 text-sm text-muted">{t('settingsUx:resetHint')}</p></div>
+        <div className="flex flex-wrap items-center justify-between gap-4 py-4"><div className="max-w-xl"><h3 className="font-semibold">{t('settingsUx:resetTitle')}</h3><p className="text-sm leading-7 text-muted">{t('settingsUx:resetHint')}</p></div>
           <Button disabled={busy !== null} onClick={() => setModal('reset')}>{t('settingsUx:resetTitle')}</Button></div>
-        <div className="flex flex-wrap items-center justify-between gap-4 py-4"><div className="max-w-xl"><h3 className="font-semibold">{t('settingsUx:clearCredentials')}</h3><p className="mt-1 text-sm text-muted">{t('settingsUx:credentialsHint')}</p></div>
+        <div className="flex flex-wrap items-center justify-between gap-4 py-4"><div className="max-w-xl"><h3 className="font-semibold">{t('settingsUx:clearCredentials')}</h3><p className="text-sm leading-7 text-muted">{t('settingsUx:credentialsHint')}</p></div>
           <Button variant="danger" disabled={busy !== null} onClick={() => void inspectCredentials()}>{t('settingsUx:reviewDeletion')}</Button></div>
       </div>
-    </Card>
+    </section>
 
-    <Card className="space-y-3">
-      <SectionTitle>{t('settings:about.title')}</SectionTitle>
-      <p className="font-semibold">VibeHub <bdi>{version ? `v${version}` : ''}</bdi></p>
+    <section hidden={selectedPanel !== 'data'} className="vh-settings-panel space-y-4">
+
+      <p className="font-semibold">{t('common:appName')} <bdi>{version ? `v${version}` : ''}</bdi></p>
       <p className="text-sm">{t('settings:about.freeOss')}</p>
-      <p className="text-sm text-muted">{t('settings:about.thirdPartyNote')}</p>
+      <Tooltip text={t('settings:about.thirdPartyNote')} />
       <Badge>{t('settings:about.license')}</Badge>
-      <p className="text-sm text-muted">{t('settings:about.funding')}</p>
-    </Card>
+      <Tooltip text={t('settings:about.funding')} />
+    </section>
 
+    </div>
     <Modal open={modal === 'reset'} title={t('settingsUx:resetTitle')} onClose={() => setModal(null)}>
       <p className="text-sm leading-7">{t('settingsUx:resetConfirm')}</p>
       <div className="mt-6 flex justify-end gap-3"><Button autoFocus onClick={() => setModal(null)}>{t('common:cancel')}</Button><Button variant="danger" onClick={() => { localStorage.removeItem('vibehub.settings.v1'); location.reload(); }}>{t('settingsUx:resetTitle')}</Button></div>

@@ -92,7 +92,7 @@ export function guideText(appId: string, lang: 'fa' | 'en'): string | null {
   const remote = remoteGuides[`${appId}/${lang}`];
   if (remote) return remote;
   const hit = Object.entries(guideModules).find(([p]) => p.includes(`/${appId}/${lang}.md`));
-  return hit ? hit[1] : null;
+  return hit?.[1]?.trim() ? hit[1] : null;
 }
 
 export function guideSections(markdown: string): { title: string; body: string }[] {

@@ -9,7 +9,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "pnpm --filter @vibehub/desktop dev",
+    "dev": "pnpm dev:browser",
     "build": "pnpm --filter @vibehub/desktop build",
     "check": "pnpm -r run check",
     "test": "node --test tests/*.test.mjs packages/core/tests/*.mjs packages/catalog/tests/*.mjs",
@@ -17,7 +17,9 @@
     "content:validate": "node scripts/validate-content.mjs",
     "release:guard": "node scripts/check-native-command-coverage.mjs",
     "tauri": "pnpm --filter @vibehub/desktop tauri",
-    "test:ui": "playwright test"
+    "test:ui": "playwright test",
+    "dev:browser": "pnpm --filter @vibehub/desktop dev --host 127.0.0.1 --port 1422 --mode browser",
+    "dev:desktop": "pnpm --filter @vibehub/desktop tauri dev --config src-tauri/tauri.dev.conf.json"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",

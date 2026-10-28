@@ -27,6 +27,7 @@ try {
   $files = @{
     ZCode = @('start.ps1', 'launch.vbs', 'injector.mjs')
     Qoder = @('start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs', 'doctor.mjs', 'LICENSE')
+    Antigravity = @('start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs')
     DeepSeekHarness = @('start.ps1', 'launch.vbs', 'injector.mjs')
   }
   foreach ($id in $files.Keys) {

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Play } from "lucide-react";
-import { preferredLaunchMode, launchBlocked, type LaunchMode } from "@core";
+import { Play, SlidersHorizontal } from "lucide-react";
+import { Link } from 'react-router-dom';
+import { preferredLaunchMode, launchBlocked, launchFailureKind, type LaunchMode } from "@core";
 import { useToolContext } from "@/app/tool-context";
 import { useSettings } from "@/app/settings";
 import { Button, Select, ErrorNotice } from "./ui";
@@ -10,11 +11,13 @@ export function LaunchControls({
   name,
   kind = "app",
   supportsRtl = false,
+  compact = false,
 }: {
   id: string;
   name: string;
   kind?: "app" | "editor";
   supportsRtl?: boolean;
+  compact?: boolean;
 }) {
   const { t } = useTranslation("ux");
   const ctx = useToolContext();
@@ -23,15 +26,19 @@ export function LaunchControls({
     supportsRtl && ctx.components.some((c) => c.id === id && c.available);
   const saved = settings.launchModeByApp[id];
   const [choice, setChoice] = useState<LaunchMode | undefined>();
-  useEffect(() => setChoice(undefined), [id]);
-  const mode = choice ?? preferredLaunchMode(saved, supportsRtl, available);
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  useEffect(() => { setChoice(undefined); setOptionsOpen(false); }, [id]);
+  const mode = choice ?? preferredLaunchMode(saved, supportsRtl && id !== "antigravity", available);
   const state = ctx.states[id];
   const key = kind + ":" + id;
+  const failureKind = launchFailureKind(ctx.failures[key]);
   const busy = ctx.busy[key] ?? false;
+  const managed = kind === "app" || id === "antigravity";
+  const preview = ctx.apps.some(app => app.via === 'browser-preview');
   const blocked =
-    kind === "app" ? launchBlocked(mode, state, available, busy) : busy;
+    preview || (managed ? launchBlocked(mode, state, available, busy) : busy);
   const reason =
-    kind === "app" &&
+    preview ? t('browserLaunchUnavailable') : managed &&
     (!state
       ? t("stateUnknown")
       : state.phase === "running"
@@ -42,9 +49,9 @@ export function LaunchControls({
             ? t("rtlMissing")
             : "");
   return (
-    <div className="space-y-2">
+    <div className={compact ? 'vh-launch-compact' : 'vh-launch-full'}>
       <div className="vh-launch-actions">
-        {supportsRtl && (
+        {supportsRtl && !compact && (
           <Select
             aria-label={t("modeFor", { name })}
             value={mode}
@@ -65,15 +72,21 @@ export function LaunchControls({
           onClick={() => void ctx.launch(id, kind, mode)}
         >
           <Play aria-hidden="true" size={15} />
-          {mode === "rtl" ? t("runRtl") : t("run")}
+          {preview ? t('desktopOnly') : mode === "rtl" ? t("runRtl") : t("run")}
         </Button>
+        {supportsRtl && compact && <Button variant="ghost" aria-label={t('modeFor', { name })} title={t('modeFor', { name })} aria-expanded={optionsOpen} onClick={() => setOptionsOpen(!optionsOpen)}><SlidersHorizontal size={16} aria-hidden="true" /></Button>}
       </div>
+      {compact && optionsOpen && <div className="vh-launch-options" onKeyDown={event => { if (event.key === 'Escape') { setOptionsOpen(false); event.currentTarget.previousElementSibling?.querySelector<HTMLButtonElement>('[aria-expanded]')?.focus(); } }}>
+        <label className="block space-y-2 text-sm"><span>{t('modeFor', { name })}</span><Select aria-label={t('modeFor', { name })} value={mode} onChange={setChoice} disabled={busy} options={[{ value: 'normal', label: t('normal') }, { value: 'rtl', label: t('runRtl') }]} /></label>
+        {id === 'antigravity' && <p className="mt-2 text-xs text-warning">{t('rtlExperimental')}</p>}
+      </div>}
       {reason && (
         <div className="max-w-xl text-xs text-muted" role="status">
           {reason}
-          {!state && (
+          {!preview && (!state || state.phase === 'running' || state.phase === 'starting') && !busy && (
             <button
               className="ms-2 underline"
+              aria-label={t('refresh') + ' ' + name}
               onClick={() => void ctx.checkState(id)}
             >
               {t("retry")}
@@ -86,7 +99,13 @@ export function LaunchControls({
           {t("requestAccepted")}
         </p>
       )}
-      {ctx.failures[key] && <ErrorNotice error={ctx.failures[key]} />}
+      {ctx.failures[key] && <div className="space-y-2">
+        <ErrorNotice error={ctx.failures[key]}
+          message={failureKind ? t(`launchFailure.${failureKind}`, { name }) : undefined}
+          recovery={failureKind ? t(`launchFailure.${failureKind}Recovery`, { name }) : undefined}
+          onRetry={failureKind && !busy ? () => { void ctx.launch(id, kind, mode); } : undefined} />
+        {failureKind && <Link className="vh-button vh-button-ghost text-sm" to={`/doctor?tool=${encodeURIComponent(id)}&kind=app`}>{t('doctor')}</Link>}
+      </div>}
     </div>
   );
 }

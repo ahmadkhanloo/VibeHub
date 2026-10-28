@@ -280,9 +280,13 @@ export function PageHeader({
 export function ErrorNotice({
   error,
   onRetry,
+  message,
+  recovery,
 }: {
   error: unknown;
   onRetry?: () => void;
+  message?: string;
+  recovery?: string;
 }) {
   const { t } = useTranslation("ux");
   const raw = String(error ?? "");
@@ -309,14 +313,14 @@ export function ErrorNotice({
       <div className="flex items-start gap-3">
         <AlertCircle size={19} aria-hidden="true" className="shrink-0" />
         <div className="min-w-0 flex-1">
-          <p className="font-bold">{t(causeKey)}</p>
-          <p className="mt-1 text-sm">{t("recovery")}</p>
-          <details className="mt-2 text-xs">
+            <p className="font-bold">{message ?? t(causeKey)}</p>
+            <p className="mt-1 text-sm">{recovery ?? t("recovery")}</p>
+            {!message && <details className="mt-2 text-xs">
             <summary>{t("technicalDetails")}</summary>
             <pre dir="ltr" className="mt-2 whitespace-pre-wrap break-all">
               {detail}
             </pre>
-          </details>
+            </details>}
         </div>
         {onRetry && (
           <Button size="sm" onClick={onRetry}>

@@ -19,17 +19,7 @@ function Say([string]$Message, [int]$Icon = 0) {
   }
 }
 
-function Find-ZCode {
-  if ($env:ZCODE_RTL_EXE -and (Test-Path -LiteralPath $env:ZCODE_RTL_EXE -PathType Leaf)) { return $env:ZCODE_RTL_EXE }
-  $saved = if (Get-Command Get-RtlSavedPath -ErrorAction SilentlyContinue) { Get-RtlSavedPath 'zcode' } else { $null }
-  if ($saved -and [IO.Path]::GetFileName($saved) -ieq 'ZCode.exe') { return $saved }
-  $candidates = @(
-    "$env:ProgramFiles\ZCode\ZCode.exe",
-    "${env:ProgramFiles(x86)}\ZCode\ZCode.exe",
-    "$env:LOCALAPPDATA\Programs\ZCode\ZCode.exe"
-  )
-  $candidates | Where-Object { Test-Path -PathType Leaf $_ } | Select-Object -First 1
-}
+function Find-ZCode { Get-RtlExecutable 'zcode' $Dir }
 
 function Get-CdpInfo {
   try { Invoke-RestMethod "http://127.0.0.1:$Port/json/version" -TimeoutSec 2 }

@@ -9,9 +9,11 @@ import {
   useLocation,
 } from "react-router-dom";
 import "@/styles/main.css";
-import "@/i18n";
+import i18n from "@/i18n";
 import { SettingsProvider, useSettings } from "@/app/settings";
 import { ToolProvider } from "@/app/tool-context";
+const AccountsPage = lazy(async () => ({ default: (await import('@/features/accounts/Accounts')).AccountsPage }));
+const ExtensionsPage = lazy(async () => ({ default: (await import('@/features/guides/Extensions')).ExtensionsPage }));
 const SearchPage = lazy(async () => ({
   default: (await import("@/features/explore/Search")).SearchPage,
 }));
@@ -84,6 +86,8 @@ function Gate() {
           element={<Navigate to="/learning" replace />}
         />
         <Route path="/guides" element={<GuidesPage />} />
+        <Route path="/guides/extensions" element={<ExtensionsPage />} />
+        <Route path="/accounts" element={<AccountsPage />} />
         <Route path="/guides/:appId" element={<GuidesPage />} />
         <Route path="/offers" element={<OffersPage />} />
         <Route path="/learning" element={<LongRunningPage />} />
@@ -100,14 +104,19 @@ const Router = window.location.hostname === 'tauri.localhost' || window.location
   ? HashRouter
   : BrowserRouter;
 
-createRoot(document.getElementById("root")!).render(
+async function bootstrap() {
+  if (import.meta.env.DEV && import.meta.env.MODE === 'browser' && !('__TAURI_INTERNALS__' in window)) {
+    const { installBrowserPreview } = await import('@/dev/browser');
+    installBrowserPreview();
+  }
+  createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <SettingsProvider>
       <Router>
         <Suspense
           fallback={
             <div className="p-6" role="status">
-              VibeHub…
+              {i18n.t('common:appName')}…
             </div>
           }
         >
@@ -117,3 +126,5 @@ createRoot(document.getElementById("root")!).render(
     </SettingsProvider>
   </StrictMode>,
 );
+}
+void bootstrap();

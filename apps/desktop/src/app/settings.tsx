@@ -36,7 +36,7 @@ const DEFAULTS: AppSettings = {
   launchModeByApp: {},
   language: "en",
   themeFamily: "graphite",
-  themeMode: "system",
+  themeMode: "light",
   accent: "auto",
   density: "comfortable",
   textSize: "md",

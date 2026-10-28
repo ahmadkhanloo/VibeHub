@@ -50,6 +50,7 @@
     "authValidated": "احراز کلید",
     "modelResponded": "پاسخ مدل"
   },
+  "authNotRequired": "برای این اتصال لازم نیست",
   "redacted": "کلید/جزئیات حساس در گزارش حذف شده است.",
   "saveKey": "ذخیرهٔ کلید در خزانه",
   "deleteKey": "حذف کلید از خزانه",
