@@ -1,4 +1,4 @@
-# Fixed local adapter. Request data arrives as JSON on stdin, never as PowerShell code.
+﻿# Fixed local adapter. Request data arrives as JSON on stdin, never as PowerShell code.
 $ErrorActionPreference = 'Stop'
 [Console]::InputEncoding = [Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
@@ -239,6 +239,23 @@ function Get-LaunchState($state, [string]$appId = '') {
     if ($state.rtl) {
         $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$([int]$state.injectorPid)" -ErrorAction SilentlyContinue
         $alive = $proc -and $proc.Name -ieq 'node.exe' -and $proc.CommandLine -match [regex]::Escape([string]$state.injectorPath)
+        if ($alive) {
+            if (-not $appId) { $appId = [string]$state.id }
+            $names = @(switch ($appId) {
+                'zcode' { 'ZCode.exe' }
+                'qoder' { 'Qoder.exe'; 'Qoder IDE.exe' }
+                'deepseek-harness' { 'DeepSeek Harness.exe' }
+                'antigravity' { 'Antigravity.exe' }
+            })
+            if (-not $names.Count) { throw 'Cannot verify the application for this RTL session.' }
+            $nameFilter = ($names | ForEach-Object { "Name='$_'" }) -join ' OR '
+            $sessionId = [Diagnostics.Process]::GetCurrentProcess().SessionId
+            # Injectors reconnect after a window exits and can outlive the application.
+            # Their existence alone must not permanently block launching it again.
+            $application = Get-CimInstance Win32_Process -Filter "($nameFilter) AND SessionId=$sessionId" -ErrorAction Stop |
+                Where-Object { $_.CommandLine -notmatch '--type=' } | Select-Object -First 1
+            $alive = [bool]$application
+        }
     } else { $alive = $state.pid -and [bool](Get-Process -Id ([int]$state.pid) -ErrorAction SilentlyContinue) }
     if ($alive) { return @{phase='running';rtl=[bool]$state.rtl;since=$state.since;port=$state.port} }
     if ($appId) {
@@ -448,7 +465,7 @@ try {
             } finally { if (Test-Path -LiteralPath $download) { Remove-Item -LiteralPath $download } }
         }
         'app-path' {
-            $names = @{qoder=@('Qoder.exe','QoderAI.exe');zcode=@('ZCode.exe');'deepseek-harness'=@('DeepSeek Harness.exe','DeepSeek.exe');antigravity=@('Antigravity.exe')}
+            $names = @{qoder=@('Qoder.exe','Qoder IDE.exe','QoderAI.exe');zcode=@('ZCode.exe');'deepseek-harness'=@('DeepSeek Harness.exe','DeepSeek.exe');antigravity=@('Antigravity.exe')}
             $id = [string]$request.appId
             $path = [string]$request.path
             if (-not $names.ContainsKey($id) -or -not [IO.Path]::IsPathRooted($path) -or -not (Test-Path -LiteralPath $path -PathType Leaf) -or [IO.Path]::GetFileName($path) -notin $names[$id]) { throw 'Select the executable belonging to this application.' }
@@ -514,7 +531,7 @@ try {
                 $launchResult
             }
         }
-        'launch-state' { Get-LaunchState $request.state }
+        'launch-state' { Get-LaunchState $request.state ([string]$request.appId) }
         'launch-states' {
             $states = @{}
             foreach ($entry in $request.states.PSObject.Properties) {

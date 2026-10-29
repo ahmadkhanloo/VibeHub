@@ -21,7 +21,7 @@ import {
 } from "@/services/ipc";
 import { useSettings } from "./settings";
 import { useCatalog } from "@/lib/catalog";
-import { launchBlocked } from "@core";
+import { launchBlocked, launchFailureKind } from "@core";
 interface ToolContext {
   apps: DetectedApp[];
   editors: DetectedEditor[];
@@ -76,20 +76,34 @@ export function ToolProvider({ children }: { children: ReactNode }) {
       setStates((old) => ({ ...old, [id]: undefined }));
     }
   }, []);
+  const acceptStates = useCallback((next: Record<string, LaunchState>) => {
+    setStates(old => Object.entries(next).every(([id, value]) => JSON.stringify(old[id]) === JSON.stringify(value)) ? old : { ...old, ...next });
+    setFailures(old => {
+      const resolved = Object.keys(next).filter(id => next[id]?.phase === 'idle' && launchFailureKind(old['app:' + id]) === 'alreadyOpen');
+      return resolved.length ? { ...old, ...Object.fromEntries(resolved.map(id => ['app:' + id, ''])) } : old;
+    });
+  }, []);
+  const checkState = useCallback(async (id: string) => {
+    try {
+      const state = await ipc.launchState(id);
+      acceptStates({ [id]: state });
+    } catch {
+      setStates((old) => ({ ...old, [id]: undefined }));
+    }
+  }, [acceptStates]);
   const checkStates = useCallback(async (ids: string[]) => {
     if (!ids.length || polling.current) return;
     polling.current = true;
     try {
       const next = await ipc.launchStates(ids);
-      setStates((old) => Object.entries(next).every(([id, value]) =>
-        JSON.stringify(old[id]) === JSON.stringify(value)) ? old : { ...old, ...next });
+      acceptStates(next);
     } catch (error) {
       setFailures((old) => ({ ...old, ...Object.fromEntries(ids.map((id) => [
         "app:" + id, String(error),
       ])) }));
       setStates((old) => ({ ...old, ...Object.fromEntries(ids.map((id) => [id, undefined])) }));
     } finally { polling.current = false; }
-  }, []);
+  }, [acceptStates]);
   const refreshProxy = useCallback(async () => {
     const [p, c] = await Promise.all([ipc.proxyProfiles(), ipc.proxyConfig()]);
     setProfiles(p);
@@ -130,6 +144,17 @@ export function ToolProvider({ children }: { children: ReactNode }) {
     return task;
   }, [checkStates, refreshProxy]);
   useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    const onReturn = () => {
+      if (document.visibilityState !== 'visible') return;
+      const ids = Object.entries(states).filter(([id, state]) => !state || state.phase === 'running' || state.phase === 'starting' || launchFailureKind(failures['app:' + id]) === 'alreadyOpen').map(([id]) => id);
+      if (!ids.length || polling.current) return;
+      void checkStates(ids);
+    };
+    window.addEventListener('focus', onReturn);
+    document.addEventListener('visibilitychange', onReturn);
+    return () => { window.removeEventListener('focus', onReturn); document.removeEventListener('visibilitychange', onReturn); };
+  }, [states, failures, checkStates]);
   useEffect(() => {
     const timer = setInterval(() => {
       if (document.visibilityState !== "visible") return;

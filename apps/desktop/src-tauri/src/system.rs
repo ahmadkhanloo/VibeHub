@@ -7,6 +7,41 @@ use std::{
 };
 use tauri::Manager;
 
+// A launched desktop process can keep its parent's pipe handle open after the
+// adapter exits. The structured result, rather than EOF, completes the request.
+fn read_native_output(reader: impl std::io::Read) -> std::io::Result<String> {
+    use std::io::BufRead;
+    let mut output = String::new();
+    for line in std::io::BufReader::new(reader).lines() {
+        let line = line?;
+        output.push_str(&line);
+        output.push('\n');
+        if line.starts_with("VIBEHUB_JSON:") {
+            break;
+        }
+    }
+    Ok(output)
+}
+
+#[cfg(test)]
+mod native_output_tests {
+    #[test]
+    fn structured_result_completes_without_waiting_for_descendant_eof() {
+        struct HeldPipe { sent: bool }
+        impl std::io::Read for HeldPipe {
+            fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
+                assert!(!self.sent, "must not wait for EOF after the structured result");
+                self.sent = true;
+                let result = b"launcher ready\nVIBEHUB_JSON:{\"ok\":true}\n";
+                buffer[..result.len()].copy_from_slice(result);
+                Ok(result.len())
+            }
+        }
+        assert_eq!(super::read_native_output(HeldPipe { sent: false }).unwrap(),
+            "launcher ready\nVIBEHUB_JSON:{\"ok\":true}\n");
+    }
+}
+
 pub fn resource_root(app: &tauri::AppHandle) -> Result<std::path::PathBuf> {
     if cfg!(debug_assertions) {
         Ok(std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../.."))
@@ -138,12 +173,11 @@ pub fn powershell(app: &tauri::AppHandle, mut request: Value) -> Result<Value> {
             .map_err(|_| "Could not send native request")?;
         // Drain pipes concurrently: installer or launcher output cannot fill a pipe and deadlock.
         use std::io::Read;
-        let mut stdout = child.stdout.take().ok_or("Missing native output")?;
+        let stdout = child.stdout.take().ok_or("Missing native output")?;
         let mut stderr = child.stderr.take().ok_or("Missing native error output")?;
         let (output_sender, output_receiver) = std::sync::mpsc::channel();
         std::thread::spawn(move || {
-            let mut output = String::new();
-            let _ = stdout.read_to_string(&mut output);
+            let output = read_native_output(stdout).unwrap_or_default();
             let _ = output_sender.send(output);
         });
         std::thread::spawn(move || {
