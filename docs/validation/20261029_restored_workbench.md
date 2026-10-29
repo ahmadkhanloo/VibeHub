@@ -18,7 +18,8 @@ The user requested all removed features back, organized under **More tools**, an
 - TypeScript, production frontend build, translation parity (1,044 keys), native command coverage and 33 JavaScript tests passed.
 - `cargo check` passed; Rust unit suite: 38 passed, 3 opt-in live checks ignored.
 - Parallel Rust account tests exposed temporary-directory collisions on the Windows clock; a process-local atomic suffix now guarantees distinct fixtures.
-- Browser acceptance covers restored destinations, theme persistence, optional setup, terminal confirmation/undo, existing account and launch behavior, and Persian/English accessibility and overflow across light/dark modes and 320–1440px widths.
+- All 80 browser scenarios passed across the full run and the 14-scenario recheck (73 + 14); native Windows behavior passed 39 assertions with the real profile untouched. Browser acceptance covers restored destinations, theme persistence, optional setup, terminal confirmation/undo, existing account and launch behavior, and Persian/English accessibility and overflow across light/dark modes and 320–1440px widths.
 - Local visual evidence: `output/modern-workbench/home-fa-light.png`, `home-fa-dark.png`, `tools-fa-light.png`, `settings-fa-dark.png`.
 
 Browser screenshots use a clearly labeled simulated native transport. They do not establish authenticated vendor switching, real provider quotas, per-app proxy traffic or clean Windows installation acceptance.
+
