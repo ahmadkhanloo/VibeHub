@@ -38,7 +38,7 @@ test('all eight catalog apps render local brand images with external requests bl
 test('settings terminal deep link opens its panel and cancellation preserves data', async ({ page }) => {
   await mockNative(page);
   await page.goto('/settings?panel=terminal');
-  await expect(page.getByRole('tab', { name: 'Terminal', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('tab', { name: 'Terminal', exact: true })).toHaveAttribute('aria-selected', 'true');
   await page.getByRole('tab', { name: 'Data and about', exact: true }).click();
   const reset = page.getByRole('button', { name: 'Reset interface preferences', exact: true });
   await reset.click();
@@ -47,9 +47,9 @@ test('settings terminal deep link opens its panel and cancellation preserves dat
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('vibehub.settings.v1')!).onboardingDone)).toBe(true);
 });
 
-const routes = ['/', '/discover', '/app/zcode', '/app/zcode?tab=connections', '/app/chatgpt?tab=accounts', '/connections/api', '/connections/proxy', '/settings', '/settings?section=updates', '/app/qoder?tab=guide'];
+const routes = ['/', '/discover', '/app/zcode', '/app/zcode?tab=connections', '/app/chatgpt?tab=accounts', '/connections/api', '/connections/proxy', '/settings', '/settings?section=updates', '/app/qoder?tab=guide', '/tools', '/offers', '/learning', '/guides/extensions', '/settings?section=terminal', '/onboarding'];
 for (const language of ['fa', 'en']) for (const mode of ['light', 'dark']) {
-  test(`minimal interface has no overflow or accessibility violations (${language}, ${mode})`, async ({ page }) => {
+  test(`restored workbench has no overflow or accessibility violations (${language}, ${mode})`, async ({ page }) => {
     test.setTimeout(180000);
     await mockNative(page, 'antigravity', language);
     await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -61,14 +61,13 @@ for (const language of ['fa', 'en']) for (const mode of ['light', 'dark']) {
       await page.evaluate(mode => { document.documentElement.dataset.mode = mode; }, mode);
       for (const width of [320, 768, 960, 1280, 1440]) {
         await page.setViewportSize({ width, height: 900 });
-        const overflow = await page.evaluate(() => {
+        await expect.poll(() => page.evaluate(() => {
           const main = document.querySelector('main')!;
           return { page: document.documentElement.scrollWidth > innerWidth, main: main.scrollWidth > main.clientWidth + 1 };
-        });
-        expect(overflow, `${route} at ${width}px`).toEqual({ page: false, main: false });
+        }), { message: `${route} at ${width}px` }).toEqual({ page: false, main: false });
         if (route === '/') {
           const columns = await page.locator('.vh-app-grid').evaluate(grid => getComputedStyle(grid).gridTemplateColumns.split(' ').length);
-          expect(columns).toBe(width === 320 ? 1 : width < 900 ? 2 : width < 1280 ? 3 : 4);
+          expect(columns).toBe(width === 320 ? 1 : width < 900 ? 2 : width < 1600 ? 3 : 4);
         }
       }
       const scan = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();

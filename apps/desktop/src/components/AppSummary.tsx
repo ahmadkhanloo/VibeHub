@@ -1,3 +1,4 @@
+import { UserRound, Network } from 'lucide-react';
 import { preferredLaunchMode } from '@core';
 import { useCatalog } from '@/lib/catalog';
 import { useEffect, useState } from 'react';
@@ -44,8 +45,15 @@ export function AppSummary({ appId }: { appId: string }) {
   const profile = ctx.profiles.find(item => item.id === (profileId && profileId !== 'inherit' ? profileId : config?.globalProfileId));
   const state = ctx.states[appId];
   const rtl = state?.phase === 'running' ? state.rtl : preferredLaunchMode(settings.launchModeByApp[appId], catalog.apps.some(app => app.id === appId && app.capabilities.rtl === 'verified'), ctx.components.some(item => item.id === appId && item.available)) === 'rtl';
-  return <div className="space-y-1 text-xs text-muted">
-    {['chatgpt', 'qoder', 'zcode'].includes(appId) && <Link className="block vh-link" to={`/app/${appId}?tab=accounts`}>{account || t('ux:accountUnknown')} · {quota || t('ux:quotaUnknown')}</Link>}
-    <Link className="block vh-link" to={`/app/${appId}?tab=connections`}>{rtl ? t('ux:runRtl') : t('ux:normal')} · {profile?.name ?? t('proxy:inherit')}{connectionName ? ' · ' + connectionName : ''}</Link>
+  return <div className="vh-app-summary-details">
+    {['chatgpt', 'qoder', 'zcode'].includes(appId) && <Link className="vh-account-summary" to={`/app/${appId}?tab=accounts`}>
+      <span className="vh-summary-line"><UserRound size={14} aria-hidden="true" /><bdi>{account || t('ux:accountUnknown')}</bdi></span>
+      <span className={'vh-quota-summary' + (quota ? ' has-quota' : '')} dir="auto">{quota || t('ux:quotaUnknown')}</span>
+    </Link>}
+    <Link className="vh-connection-summary" to={`/app/${appId}?tab=connections`}>
+      <span className="vh-summary-line"><Network size={14} aria-hidden="true" /><span>{profile?.name ?? t('proxy:inherit')}</span></span>
+      <span className="vh-mode-chip">{rtl ? 'RTL' : t('ux:normal')}</span>
+      {connectionName && <span className="vh-api-reference" dir="auto">{connectionName}</span>}
+    </Link>
   </div>;
 }

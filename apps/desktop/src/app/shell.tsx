@@ -1,4 +1,5 @@
 
+import { FeedActivity } from './FeedActivity';
 import { ipc } from '@/services/ipc';
 import { Tooltip } from '@/components/Tooltip';
 import { Suspense, useEffect, useRef, useState } from "react";
@@ -6,6 +7,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   House,
+  Wrench,
   Languages,
   PanelLeftClose,
   PanelLeftOpen,
@@ -22,7 +24,8 @@ export function AppShell() {
   const { settings, update } = useSettings();
   const navigate = useNavigate();
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(() => matchMedia("(max-width:1099px)").matches);
+  const sidebarChosen = useRef(false);
   const [query, setQuery] = useState("");
   const search = useRef<HTMLInputElement>(null);
   const main = useRef<HTMLElement>(null);
@@ -37,8 +40,8 @@ export function AppShell() {
       }
     };
     window.addEventListener("keydown", key);
-    const mq = matchMedia("(max-width:1199px)");
-    const resize = () => { if (mq.matches) setCollapsed(true); };
+    const mq = matchMedia("(max-width:1099px)");
+    const resize = () => { if (mq.matches || !sidebarChosen.current) setCollapsed(mq.matches); };
     mq.addEventListener("change", resize);
     return () => {
       window.removeEventListener("keydown", key);
@@ -55,6 +58,7 @@ export function AppShell() {
   const items = [
     { to: "/", icon: House, label: t("ux:workspace") },
     { to: "/connections", icon: Network, label: t("ux:connections") },
+    { to: "/tools", icon: Wrench, label: t("workbench:moreTools") },
   ];
   const link = (item: (typeof items)[number]) => (
     <Tooltip key={item.to} text={item.label}><NavLink
@@ -62,7 +66,7 @@ export function AppShell() {
       to={item.to}
       end={item.to === "/"}
       aria-label={item.label}
-      className="vh-nav-link"
+      className={({isActive}) => 'vh-nav-link' + ((isActive || (item.to === '/tools' && /^\/(offers|learning|guides|accounts|doctor|terminal)(\/|$)/.test(location.pathname))) ? ' is-active' : '')}
     >
       <item.icon aria-hidden="true" size={20} />
       <span className="vh-nav-label">{item.label}</span>
@@ -81,7 +85,7 @@ export function AppShell() {
         {t("ux:skipMain")}
       </a>
       <aside className={"vh-sidebar " + (collapsed ? "collapsed" : "")}>
-        <div className="mb-8 flex items-center gap-3 px-2 pt-1">
+        <div className="vh-sidebar-brand">
           <img
             src={vibeHubMark}
             alt=""
@@ -90,9 +94,7 @@ export function AppShell() {
             height={32}
           />
           {!collapsed && (
-            <span className="text-lg font-bold" dir={settings.language === 'fa' ? 'rtl' : 'ltr'}>
-              {t('common:appName')}
-            </span>
+            <div className="vh-brand-copy"><span dir={settings.language === 'fa' ? 'rtl' : 'ltr'}>{t('common:appName')}</span><small>{t('workbench:brandCaption')}</small></div>
           )}
         </div>
         <nav aria-label={t("ux:mainNav")} className="flex-1 space-y-1">
@@ -105,7 +107,7 @@ export function AppShell() {
             className="w-full vh-sidebar-toggle"
             aria-expanded={!collapsed}
             aria-label={t(collapsed ? "nav:expand" : "nav:collapse")}
-            onClick={() => setCollapsed(!collapsed)}
+            onClick={() => { sidebarChosen.current = true; setCollapsed(!collapsed); }}
           >
             {collapsed ? (
               <PanelLeftOpen aria-hidden="true" size={18} />
@@ -171,6 +173,7 @@ export function AppShell() {
           <div className="vh-content">
             <Suspense fallback={<Spinner />}>
 
+        <FeedActivity />
         <AccountsNotice />
         <Outlet />
             </Suspense>

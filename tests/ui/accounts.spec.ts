@@ -61,7 +61,7 @@ test('failed app discovery offers retry without an IDE fallback', async ({ page 
 
 test('account switching waits for explicit restart confirmation; cancel sends no confirmation', async ({ page }) => {
   await accountsFixture(page); await page.goto('/accounts');
-  await expect(page.getByRole('heading', { name: 'ChatGPT / Codex', exact: true })).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'App', exact: true })).toHaveValue('chatgpt');
   await expect(page.getByText('Quota information is unknown. Refresh to check.')).toBeVisible();
   const work = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Work', exact: true }) }).last();
   await work.getByRole('button', { name: 'Switch account', exact: true }).click();
@@ -115,7 +115,7 @@ test('accounts default to one percent, import JSON through native picker and sco
   expect(request.args.payload).not.toHaveProperty('path');
   await page.keyboard.press('Escape');
   await page.goto('/app/qoder?tab=accounts');
-  await expect(page.getByText('Local fixture', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Local fixture', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Import account JSON', exact: true })).toHaveCount(0);
   await expect(page.getByRole('switch')).toHaveCount(0);
   await page.goto('/app/chatgpt?tab=accounts');
@@ -123,9 +123,10 @@ test('accounts default to one percent, import JSON through native picker and sco
   await expect(page.getByRole('button', { name: 'Import account JSON', exact: true })).toBeVisible();
 });
 
-test('standalone tutorials move out of the main product', async ({ page }) => {
+test('standalone tutorials are restored alongside external documentation', async ({ page }) => {
   await accountsFixture(page); await page.goto('/guides/extensions');
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/guides\/extensions$/);
+  await expect(page.locator('h1')).toBeVisible();
   await page.goto('/settings?section=data');
   await page.getByRole('button', { name: 'Open documentation', exact: true }).click();
   expect(await page.evaluate(() => (window as any).__mock.calls.some((call: any) => call.cmd === 'plugin:opener|open_url' && call.args.url.includes('/docs/tutorials')))).toBe(true);
@@ -133,7 +134,7 @@ test('standalone tutorials move out of the main product', async ({ page }) => {
 
 for (const language of ['en', 'fa']) test(`account page keyboard and accessibility (${language})`, async ({ page }) => {
   await accountsFixture(page, language); await page.goto('/accounts');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('ChatGPT / Codex');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(language === 'fa' ? 'حساب‌ها و سهمیه' : 'Accounts and quotas');
   await page.getByRole('button', { name: language === 'fa' ? 'افزودن حساب' : 'Add an account', exact:true }).click();
   await page.getByRole('dialog').getByRole('textbox').focus(); await page.keyboard.press('Tab');
   await expect(page.getByRole('button', { name: language === 'fa' ? 'ورود با ChatGPT' : 'Sign in with ChatGPT', exact: true })).toBeFocused();

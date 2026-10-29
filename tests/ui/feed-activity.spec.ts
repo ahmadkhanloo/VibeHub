@@ -20,13 +20,14 @@ test('startup refresh, concurrent manual requests and failed refresh retain vali
   });
   await page.goto('/settings?section=updates');
   await expect(page.getByRole('heading', {name:'Settings',exact:true})).toBeVisible();
-  expect(await page.evaluate(() => (window as any).__mock.feedCalls)).toBe(0);
+  await expect.poll(() => page.evaluate(() => (window as any).__mock.feedCalls)).toBe(1);
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('vibehub.content.v1'))).not.toBeNull();
   await page.evaluate(async () => {
     const { ipc } = await import('/src/services/ipc.ts');
     const url = JSON.parse(localStorage.getItem('vibehub.settings.v1')!).feedBaseUrl;
     await Promise.all([ipc.feedSync(url), ipc.feedSync(url)]);
   });
-  expect(await page.evaluate(() => (window as any).__mock.feedCalls)).toBe(1);
+  expect(await page.evaluate(() => (window as any).__mock.feedCalls)).toBe(2);
   const before = await page.evaluate(() => localStorage.getItem('vibehub.content.v1'));
   await page.evaluate(() => { (window as any).__mock.failFeed = true; });
   await page.locator('summary').filter({hasText:/^Advanced$/}).click();

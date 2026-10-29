@@ -261,7 +261,7 @@ for (const lang of ["en", "fa"])
       ).toEqual([]);
     }
   });
-test("the single theme keeps normal text readable in light and dark modes", async ({
+test("all restored themes keep normal text readable in light and dark modes", async ({
   page,
 }) => {
   await mockNative(page);
@@ -289,10 +289,11 @@ test("the single theme keeps normal text readable in light and dark modes", asyn
     };
     const out: any[] = [];
     const root = document.documentElement;
-    const button = document.querySelector(".vh-button-primary")!;
-    for (const theme of ["graphite"])
+    const button = document.querySelector<HTMLElement>(".vh-button-primary")!;
+    button.style.transitionProperty = "none";
+    for (const theme of ["graphite", "nord", "catppuccin", "solarized"])
       for (const mode of ["light", "dark"])
-        for (const accent of ["auto"]) {
+        for (const accent of ["auto", "indigo", "emerald", "violet", "amber"]) {
           Object.assign(root.dataset, { theme, mode, accent });
           const b = getComputedStyle(button);
           const s = getComputedStyle(root);
