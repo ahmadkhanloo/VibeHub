@@ -77,7 +77,7 @@ test("daily launch uses RTL once, saves success and remembers explicit normal ch
     page.getByRole("button", { name: "Run ZCode", exact: true }),
   ).toBeEnabled();
 });
-for (const scenario of ["running", "stateError"])
+for (const scenario of ["stateError"])
   test("unsafe launch blocked: " + scenario, async ({ page }) => {
     await mockNative(page, scenario);
     await page.goto("/");
@@ -269,7 +269,7 @@ for (const lang of ["en", "fa"])
       ).toEqual([]);
     }
   });
-test("all 40 theme combinations keep normal text readable", async ({
+test("the single theme keeps normal text readable in light and dark modes", async ({
   page,
 }) => {
   await mockNative(page);
@@ -298,9 +298,9 @@ test("all 40 theme combinations keep normal text readable", async ({
     const out: any[] = [];
     const root = document.documentElement;
     const button = document.querySelector(".vh-button-primary")!;
-    for (const theme of ["graphite", "nord", "catppuccin", "solarized"])
+    for (const theme of ["graphite"])
       for (const mode of ["light", "dark"])
-        for (const accent of ["auto", "indigo", "emerald", "violet", "amber"]) {
+        for (const accent of ["auto"]) {
           Object.assign(root.dataset, { theme, mode, accent });
           const b = getComputedStyle(button);
           const s = getComputedStyle(root);

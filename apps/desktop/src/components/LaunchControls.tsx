@@ -87,9 +87,10 @@ export function LaunchControls({
       {reason && (
         <div className="max-w-xl text-xs text-muted" role="status">
           {reason}
-          {!state && (
+          {(!state || state.phase === "running") && (
             <button
               className="ms-2 underline"
+              aria-label={t("recheckFor", { name })}
               onClick={() => void ctx.checkState(id)}
             >
               {t("retry")}

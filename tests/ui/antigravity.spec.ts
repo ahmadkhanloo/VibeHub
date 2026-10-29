@@ -3,7 +3,9 @@ import { mockNative } from './mock';
 import { INJECT_JS, STYLE_ID } from '../../apps/Antigravity/style.mjs';
 
 test('standalone chat RTL stays scoped, supports streaming and cleans up without duplicate observers', async ({ page }) => {
+  await mockNative(page);
   await page.goto('/');
+  await expect(page.getByRole('heading', {name:'Apps',exact:true})).toBeVisible();
   await page.setContent(`
     <h1 id="outside">عنوان بیرون از چت</h1>
     <div data-testid="planner-response-text">
@@ -46,7 +48,9 @@ test('standalone chat RTL stays scoped, supports streaming and cleans up without
 });
 
 test('injector ignores pages outside standalone Antigravity', async ({ page }) => {
+  await mockNative(page);
   await page.goto('/');
+  await expect(page.getByRole('heading', {name:'Apps',exact:true})).toBeVisible();
   await page.setContent('<div data-testid="planner-response-text"><p>سلام</p></div>');
   await page.evaluate(source => { (0, eval)(source); }, INJECT_JS);
   expect(await page.locator(`#${STYLE_ID}`).count()).toBe(0);

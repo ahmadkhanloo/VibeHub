@@ -7,11 +7,6 @@ for (const language of ['fa', 'en']) {
   test(`decision-critical instructions are visible without opening help (${language})`, async ({ page }) => {
     const copy = (namespace: string) => JSON.parse(readFileSync(`apps/desktop/src/i18n/${language}/${namespace}.json`, 'utf8'));
     await mockNative(page, 'ready', language);
-    await page.goto('/settings?panel=terminal');
-    const terminal = copy('terminal');
-    for (const key of ['previewNote', 'applyWhat', 'undoNote', 'verifyHint']) {
-      await expect(page.locator('main p').filter({ hasText: terminal[key] })).toBeVisible();
-    }
     await page.goto('/settings?section=data');
     const settings = copy('settingsUx');
     for (const key of ['cacheHint', 'resetHint', 'credentialsHint']) {
@@ -22,7 +17,7 @@ for (const language of ['fa', 'en']) {
   test(`settings explanations remain accessible on demand (${language})`, async ({ page }) => {
     await mockNative(page, 'ready', language);
     await page.setViewportSize({ width: 320, height: 900 });
-    await page.goto('/settings?panel=terminal');
+    await page.goto('/');
     const help = page.locator('main .vh-info-button').first();
     const text = await help.getAttribute('aria-label');
     expect(text!.length).toBeGreaterThan(15);

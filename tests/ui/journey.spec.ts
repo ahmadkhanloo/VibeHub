@@ -22,20 +22,12 @@ async function fixture(page: Page, scenario: Scenario, onboardingDone = true) {
   }, { scenario, onboardingDone });
 }
 
-test('an unsuccessful onboarding check can be retried and the chosen tool opens its own setup', async ({ page }) => {
-  await fixture(page, 'error', false);
-  await page.goto('/onboarding');
-  await page.getByRole('button', { name: 'Next', exact: true }).click();
-  await page.getByRole('button', { name: 'Check this computer', exact: true }).click();
-  await expect(page.locator('[data-scan-state="error"]')).toBeVisible();
-  await page.evaluate(() => { (window as unknown as { journeyScenario: string }).journeyScenario = 'ready'; });
-  await page.getByRole('button', { name: 'Check again', exact: true }).click();
-  await expect(page.locator('[data-scan-state="ready"]')).toBeVisible();
-  await page.getByRole('button', { name: 'Next', exact: true }).click();
-  await page.getByRole('radio', { name: 'ZCode', exact: true }).check();
-  await page.getByRole('button', { name: 'Prepare ZCode', exact: true }).click();
-  await expect(page).toHaveURL(/\/app\/zcode$/);
-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('vibehub.settings.v1') ?? '{}').onboardingDone)).toBe(true);
+test('first run opens apps and automatically scans without an onboarding wizard', async ({ page }) => {
+  await fixture(page, 'error', false); await page.goto('/onboarding');
+  await expect(page).toHaveURL(/\/$/); await expect(page.getByRole('alert')).toBeVisible();
+  await page.evaluate(() => { (window as any).journeyScenario = 'ready'; });
+  await page.getByRole('button', { name: 'Try again', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'ZCode', exact: true })).toBeVisible();
 });
 
 test('guide search has a real empty state and does not invent a review date', async ({ page }) => {
@@ -76,8 +68,8 @@ test('offers survive corrupt read-state storage and never ask for notification p
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/offers');
-  await expect(page.getByRole('heading', { name: 'Offers & News', exact: true })).toBeVisible();
-  await expect(page.getByRole('switch', { name: 'System notifications (optional)', exact: true })).not.toBeChecked();
+  await expect(page).toHaveURL(/discover/);
+  await expect(page.getByRole('switch', { name: 'System notifications (optional)', exact: true })).toHaveCount(0);
   const calls = await page.evaluate(() => (window as unknown as { journeyCalls: string[] }).journeyCalls);
   expect(calls.some((command) => command.includes('notification'))).toBe(false);
   expect(errors).toEqual([]);

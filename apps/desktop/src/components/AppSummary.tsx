@@ -13,6 +13,8 @@ export function AppSummary({ appId }: { appId: string }) {
   const ctx = useToolContext();
   const catalog = useCatalog();
   const [account, setAccount] = useState('');
+  const [connectionName, setConnectionName] = useState('');
+  useEffect(() => { let active = true; void ipc.providerConnections().then(items => { if (active) setConnectionName(items.find(item => item.id === settings.apiConnectionByApp[appId])?.name ?? ''); }).catch(() => { if (active) setConnectionName(''); }); return () => { active = false; }; }, [appId, settings.apiConnectionByApp[appId]]);
   const [quota, setQuota] = useState('');
   useEffect(() => {
     let active = true;
@@ -44,6 +46,6 @@ export function AppSummary({ appId }: { appId: string }) {
   const rtl = state?.phase === 'running' ? state.rtl : preferredLaunchMode(settings.launchModeByApp[appId], catalog.apps.some(app => app.id === appId && app.capabilities.rtl === 'verified'), ctx.components.some(item => item.id === appId && item.available)) === 'rtl';
   return <div className="space-y-1 text-xs text-muted">
     {['chatgpt', 'qoder', 'zcode'].includes(appId) && <Link className="block vh-link" to={`/app/${appId}?tab=accounts`}>{account || t('ux:accountUnknown')} · {quota || t('ux:quotaUnknown')}</Link>}
-    <Link className="block vh-link" to={`/app/${appId}?tab=connections`}>{rtl ? t('ux:runRtl') : t('ux:normal')} · {profile?.name ?? t('proxy:inherit')}</Link>
+    <Link className="block vh-link" to={`/app/${appId}?tab=connections`}>{rtl ? t('ux:runRtl') : t('ux:normal')} · {profile?.name ?? t('proxy:inherit')}{connectionName ? ' · ' + connectionName : ''}</Link>
   </div>;
 }

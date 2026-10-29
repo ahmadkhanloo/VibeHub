@@ -2,7 +2,7 @@
   "name": "vibehub",
   "private": true,
   "version": "0.2.0",
-  "description": "Free & open-source desktop hub for discovering, installing and running free AI coding tools. فارسی/English, RTL-aware.",
+  "description": "Manage and launch coding apps, with Persian support, accounts and connections.",
   "license": "MIT",
   "packageManager": "pnpm@12.15.0",
   "engines": {

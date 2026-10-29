@@ -138,5 +138,6 @@
   "restoreConnection": "Undo last connection selection",
   "accountUnknown": "Account unavailable",
   "quotaUnknown": "Quota unavailable",
-  "chooseExecutable": "Choose app executable"
+  "chooseExecutable": "Choose app executable",
+  "recheckFor": "Check again {{name}}"
 }

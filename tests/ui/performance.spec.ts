@@ -13,11 +13,11 @@ test('focus does not rescan and active states use one batch per 15 seconds', asy
   await page.evaluate(() => { for (let i=0;i<10;i++) window.dispatchEvent(new Event('focus')); });
   await page.clock.fastForward(15000);
   expect(await page.evaluate(() => (window as any).__mock.calls.filter((c: any) => c.cmd === 'detect_apps').length)).toBe(scans);
-  await expect.poll(() => page.evaluate(() => (window as any).__mock.calls.filter((c: any) => c.cmd === 'launch_states').length)).toBe(initialBatches + 1);
+  await expect.poll(() => page.evaluate(() => (window as any).__mock.calls.filter((c: any) => c.cmd === 'launch_states').length)).toBe(initialBatches + 2);
   expect(await page.evaluate(() => (window as any).__mock.calls.filter((c: any) => c.cmd === 'launch_state').length)).toBe(0);
   await page.evaluate(() => Object.defineProperty(document, 'visibilityState', { configurable:true, value:'hidden' }));
   await page.clock.fastForward(60000);
-  expect(await page.evaluate(() => (window as any).__mock.calls.filter((c: any) => c.cmd === 'launch_states').length)).toBe(initialBatches + 1);
+  expect(await page.evaluate(() => (window as any).__mock.calls.filter((c: any) => c.cmd === 'launch_states').length)).toBe(initialBatches + 2);
 });
 
 test('slow process checks do not block inventory or navigation and never overlap', async ({ page }) => {

@@ -22,7 +22,7 @@ test('browser development boots without test injection and clearly simulates RTL
   await expect.poll(() => page.evaluate(() => (window as any).__mock.calls.some((call: any) => call.cmd === 'launch_app' && call.args.req.appId === 'qoder' && call.args.req.rtl))).toBe(true);
   await page.locator('a[href="/settings"]').click();
   await expect(page).toHaveURL(/\/settings$/);
-  await page.locator('a[href="/accounts"]').click();
+  await page.goto('http://127.0.0.1:1422/app/chatgpt?tab=accounts');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'حساب‌های واقعی در نسخه دسکتاپ', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'ورود با ChatGPT', exact: true })).toHaveCount(0);

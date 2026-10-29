@@ -138,5 +138,6 @@
   "restoreConnection": "بازگردانی انتخاب اتصال قبلی",
   "accountUnknown": "حساب در دسترس نیست",
   "quotaUnknown": "سهمیه در دسترس نیست",
-  "chooseExecutable": "انتخاب مسیر برنامه"
+  "chooseExecutable": "انتخاب مسیر برنامه",
+  "recheckFor": "بررسی دوبارهٔ {{name}}"
 }

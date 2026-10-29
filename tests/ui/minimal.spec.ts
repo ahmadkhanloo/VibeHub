@@ -73,7 +73,7 @@ for (const language of ['fa', 'en']) for (const mode of ['light', 'dark']) {
       }
       const scan = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
       expect(scan.violations.map(item => ({ id: item.id, targets: item.nodes.map(node => node.target) })), route).toEqual([]);
-      await page.screenshot({ path: `output/minimal-redesign/verified/${language}-${mode}-${route.slice(1).replaceAll('/', '-') || 'home'}.png`, animations: 'disabled' });
+      await page.screenshot({ path: `output/minimal-redesign/verified/${language}-${mode}-${route.slice(1).replace(/[^a-z0-9-]/gi, '-') || 'home'}.png`, animations: 'disabled' });
     }
     expect(errors).toEqual([]);
   });

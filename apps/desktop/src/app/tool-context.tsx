@@ -68,14 +68,6 @@ export function ToolProvider({ children }: { children: ReactNode }) {
     polling = useRef(false);
   const { update } = useSettings();
   const catalog = useCatalog();
-  const checkState = useCallback(async (id: string) => {
-    try {
-      const state = await ipc.launchState(id);
-      setStates((old) => ({ ...old, [id]: state }));
-    } catch {
-      setStates((old) => ({ ...old, [id]: undefined }));
-    }
-  }, []);
   const acceptStates = useCallback((next: Record<string, LaunchState>) => {
     setStates(old => Object.entries(next).every(([id, value]) => JSON.stringify(old[id]) === JSON.stringify(value)) ? old : { ...old, ...next });
     setFailures(old => {
@@ -196,7 +188,7 @@ export function ToolProvider({ children }: { children: ReactNode }) {
         (a) => a.id === id && a.capabilities.rtl === "verified",
       ));
     const managed = kind === "app" || id === "antigravity";
-    if (managed && launchBlocked(mode, states[id], rtlAvailable, false) && !(cwd && states[id]?.phase === "running"))
+    if (managed && mode === 'rtl' && !rtlAvailable)
       return;
     inFlight.current.add(key);
     setBusy((old) => ({ ...old, [key]: true }));

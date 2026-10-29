@@ -18,18 +18,19 @@ test('startup refresh, concurrent manual requests and failed refresh retain vali
       return { ok: true, updated: true, detail: 'Fixture feed', catalog, guides };
     };
   });
-  await page.goto('/offers');
-  await expect.poll(() => page.evaluate(() => localStorage.getItem('vibehub.feed.success.v1'))).not.toBeNull();
-  expect(await page.evaluate(() => (window as any).__mock.feedCalls)).toBe(1);
+  await page.goto('/settings?section=updates');
+  await expect(page.getByRole('heading', {name:'Settings',exact:true})).toBeVisible();
+  expect(await page.evaluate(() => (window as any).__mock.feedCalls)).toBe(0);
   await page.evaluate(async () => {
     const { ipc } = await import('/src/services/ipc.ts');
     const url = JSON.parse(localStorage.getItem('vibehub.settings.v1')!).feedBaseUrl;
     await Promise.all([ipc.feedSync(url), ipc.feedSync(url)]);
   });
-  expect(await page.evaluate(() => (window as any).__mock.feedCalls)).toBe(2);
+  expect(await page.evaluate(() => (window as any).__mock.feedCalls)).toBe(1);
   const before = await page.evaluate(() => localStorage.getItem('vibehub.content.v1'));
   await page.evaluate(() => { (window as any).__mock.failFeed = true; });
-  await page.getByRole('button', { name: 'Check offers feed', exact: true }).click();
-  await expect(page.getByText('The latest refresh failed. Saved offers remain available; check their source verification time.', { exact: true })).toBeVisible();
+  await page.locator('summary').filter({hasText:/^Advanced$/}).click();
+  await page.getByRole('button', { name: 'Check content updates (catalog/guides/offers)', exact: true }).click();
+  await expect(page.getByRole('alert')).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('vibehub.content.v1'))).toBe(before);
 });
