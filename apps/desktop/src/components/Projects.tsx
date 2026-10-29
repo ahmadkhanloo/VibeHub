@@ -1,7 +1,6 @@
 import { preferredLaunchMode, type LaunchMode } from '@core';
 import { useCatalog } from '@/lib/catalog';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { open } from '@tauri-apps/plugin-dialog';
 import { useSettings } from '@/app/settings';
@@ -39,6 +38,5 @@ export function Projects({ appId }: { appId?: string }) {
       <Button className="min-w-0 flex-1 justify-start" disabled={blocked} onClick={() => void launch(path)}><bdi className="truncate">{path}</bdi></Button>
       <Button variant="ghost" aria-label={t('forgetProject', { path })} onClick={() => update({ recentProjects: settings.recentProjects.filter(item => item !== path) })}>{t('common:delete')}</Button>
     </li>)}</ul>
-    {ctx.failures['app:' + selected] && <><Link className="vh-link" to={'/doctor?tool=' + selected + '&kind=app'}>{t('doctor')}</Link></>}
   </section>;
 }

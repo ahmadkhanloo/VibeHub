@@ -1,6 +1,6 @@
 {
   "date": "2026-10-29",
-  "version": "0.2.0-beta.2",
+  "version": "0.2.0-beta.3",
   "basis": "Initial local working tree, preserving existing uncommitted VibeHub work and merging current origin/main fixes",
   "items": [
     {
@@ -160,5 +160,10 @@
     "trigger": "Installed beta.1 exposed an existing failed launch status whose explanation was lost when the hub restarted",
     "fix": "Shared launch controls now read persisted LaunchState.error as well as transient failures, preserving localized recovery and retry",
     "checks": "Targeted launch-error and lifecycle regression suite; full CI required before beta.2"
+  },
+  "native_followup": {
+    "trigger": "Live native verification outside the Codex package found a cold status query timing out at five seconds and leaving stale launch alerts after subsequent successful reads",
+    "fix": "Use unknown state for failed status reads; retain real persisted launch errors separately; allow 15 seconds for cold Windows status queries",
+    "installation": "Use a normal interactive Windows process for installer execution; verify default executable and shortcuts outside Codex AppData virtualization"
   }
 }
