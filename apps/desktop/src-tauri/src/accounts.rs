@@ -1285,10 +1285,12 @@ mod tests {
     struct Sandbox(PathBuf);
     impl Sandbox {
         fn new() -> Self {
+            static NEXT_SANDBOX: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
             let path = std::env::temp_dir().join(format!(
-                "vibehub-accounts-{}-{}",
+                "vibehub-accounts-{}-{}-{}",
                 std::process::id(),
-                chrono::Utc::now().timestamp_nanos_opt().unwrap()
+                chrono::Utc::now().timestamp_nanos_opt().unwrap(),
+                NEXT_SANDBOX.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
             ));
             fs::create_dir_all(&path).unwrap();
             Self(path)

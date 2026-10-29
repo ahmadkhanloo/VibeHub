@@ -2,7 +2,7 @@
 
 Manage and launch coding apps, with Persian support, accounts and connections.
 
-The main navigation is **Apps**, **Connections** (API and proxy), and **Settings**. Open a project folder or a recent project with an installed app, focus its existing window, and configure accounts, connections and guides from that app’s page. Account quotas are shown when available; unavailable values remain explicit. API selections are manual setup references and do not rewrite third-party settings. Connection selections can be undone, and Codex can return to the previous saved account. Qoder/ZCode account viewing is available in their pages; unverified switching is not offered.
+The main navigation is **Apps**, **Connections** (API and proxy), and **More tools**, with **Settings** in the sidebar footer. Open a project folder or a recent project with an installed app, focus its existing window, and configure accounts, connections and guides from that app’s page. Account quotas are shown when available; unavailable values remain explicit. API selections are manual setup references and do not rewrite third-party settings. Connection selections can be undone, and Codex can return to the previous saved account. Qoder/ZCode account viewing is available in their pages; unverified switching is not offered.
 
 ## Development without reinstalling
 
@@ -19,7 +19,7 @@ Open **ChatGPT / Codex → Accounts** to sign in, import your local Codex accoun
 
 Automatic switching is off by default. When enabled it checks every five minutes while VibeHub is running, uses a 1% remaining-quota threshold by default, and waits at least ten minutes between switches. Open desktop apps require explicit restart confirmation. **Live Windows desktop account switching remains experimental and unverified.**
 
-Long-running agent and plugin/skill tutorials live in the repository’s external documentation. Offers, terminal customization, onboarding steps and theme families are no longer part of the main interface. An undo action remains for terminal profiles modified by older versions.
+More tools groups accounts, offers, terminal customization, diagnostics, app guides, plugin/skill tutorials, long-running agent lessons, optional setup and appearance. All four theme families and accent choices are available again. Terminal changes retain explicit confirmation and undo. First launch opens the workspace directly; the setup guide remains optional.
 
 VibeHub is a free, open-source desktop companion for discovering and configuring AI coding tools. It separates each tool's license, free-access terms, regional eligibility, and VibeHub capabilities; it does not provide model hosting or a proxy service.
 

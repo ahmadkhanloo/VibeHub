@@ -1,7 +1,7 @@
 import { AppPath } from "./AppPath";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Play, SlidersHorizontal } from "lucide-react";
+import { AlertCircle, ChevronDown, Play, SlidersHorizontal } from "lucide-react";
 import { Link } from 'react-router-dom';
 import { preferredLaunchMode, launchBlocked, launchFailureKind, type LaunchMode } from "@core";
 import { useToolContext } from "@/app/tool-context";
@@ -104,7 +104,9 @@ export function LaunchControls({
           {t("requestAccepted")}
         </p>
       )}
-      {failure && <div className="space-y-2">
+      {failure && <details className="vh-launch-error" open={!!ctx.failures[key]}>
+        <summary><AlertCircle size={14} aria-hidden="true" /><span>{t('workbench:launchIssue')}</span><ChevronDown size={14} aria-hidden="true" /></summary>
+        <div className="space-y-2">
         <ErrorNotice error={failure}
           message={failureKind ? t(`launchFailure.${failureKind}`, { name }) : undefined}
           recovery={failureKind ? t(`launchFailure.${failureKind}Recovery`, { name }) : undefined}
@@ -112,7 +114,8 @@ export function LaunchControls({
         <AppPath appId={id} />
         <Link className="vh-link" to={`/app/${id}?tab=connections`}>{t("connections")}</Link>
         {<Link className="vh-button vh-button-ghost text-sm" to={`/doctor?tool=${encodeURIComponent(id)}&kind=app`}>{t('doctor')}</Link>}
-      </div>}
+        </div>
+      </details>}
     </div>
   );
 }

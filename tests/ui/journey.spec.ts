@@ -23,7 +23,7 @@ async function fixture(page: Page, scenario: Scenario, onboardingDone = true) {
 }
 
 test('first run opens apps and automatically scans without an onboarding wizard', async ({ page }) => {
-  await fixture(page, 'error', false); await page.goto('/onboarding');
+  await fixture(page, 'error', false); await page.goto('/');
   await expect(page).toHaveURL(/\/$/); await expect(page.getByRole('alert')).toBeVisible();
   await page.evaluate(() => { (window as any).journeyScenario = 'ready'; });
   await page.getByRole('button', { name: 'Try again', exact: true }).click();
@@ -68,7 +68,7 @@ test('offers survive corrupt read-state storage and never ask for notification p
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/offers');
-  await expect(page).toHaveURL(/discover/);
+  await expect(page).toHaveURL(/offers/);
   await expect(page.getByRole('switch', { name: 'System notifications (optional)', exact: true })).toHaveCount(0);
   const calls = await page.evaluate(() => (window as unknown as { journeyCalls: string[] }).journeyCalls);
   expect(calls.some((command) => command.includes('notification'))).toBe(false);

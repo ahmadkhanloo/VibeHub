@@ -1,24 +1,59 @@
 import { Disclosure } from '@/components/Disclosure';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Download, RefreshCw } from 'lucide-react';
-import { Badge, Button, ErrorNotice, Input, Modal, PageHeader, Select, Tabs } from '@/components/ui';
-import { useSettings, type ThemeModeSetting } from '@/app/settings';
+import { Check, Download, Moon, RefreshCw, Sun } from 'lucide-react';
+import { Badge, Button, ErrorNotice, Input, Modal, PageHeader, Select, Toggle, Tabs } from '@/components/ui';
+import { useSettings, type Accent, type ThemeFamily, type ThemeModeSetting } from '@/app/settings';
 import { ipc, type CredentialClearResult, type ProviderCredentialInventory } from '@/services/ipc';
 import { check } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { Link, useSearchParams } from 'react-router-dom';
 
 
+import { TerminalPage } from '@/features/terminal/Terminal';
+import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
+
+const FAMILIES: ThemeFamily[] = ['graphite', 'nord', 'catppuccin', 'solarized'];
+const ACCENTS: Accent[] = ['auto', 'indigo', 'emerald', 'violet', 'amber'];
+
 const MODES: ThemeModeSetting[] = ['system', 'light', 'dark'];
 const LEGACY_NAMES: Record<string, string> = { openrouter: 'OpenRouter', 'nvidia-build': 'NVIDIA', 'custom-openai-compatible': 'OpenAI-compatible' };
+
+function ThemeGallery() {
+  const { t } = useTranslation(['settings', 'common']);
+  const { settings, update, resolvedMode } = useSettings();
+  return <div className="space-y-4">
+    <h3 className="font-semibold">{t('settings:appearance.gallery')}</h3>
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {FAMILIES.flatMap((family) => (['light', 'dark'] as const).map((mode) => {
+        const active = settings.themeFamily === family && resolvedMode === mode;
+        return <button key={`${family}-${mode}`} type="button" aria-pressed={active}
+          onClick={() => update({ themeFamily: family, themeMode: mode })}
+          data-theme={family} data-mode={mode} data-accent={settings.accent}
+          className={`rounded-xl border p-4 text-start ${active ? 'border-primary ring-1 ring-primary' : 'border-border'}`}
+          style={{ background: 'var(--surface)', color: 'var(--text)' }}>
+          <span className="vh-theme-preview" aria-hidden="true">
+            <span className="vh-theme-preview-nav"><i /><i /><i /></span>
+            <span className="vh-theme-preview-content"><span className="vh-theme-preview-heading" /><span className="vh-theme-preview-line" /><span className="vh-theme-preview-card"><i /><span /></span><span className="vh-theme-preview-action" /></span>
+            {active && <Check size={16} className="vh-theme-preview-check" />}
+          </span>
+          <span className="flex items-center justify-between gap-2 text-sm">
+            {t(`settings:appearance.families.${family}`)}
+            {mode === 'dark' ? <Moon size={16} aria-hidden="true" /> : <Sun size={16} aria-hidden="true" />}
+          </span>
+          <span className="mt-1 block text-xs">{t(`settings:appearance.mode${mode === 'dark' ? 'Dark' : 'Light'}`)}</span>
+        </button>;
+      }))}
+    </div>
+  </div>;
+}
 
 export function SettingsPage() {
   const { t } = useTranslation(['settingsUx', 'settings', 'common']);
   const { settings, update } = useSettings();
   const [params, setParams] = useSearchParams();
-  const panels = ['appearance', 'updates', 'data'];
-  const selectedPanel = panels.includes(params.get('section') ?? '') ? params.get('section')! : 'appearance';
+  const panels = ['appearance', 'terminal', 'updates', 'notifications', 'data'];
+  const selectedPanel = params.get('panel') === 'terminal' ? 'terminal' : panels.includes(params.get('section') ?? '') ? params.get('section')! : 'appearance';
   const [version, setVersion] = useState<string | null>(null);
   const [availableUpdate, setAvailableUpdate] = useState<Awaited<ReturnType<typeof check>>>(null);
   const [checked, setChecked] = useState(false);
@@ -83,8 +118,17 @@ export function SettingsPage() {
           <Select value={settings.language} onChange={(language) => update({ language })} options={[{ value: 'fa', label: t('common:languagePersian') }, { value: 'en', label: t('common:languageEnglish') }]} /></label>
         <label className="block space-y-2 text-sm"><span>{t('settings:appearance.mode')}</span>
           <Select<ThemeModeSetting> value={settings.themeMode} onChange={(themeMode) => update({ themeMode })} options={MODES.map((mode) => ({ value: mode, label: t(`settings:appearance.mode${mode.charAt(0).toUpperCase()}${mode.slice(1)}`) }))} /></label>
+        <label className="block space-y-2 text-sm"><span>{t('settings:appearance.family')}</span>
+          <Select<ThemeFamily> value={settings.themeFamily} onChange={(themeFamily) => update({ themeFamily })} options={FAMILIES.map((family) => ({ value: family, label: t(`settings:appearance.families.${family}`) }))} /></label>
+        <label className="block space-y-2 text-sm"><span>{t('settings:appearance.accent')}</span>
+          <Select<Accent> value={settings.accent} onChange={(accent) => update({ accent })} options={ACCENTS.map((accent) => ({ value: accent, label: t(`settings:appearance.accents.${accent}`) }))} /></label>
       </div>
+      <ThemeGallery />
     </section>
+
+    <section hidden={selectedPanel !== 'terminal'} className="vh-settings-panel">{selectedPanel === 'terminal' && <TerminalPage />}</section>
+
+
 
 
 
@@ -115,6 +159,24 @@ export function SettingsPage() {
     </section>
 
 
+
+    <section hidden={selectedPanel !== 'notifications'} className="vh-settings-panel space-y-4">
+
+      <Toggle checked={settings.nativeNotifications} disabled={busy !== null} onChange={(enabled) => {
+        if (!enabled) { update({ nativeNotifications: false }); return; }
+        void perform('notifications', async () => {
+          const granted = await isPermissionGranted() || await requestPermission() === 'granted';
+          if (!granted) throw new Error(t('settingsUx:notificationPermissionDenied'));
+          update({ nativeNotifications: true });
+        });
+      }} label={t('settings:notifications.system')} />
+      <p className="text-sm leading-7 text-muted">{t('settingsUx:notificationsHint')}</p>
+      <Toggle checked={settings.quietHours.enabled} disabled={busy !== null} onChange={(enabled) => update({ quietHours: { ...settings.quietHours, enabled } })} label={t('settingsUx:quietHours')} />
+      {settings.quietHours.enabled && <div className="grid max-w-md grid-cols-2 gap-4">
+        <label className="block space-y-2 text-sm"><span>{t('settingsUx:quietFrom')}</span><Input type="time" dir="ltr" value={settings.quietHours.from} onChange={(event) => update({ quietHours: { ...settings.quietHours, from: event.target.value } })} /></label>
+        <label className="block space-y-2 text-sm"><span>{t('settingsUx:quietTo')}</span><Input type="time" dir="ltr" value={settings.quietHours.to} onChange={(event) => update({ quietHours: { ...settings.quietHours, to: event.target.value } })} /></label>
+      </div>}
+    </section>
 
     <section hidden={selectedPanel !== 'data'} className="vh-settings-panel space-y-4">
 

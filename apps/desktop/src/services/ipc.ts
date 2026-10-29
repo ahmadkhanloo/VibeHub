@@ -134,6 +134,10 @@ export const ipc = {
   proxyTest: (profile: ProxyProfile, level: 'tcp' | 'handshake' | 'request') =>
     invoke<ProxyTestResult>('proxy_test', { profile, level }),
 
+  terminalDetect: () => invoke<TerminalSetupState>('terminal_detect'),
+  terminalInstallOhMyPosh: () => invoke<InstallRunResult>('terminal_install_ohmyposh'),
+  terminalInstallFont: (which: 'nerd' | 'vazirmatn') => invoke<FontInstallResult>('terminal_install_font', { which }),
+  terminalApplyTheme: () => invoke<{ ok: boolean; backupPath?: string; detail: string }>('terminal_apply_theme'),
   terminalUndo: () => invoke<{ ok: boolean; detail: string }>('terminal_undo'),
 
   doctorRun: () => invoke<DoctorCheck[]>('doctor_run'),

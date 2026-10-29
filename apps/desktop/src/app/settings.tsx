@@ -12,6 +12,8 @@ import {
 } from "react";
 import { changeLanguage, type AppLanguage } from "@/i18n";
 
+export type ThemeFamily = "graphite" | "nord" | "catppuccin" | "solarized";
+export type Accent = "auto" | "indigo" | "emerald" | "violet" | "amber";
 export type ThemeModeSetting = "system" | "light" | "dark";
 export type ResolvedMode = "light" | "dark";
 
@@ -23,6 +25,8 @@ export interface AppSettings {
   previousProxyByApp: Record<string, string>;
   language: AppLanguage;
   themeMode: ThemeModeSetting;
+  themeFamily: ThemeFamily;
+  accent: Accent;
   density: "comfortable" | "compact";
   textSize: "sm" | "md" | "lg";
   onboardingDone: boolean;
@@ -40,6 +44,8 @@ const DEFAULTS: AppSettings = {
   previousProxyByApp: {},
   language: "en",
   themeMode: "system",
+  themeFamily: "graphite",
+  accent: "auto",
   density: "comfortable",
   textSize: "md",
   onboardingDone: false,
@@ -70,6 +76,8 @@ function load(): AppSettings {
       ...DEFAULTS,
       ...parsed,
       launchModeByApp,
+      themeFamily: ["graphite", "nord", "catppuccin", "solarized"].includes(parsed.themeFamily) ? parsed.themeFamily : "graphite",
+      accent: ["auto", "indigo", "emerald", "violet", "amber"].includes(parsed.accent) ? parsed.accent : "auto",
       recentProjects: Array.isArray(parsed.recentProjects) ? parsed.recentProjects.filter((p: unknown) => typeof p === "string" && p.length > 0).slice(0, 6) : [],
       apiConnectionByApp: parsed.apiConnectionByApp && typeof parsed.apiConnectionByApp === "object" && !Array.isArray(parsed.apiConnectionByApp) ? parsed.apiConnectionByApp : {},
       language: ["fa", "en"].includes(parsed.language)
@@ -126,9 +134,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const root = document.documentElement;
-    root.dataset.theme = "graphite";
+    root.dataset.theme = settings.themeFamily;
     root.dataset.mode = resolvedMode;
-    root.dataset.accent = "auto";
+    root.dataset.accent = settings.accent;
     root.dataset.density = settings.density;
     root.dataset.textSize = settings.textSize;
     try {

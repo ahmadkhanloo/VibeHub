@@ -9,6 +9,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import "@/styles/main.css";
+import "@/styles/workbench.css";
 import i18n from "@/i18n";
 import { SettingsProvider } from "@/app/settings";
 import { ToolProvider } from "@/app/tool-context";
@@ -42,12 +43,19 @@ const SettingsPage = lazy(async () => ({
   default: (await import("@/features/settings/Settings")).SettingsPage,
 }));
 
+const ToolsPage = lazy(async () => ({default: (await import('@/features/tools/Tools')).ToolsPage}));
+const AccountsHub = lazy(async () => ({default: (await import('@/features/accounts/AccountsHub')).AccountsHub}));
+const OffersPage = lazy(async () => ({default: (await import('@/features/offers/Offers')).OffersPage}));
+const ExtensionsPage = lazy(async () => ({default: (await import('@/features/guides/Extensions')).ExtensionsPage}));
+const LongRunningPage = lazy(async () => ({default: (await import('@/features/learning/LongRunning')).LongRunningPage}));
+const Onboarding = lazy(async () => ({default: (await import('@/features/onboarding/Onboarding')).Onboarding}));
+
 function LegacyModels() { const { search } = useLocation(); return <Navigate to={"/connections/api" + search} replace />; }
 
 function Gate() {
   return (
     <Routes>
-      <Route path="/onboarding" element={<Navigate to="/" replace />} />
+      <Route path="/onboarding" element={<Onboarding />} />
       <Route
         element={
           <ToolProvider>
@@ -56,6 +64,7 @@ function Gate() {
         }
       >
         <Route path="/" element={<HomePage />} />
+        <Route path="/tools" element={<ToolsPage />} />
         <Route path="/discover" element={<DiscoverPage />} />
         <Route path="/app/:appId" element={<AppDetailsPage />} />
         <Route path="/my-apps" element={<Navigate to="/" replace />} />
@@ -68,18 +77,18 @@ function Gate() {
         <Route path="/proxy" element={<Navigate to="/connections/proxy" replace />} />
         <Route
           path="/terminal"
-          element={<Navigate to="/settings?section=data" replace />}
+          element={<Navigate to="/settings?section=terminal" replace />}
         />
         <Route
           path="/long-running"
-          element={<Navigate to="/settings?section=data" replace />}
+          element={<Navigate to="/learning" replace />}
         />
         <Route path="/guides" element={<GuidesPage />} />
-        <Route path="/guides/extensions" element={<Navigate to="/" replace />} />
-        <Route path="/accounts" element={<Navigate to="/app/chatgpt?tab=accounts" replace />} />
+        <Route path="/guides/extensions" element={<ExtensionsPage />} />
+        <Route path="/accounts" element={<AccountsHub />} />
         <Route path="/guides/:appId" element={<GuidesPage />} />
-        <Route path="/offers" element={<Navigate to="/discover" replace />} />
-        <Route path="/learning" element={<Navigate to="/settings?section=data" replace />} />
+        <Route path="/offers" element={<OffersPage />} />
+        <Route path="/learning" element={<LongRunningPage />} />
         <Route path="/models" element={<LegacyModels />} />
         <Route path="/doctor" element={<DoctorPage />} />
         <Route path="/settings" element={<SettingsPage />} />
@@ -105,7 +114,7 @@ async function bootstrap() {
         <Suspense
           fallback={
             <div className="p-6" role="status">
-              {i18n.t('common:appName')}â€¦
+              {i18n.t('common:appName')}…
             </div>
           }
         >

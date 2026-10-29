@@ -268,6 +268,29 @@ async fn provider_connection_test(app: tauri::AppHandle, id: String) -> Result<V
 }
 
 #[tauri::command]
+async fn terminal_detect(app: tauri::AppHandle) -> Result<Value> {
+    system::run(app, json!({"operation":"terminal-detect"})).await
+}
+#[tauri::command]
+async fn terminal_install_ohmyposh(app: tauri::AppHandle) -> Result<Value> {
+    system::install(app, "terminal".into(), "winget", None).await
+}
+#[tauri::command]
+async fn terminal_install_font(app: tauri::AppHandle, which: String) -> Result<Value> {
+    system::run(app, json!({"operation":"font-install", "which":which})).await
+}
+#[tauri::command]
+async fn terminal_apply_theme(app: tauri::AppHandle) -> Result<Value> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let _lock = storage::TERMINAL_LOCK
+            .lock()
+            .map_err(|_| "Terminal lock failed")?;
+        system::powershell(&app, json!({"operation":"terminal-apply"}))
+    })
+    .await
+    .map_err(|_| "Terminal operation failed")?
+}
+#[tauri::command]
 async fn terminal_undo(app: tauri::AppHandle) -> Result<Value> {
     tauri::async_runtime::spawn_blocking(move || {
         let _lock = storage::TERMINAL_LOCK
@@ -500,6 +523,10 @@ pub fn run() {
             proxy_config,
             proxy_set_config,
             proxy_test,
+            terminal_detect,
+            terminal_install_ohmyposh,
+            terminal_install_font,
+            terminal_apply_theme,
             terminal_undo,
             doctor_run,
             vault_set,

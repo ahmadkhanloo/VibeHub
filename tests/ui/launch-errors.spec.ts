@@ -35,9 +35,11 @@ test('persisted launch errors keep their explanation and recovery after reopenin
   await mockNative(page);
   await page.addInitScript(() => { (window as any).__mock.launchStates.zcode = { phase: 'failed', error: 'Native operation timed out; inspect the current state before retrying' }; });
   await page.goto('/');
+  await page.locator('.vh-launch-error > summary').click();
   await expect(page.getByRole('alert')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Choose app executable', exact: true })).toBeVisible();
   await page.reload();
+  await page.locator('.vh-launch-error > summary').click();
   await expect(page.getByRole('alert')).toBeVisible();
   await expect(page.getByRole('link', {name:'Diagnostics',exact:true})).toBeVisible();
   await page.evaluate(() => { (window as any).__mock.launchStates.zcode = { phase: 'idle' }; });

@@ -1,0 +1,20 @@
+{
+  "title": "Plugins and skills",
+  "intro": "Installation guides, useful starters and compatibility by app.",
+  "search": "Search guides",
+  "source": "Original source",
+  "checked": "Reviewed: {{date}}",
+  "skill": "Skill",
+  "plugin": "Plugin",
+  "prerequisites": "Prerequisites",
+  "install": "Install",
+  "use": "Activate and use",
+  "remove": "Remove",
+  "troubleshoot": "Troubleshooting",
+  "empty": "No matching guides",
+  "emptyHint": "Try a skill name or another search.",
+  "official": "Official ChatGPT/Codex installation guide",
+  "terms": "A skill provides workflow instructions; a plugin bundles skills and tools; MCP connects tools and data. A VS Code extension runs in the editor and has a separate installation path.",
+  "compatibility": "Compatible surfaces",
+  "open": "Read installation guide"
+}

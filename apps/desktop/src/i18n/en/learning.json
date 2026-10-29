@@ -1,0 +1,25 @@
+{
+  "title": "Working with coding assistants",
+  "subtitle": "Practical guidance for planning, choosing a model, and checking an assistant's work.",
+  "source": "Original source",
+  "sourceContextTitle": "What does this repository show?",
+  "sourceContext": "This is an educational example specifically for Claude Code, not a ready-made system that works unchanged with every assistant. Useful patterns include criteria that fail until evidence is checked, a separate evaluator with fresh context, and progress notes for handing work to the next session. Its authors describe it as example ingredients from the Code with Claude event; adapt the ideas for other tools instead of copying the hooks blindly.",
+  "steps": {
+    "1": { "title": "Define what done means", "body": "Write acceptance criteria before starting; leave each one incomplete until you inspect evidence." },
+    "2": { "title": "Finish one step at a time", "body": "Keep each turn focused on one small, complete piece of work." },
+    "3": { "title": "Check results with evidence", "body": "Inspect a real run, screenshot, or report instead of relying on the agent's claim." },
+    "4": { "title": "Leave a handoff", "body": "Record changes, checks, and the next step so the next session can continue." }
+  },
+  "recommendations": {
+    "title": "Practical tips",
+    "items": {
+      "1": "For a change across several files, write the goal and completion criteria first. Ask the assistant for a short plan and review it before implementation.",
+      "2": "Use low reasoning for questions and small edits, medium for routine multi-file work, and high for difficult design or debugging. Higher levels can increase time and cost.",
+      "3": "After a change, read the diff and test results. For work across sessions, record the current state, remaining tasks, and next step in a project file."
+    }
+  },
+  "templateTitle": "Ready-to-use prompt",
+  "copy": "Copy prompt",
+  "copied": "Copied",
+  "prompt": "First summarize the goal and completion criteria. For multi-part work, propose a short plan and resolve open questions before implementation. Split the work into small steps; inspect real evidence for each criterion and do not mark it complete without evidence. At the end, record changes, tests, remaining work, and the next step in PROGRESS.md."
+}
