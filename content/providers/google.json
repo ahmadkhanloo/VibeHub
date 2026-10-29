@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "google",
+  "name": "Google Gemini",
+  "officialUrl": "https://aistudio.google.com/",
+  "modelsDocUrl": "https://ai.google.dev/gemini-api/docs/pricing",
+  "freeAccess": "free_tier",
+  "requiresAccount": true,
+  "requiresApiKey": true,
+  "usageTermsUrl": "https://ai.google.dev/gemini-api/docs/pricing",
+  "supportedApps": {
+    "qoder": "unknown"
+  },
+  "eligibilityStatus": "unknown",
+  "lastVerified": "2026-10-28",
+  "notes": {
+    "fa": "پلن رایگان برای برخی مدل‌ها و حساب‌های واجد شرایط است؛ در پلن پولی قیمت متفاوت است و داده‌های پلن رایگان ممکن است برای بهبود محصولات استفاده شوند.",
+    "en": "The free tier covers selected models and eligible accounts; paid-tier pricing differs and free-tier content may be used to improve products."
+  },
+  "endpoint": {
+    "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
+    "kind": "openai-compatible"
+  }
+}

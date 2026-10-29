@@ -1,3 +1,4 @@
+import { Disclosure } from '@/components/Disclosure';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -32,8 +33,8 @@ export function DoctorPage() {
     busy.current = true;
     setRunning(true); setError(null); setCopyStatus(null);
     try {
-      const [native, detectedApps, detectedEditors, components, profiles, proxyConfig, connections] = await Promise.allSettled([
-        ipc.doctorRun(), ipc.detectApps(), ipc.detectEditors(), ipc.rtlComponents(), ipc.proxyProfiles(), ipc.proxyConfig(), ipc.providerConnections(),
+      const [native, detectedApps, components, profiles, proxyConfig, connections] = await Promise.allSettled([
+        ipc.doctorRun(), ipc.detectApps(), ipc.rtlComponents(), ipc.proxyProfiles(), ipc.proxyConfig(), ipc.providerConnections(),
       ]);
       const results: Check[] = native.status === 'fulfilled' ? [...native.value] : [{ id: 'crash', label: { fa: 'بررسی پیش‌نیازها', en: 'Prerequisite checks' }, status: 'fail', detail: sanitizeReportText(String(native.reason)) }];
       if (native.status === 'rejected') setError(native.reason);
@@ -42,12 +43,11 @@ export function DoctorPage() {
         results.push({ id: 'apps', label: { fa: 'برنامه‌های کدنویسی', en: 'Coding apps' }, status: 'pass', detailKey: 'appsCount', detailValues: { installed: installed.length, total: detectedApps.value.length } });
         for (const item of installed) results.push({ id: `app-${item.id}`, label: { fa: appNames[item.id] ?? item.id, en: appNames[item.id] ?? item.id }, status: 'pass', ...(item.version ? { detail: `v${item.version}` } : { detailKey: 'pathFound' }) });
       } else results.push({ id: 'apps', label: { fa: 'شناسایی برنامه‌ها', en: 'App detection' }, status: 'fail', detailKey: 'appsFailed' });
-      results.push({ id: 'editors', label: { fa: 'ویرایشگرهای دیگر', en: 'Other editors' }, status: detectedEditors.status === 'fulfilled' ? 'pass' : 'fail', ...(detectedEditors.status === 'fulfilled' ? { detailKey: 'editorsCount', detailValues: { count: detectedEditors.value.length } } : {}) });
       const focusId = searchParams.get('tool');
       const focusKind = searchParams.get('kind');
-      if (focusId && (focusKind === 'app' || focusKind === 'editor')) {
-        const detected = focusKind === 'app' && detectedApps.status === 'fulfilled' ? detectedApps.value.find((item) => item.id === focusId && item.installed) : focusKind === 'editor' && detectedEditors.status === 'fulfilled' ? detectedEditors.value.find((item) => item.id === focusId) : undefined;
-        const name = appNames[focusId] ?? (detectedEditors.status === 'fulfilled' ? detectedEditors.value.find((item) => item.id === focusId)?.name : undefined) ?? focusId;
+      if (focusId && focusKind === 'app') {
+        const detected = detectedApps.status === 'fulfilled' ? detectedApps.value.find(item => item.id === focusId && item.installed) : undefined;
+        const name = appNames[focusId] ?? focusId;
         results.push({ id: 'focusedTool', label: { fa: `برنامهٔ انتخاب‌شده: ${name}`, en: `Selected tool: ${name}` }, status: detected ? 'pass' : 'fail', detailKey: detected ? 'pathFound' : 'pathMissing' });
       }
       if (components.status === 'fulfilled' && detectedApps.status === 'fulfilled') {
@@ -78,16 +78,17 @@ export function DoctorPage() {
   };
 
   return <div className="space-y-6">
-    <PageHeader title={t('doctor:title')} description={t('doctor:subtitle')} actions={<div className="flex flex-wrap gap-2"><Button variant="primary" loading={running} onClick={() => void run()}><Play size={14} aria-hidden="true" />{t('doctor:runChecks')}</Button><Button disabled={!checks || running} onClick={() => void copyReport()}><ClipboardCopy size={14} aria-hidden="true" />{t('doctor:copyReport')}</Button></div>} />
-    <Card className="space-y-3"><p>{t('doctor:purpose')}</p><p className="text-sm leading-7 text-muted">{t('doctor:networkNote')}</p></Card>
+    <PageHeader title={t('doctor:title')} actions={<div className="flex flex-wrap gap-2"><Button variant="primary" loading={running} onClick={() => void run()}><Play size={14} aria-hidden="true" />{t('doctor:runChecks')}</Button><Button disabled={!checks || running} onClick={() => void copyReport()}><ClipboardCopy size={14} aria-hidden="true" />{t('doctor:copyReport')}</Button></div>} />
+    <Disclosure title={t('ux:help')}><p>{t('doctor:purpose')}</p><p className="text-sm leading-7 text-muted">{t('doctor:networkNote')}</p></Disclosure>
     {error != null && <ErrorNotice error={error} onRetry={() => void run()} />}
     {copyStatus && <p role={copyStatus === 'error' ? 'alert' : 'status'} className="text-sm">{t(copyStatus === 'success' ? 'journeyUx:doctor.copySuccess' : 'journeyUx:doctor.copyFailure')}</p>}
     {!checks ? <p role="status" className="text-sm text-muted">{running ? t('doctor:running') : t('journeyUx:doctor.notRun')}</p> : <>
       <p role="status" className="text-sm text-muted">{t('journeyUx:doctor.summary', { count: checks.length })}</p>
       <Card><ul className="divide-y divide-border">{checks.map((check) => <li key={check.id} className="space-y-3 py-4 first:pt-0 last:pb-0">
         <div className="flex flex-wrap items-center gap-3"><Badge tone={tone[check.status]}>{t(`common:${check.status === 'pass' ? 'pass' : check.status === 'fail' ? 'fail' : check.status === 'unknown' ? 'unknown' : 'skipStatus'}`)}</Badge><h2 className="font-bold">{labelFor(check)}</h2></div>
-        {detailFor(check) && <p dir="auto" className="break-words text-sm leading-7 text-muted">{detailFor(check)}</p>}
+        <Disclosure title={t('ux:details')} defaultOpen={check.status !== 'pass'}>        {detailFor(check) && <p dir="auto" className="break-words text-sm leading-7 text-muted">{detailFor(check)}</p>}
         <p className="text-sm leading-7 text-muted">{t(check.id === 'focusedTool' ? 'doctor:nextActions.focusedTool' : check.status === 'pass' ? 'doctor:nextActions.pass' : check.status === 'fail' ? `doctor:nextActions.${check.id}` : 'doctor:nextActions.review', { defaultValue: t('doctor:nextActions.default') })}</p>
+        </Disclosure>
         {check.status !== 'pass' && <Link to={relatedLink(check.id)} className="inline-block text-sm text-primary hover:underline">{t('journeyUx:doctor.openSetting')}</Link>}
       </li>)}</ul><p className="mt-5 border-t border-border pt-4 text-xs text-muted">{t('doctor:noSecrets')}</p></Card>
     </>}

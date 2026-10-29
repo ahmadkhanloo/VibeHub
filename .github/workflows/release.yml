@@ -139,9 +139,13 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: VibeHub ${{ github.ref_name }}
           releaseBody: |
-            VibeHub beta for Windows: redesigned Persian/English workspace, one-click tool launch, contextual proxy setup, model-service search and safer credential management. Download `VibeHub-Setup.exe` and choose the full desktop hub or selected standalone RTL launchers for ZCode, Qoder, and DeepSeek Harness. The installer includes a checksum-verified Node.js runtime. Clean Windows 10/11 installation, real vendor-app RTL/proxy traffic and signed upgrade acceptance remain unverified; this prerelease is for testing. The Tauri signature on the updater archive is separate from a Windows publisher signature for the Setup executable. `latest.json`, the SHA-256 manifest, source archive, SBOM, and license notices are attached below. Existing v1.x releases belong to the historical AgentRTL product.
+            VibeHub 0.2 beta: manage and launch coding apps with Persian support, accounts and connections. The main navigation is now Apps, Connections and Settings. Open project folders, revisit recent projects, focus running apps, see account/quota/RTL/proxy summaries, configure each app in one place and undo connection/account selections. API connections remain an explicit manual setup reference. Unsupported desktop account switching is not offered. Long tutorials live in external documentation; terminal customization, the offers feed and theme families are removed from the main product.
 
-            انتشار ویندوز VibeHub. فایل `VibeHub-Setup.exe` را دریافت و نصب کامل هاب یا میانبرهای مستقل RTL ابزارهای ZCode، Qoder و DeepSeek Harness را انتخاب کنید. Runtime همراه Node.js با کنترل SHA-256 عرضه می‌شود. امضای Tauri روی بستهٔ updater با امضای ناشر ویندوز برای فایل Setup یکی نیست. `latest.json`، فهرست SHA-256، سورس، SBOM و اطلاعیه‌های مجوز هم پیوست می‌شوند.
+            Download `VibeHub-Setup.exe`. This prerelease includes a pinned Node.js runtime and signed Tauri updater assets; the Setup executable does not carry a Windows publisher signature. Clean Windows 10/11 and end-to-end signed upgrade acceptance remain unverified. Qoder/ZCode account switching remains blocked pending live verification; real provider authentication and per-app proxy routing are not claimed by local checks. Historical v1.x releases belong to AgentRTL.
+
+            نسخهٔ آزمایشی ۰٫۲ وایب‌هاب: منوی سه‌بخشی برنامه‌ها، اتصال‌ها و تنظیمات؛ انتخاب پوشه و پروژه‌های اخیر؛ رفتن به پنجرهٔ برنامهٔ باز؛ خلاصهٔ حساب، سهمیه و اتصال روی کارت؛ تنظیم و راهنمای هر برنامه در همان صفحه؛ و بازگردانی انتخاب اتصال و حساب. اتصال API مرجع تنظیم دستی است. تعویض حساب تأییدنشدهٔ Qoder و ZCode عرضه نمی‌شود. آموزش‌های طولانی در مستندات بیرونی‌اند و خبرخوان پیشنهادها، زیباسازی ترمینال و خانواده‌های تم از رابط اصلی حذف شده‌اند.
+
+            فایل `VibeHub-Setup.exe` را نصب کنید. آزمون نصب پاک Windows 10/11 و چرخهٔ کامل ارتقای امضاشده هنوز تأیید نشده است. امضای updater با امضای ناشر ویندوز برای Setup متفاوت است.
           releaseDraft: true
           prerelease: ${{ contains(github.ref_name, '-') }}
           generateReleaseNotes: true

@@ -33,11 +33,18 @@ function connect(wsUrl) {
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(wsUrl);
     const cdp = { ws, nextId: 1, pending: new Map(), handlers: new Map(), violations: [] };
+    const connectionTimer = setTimeout(() => { ws.close(); reject(new Error('DevTools connection timed out')); }, 5000);
+    const failPending = () => {
+      clearTimeout(connectionTimer);
+      for (const pending of cdp.pending.values()) { clearTimeout(pending.timer); pending.reject(new Error('DevTools connection closed')); }
+      cdp.pending.clear();
+    };
     cdp.on = (m, fn) => (cdp.handlers.get(m) || cdp.handlers.set(m, []).get(m)).push(fn);
     cdp.send = (method, params = {}, sessionId) =>
-      new Promise((resolve) => {
+      new Promise((resolve, reject) => {
         const id = cdp.nextId++;
-        cdp.pending.set(id, resolve);
+        const timer = setTimeout(() => { cdp.pending.delete(id); reject(new Error(`DevTools request timed out: ${method}`)); }, 5000);
+        cdp.pending.set(id, { resolve, reject, timer });
         const msg = { id, method, params };
         if (sessionId) msg.sessionId = sessionId;
         ws.send(JSON.stringify(msg));
@@ -45,7 +52,10 @@ function connect(wsUrl) {
     ws.addEventListener('message', (ev) => {
       const msg = JSON.parse(ev.data);
       if (msg.id && cdp.pending.has(msg.id)) {
-        cdp.pending.get(msg.id)(msg.result ?? { __error: msg.error?.message });
+        const pending = cdp.pending.get(msg.id);
+        clearTimeout(pending.timer);
+        if (msg.error) pending.reject(new Error(`DevTools rejected request: ${msg.error.message}`));
+        else pending.resolve(msg.result ?? {});
         cdp.pending.delete(msg.id);
         return;
       }
@@ -54,8 +64,9 @@ function connect(wsUrl) {
       }
       for (const fn of cdp.handlers.get(msg.method) || []) fn(msg.params || {}, msg.sessionId);
     });
-    ws.addEventListener('open', () => resolve(cdp));
-    ws.addEventListener('error', () => reject(new Error(`cannot open ${wsUrl}`)));
+    ws.addEventListener('open', () => { clearTimeout(connectionTimer); resolve(cdp); });
+    ws.addEventListener('close', failPending);
+    ws.addEventListener('error', () => { failPending(); reject(new Error('Cannot open DevTools connection')); });
   });
 }
 
@@ -71,7 +82,7 @@ async function sessions(cdp) {
     list.push({ sessionId: p.sessionId, type: i.type, url: i.url || '', label: i.title || i.url || i.targetId });
   });
   await cdp.send('Target.setDiscoverTargets', { discover: true });
-  await cdp.send('Target.setAutoAttach', { autoAttach: true, flatten: true, waitForDebugger: false });
+  await cdp.send('Target.setAutoAttach', { autoAttach: true, flatten: true, waitForDebuggerOnStart: false });
   await new Promise((r) => setTimeout(r, 400));
   const { targetInfos = [] } = await cdp.send('Target.getTargets');
   for (const t of targetInfos) {
@@ -218,6 +229,7 @@ async function main() {
   }
   const cdp = await connect(version.webSocketDebuggerUrl);
   const list = await sessions(cdp);
+  if (MODE === 'check' && !list.length) throw new Error('No reachable Qoder frames; RTL is not verified');
 
   if (MODE === 'targets') {
     const rest = await httpJson('/json/list');
@@ -269,6 +281,7 @@ async function main() {
         return;
       }
     } catch (e) {
+      failures++;
       log(`\n== ${s.type} ${s.label}\n   probe failed: ${e.message}`);
     }
   }

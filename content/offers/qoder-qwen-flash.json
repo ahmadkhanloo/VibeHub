@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "offerId": "qoder-qwen-flash",
+  "appId": "qoder",
+  "title": {
+    "fa": "Qwen3.8-Flash رایگان در Qoder",
+    "en": "Qwen3.8-Flash free in Qoder"
+  },
+  "summary": {
+    "fa": "دورهٔ رایگان تمدید شده است؛ پایان آن هنوز اعلام نشده. هزینهٔ سایر مدل‌ها جدا محاسبه می‌شود.",
+    "en": "The free promotion has been extended; an end date has not been announced. Other model calls are billed separately."
+  },
+  "sourceUrl": "https://docs.qoder.com/events/flashoffer",
+  "publishedAt": "2026-10-27T15:55:00.456Z",
+  "verifiedAt": "2026-10-27T15:55:00.456Z",
+  "eligibility": "Individual international accounts; other model calls are excluded.",
+  "status": "verified",
+  "checkedAt": "2026-10-27T15:55:00.456Z",
+  "sourceState": "fresh",
+  "revision": "1df14b0943c1fbd2e329cab40bbe21887360cb55f400e63f12d051f55c60544b",
+  "benefit": {
+    "unit": "free-model",
+    "model": "Qwen3.8-Flash"
+  },
+  "claim": {
+    "required": false,
+    "url": "https://docs.qoder.com/events/flashoffer"
+  }
+}

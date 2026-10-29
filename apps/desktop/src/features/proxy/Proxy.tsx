@@ -1,3 +1,4 @@
+import { Disclosure } from '@/components/Disclosure';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -40,7 +41,7 @@ export function ProxyPage() {
   const usedAsDefault = !!deleting && config?.globalProfileId === deleting.id;
   const inUse = usedAsDefault || affectedTools.length > 0;
   return <div className="space-y-8">
-    <PageHeader title={t('proxy:title')} description={t('connectionsUx:proxyIntro')} actions={<Button disabled={busy !== null} variant="primary" onClick={() => setEditing(newProxyProfile())}><Plus size={16} aria-hidden="true" />{t('proxy:newProfile')}</Button>} />
+    <PageHeader title={t('proxy:title')} actions={<Button disabled={busy !== null} variant="primary" onClick={() => setEditing(newProxyProfile())}><Plus size={16} aria-hidden="true" />{t('proxy:newProfile')}</Button>} />
     {error != null && !deleting && !testing && <ErrorNotice error={error} />}
     {message && <p role="status" className="text-sm text-success">{message}</p>}
     {!config ? <ErrorNotice error={t('connectionsUx:proxyReadFailed')} onRetry={() => { void act('refresh', async () => { await refreshProxy(); }); }} /> : <Card className="space-y-4" as="section" id="proxy-default-route">
@@ -54,18 +55,18 @@ export function ProxyPage() {
       <details className="text-sm"><summary className="cursor-pointer font-medium">{t('connectionsUx:proxyLimitations')}</summary><p className="mt-2 max-w-3xl leading-7 text-muted">{t('proxy:editorProxyHint')}</p></details>
     </Card>}
     <section aria-labelledby="proxy-profiles-heading"><SectionTitle action={<Button size="sm" disabled={busy !== null} onClick={() => void act('refresh', async () => { await refreshProxy(); })}><RefreshCw size={16} aria-hidden="true" />{t('connectionsUx:refreshProfiles')}</Button>}><span id="proxy-profiles-heading">{t('proxy:profiles')}</span></SectionTitle>
-      {profiles.length === 0 ? <EmptyState title={t('proxy:noProfiles')} sub={t('proxy:addFirstProfile')} /> : <div className="space-y-3">{profiles.map((profile) => {
+      {profiles.length === 0 ? <EmptyState title={t('proxy:noProfiles')} sub={t('proxy:addFirstProfile')} /> : <div className="vh-record-list">{profiles.map((profile) => {
         const results = tests[profile.id] ?? [];
         const testable = profile.mode === 'http' || profile.mode === 'socks5';
         const status = results.some((r) => !r.ok) ? 'failed' : results.length === 3 ? 'healthy' : results.length ? 'partial' : 'untested';
         return <Card key={profile.id} className="space-y-4" data-testid={`proxy-profile-${profile.id}`}>
           <div className="flex flex-wrap items-start gap-4"><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h3 className="break-words text-base font-bold" dir="auto">{profile.name}</h3>{config?.globalProfileId === profile.id && <Badge tone="primary">{t('proxy:defaultProfile')}</Badge>}</div><div className="mt-2 flex flex-wrap items-center gap-2"><Badge tone="muted">{t(`proxy:mode.${profile.mode}`)}</Badge>{profile.hasPassword && <Badge tone="muted">{t('common:secureVault')}</Badge>}<Badge tone={!testable || status === 'untested' ? 'muted' : status === 'healthy' ? 'success' : status === 'failed' ? 'danger' : 'warning'}>{t(testable ? `proxy:${status}` : 'proxy:notTestable')}</Badge></div>{testable && <p className="ltr-tech mt-2 break-all text-sm text-muted">{profile.host}:{profile.port}</p>}</div><div className="flex gap-2"><Button size="sm" disabled={busy !== null} onClick={() => setEditing(profile)}>{t('common:edit')}</Button><Button size="sm" variant="ghost" disabled={busy !== null} aria-label={t('proxy:deleteNamedProfile', { name: profile.name })} onClick={() => { setError(null); setDeleting(profile); }}><Trash2 size={16} aria-hidden="true" />{t('common:delete')}</Button></div></div>
           {testable && <Button size="sm" disabled={busy !== null} loading={busy === `test:${profile.id}`} onClick={() => { setError(null); setTesting(profile); }}>{t('proxy:testAll')}</Button>}
-          {results.length > 0 && <div className="space-y-2 border-t border-border pt-3" aria-live="polite">{results.map((result) => <div key={result.level} className="flex items-start gap-2 text-sm">{result.ok ? <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-success" aria-hidden="true" /> : <XCircle size={16} className="mt-0.5 shrink-0 text-danger" aria-hidden="true" />}<span>{t(`proxy:${result.level}`)}: {t(result.ok ? 'connectionsUx:confirmed' : 'connectionsUx:notConfirmed')}</span></div>)}</div>}
+          {results.length > 0 && <Disclosure title={t('ux:details')} defaultOpen={status !== 'healthy'}><div className="space-y-2 border-t border-border pt-3" aria-live="polite">{results.map((result) => <div key={result.level} className="flex items-start gap-2 text-sm">{result.ok ? <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-success" aria-hidden="true" /> : <XCircle size={16} className="mt-0.5 shrink-0 text-danger" aria-hidden="true" />}<span>{t(`proxy:${result.level}`)}: {t(result.ok ? 'connectionsUx:confirmed' : 'connectionsUx:notConfirmed')}</span></div>)}</div></Disclosure>}
         </Card>;
       })}</div>}
     </section>
-    <div className="space-y-2 border-t border-border pt-4"><p className="max-w-3xl text-sm leading-7 text-muted">{t('proxy:scopeNote')}</p><p className="max-w-3xl text-sm leading-7 text-muted">{t('proxy:termsNote')}</p></div>
+    <Disclosure title={t('ux:help')}><p className="max-w-3xl text-sm leading-7 text-muted">{t('proxy:scopeNote')}</p><p className="max-w-3xl text-sm leading-7 text-muted">{t('proxy:termsNote')}</p></Disclosure>
     {editing && <ProxyProfileEditor key={editing.id} profile={editing} onClose={() => setEditing(null)} onSaved={async (profile) => { await refreshProxy(); setTests((current) => { const next = { ...current }; delete next[profile.id]; return next; }); setMessage(t('connectionsUx:profileSaved')); }} />}
     <Modal open={!!deleting} title={t(inUse ? 'connectionsUx:profileInUse' : 'connectionsUx:deleteProxy')} onClose={() => setDeleting(null)} busy={busy !== null}>
       <p className="text-sm leading-7">{t(inUse ? 'connectionsUx:profileInUseHint' : 'connectionsUx:deleteProxyHint', { name: deleting?.name })}</p>

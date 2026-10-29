@@ -1,6 +1,6 @@
 [package]
 name = "vibehub"
-version = "0.1.0"
+version = "0.2.0"
 description = "Free and open-source desktop hub for AI coding tools"
 authors = ["VibeHub contributors"]
 license = "MIT"
@@ -23,6 +23,7 @@ serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
 tauri = { version = "2.12.5", features = [] }
 tauri-plugin-log = "2"
+tauri-plugin-dialog = "2"
 tauri-plugin-notification = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-process = "2"
@@ -33,3 +34,10 @@ keyring = { version = "3", features = ["windows-native"] }
 chrono = "0.4"
 semver = "1"
 base64 = "0.23"
+sha2 = "0.10"
+toml = "1.1"
+age = "0.11.1"
+rand = "0.9"
+
+# Already used by rustls; account envelopes use the same audited AES-GCM implementation.
+ring = "0.17"

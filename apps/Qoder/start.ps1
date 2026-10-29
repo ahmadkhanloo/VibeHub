@@ -1,4 +1,4 @@
-# Qoder RTL - launcher
+﻿# Qoder RTL - launcher
 #
 #   normal:  powershell -ExecutionPolicy Bypass -File start.ps1
 #   hidden:  launch.vbs calls this with -Gui (no console window at all)
@@ -53,45 +53,7 @@ function Get-RunningQoder {
 
 # --- locate the activated build: only a folder whose resources\app.asar exists
 #     can start (0.4.7 / 0.4.8 here hold app.asar.qoder-pending and would fail) ---
-function Find-Qoder {
-  if ($env:QODER_RTL_EXE) {
-    if (Test-Path -PathType Leaf $env:QODER_RTL_EXE) { return $env:QODER_RTL_EXE }
-    throw "QODER_RTL_EXE is set but not a file: $env:QODER_RTL_EXE"
-  }
-  $sharedPath = if (Get-Command Get-RtlSavedPath -ErrorAction SilentlyContinue) { Get-RtlSavedPath 'qoder' } else { $null }
-  if ($sharedPath -and [IO.Path]::GetFileName($sharedPath) -in @('Qoder.exe','Qoder IDE.exe')) { return $sharedPath }
-  $savedPathFile = Join-Path $Dir 'qoder-path.txt'
-  if (Test-Path -LiteralPath $savedPathFile) {
-    try { $savedPath = ([System.IO.File]::ReadAllText($savedPathFile, [System.Text.Encoding]::UTF8)).Trim() }
-    catch { $savedPath = '' }
-    if ($savedPath -and (Test-Path -PathType Leaf $savedPath)) { return $savedPath }
-  }
-  $running = Get-RunningQoder | Select-Object -First 1
-  if ($running) {
-    $root = Split-Path -Parent $running.ExecutablePath
-    if (Test-Path (Join-Path $root 'resources\app.asar')) { return $running.ExecutablePath }
-  }
-  foreach ($base in @(
-    (Join-Path $env:LOCALAPPDATA 'Programs\Qoder IDE'),
-    (Join-Path $env:LOCALAPPDATA 'Programs\Qoder')
-  )) {
-    $versions = Get-ChildItem (Join-Path $base '.qoder-versions') -Directory -ErrorAction SilentlyContinue |
-      Where-Object { $_.Name -match '^\d+(\.\d+){2,3}$' } |
-      Where-Object { Test-Path (Join-Path $_.FullName 'resources\app.asar') } |
-      Sort-Object { [version]$_.Name } -Descending
-    foreach ($version in $versions) {
-      foreach ($name in @('Qoder IDE.exe', 'Qoder.exe')) {
-        $candidate = Join-Path $version.FullName $name
-        if (Test-Path -PathType Leaf $candidate) { return $candidate }
-      }
-    }
-    foreach ($name in @('Qoder IDE.exe', 'Qoder.exe')) {
-      $flat = Join-Path $base $name
-      if ((Test-Path -PathType Leaf $flat) -and (Test-Path (Join-Path $base 'resources\app.asar'))) { return $flat }
-    }
-  }
-  throw 'Qoder was not found. Set QODER_RTL_EXE to its full path.'
-}
+function Find-Qoder { Get-RtlExecutable 'qoder' $Dir }
 
 try {
   $exe = Find-Qoder
@@ -156,7 +118,9 @@ if ($owner) {
   }
 
   Say "starting Qoder with --remote-debugging-port=$Port"
-  Start-Process -FilePath $exe -ArgumentList "--remote-debugging-port=$Port" | Out-Null
+  $launchArgs = "--remote-debugging-port=$Port"
+  if ($env:VIBEHUB_PROJECT) { $launchArgs += ' "' + ($env:VIBEHUB_PROJECT.TrimEnd('\') + '\.') + '"' }
+  Start-Process -FilePath $exe -ArgumentList $launchArgs | Out-Null
   for ($i = 0; $i -lt 40; $i++) {
     Start-Sleep -Milliseconds 500
     $owner = PortOwner $Port

@@ -29,7 +29,7 @@
   "noDefault": "No default proxy",
   "chooseDefaultFirst": "Choose an HTTP or SOCKS5 profile as the default first.",
   "perApp": "Per-app override",
-  "editorProxyHint": "A proxy can be requested when launching detected IDEs, but an IDE may ignore it. Require-proxy blocks IDE launch because their routing has not been validated.",
+  "editorProxyHint": "Health checks verify VibeHub’s connection to the proxy. Each app’s traffic routing needs separate verification.",
   "inherit": "Inherit global",
   "requireProxy": "Require proxy",
   "requireProxyHint": "If the proxy is unavailable, launch is blocked (fail-closed at launch time). This does not guarantee all app traffic is tunneled.",

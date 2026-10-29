@@ -12,17 +12,17 @@ import {
 } from "react";
 import { changeLanguage, type AppLanguage } from "@/i18n";
 
-export type ThemeFamily = "graphite" | "nord" | "catppuccin" | "solarized";
 export type ThemeModeSetting = "system" | "light" | "dark";
-export type Accent = "auto" | "indigo" | "emerald" | "violet" | "amber";
 export type ResolvedMode = "light" | "dark";
 
 export interface AppSettings {
   launchModeByApp: Record<string, "normal" | "rtl">;
+  recentProjects: string[];
+  apiConnectionByApp: Record<string, string>;
+  previousApiByApp: Record<string, string>;
+  previousProxyByApp: Record<string, string>;
   language: AppLanguage;
-  themeFamily: ThemeFamily;
   themeMode: ThemeModeSetting;
-  accent: Accent;
   density: "comfortable" | "compact";
   textSize: "sm" | "md" | "lg";
   onboardingDone: boolean;
@@ -34,10 +34,12 @@ export interface AppSettings {
 
 const DEFAULTS: AppSettings = {
   launchModeByApp: {},
+  recentProjects: [],
+  apiConnectionByApp: {},
+  previousApiByApp: {},
+  previousProxyByApp: {},
   language: "en",
-  themeFamily: "graphite",
   themeMode: "system",
-  accent: "auto",
   density: "comfortable",
   textSize: "md",
   onboardingDone: false,
@@ -68,22 +70,14 @@ function load(): AppSettings {
       ...DEFAULTS,
       ...parsed,
       launchModeByApp,
+      recentProjects: Array.isArray(parsed.recentProjects) ? parsed.recentProjects.filter((p: unknown) => typeof p === "string" && p.length > 0).slice(0, 6) : [],
+      apiConnectionByApp: parsed.apiConnectionByApp && typeof parsed.apiConnectionByApp === "object" && !Array.isArray(parsed.apiConnectionByApp) ? parsed.apiConnectionByApp : {},
       language: ["fa", "en"].includes(parsed.language)
         ? parsed.language
         : detectDefaultLanguage(),
-      themeFamily: ["graphite", "nord", "catppuccin", "solarized"].includes(
-        parsed.themeFamily,
-      )
-        ? parsed.themeFamily
-        : DEFAULTS.themeFamily,
       themeMode: ["system", "light", "dark"].includes(parsed.themeMode)
         ? parsed.themeMode
         : DEFAULTS.themeMode,
-      accent: ["auto", "indigo", "emerald", "violet", "amber"].includes(
-        parsed.accent,
-      )
-        ? parsed.accent
-        : DEFAULTS.accent,
       quietHours: {
         ...DEFAULTS.quietHours,
         ...(parsed.quietHours && typeof parsed.quietHours === "object"
@@ -132,9 +126,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const root = document.documentElement;
-    root.dataset.theme = settings.themeFamily;
+    root.dataset.theme = "graphite";
     root.dataset.mode = resolvedMode;
-    root.dataset.accent = settings.accent;
+    root.dataset.accent = "auto";
     root.dataset.density = settings.density;
     root.dataset.textSize = settings.textSize;
     try {

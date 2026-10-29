@@ -33,7 +33,7 @@ test('launch controls and shared context apply the shared fail-closed policy', a
   const context = await readFile(new URL('../apps/desktop/src/app/tool-context.tsx', import.meta.url), 'utf8');
   assert.match(home, /LaunchControls/);
   assert.match(controls, /launchBlocked/);
-  assert.match(controls, /disabled=\{blocked\}/);
+  assert.match(controls, /disabled=\{state\?\.phase === "running" \? busy \|\| focusing : blocked\}/);
   assert.match(context, /ipc\.launchState/);
   assert.match(context, /launchBlocked/);
 });

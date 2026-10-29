@@ -102,6 +102,12 @@ export const offerSchema = z.object({
   regionNotes: localized.optional(),
   freeAccessChange: z.boolean().optional(),
   status: z.enum(['verified', 'reported']),
+  checkedAt: isoDate.optional(),
+  sourceState: z.enum(['fresh', 'stale', 'unavailable']).optional(),
+  revision: z.string().max(128).optional(),
+  benefit: z.object({ quantity: z.number().nonnegative().optional(), unit: z.enum(['credits', 'tokens', 'free-model']), model: z.string().max(128).optional() }).strict().optional(),
+  claim: z.object({ required: z.boolean(), url: z.string().url(), dailyAt: z.string().regex(/^\d{2}:\d{2}$/).optional(), timeZone: z.string().max(64).optional(), expiresAfterDays: z.number().positive().optional() }).strict().optional(),
+  usageWindow: z.object({ from: z.string().regex(/^\d{2}:\d{2}$/), to: z.string().regex(/^\d{2}:\d{2}$/), timeZone: z.string().max(64) }).strict().optional(),
 }).strict();
 
 export const feedIndexSchema = z.object({

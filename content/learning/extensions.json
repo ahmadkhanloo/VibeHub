@@ -1,0 +1,352 @@
+[
+  {
+    "id": "frontend-design",
+    "name": "frontend-design",
+    "kind": "skill",
+    "source": "https://github.com/anthropics/skills/tree/main/skills/frontend-design",
+    "checked": "2026-10-27",
+    "summary": {
+      "en": "Design a web interface with a clear visual direction.",
+      "fa": "طراحی رابط وب با جهت بصری مشخص."
+    },
+    "compatibility": {
+      "en": "Local Codex skills; Codex in ChatGPT desktop where local skills are available. For another agent, check its own support.",
+      "fa": "اسکیل محلی Codex و بخش Codex اپ ChatGPT در صورت دسترسی به اسکیل محلی؛ برای عامل دیگر پشتیبانی خود ابزار را بررسی کنید."
+    },
+    "prerequisites": {
+      "en": "A skill-capable agent. Read SKILL.md for runtime, browser and document-tool dependencies.",
+      "fa": "عامل دارای پشتیبانی اسکیل؛ پیش‌نیازهای محیط اجرا، مرورگر و ابزار سند را در SKILL.md بررسی کنید."
+    },
+    "install": {
+      "en": "In Codex, ask $skill-installer to install frontend-design from https://github.com/anthropics/skills/tree/main/skills/frontend-design. Alternatively, copy this skill folder into .agents/skills/frontend-design/ in your project. Review its source first.",
+      "fa": "در Codex از $skill-installer بخواهید frontend-design را از https://github.com/anthropics/skills/tree/main/skills/frontend-design نصب کند. روش دستی: پوشه همین اسکیل را در .agents/skills/frontend-design/ پروژه قرار دهید. ابتدا منبع را بررسی کنید."
+    },
+    "use": {
+      "en": "Select $frontend-design and describe your task with the relevant file or project. Start a new session if the skill is missing.",
+      "fa": "اسکیل $frontend-design را انتخاب کنید و کار را همراه فایل یا پروژه مرتبط توضیح دهید. اگر دیده نشد، نشست تازه‌ای باز کنید."
+    },
+    "remove": {
+      "en": "Remove only the installed skill folder, or disable its exact path using [[skills.config]] in Codex configuration. Restart after configuration changes.",
+      "fa": "فقط پوشه اسکیل نصب‌شده را حذف کنید یا مسیر همان اسکیل را با [[skills.config]] در پیکربندی Codex غیرفعال کنید؛ پس از تغییر پیکربندی دوباره اجرا کنید."
+    },
+    "troubleshoot": {
+      "en": "Check SKILL.md location, agent support and dependencies. A shared skill format does not guarantee all scripts work unchanged on Windows.",
+      "fa": "محل SKILL.md، پشتیبانی عامل و پیش‌نیازها را بررسی کنید. قالب مشترک اسکیل، اجرای بدون تغییر همه اسکریپت‌ها روی ویندوز را تضمین نمی‌کند."
+    }
+  },
+  {
+    "id": "webapp-testing",
+    "name": "webapp-testing",
+    "kind": "skill",
+    "source": "https://github.com/anthropics/skills/tree/main/skills/webapp-testing",
+    "checked": "2026-10-27",
+    "summary": {
+      "en": "Test a local web app with Playwright.",
+      "fa": "آزمون اپ وب محلی با Playwright."
+    },
+    "compatibility": {
+      "en": "Local Codex skills; Codex in ChatGPT desktop where local skills are available. For another agent, check its own support.",
+      "fa": "اسکیل محلی Codex و بخش Codex اپ ChatGPT در صورت دسترسی به اسکیل محلی؛ برای عامل دیگر پشتیبانی خود ابزار را بررسی کنید."
+    },
+    "prerequisites": {
+      "en": "A skill-capable agent. Read SKILL.md for runtime, browser and document-tool dependencies.",
+      "fa": "عامل دارای پشتیبانی اسکیل؛ پیش‌نیازهای محیط اجرا، مرورگر و ابزار سند را در SKILL.md بررسی کنید."
+    },
+    "install": {
+      "en": "In Codex, ask $skill-installer to install webapp-testing from https://github.com/anthropics/skills/tree/main/skills/webapp-testing. Alternatively, copy this skill folder into .agents/skills/webapp-testing/ in your project. Review its source first.",
+      "fa": "در Codex از $skill-installer بخواهید webapp-testing را از https://github.com/anthropics/skills/tree/main/skills/webapp-testing نصب کند. روش دستی: پوشه همین اسکیل را در .agents/skills/webapp-testing/ پروژه قرار دهید. ابتدا منبع را بررسی کنید."
+    },
+    "use": {
+      "en": "Select $webapp-testing and describe your task with the relevant file or project. Start a new session if the skill is missing.",
+      "fa": "اسکیل $webapp-testing را انتخاب کنید و کار را همراه فایل یا پروژه مرتبط توضیح دهید. اگر دیده نشد، نشست تازه‌ای باز کنید."
+    },
+    "remove": {
+      "en": "Remove only the installed skill folder, or disable its exact path using [[skills.config]] in Codex configuration. Restart after configuration changes.",
+      "fa": "فقط پوشه اسکیل نصب‌شده را حذف کنید یا مسیر همان اسکیل را با [[skills.config]] در پیکربندی Codex غیرفعال کنید؛ پس از تغییر پیکربندی دوباره اجرا کنید."
+    },
+    "troubleshoot": {
+      "en": "Check SKILL.md location, agent support and dependencies. A shared skill format does not guarantee all scripts work unchanged on Windows.",
+      "fa": "محل SKILL.md، پشتیبانی عامل و پیش‌نیازها را بررسی کنید. قالب مشترک اسکیل، اجرای بدون تغییر همه اسکریپت‌ها روی ویندوز را تضمین نمی‌کند."
+    }
+  },
+  {
+    "id": "pdf",
+    "name": "pdf",
+    "kind": "skill",
+    "source": "https://github.com/anthropics/skills/tree/main/skills/pdf",
+    "checked": "2026-10-27",
+    "summary": {
+      "en": "Read, generate and inspect PDF files.",
+      "fa": "خواندن، ساخت و بررسی فایل PDF."
+    },
+    "compatibility": {
+      "en": "Local Codex skills; Codex in ChatGPT desktop where local skills are available. For another agent, check its own support.",
+      "fa": "اسکیل محلی Codex و بخش Codex اپ ChatGPT در صورت دسترسی به اسکیل محلی؛ برای عامل دیگر پشتیبانی خود ابزار را بررسی کنید."
+    },
+    "prerequisites": {
+      "en": "A skill-capable agent. Read SKILL.md for runtime, browser and document-tool dependencies.",
+      "fa": "عامل دارای پشتیبانی اسکیل؛ پیش‌نیازهای محیط اجرا، مرورگر و ابزار سند را در SKILL.md بررسی کنید."
+    },
+    "install": {
+      "en": "In Codex, ask $skill-installer to install pdf from https://github.com/anthropics/skills/tree/main/skills/pdf. Alternatively, copy this skill folder into .agents/skills/pdf/ in your project. Review its source first.",
+      "fa": "در Codex از $skill-installer بخواهید pdf را از https://github.com/anthropics/skills/tree/main/skills/pdf نصب کند. روش دستی: پوشه همین اسکیل را در .agents/skills/pdf/ پروژه قرار دهید. ابتدا منبع را بررسی کنید."
+    },
+    "use": {
+      "en": "Select $pdf and describe your task with the relevant file or project. Start a new session if the skill is missing.",
+      "fa": "اسکیل $pdf را انتخاب کنید و کار را همراه فایل یا پروژه مرتبط توضیح دهید. اگر دیده نشد، نشست تازه‌ای باز کنید."
+    },
+    "remove": {
+      "en": "Remove only the installed skill folder, or disable its exact path using [[skills.config]] in Codex configuration. Restart after configuration changes.",
+      "fa": "فقط پوشه اسکیل نصب‌شده را حذف کنید یا مسیر همان اسکیل را با [[skills.config]] در پیکربندی Codex غیرفعال کنید؛ پس از تغییر پیکربندی دوباره اجرا کنید."
+    },
+    "troubleshoot": {
+      "en": "Check SKILL.md location, agent support and dependencies. A shared skill format does not guarantee all scripts work unchanged on Windows.",
+      "fa": "محل SKILL.md، پشتیبانی عامل و پیش‌نیازها را بررسی کنید. قالب مشترک اسکیل، اجرای بدون تغییر همه اسکریپت‌ها روی ویندوز را تضمین نمی‌کند."
+    }
+  },
+  {
+    "id": "docx",
+    "name": "docx",
+    "kind": "skill",
+    "source": "https://github.com/anthropics/skills/tree/main/skills/docx",
+    "checked": "2026-10-27",
+    "summary": {
+      "en": "Create and edit Word documents.",
+      "fa": "ساخت و ویرایش سند Word."
+    },
+    "compatibility": {
+      "en": "Local Codex skills; Codex in ChatGPT desktop where local skills are available. For another agent, check its own support.",
+      "fa": "اسکیل محلی Codex و بخش Codex اپ ChatGPT در صورت دسترسی به اسکیل محلی؛ برای عامل دیگر پشتیبانی خود ابزار را بررسی کنید."
+    },
+    "prerequisites": {
+      "en": "A skill-capable agent. Read SKILL.md for runtime, browser and document-tool dependencies.",
+      "fa": "عامل دارای پشتیبانی اسکیل؛ پیش‌نیازهای محیط اجرا، مرورگر و ابزار سند را در SKILL.md بررسی کنید."
+    },
+    "install": {
+      "en": "In Codex, ask $skill-installer to install docx from https://github.com/anthropics/skills/tree/main/skills/docx. Alternatively, copy this skill folder into .agents/skills/docx/ in your project. Review its source first.",
+      "fa": "در Codex از $skill-installer بخواهید docx را از https://github.com/anthropics/skills/tree/main/skills/docx نصب کند. روش دستی: پوشه همین اسکیل را در .agents/skills/docx/ پروژه قرار دهید. ابتدا منبع را بررسی کنید."
+    },
+    "use": {
+      "en": "Select $docx and describe your task with the relevant file or project. Start a new session if the skill is missing.",
+      "fa": "اسکیل $docx را انتخاب کنید و کار را همراه فایل یا پروژه مرتبط توضیح دهید. اگر دیده نشد، نشست تازه‌ای باز کنید."
+    },
+    "remove": {
+      "en": "Remove only the installed skill folder, or disable its exact path using [[skills.config]] in Codex configuration. Restart after configuration changes.",
+      "fa": "فقط پوشه اسکیل نصب‌شده را حذف کنید یا مسیر همان اسکیل را با [[skills.config]] در پیکربندی Codex غیرفعال کنید؛ پس از تغییر پیکربندی دوباره اجرا کنید."
+    },
+    "troubleshoot": {
+      "en": "Check SKILL.md location, agent support and dependencies. A shared skill format does not guarantee all scripts work unchanged on Windows.",
+      "fa": "محل SKILL.md، پشتیبانی عامل و پیش‌نیازها را بررسی کنید. قالب مشترک اسکیل، اجرای بدون تغییر همه اسکریپت‌ها روی ویندوز را تضمین نمی‌کند."
+    }
+  },
+  {
+    "id": "xlsx",
+    "name": "xlsx",
+    "kind": "skill",
+    "source": "https://github.com/anthropics/skills/tree/main/skills/xlsx",
+    "checked": "2026-10-27",
+    "summary": {
+      "en": "Work with spreadsheets and formulas.",
+      "fa": "کار با صفحه‌گسترده و فرمول‌ها."
+    },
+    "compatibility": {
+      "en": "Local Codex skills; Codex in ChatGPT desktop where local skills are available. For another agent, check its own support.",
+      "fa": "اسکیل محلی Codex و بخش Codex اپ ChatGPT در صورت دسترسی به اسکیل محلی؛ برای عامل دیگر پشتیبانی خود ابزار را بررسی کنید."
+    },
+    "prerequisites": {
+      "en": "A skill-capable agent. Read SKILL.md for runtime, browser and document-tool dependencies.",
+      "fa": "عامل دارای پشتیبانی اسکیل؛ پیش‌نیازهای محیط اجرا، مرورگر و ابزار سند را در SKILL.md بررسی کنید."
+    },
+    "install": {
+      "en": "In Codex, ask $skill-installer to install xlsx from https://github.com/anthropics/skills/tree/main/skills/xlsx. Alternatively, copy this skill folder into .agents/skills/xlsx/ in your project. Review its source first.",
+      "fa": "در Codex از $skill-installer بخواهید xlsx را از https://github.com/anthropics/skills/tree/main/skills/xlsx نصب کند. روش دستی: پوشه همین اسکیل را در .agents/skills/xlsx/ پروژه قرار دهید. ابتدا منبع را بررسی کنید."
+    },
+    "use": {
+      "en": "Select $xlsx and describe your task with the relevant file or project. Start a new session if the skill is missing.",
+      "fa": "اسکیل $xlsx را انتخاب کنید و کار را همراه فایل یا پروژه مرتبط توضیح دهید. اگر دیده نشد، نشست تازه‌ای باز کنید."
+    },
+    "remove": {
+      "en": "Remove only the installed skill folder, or disable its exact path using [[skills.config]] in Codex configuration. Restart after configuration changes.",
+      "fa": "فقط پوشه اسکیل نصب‌شده را حذف کنید یا مسیر همان اسکیل را با [[skills.config]] در پیکربندی Codex غیرفعال کنید؛ پس از تغییر پیکربندی دوباره اجرا کنید."
+    },
+    "troubleshoot": {
+      "en": "Check SKILL.md location, agent support and dependencies. A shared skill format does not guarantee all scripts work unchanged on Windows.",
+      "fa": "محل SKILL.md، پشتیبانی عامل و پیش‌نیازها را بررسی کنید. قالب مشترک اسکیل، اجرای بدون تغییر همه اسکریپت‌ها روی ویندوز را تضمین نمی‌کند."
+    }
+  },
+  {
+    "id": "pptx",
+    "name": "pptx",
+    "kind": "skill",
+    "source": "https://github.com/anthropics/skills/tree/main/skills/pptx",
+    "checked": "2026-10-27",
+    "summary": {
+      "en": "Create and edit PowerPoint presentations.",
+      "fa": "ساخت و ویرایش ارائه PowerPoint."
+    },
+    "compatibility": {
+      "en": "Local Codex skills; Codex in ChatGPT desktop where local skills are available. For another agent, check its own support.",
+      "fa": "اسکیل محلی Codex و بخش Codex اپ ChatGPT در صورت دسترسی به اسکیل محلی؛ برای عامل دیگر پشتیبانی خود ابزار را بررسی کنید."
+    },
+    "prerequisites": {
+      "en": "A skill-capable agent. Read SKILL.md for runtime, browser and document-tool dependencies.",
+      "fa": "عامل دارای پشتیبانی اسکیل؛ پیش‌نیازهای محیط اجرا، مرورگر و ابزار سند را در SKILL.md بررسی کنید."
+    },
+    "install": {
+      "en": "In Codex, ask $skill-installer to install pptx from https://github.com/anthropics/skills/tree/main/skills/pptx. Alternatively, copy this skill folder into .agents/skills/pptx/ in your project. Review its source first.",
+      "fa": "در Codex از $skill-installer بخواهید pptx را از https://github.com/anthropics/skills/tree/main/skills/pptx نصب کند. روش دستی: پوشه همین اسکیل را در .agents/skills/pptx/ پروژه قرار دهید. ابتدا منبع را بررسی کنید."
+    },
+    "use": {
+      "en": "Select $pptx and describe your task with the relevant file or project. Start a new session if the skill is missing.",
+      "fa": "اسکیل $pptx را انتخاب کنید و کار را همراه فایل یا پروژه مرتبط توضیح دهید. اگر دیده نشد، نشست تازه‌ای باز کنید."
+    },
+    "remove": {
+      "en": "Remove only the installed skill folder, or disable its exact path using [[skills.config]] in Codex configuration. Restart after configuration changes.",
+      "fa": "فقط پوشه اسکیل نصب‌شده را حذف کنید یا مسیر همان اسکیل را با [[skills.config]] در پیکربندی Codex غیرفعال کنید؛ پس از تغییر پیکربندی دوباره اجرا کنید."
+    },
+    "troubleshoot": {
+      "en": "Check SKILL.md location, agent support and dependencies. A shared skill format does not guarantee all scripts work unchanged on Windows.",
+      "fa": "محل SKILL.md، پشتیبانی عامل و پیش‌نیازها را بررسی کنید. قالب مشترک اسکیل، اجرای بدون تغییر همه اسکریپت‌ها روی ویندوز را تضمین نمی‌کند."
+    }
+  },
+  {
+    "id": "skill-creator",
+    "name": "skill-creator",
+    "kind": "skill",
+    "source": "https://github.com/anthropics/skills/tree/main/skills/skill-creator",
+    "checked": "2026-10-27",
+    "summary": {
+      "en": "Create and improve a reusable skill.",
+      "fa": "ساخت و بهبود اسکیل قابل استفاده مجدد."
+    },
+    "compatibility": {
+      "en": "Local Codex skills; Codex in ChatGPT desktop where local skills are available. For another agent, check its own support.",
+      "fa": "اسکیل محلی Codex و بخش Codex اپ ChatGPT در صورت دسترسی به اسکیل محلی؛ برای عامل دیگر پشتیبانی خود ابزار را بررسی کنید."
+    },
+    "prerequisites": {
+      "en": "A skill-capable agent. Read SKILL.md for runtime, browser and document-tool dependencies.",
+      "fa": "عامل دارای پشتیبانی اسکیل؛ پیش‌نیازهای محیط اجرا، مرورگر و ابزار سند را در SKILL.md بررسی کنید."
+    },
+    "install": {
+      "en": "In Codex, ask $skill-installer to install skill-creator from https://github.com/anthropics/skills/tree/main/skills/skill-creator. Alternatively, copy this skill folder into .agents/skills/skill-creator/ in your project. Review its source first.",
+      "fa": "در Codex از $skill-installer بخواهید skill-creator را از https://github.com/anthropics/skills/tree/main/skills/skill-creator نصب کند. روش دستی: پوشه همین اسکیل را در .agents/skills/skill-creator/ پروژه قرار دهید. ابتدا منبع را بررسی کنید."
+    },
+    "use": {
+      "en": "Select $skill-creator and describe your task with the relevant file or project. Start a new session if the skill is missing.",
+      "fa": "اسکیل $skill-creator را انتخاب کنید و کار را همراه فایل یا پروژه مرتبط توضیح دهید. اگر دیده نشد، نشست تازه‌ای باز کنید."
+    },
+    "remove": {
+      "en": "Remove only the installed skill folder, or disable its exact path using [[skills.config]] in Codex configuration. Restart after configuration changes.",
+      "fa": "فقط پوشه اسکیل نصب‌شده را حذف کنید یا مسیر همان اسکیل را با [[skills.config]] در پیکربندی Codex غیرفعال کنید؛ پس از تغییر پیکربندی دوباره اجرا کنید."
+    },
+    "troubleshoot": {
+      "en": "Check SKILL.md location, agent support and dependencies. A shared skill format does not guarantee all scripts work unchanged on Windows.",
+      "fa": "محل SKILL.md، پشتیبانی عامل و پیش‌نیازها را بررسی کنید. قالب مشترک اسکیل، اجرای بدون تغییر همه اسکریپت‌ها روی ویندوز را تضمین نمی‌کند."
+    }
+  },
+  {
+    "id": "github",
+    "name": "GitHub",
+    "kind": "plugin",
+    "source": "https://github.com/github/github-mcp-server",
+    "checked": "2026-10-27",
+    "summary": {
+      "en": "Work with repositories, issues and pull requests.",
+      "fa": "کار با مخزن، ایشو و درخواست ادغام."
+    },
+    "compatibility": {
+      "en": "Supported ChatGPT/Codex plugin surfaces; availability depends on your account and workspace. VS Code extensions use another installation path.",
+      "fa": "محیط‌های ChatGPT/Codex دارای پشتیبانی پلاگین؛ دسترسی به حساب و فضای کاری وابسته است. افزونه VS Code مسیر نصب دیگری دارد."
+    },
+    "prerequisites": {
+      "en": "Plugin-directory access and the provider account or permissions requested by the plugin.",
+      "fa": "دسترسی به فهرست پلاگین‌ها و حساب یا مجوزهای درخواستی سرویس مربوط."
+    },
+    "install": {
+      "en": "In ChatGPT desktop, open Plugins, search for GitHub, review its details, install it and complete the requested connection. In Codex CLI use /plugins and your configured marketplace.",
+      "fa": "در اپ ChatGPT بخش Plugins را باز کنید، GitHub را جست‌وجو و جزئیات را بررسی کنید؛ نصب و اتصال درخواستی را کامل کنید. در Codex CLI از /plugins و مارکت‌پلیس تنظیم‌شده استفاده کنید."
+    },
+    "use": {
+      "en": "Start a new chat/session and select @GitHub, or describe the relevant task. Access follows the connected account permissions.",
+      "fa": "چت یا نشست تازه‌ای باز کنید و @GitHub را انتخاب کنید یا کار مرتبط را توضیح دهید. دسترسی تابع مجوز حساب متصل است."
+    },
+    "remove": {
+      "en": "Open the installed plugin and choose Uninstall where available. Disconnect the linked service separately if you also want to revoke that connection.",
+      "fa": "پلاگین نصب‌شده را باز کنید و در صورت دسترسی Uninstall را بزنید. برای لغو اتصال سرویس، اتصال مربوط را جداگانه قطع کنید."
+    },
+    "troubleshoot": {
+      "en": "Check account/workspace availability, provider authorization and supported surface. If Plugins is absent, consult the official guide.",
+      "fa": "دسترسی حساب یا فضای کاری، مجوز سرویس و محیط پشتیبانی‌شده را بررسی کنید. اگر Plugins وجود ندارد، راهنمای رسمی را ببینید."
+    }
+  },
+  {
+    "id": "figma",
+    "name": "Figma",
+    "kind": "plugin",
+    "source": "https://github.com/openai/plugins/tree/main/plugins/figma",
+    "checked": "2026-10-27",
+    "summary": {
+      "en": "Use design context and supported Figma workflows.",
+      "fa": "استفاده از اطلاعات طراحی و گردش کارهای Figma."
+    },
+    "compatibility": {
+      "en": "Supported ChatGPT/Codex plugin surfaces; availability depends on your account and workspace. VS Code extensions use another installation path.",
+      "fa": "محیط‌های ChatGPT/Codex دارای پشتیبانی پلاگین؛ دسترسی به حساب و فضای کاری وابسته است. افزونه VS Code مسیر نصب دیگری دارد."
+    },
+    "prerequisites": {
+      "en": "Plugin-directory access and the provider account or permissions requested by the plugin.",
+      "fa": "دسترسی به فهرست پلاگین‌ها و حساب یا مجوزهای درخواستی سرویس مربوط."
+    },
+    "install": {
+      "en": "In ChatGPT desktop, open Plugins, search for Figma, review its details, install it and complete the requested connection. In Codex CLI use /plugins and your configured marketplace.",
+      "fa": "در اپ ChatGPT بخش Plugins را باز کنید، Figma را جست‌وجو و جزئیات را بررسی کنید؛ نصب و اتصال درخواستی را کامل کنید. در Codex CLI از /plugins و مارکت‌پلیس تنظیم‌شده استفاده کنید."
+    },
+    "use": {
+      "en": "Start a new chat/session and select @Figma, or describe the relevant task. Access follows the connected account permissions.",
+      "fa": "چت یا نشست تازه‌ای باز کنید و @Figma را انتخاب کنید یا کار مرتبط را توضیح دهید. دسترسی تابع مجوز حساب متصل است."
+    },
+    "remove": {
+      "en": "Open the installed plugin and choose Uninstall where available. Disconnect the linked service separately if you also want to revoke that connection.",
+      "fa": "پلاگین نصب‌شده را باز کنید و در صورت دسترسی Uninstall را بزنید. برای لغو اتصال سرویس، اتصال مربوط را جداگانه قطع کنید."
+    },
+    "troubleshoot": {
+      "en": "Check account/workspace availability, provider authorization and supported surface. If Plugins is absent, consult the official guide.",
+      "fa": "دسترسی حساب یا فضای کاری، مجوز سرویس و محیط پشتیبانی‌شده را بررسی کنید. اگر Plugins وجود ندارد، راهنمای رسمی را ببینید."
+    }
+  },
+  {
+    "id": "openai-developers",
+    "name": "OpenAI Developers",
+    "kind": "plugin",
+    "source": "https://developers.openai.com/learn/developers-codex-plugin",
+    "checked": "2026-10-27",
+    "summary": {
+      "en": "Use current OpenAI documentation and API guidance.",
+      "fa": "استفاده از مستندات جاری OpenAI و راهنمای API."
+    },
+    "compatibility": {
+      "en": "Supported ChatGPT/Codex plugin surfaces; availability depends on your account and workspace. VS Code extensions use another installation path.",
+      "fa": "محیط‌های ChatGPT/Codex دارای پشتیبانی پلاگین؛ دسترسی به حساب و فضای کاری وابسته است. افزونه VS Code مسیر نصب دیگری دارد."
+    },
+    "prerequisites": {
+      "en": "Plugin-directory access and the provider account or permissions requested by the plugin.",
+      "fa": "دسترسی به فهرست پلاگین‌ها و حساب یا مجوزهای درخواستی سرویس مربوط."
+    },
+    "install": {
+      "en": "In ChatGPT desktop, open Plugins, search for OpenAI Developers, review its details, install it and complete the requested connection. In Codex CLI use /plugins and your configured marketplace.",
+      "fa": "در اپ ChatGPT بخش Plugins را باز کنید، OpenAI Developers را جست‌وجو و جزئیات را بررسی کنید؛ نصب و اتصال درخواستی را کامل کنید. در Codex CLI از /plugins و مارکت‌پلیس تنظیم‌شده استفاده کنید."
+    },
+    "use": {
+      "en": "Start a new chat/session and select @OpenAI Developers, or describe the relevant task. Access follows the connected account permissions.",
+      "fa": "چت یا نشست تازه‌ای باز کنید و @OpenAI Developers را انتخاب کنید یا کار مرتبط را توضیح دهید. دسترسی تابع مجوز حساب متصل است."
+    },
+    "remove": {
+      "en": "Open the installed plugin and choose Uninstall where available. Disconnect the linked service separately if you also want to revoke that connection.",
+      "fa": "پلاگین نصب‌شده را باز کنید و در صورت دسترسی Uninstall را بزنید. برای لغو اتصال سرویس، اتصال مربوط را جداگانه قطع کنید."
+    },
+    "troubleshoot": {
+      "en": "Check account/workspace availability, provider authorization and supported surface. If Plugins is absent, consult the official guide.",
+      "fa": "دسترسی حساب یا فضای کاری، مجوز سرویس و محیط پشتیبانی‌شده را بررسی کنید. اگر Plugins وجود ندارد، راهنمای رسمی را ببینید."
+    }
+  }
+]

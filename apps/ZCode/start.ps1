@@ -1,4 +1,4 @@
-param([switch]$Gui, [switch]$Discover)
+﻿param([switch]$Gui, [switch]$Discover)
 
 $ErrorActionPreference = 'Stop'
 $Port = if ($env:ZCODE_RTL_PORT) { [int]$env:ZCODE_RTL_PORT } else { 9222 }
@@ -19,17 +19,7 @@ function Say([string]$Message, [int]$Icon = 0) {
   }
 }
 
-function Find-ZCode {
-  if ($env:ZCODE_RTL_EXE -and (Test-Path -LiteralPath $env:ZCODE_RTL_EXE -PathType Leaf)) { return $env:ZCODE_RTL_EXE }
-  $saved = if (Get-Command Get-RtlSavedPath -ErrorAction SilentlyContinue) { Get-RtlSavedPath 'zcode' } else { $null }
-  if ($saved -and [IO.Path]::GetFileName($saved) -ieq 'ZCode.exe') { return $saved }
-  $candidates = @(
-    "$env:ProgramFiles\ZCode\ZCode.exe",
-    "${env:ProgramFiles(x86)}\ZCode\ZCode.exe",
-    "$env:LOCALAPPDATA\Programs\ZCode\ZCode.exe"
-  )
-  $candidates | Where-Object { Test-Path -PathType Leaf $_ } | Select-Object -First 1
-}
+function Find-ZCode { Get-RtlExecutable 'zcode' $Dir }
 
 function Get-CdpInfo {
   try { Invoke-RestMethod "http://127.0.0.1:$Port/json/version" -TimeoutSec 2 }
@@ -109,7 +99,9 @@ if ($owner) {
   exit 1
 } else {
   Say "starting ZCode with --remote-debugging-port=$Port"
-  Start-Process -FilePath $exe -ArgumentList "--remote-debugging-port=$Port" | Out-Null
+  $launchArgs = "--remote-debugging-port=$Port"
+  if ($env:VIBEHUB_PROJECT) { $launchArgs += ' "' + ($env:VIBEHUB_PROJECT.TrimEnd('\') + '\.') + '"' }
+  Start-Process -FilePath $exe -ArgumentList $launchArgs | Out-Null
   for ($i = 0; $i -lt 40; $i++) {
     Start-Sleep -Milliseconds 500
     $info = Get-CdpInfo

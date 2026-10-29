@@ -7,7 +7,11 @@ on:
       - "content/**"
       - "scripts/build-content-site.mjs"
       - "scripts/validate-content.mjs"
+      - "scripts/collect-offers.mjs"
+      - "packages/core/src/schemas.ts"
       - ".github/workflows/publish-content.yml"
+  schedule:
+    - cron: "17 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -40,6 +44,15 @@ jobs:
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Configure GitHub Pages
+        id: pages
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+
+      - name: Collect official public offers
+        env:
+          PREVIOUS_FEED_URL: ${{ steps.pages.outputs.base_url }}/feed
+        run: node scripts/collect-offers.mjs
+
       - name: Validate content and feed assembly
         run: |
           pnpm content:validate
@@ -47,9 +60,6 @@ jobs:
 
       - name: Build static Pages artifact
         run: node scripts/build-content-site.mjs "$RUNNER_TEMP/vibehub-content-site"
-
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v3

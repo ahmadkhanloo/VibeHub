@@ -22,5 +22,15 @@
     "to": "To",
     "checkNow": "Check offers feed",
     "lastSynced": "Last synced"
-  }
+  },
+  "manualClaim": "Claim manually in the original app. Daily window starts:",
+  "sourceChecked": "Source checked",
+  "sourceStale": "The source has not been freshly confirmed. Check current conditions in the original app.",
+  "claimPage": "Claim instructions",
+  "benefitUnits": {
+    "credits": "Credits",
+    "tokens": "Tokens",
+    "free-model": "Limited free model access"
+  },
+  "feedOffline": "The latest refresh failed. Saved offers remain available; check their source verification time."
 }

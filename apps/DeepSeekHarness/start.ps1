@@ -1,4 +1,4 @@
-param([switch]$Gui, [switch]$Discover)
+﻿param([switch]$Gui, [switch]$Discover)
 
 $ErrorActionPreference = 'Stop'
 $Port = if ($env:DEEPSEEK_HARNESS_RTL_PORT) { [int]$env:DEEPSEEK_HARNESS_RTL_PORT } else { 9228 }
@@ -19,14 +19,7 @@ function Say([string]$Message, [int]$Icon = 0) {
   }
 }
 
-function Find-Harness {
-  if ($env:DEEPSEEK_HARNESS_RTL_EXE -and (Test-Path -LiteralPath $env:DEEPSEEK_HARNESS_RTL_EXE -PathType Leaf)) { return $env:DEEPSEEK_HARNESS_RTL_EXE }
-  $saved = if (Get-Command Get-RtlSavedPath -ErrorAction SilentlyContinue) { Get-RtlSavedPath 'deepseek-harness' } else { $null }
-  if ($saved -and [IO.Path]::GetFileName($saved) -ieq 'DeepSeek Harness.exe') { return $saved }
-  $path = "$env:LOCALAPPDATA\Programs\DeepSeek Harness\DeepSeek Harness.exe"
-  if (Test-Path -PathType Leaf $path) { return $path }
-  return $null
-}
+function Find-Harness { Get-RtlExecutable 'deepseek-harness' $Dir }
 
 function Get-CdpInfo {
   try { Invoke-RestMethod "http://127.0.0.1:$Port/json/version" -TimeoutSec 2 }
@@ -99,7 +92,9 @@ if ($owner) {
   exit 1
 } else {
   Say "starting DeepSeek Harness with --remote-debugging-port=$Port"
-  Start-Process -FilePath $exe -ArgumentList "--remote-debugging-port=$Port" | Out-Null
+  $launchArgs = "--remote-debugging-port=$Port"
+  if ($env:VIBEHUB_PROJECT) { $launchArgs += ' "' + ($env:VIBEHUB_PROJECT.TrimEnd('\') + '\.') + '"' }
+  Start-Process -FilePath $exe -ArgumentList $launchArgs | Out-Null
   for ($i = 0; $i -lt 60; $i++) {
     Start-Sleep -Milliseconds 500
     $info = Get-CdpInfo

@@ -35,7 +35,7 @@ export function SearchPage() {
               {t("tools")} ({apps.length})
             </SectionTitle>
             {apps.length ? (
-              <div className="vh-tool-list">
+              <div className="vh-app-grid">
                 {apps.map((app) => (
                   <CatalogRow key={app.id} app={app} />
                 ))}

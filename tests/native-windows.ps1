@@ -1,4 +1,4 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
 $sandbox = Join-Path ([IO.Path]::GetTempPath()) ('vibehub-native-' + [guid]::NewGuid().ToString('N'))
 $null = New-Item -Path $sandbox -ItemType Directory
@@ -33,6 +33,27 @@ function Run-Adapter($request) {
     $line.Substring(13) | ConvertFrom-Json
 }
 try {
+    $hubAst = [System.Management.Automation.Language.Parser]::ParseFile($adapter, [ref]$null, [ref]$null)
+    $hubFunction = $hubAst.Find({param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Invoke-HubRtlLauncher'}, $true)
+    . ([scriptblock]::Create($hubFunction.Extent.Text))
+    $fakeLauncher = Join-Path $sandbox 'rtl-failure.ps1'
+    [IO.File]::WriteAllText($fakeLauncher, 'param([switch]$Gui); if($Gui){throw "Unexpected native popup mode"}; Write-Host "Port 9226 is already used by another program."; exit 1')
+    $launchError = $null
+    try { Invoke-HubRtlLauncher $fakeLauncher } catch { $launchError = $_.Exception.Message }
+    Assert ($launchError -eq 'VIBEHUB_LAUNCH_PORT_BUSY') 'Hub must convert launcher port conflicts into an inline error code without enabling GUI popups'
+    [IO.File]::WriteAllText($fakeLauncher, 'Write-Host "Qoder is already running without the DevTools port."; exit 1')
+    $launchError = $null
+    try { Invoke-HubRtlLauncher $fakeLauncher } catch { $launchError = $_.Exception.Message }
+    Assert ($launchError -eq 'VIBEHUB_LAUNCH_ALREADY_OPEN') 'Already-open launch errors must remain distinguishable from a port conflict'
+    $proxyAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $repo 'apps\Antigravity\start.ps1'), [ref]$null, [ref]$null)
+    $proxyFunction = $proxyAst.Find({param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Resolve-AntigravityProxy'}, $true)
+    . ([scriptblock]::Create($proxyFunction.Extent.Text))
+    Assert ((Resolve-AntigravityProxy '' 'socks5h://127.0.0.1:10808') -eq 'socks5h://127.0.0.1:10808') 'Antigravity RTL must inherit the selected app proxy'
+    Assert ((Resolve-AntigravityProxy 'http://127.0.0.1:8888' 'http://127.0.0.1:10808') -eq 'http://127.0.0.1:8888') 'Explicit Antigravity proxy must take precedence'
+    Assert ((Resolve-AntigravityProxy '' '') -eq '') 'No Antigravity proxy must remain empty'
+    $proxyError = $null
+    try { Resolve-AntigravityProxy 'http://user:synthetic-secret@127.0.0.1:10808' '' } catch { $proxyError = $_.Exception.Message }
+    Assert ($proxyError -and $proxyError -notmatch 'synthetic-secret') 'Embedded proxy credentials must fail without leaking their value'
     $developmentNode = Join-Path $repo 'apps\desktop\src-tauri\windows\payload\node.exe'
     if (Test-Path -LiteralPath $developmentNode -PathType Leaf) {
         . (Join-Path $repo 'apps\rtl-paths.ps1')
@@ -43,9 +64,10 @@ try {
     $initial = "# original فارسی`r`n"
     [IO.File]::WriteAllText($profileFile, $initial, [Text.UTF8Encoding]::new($true))
     $detected = @(Run-Adapter @{operation='detect'})
-    Assert ($detected.Count -eq 6) 'Detection must return all six app records'
+    Assert ($detected.Count -eq 8) 'Detection must return all eight app records'
     Assert (@($detected | Where-Object { $_.installed -isnot [bool] }).Count -eq 0) 'Detection installed flags must be booleans'
     $editors = @(Run-Adapter @{operation='detect-editors'})
+    Assert ($editors.Count -eq 0) 'General IDE discovery must stay retired'
     $knownEditorIds = @('vscode','vscode-insiders','antigravity','antigravity-ide','cursor','windsurf','zed','trae','kiro','vscodium')
     Assert (@($editors | Where-Object { $_.id -notin $knownEditorIds -or $_.installed -ne $true -or -not (Test-Path -LiteralPath $_.path -PathType Leaf) }).Count -eq 0) 'Editor scan must return only known apps with existing executable paths'
     Assert (@($editors.id | Select-Object -Unique).Count -eq $editors.Count) 'Editor scan must not return duplicate app records'
@@ -54,12 +76,18 @@ try {
     [IO.Directory]::CreateDirectory($fakeEditorDir) | Out-Null
     $probeSource = Join-Path $sandbox 'proxy-probe.rs'
     $probeOutput = Join-Path $fakeEditorDir 'proxy-env.txt'
-    $probeCode = 'use std::{env, fs}; fn main() { let proxy = env::var("HTTP_PROXY").unwrap_or_else(|_| "unset".to_string()); fs::write(r#"' + $probeOutput + '"#, proxy).unwrap(); }'
+    $probeCode = 'use std::{env, fs}; fn main() { let args: Vec<String> = env::args().collect(); if let Ok(out) = env::var("VIBEHUB_PROJECT_PROBE") { fs::write(out, format!("{}\n{}", env::current_dir().unwrap().display(), args.get(1).unwrap_or(&String::new()))).unwrap(); } let proxy = env::var("HTTP_PROXY").unwrap_or_else(|_| "unset".to_string()); fs::write(r#"' + $probeOutput + '"#, proxy).unwrap(); }'
     [IO.File]::WriteAllText($probeSource, $probeCode, [Text.UTF8Encoding]::new($false))
     & rustc --edition=2021 $probeSource -o $fakeEditor
     if ($LASTEXITCODE -ne 0) { throw "Could not compile the temporary editor probe (rustc exit $LASTEXITCODE)" }
-    $testEditor = @(Run-Adapter @{operation='detect-editors'} | Where-Object { $_.id -eq 'antigravity' } | Select-Object -First 1)
+    $testEditor = @(Run-Adapter @{operation='detect'} | Where-Object { $_.id -eq 'antigravity' -and $_.installed } | Select-Object -First 1)
     Assert ($testEditor.Count -eq 1 -and $testEditor[0].path -eq $fakeEditor) "The proxy launch test must resolve its sandbox editor; received: $($testEditor | ConvertTo-Json -Compress)"
+    $fakeChatDir = Join-Path $sandbox 'Programs\ChatGPT'
+    [IO.Directory]::CreateDirectory($fakeChatDir) | Out-Null
+    Copy-Item -LiteralPath $fakeEditor -Destination (Join-Path $fakeChatDir 'ChatGPT.exe')
+    Copy-Item -LiteralPath $fakeEditor -Destination (Join-Path $fakeChatDir 'Codex.exe')
+    $chatApps = @(Run-Adapter @{operation='detect'} | Where-Object { $_.id -eq 'chatgpt' })
+    Assert ($chatApps.Count -eq 1 -and $chatApps[0].installed) 'New and legacy desktop executables must produce a single installed ChatGPT/Codex record'
     $priorHttpProxy = $env:HTTP_PROXY
     try {
         $env:HTTP_PROXY = 'socks5h://127.0.0.1:10808'
@@ -69,12 +97,33 @@ try {
         $env:HTTP_PROXY = $priorHttpProxy
         Remove-Item -LiteralPath $probeOutput -Force -ErrorAction SilentlyContinue
     }
-    $proxyLaunch = Run-Adapter @{operation='launch-editor';editorId='antigravity';proxyUrl='socks5h://127.0.0.1:10808';waitForTestExitMs=5000}
+    $proxyLaunch = Run-Adapter @{operation='launch';req=@{appId='antigravity';rtl=$false};proxyUrl='socks5h://127.0.0.1:10808';waitForTestExitMs=5000}
     Assert $proxyLaunch.proxyConfigured 'Proxy profile should be passed to the editor launch request'
     Assert (-not $proxyLaunch.proxyRoutingVerified) 'The adapter must not claim that IDE traffic was verified'
     Assert ($proxyLaunch.testProcessCompleted -and $proxyLaunch.testExitCode -eq 0) "The proxy child should exit cleanly; launch result=$($proxyLaunch | ConvertTo-Json -Compress)"
     Assert (Test-Path -LiteralPath $probeOutput) 'The proxy child must record its environment'
     Assert ([IO.File]::ReadAllText($probeOutput) -eq 'socks5h://127.0.0.1:10808') 'The selected proxy should reach the editor child process environment'
+    $project = Join-Path $sandbox "پروژه فارسی ' & dollar $ with spaces"
+    [IO.Directory]::CreateDirectory($project) | Out-Null
+    $env:VIBEHUB_PROJECT_PROBE = Join-Path $sandbox 'project-result.txt'
+    try {
+        $projectLaunch = Run-Adapter @{operation='launch';req=@{appId='antigravity';rtl=$false;cwd=$project};waitForTestExitMs=5000}
+        Assert ($projectLaunch.ok -and $projectLaunch.testExitCode -eq 0) 'Project child must exit successfully'
+        $received = [IO.File]::ReadAllLines($env:VIBEHUB_PROJECT_PROBE)
+        Assert ($received[0] -eq $project) 'Project path must set the child working directory exactly'
+        Assert ([IO.Path]::GetFullPath($received[1]) -eq $project) 'Project folder must reach the GUI as one argument, including Persian, spaces and metacharacters'
+    } finally { Remove-Item Env:VIBEHUB_PROJECT_PROBE -ErrorAction SilentlyContinue }
+    $batch = Run-Adapter @{operation='launch-states'; states=@{
+        alive=@{pid=$PID;rtl=$false;since='fixture'}
+        absent=$null
+        failed=@{phase='failed';error='fixture error'}
+    }}
+    Assert ($batch.alive.phase -eq 'running') 'Batch status must check a live PID'
+    Assert ($batch.absent.phase -eq 'idle') 'Batch status must preserve idle entries'
+    Assert ($batch.failed.phase -eq 'failed' -and $batch.failed.error -eq 'fixture error') 'Batch status must preserve launch errors'
+    [IO.File]::WriteAllText((Join-Path $sandbox 'opencode.cmd'), "@echo off`r`n", [Text.UTF8Encoding]::new($false))
+    $cli = @(Run-Adapter @{operation='detect'} | Where-Object { $_.id -eq 'opencode' })
+    Assert ($cli.Count -eq 1 -and $cli[0].installed -and $cli[0].path -eq (Join-Path $sandbox 'opencode.cmd')) 'Fast PATH detection must find CMD shims'
     $state = Run-Adapter @{operation='terminal-detect'}
     Assert ($state.profilePath -eq $profileFile) "Test profile must be isolated. Received: $($state | ConvertTo-Json -Compress)"
     $applied = Run-Adapter @{operation='terminal-apply'}

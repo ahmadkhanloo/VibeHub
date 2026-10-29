@@ -42,7 +42,8 @@ interface ToolContext {
     id: string,
     kind: "app" | "editor",
     mode: LaunchMode,
-  ) => Promise<void>;
+    cwd?: string,
+  ) => Promise<boolean | undefined>;
   checkState: (id: string) => Promise<void>;
 }
 const Context = createContext<ToolContext | null>(null);
@@ -63,7 +64,8 @@ export function ToolProvider({ children }: { children: ReactNode }) {
     [failures, setFailures] = useState<Record<string, string>>({});
   const inFlight = useRef(new Set<string>()),
     scan = useRef<Promise<void> | null>(null),
-    proxyWrite = useRef<Promise<void>>(Promise.resolve());
+    proxyWrite = useRef<Promise<void>>(Promise.resolve()),
+    polling = useRef(false);
   const { update } = useSettings();
   const catalog = useCatalog();
   const checkState = useCallback(async (id: string) => {
@@ -73,6 +75,20 @@ export function ToolProvider({ children }: { children: ReactNode }) {
     } catch {
       setStates((old) => ({ ...old, [id]: undefined }));
     }
+  }, []);
+  const checkStates = useCallback(async (ids: string[]) => {
+    if (!ids.length || polling.current) return;
+    polling.current = true;
+    try {
+      const next = await ipc.launchStates(ids);
+      setStates((old) => Object.entries(next).every(([id, value]) =>
+        JSON.stringify(old[id]) === JSON.stringify(value)) ? old : { ...old, ...next });
+    } catch (error) {
+      setFailures((old) => ({ ...old, ...Object.fromEntries(ids.map((id) => [
+        "app:" + id, String(error),
+      ])) }));
+      setStates((old) => ({ ...old, ...Object.fromEntries(ids.map((id) => [id, undefined])) }));
+    } finally { polling.current = false; }
   }, []);
   const refreshProxy = useCallback(async () => {
     const [p, c] = await Promise.all([ipc.proxyProfiles(), ipc.proxyConfig()]);
@@ -85,49 +101,44 @@ export function ToolProvider({ children }: { children: ReactNode }) {
     const task = (async () => {
       const result = await Promise.allSettled([
         ipc.detectApps(),
-        ipc.detectEditors(),
         ipc.rtlComponents(),
         refreshProxy(),
       ]);
-      const [a, e, c] = result;
+      const [a, c] = result;
       setErrors(
         result
           .filter((r) => r.status === "rejected")
           .map((r) => String((r as PromiseRejectedResult).reason)),
       );
-      setDetectionFailed(a.status === "rejected" && e.status === "rejected");
+      setDetectionFailed(a.status === "rejected");
       if (a.status === "fulfilled") {
         setApps(a.value);
-        await Promise.all(
-          a.value.filter((x) => x.installed).map((x) => checkState(x.id)),
-        );
+
       } else setApps([]);
-      setEditors(e.status === "fulfilled" ? e.value : []);
+      setEditors([]);
       setComponents(c.status === "fulfilled" ? c.value : []);
       setLoading(false);
+      // Inventory is usable before potentially slow process checks complete.
+      const ids = [
+        ...(a.status === "fulfilled" ? a.value.filter((x) => x.installed).map((x) => x.id) : []),
+      ];
+      void checkStates(ids);
     })().finally(() => {
       scan.current = null;
     });
     scan.current = task;
     return task;
-  }, [checkState, refreshProxy]);
-  useEffect(() => {
-    void refresh();
-    const focus = () => {
-      void refresh();
-    };
-    window.addEventListener("focus", focus);
-    return () => window.removeEventListener("focus", focus);
-  }, [refresh]);
+  }, [checkStates, refreshProxy]);
+  useEffect(() => { void refresh(); }, [refresh]);
   useEffect(() => {
     const timer = setInterval(() => {
       if (document.visibilityState !== "visible") return;
-      for (const [id, state] of Object.entries(states))
-        if (state?.phase === "starting" || state?.phase === "running")
-          void checkState(id);
-    }, 5000);
+      const ids = Object.entries(states).filter(([, state]) =>
+        state?.phase === "starting" || state?.phase === "running").map(([id]) => id);
+      void checkStates(ids);
+    }, 15000);
     return () => clearInterval(timer);
-  }, [states, checkState]);
+  }, [states, checkStates]);
   const saveToolProxy = useCallback(
     (appId: string, profileId: string) => {
       const task = proxyWrite.current
@@ -150,33 +161,35 @@ export function ToolProvider({ children }: { children: ReactNode }) {
     id: string,
     kind: "app" | "editor",
     mode: LaunchMode,
+    cwd?: string,
   ) => {
     const key = kind + ":" + id;
     if (inFlight.current.has(key)) return;
     const rtlAvailable =
       components.some((c) => c.id === id && c.available) &&
-      catalog.apps.some(
+      (id === "antigravity" || catalog.apps.some(
         (a) => a.id === id && a.capabilities.rtl === "verified",
-      );
-    if (kind === "app" && launchBlocked(mode, states[id], rtlAvailable, false))
+      ));
+    const managed = kind === "app" || id === "antigravity";
+    if (managed && launchBlocked(mode, states[id], rtlAvailable, false) && !(cwd && states[id]?.phase === "running"))
       return;
     inFlight.current.add(key);
     setBusy((old) => ({ ...old, [key]: true }));
     setFailures((old) => ({ ...old, [key]: "" }));
     setMessages((old) => ({ ...old, [key]: "" }));
     try {
-      if (kind === "app") {
+      if (managed) {
         const latest = await ipc.launchState(id);
         setStates((old) => ({ ...old, [id]: latest }));
-        if (launchBlocked(mode, latest, rtlAvailable, false)) return;
+        if (launchBlocked(mode, latest, rtlAvailable, false) && !(cwd && latest.phase === "running")) return false;
       }
       const result =
         kind === "app"
-          ? await ipc.launchApp({ appId: id, rtl: mode === "rtl" })
-          : await ipc.launchEditor(id);
+          ? await ipc.launchApp({ appId: id, rtl: mode === "rtl", cwd })
+          : await ipc.launchEditor(id, mode === "rtl");
       if (result.ok) {
         setMessages((old) => ({ ...old, [key]: "accepted" }));
-        if (kind === "app")
+        if (managed)
           update((current) => ({
             launchModeByApp: { ...current.launchModeByApp, [id]: mode },
           }));
@@ -186,10 +199,12 @@ export function ToolProvider({ children }: { children: ReactNode }) {
           [key]: result.detail || "Launch failed",
         }));
       }
-      if (kind === "app") await checkState(id);
+      if (managed) await checkState(id);
+      return result.ok;
     } catch (error) {
       setFailures((old) => ({ ...old, [key]: String(error) }));
-      if (kind === "app") await checkState(id);
+      if (managed) await checkState(id);
+      return false;
     } finally {
       inFlight.current.delete(key);
       setBusy((old) => ({ ...old, [key]: false }));

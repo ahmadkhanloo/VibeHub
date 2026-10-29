@@ -1,6 +1,6 @@
 {
-  "title": "Models & connections",
-  "connectionIntro": "Save and test a model connection here, then enter it in a compatible tool's settings. API keys stay in the Windows credential vault.",
+  "title": "API connections",
+  "connectionIntro": "Save the endpoint, model ID and key and test the connection. To use it in Qoder or another tool, enter the details in that tool’s settings; this notebook does not activate it automatically.",
   "savedConnections": "Saved connections",
   "providerCatalog": "Providers",
   "addConnection": "Add connection",
@@ -14,13 +14,21 @@
   "whereToUse": "Where can I use this?",
   "manualSetup": "In a tool that supports custom endpoints, open its model settings, choose the {{provider}} protocol, and enter the base URL and model ID “{{model}}”. If the tool requires a key, get one from the provider's official console and enter it in that tool; VibeHub never displays its saved copy.",
   "supportedTools": "Compatibility recorded in the catalog",
-  "compatibilityStatus": { "verified": "Tested", "reported": "Reported; not tested in VibeHub", "unknown": "Unknown" },
+  "compatibilityStatus": {
+    "verified": "Tested",
+    "reported": "Reported; not tested in VibeHub",
+    "unknown": "Unknown"
+  },
   "noVerifiedTools": "No confirmed compatible tool is listed in the catalog; check the tool's manual setup first.",
   "noAutomaticInjection": "VibeHub does not copy keys into other tools. Automatic setup is enabled only for tools with a tested adapter.",
   "keyMissing": "No key saved",
   "replaceApiKey": "Replace API key (optional)",
   "leaveBlankToKeep": "Leave blank to keep the saved key",
-  "tabs": { "freeProviders": "Free providers", "localModels": "Local models", "apiConnections": "API connections" },
+  "tabs": {
+    "freeProviders": "Free providers",
+    "localModels": "Local models",
+    "apiConnections": "API connections"
+  },
   "filters": {
     "noSignup": "No signup",
     "byok": "BYOK",
@@ -50,6 +58,7 @@
     "authValidated": "Key authenticated",
     "modelResponded": "Model responded"
   },
+  "authNotRequired": "Not required for this connection",
   "redacted": "Sensitive keys/details are redacted from the report.",
   "saveKey": "Save key to vault",
   "deleteKey": "Delete key from vault",
@@ -57,5 +66,16 @@
   "noKeyStored": "No key stored",
   "customEndpoint": "Custom OpenAI-compatible endpoint",
   "customNote": "Cost and terms are defined by the endpoint itself.",
-  "agentIntegration": "Connections are entered through each tool's own settings; 'ready to configure' is different from 'tested inside the tool'."
+  "agentIntegration": "Connections are entered through each tool's own settings; 'ready to configure' is different from 'tested inside the tool'.",
+  "listModels": "Refresh model list",
+  "modelListHint": "The list uses this connection’s key and the global network profile. Free pricing is shown only when supported by provider data.",
+  "modelFree": "Free according to provider",
+  "modelUnknown": "Price unknown; check provider",
+  "modelsChecked": "Last checked",
+  "noModels": "No models returned by the provider.",
+  "freeList": "Confirmed free models",
+  "unknownList": "Models with unknown pricing",
+  "noFree": "No free models confirmed in the response.",
+  "proxyTroubleshooting": "If the service did not respond, check your internet connection and global proxy profile, host, port and HTTP or SOCKS5 type, then run the proxy test. Other causes are also possible.",
+  "openProxySettings": "Open proxy center"
 }

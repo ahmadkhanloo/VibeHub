@@ -1,8 +1,10 @@
+import { Tooltip } from '@/components/Tooltip';
+import { Disclosure } from '@/components/Disclosure';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BellRing, CheckCheck, RefreshCw } from 'lucide-react';
-import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/plugin-notification';
-import { Badge, Button, Card, EmptyState, ErrorNotice, PageHeader, Toggle } from '@/components/ui';
+import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
+import { Badge, Button, EmptyState, ErrorNotice, PageHeader, Toggle } from '@/components/ui';
 import { classifyOffers, useCatalog } from '@/lib/catalog';
 import { ipc } from '@/services/ipc';
 import { useSettings } from '@/app/settings';
@@ -13,16 +15,6 @@ function savedIds(key: string): string[] {
   try { const value: unknown = JSON.parse(localStorage.getItem(key) ?? '[]'); return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []; }
   catch { return []; }
 }
-function inQuietHours(quiet: { enabled: boolean; from: string; to: string }): boolean {
-  if (!quiet.enabled) return false;
-  const now = new Date();
-  const minutes = now.getHours() * 60 + now.getMinutes();
-  const parse = (value: string) => { if (!/^\d{2}:\d{2}$/.test(value)) return null; const [hours = 0, mins = 0] = value.split(':').map(Number); return hours < 24 && mins < 60 ? hours * 60 + mins : null; };
-  const start = parse(quiet.from), end = parse(quiet.to);
-  if (start === null || end === null) return false;
-  return start <= end ? minutes >= start && minutes < end : minutes >= start || minutes < end;
-}
-
 export function OffersPage() {
   const { t, i18n } = useTranslation(['offers', 'common', 'journeyUx']);
   const lang = i18n.language.startsWith('fa') ? 'fa' : 'en';
@@ -32,10 +24,17 @@ export function OffersPage() {
   const [readIds, setReadIds] = useState<string[]>(() => savedIds('vibehub.readOffers'));
   const [syncing, setSyncing] = useState(false);
   const [permissionBusy, setPermissionBusy] = useState(false);
-  const [lastSynced, setLastSynced] = useState<string | null>(null);
+  const lastSync = () => { try { const stamp = JSON.parse(localStorage.getItem('vibehub.feed.success.v1') ?? '{}')[settings.feedBaseUrl]; return stamp ? new Date(stamp).toISOString() : null; } catch { return null; } };
+  const [lastSynced, setLastSynced] = useState<string | null>(lastSync);
+  const [offline, setOffline] = useState(() => { try { return JSON.parse(localStorage.getItem('vibehub.feed.failure.v1') ?? 'null')?.url === settings.feedBaseUrl; } catch { return false; } });
+  useEffect(() => {
+    const failed = () => setOffline(true), recovered = () => setOffline(false);
+    window.addEventListener('vibehub:feed-failed', failed); window.addEventListener('vibehub:feed-synced', recovered);
+    return () => { window.removeEventListener('vibehub:feed-failed', failed); window.removeEventListener('vibehub:feed-synced', recovered); };
+  }, [settings.feedBaseUrl]);
+  useEffect(() => { const update = () => setLastSynced(lastSync()); window.addEventListener('vibehub:feed-synced', update); return () => window.removeEventListener('vibehub:feed-synced', update); }, [settings.feedBaseUrl]);
   const [error, setError] = useState<unknown>(null);
   const [retryAction, setRetryAction] = useState<'sync' | 'permission' | null>(null);
-  const notifying = useRef(false);
   const syncLock = useRef(false);
 
   useEffect(() => {
@@ -67,50 +66,37 @@ export function OffersPage() {
     finally { setPermissionBusy(false); }
   };
 
-  useEffect(() => {
-    if (!settings.nativeNotifications || inQuietHours(settings.quietHours) || notifying.current) return;
-    const notified = new Set(savedIds('vibehub.notifiedOffers.v1'));
-    const pending = offers.filter((offer) => offer.status === 'verified' && offer.state === 'active' && !readIds.includes(offer.offerId) && !notified.has(`${offer.offerId}:${offer.verifiedAt}`));
-    if (!pending.length) return;
-    notifying.current = true;
-    void (async () => {
-      try {
-        // An existing preference never causes a fresh permission prompt on entry.
-        if (!await isPermissionGranted()) return;
-        for (const offer of pending) {
-          await sendNotification({ title: offer.title[lang], body: offer.summary[lang] });
-          notified.add(`${offer.offerId}:${offer.verifiedAt}`);
-          localStorage.setItem('vibehub.notifiedOffers.v1', JSON.stringify([...notified]));
-        }
-      } catch (e) { setRetryAction(null); setError(e); }
-      finally { notifying.current = false; }
-    })();
-  }, [offers, readIds, settings.nativeNotifications, settings.quietHours, lang]);
 
   return <div className="space-y-6">
-    <PageHeader title={t('offers:title')} description={t('offers:subtitle')} actions={<Button loading={syncing} onClick={() => void sync()}><RefreshCw size={16} aria-hidden="true" />{t('offers:notifications.checkNow')}</Button>} />
-    <Card className="space-y-4">
+    <PageHeader title={t('offers:title')} actions={<Button loading={syncing} onClick={() => void sync()}><RefreshCw size={16} aria-hidden="true" />{t('offers:notifications.checkNow')}</Button>} />
+    <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3"><Toggle checked={settings.nativeNotifications} disabled={permissionBusy} onChange={(enabled) => void setNotifications(enabled)} label={t('offers:notifications.native')} /><Button size="sm" variant="ghost" disabled={!offers.some((offer) => !readIds.includes(offer.offerId))} onClick={() => markRead(offers.map((offer) => offer.offerId))}><CheckCheck size={16} aria-hidden="true" />{t('offers:markAllRead')}</Button></div>
-      <p className="text-sm text-muted">{t('offers:notifications.nativeHint')}</p>
+      <Tooltip text={t('offers:notifications.nativeHint')} />
       <p role="status" className="text-xs text-muted">{lastSynced ? `${t('offers:notifications.lastSynced')}: ${new Date(lastSynced).toLocaleString(lang === 'fa' ? 'fa-IR' : 'en-US')}` : t('journeyUx:offers.offline')}</p>
-    </Card>
+    </div>
+    {offline && <p role="status" className="text-sm text-warning">{t('offers:feedOffline')}</p>}
     {error != null && <ErrorNotice error={error} onRetry={retryAction === 'sync' ? () => void sync() : retryAction === 'permission' ? () => void setNotifications(true) : undefined} />}
     {offers.length === 0 ? <EmptyState icon={<BellRing size={24} aria-hidden="true" />} title={t('offers:empty')} /> : <div className="space-y-4">
-      {offers.map((offer) => <Card key={offer.offerId} className="space-y-3">
+      {offers.map((offer, index) => <Disclosure key={offer.offerId} defaultOpen={index === 0} title={<span className="space-y-1"><h2 className="font-semibold">{offer.title[lang]}</h2><span className="block text-xs text-muted">{offer.checkedAt ? `${t('offers:sourceChecked')}: ${new Date(offer.checkedAt).toLocaleString(lang === 'fa' ? 'fa-IR' : 'en-US')}` : t('offers:reportedNeedsCheck')}{offer.sourceState === 'stale' || offer.sourceState === 'unavailable' ? ` · ${t('offers:sourceStale')}` : ''}</span></span>}>
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-lg font-bold">{offer.title[lang]}</h2>
           {!readIds.includes(offer.offerId) && <Badge tone="primary">{t('journeyUx:offers.unread')}</Badge>}
-          <Badge tone={offer.status === 'verified' ? 'success' : 'warning'}>{offer.status === 'verified' ? t('offers:verified') : t('offers:reportedNeedsCheck')}</Badge>
+          <Badge tone={offer.status === 'verified' && offer.sourceState !== 'stale' ? 'success' : 'warning'}>{offer.status === 'verified' && offer.sourceState !== 'stale' ? t('offers:verified') : t('offers:reportedNeedsCheck')}</Badge>
           <Badge tone="muted">{t(`offers:${offer.state}`)}</Badge>
         </div>
         <p className="text-sm leading-7 text-muted">{offer.summary[lang]}</p>
+        {offer.benefit && <p className="text-sm"><bdi>{offer.benefit.quantity ?? ''} {offer.benefit.model ?? ''}</bdi> {t('offers:benefitUnits.' + offer.benefit.unit)}</p>}
+        {offer.eligibility && <p className="text-sm text-muted" dir="auto">{offer.eligibility}</p>}
+        {offer.claim?.required && <p className="text-sm text-muted">{t('offers:manualClaim')} {offer.claim.dailyAt && <bdi>{offer.claim.dailyAt} ({offer.claim.timeZone})</bdi>}</p>}
+        {offer.checkedAt && <p className="text-xs text-muted">{t('offers:sourceChecked')}: <bdi>{new Date(offer.checkedAt).toLocaleString(lang === 'fa' ? 'fa-IR' : 'en-US')}</bdi></p>}
+        {(offer.sourceState === 'stale' || offer.sourceState === 'unavailable' || (offer.checkedAt && Date.now() - +new Date(offer.checkedAt) > 48 * 3600000)) && <p role="status" className="text-sm text-warning">{t('offers:sourceStale')}</p>}
+        {offer.claim && <Button size="sm" onClick={() => void openUrl(offer.claim!.url).catch(setError)}>{t('offers:claimPage')}</Button>}
         {offer.endAt && <p className="text-xs text-muted"><bdi>{new Date(offer.endAt).toLocaleString(lang === 'fa' ? 'fa-IR' : 'en-US')}</bdi></p>}
         {offer.regionNotes && <p className="text-sm text-muted">{offer.regionNotes[lang]}</p>}
         <div className="flex flex-wrap items-center gap-3">
           <Button size="sm" onClick={() => void openUrl(offer.sourceUrl).catch((e) => { setRetryAction(null); setError(e); })}>{t('offers:sourceUrl')}<span className="ltr-tech text-xs">{new URL(offer.sourceUrl).host}</span></Button>
           {!readIds.includes(offer.offerId) && <Button size="sm" variant="ghost" onClick={() => markRead([offer.offerId])}>{t('offers:markRead')}</Button>}
         </div>
-      </Card>)}
+      </Disclosure>)}
     </div>}
   </div>;
 }

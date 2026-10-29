@@ -91,6 +91,13 @@ pub fn powershell(app: &tauri::AppHandle, mut request: Value) -> Result<Value> {
     if !cfg!(windows) {
         return Err("This adapter requires Windows".into());
     }
+    let timeout = match request["operation"].as_str() {
+        Some("detect" | "detect-editors") => Duration::from_secs(15),
+        Some("launch-state" | "launch-states") => Duration::from_secs(5),
+        Some("account-app-state" | "account-app-open") => Duration::from_secs(10),
+        Some("account-app-close") => Duration::from_secs(20),
+        _ => Duration::from_secs(150),
+    };
     request["resourceRoot"] = json!(resource_root(app)?);
     let data = app.path().app_cache_dir().map_err(|e| e.to_string())?;
     std::fs::create_dir_all(&data).map_err(|e| e.to_string())?;
@@ -133,12 +140,13 @@ pub fn powershell(app: &tauri::AppHandle, mut request: Value) -> Result<Value> {
         use std::io::Read;
         let mut stdout = child.stdout.take().ok_or("Missing native output")?;
         let mut stderr = child.stderr.take().ok_or("Missing native error output")?;
-        let output_thread = std::thread::spawn(move || {
+        let (output_sender, output_receiver) = std::sync::mpsc::channel();
+        std::thread::spawn(move || {
             let mut output = String::new();
             let _ = stdout.read_to_string(&mut output);
-            output
+            let _ = output_sender.send(output);
         });
-        let error_thread = std::thread::spawn(move || {
+        std::thread::spawn(move || {
             let mut output = Vec::new();
             let _ = stderr.read_to_end(&mut output);
         });
@@ -151,7 +159,7 @@ pub fn powershell(app: &tauri::AppHandle, mut request: Value) -> Result<Value> {
             {
                 break;
             }
-            if start.elapsed() > Duration::from_secs(150) {
+            if start.elapsed() > timeout {
                 let _ = child.kill();
                 let _ = child.wait();
                 return Err(
@@ -160,10 +168,10 @@ pub fn powershell(app: &tauri::AppHandle, mut request: Value) -> Result<Value> {
             }
             std::thread::sleep(Duration::from_millis(50));
         }
-        let output = output_thread
-            .join()
-            .map_err(|_| "Native output task failed")?;
-        let _ = error_thread.join();
+        // Descendants may inherit pipe handles: never join an unbounded pipe reader.
+        let output = output_receiver
+            .recv_timeout(timeout.saturating_sub(start.elapsed()))
+            .map_err(|_| "Native output timed out; inspect the current state before retrying")?;
         let json = output
             .lines()
             .rev()
@@ -178,6 +186,14 @@ pub fn powershell(app: &tauri::AppHandle, mut request: Value) -> Result<Value> {
     })();
     let _ = std::fs::remove_file(script);
     result
+}
+
+pub async fn blocking<T: Send + 'static>(
+    work: impl FnOnce() -> Result<T> + Send + 'static,
+) -> Result<T> {
+    tauri::async_runtime::spawn_blocking(work)
+        .await
+        .map_err(|_| "Background operation failed")?
 }
 
 pub async fn run(app: tauri::AppHandle, request: Value) -> Result<Value> {

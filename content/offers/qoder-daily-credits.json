@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "offerId": "qoder-daily-credits",
+  "appId": "qoder",
+  "title": {
+    "fa": "۱۰۰ کردیت روزانهٔ Qoder",
+    "en": "Qoder daily 100 Credits"
+  },
+  "summary": {
+    "fa": "برای حساب‌های شخصی؛ هر روز داخل اپ دریافت کنید. هر بسته ۳۰ روز اعتبار دارد.",
+    "en": "Individual accounts can claim once daily in Qoder. Each reward is valid for 30 days."
+  },
+  "sourceUrl": "https://docs.qoder.com/events/100credits",
+  "publishedAt": "2026-10-27T15:55:00.456Z",
+  "verifiedAt": "2026-10-27T15:55:00.456Z",
+  "eligibility": "Individual international accounts; excludes Teams and Enterprise.",
+  "status": "verified",
+  "checkedAt": "2026-10-27T15:55:00.456Z",
+  "sourceState": "fresh",
+  "revision": "f569ce58b75ed9b3bf02fc42310a740efd561026bf4daed7e2c728c2a28437c6",
+  "benefit": {
+    "quantity": 100,
+    "unit": "credits"
+  },
+  "claim": {
+    "required": true,
+    "url": "https://docs.qoder.com/events/100credits",
+    "dailyAt": "10:00",
+    "timeZone": "Asia/Singapore",
+    "expiresAfterDays": 30
+  }
+}

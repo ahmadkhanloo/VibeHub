@@ -1,3 +1,4 @@
+import { useSettings } from '@/app/settings';
 import { useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -77,11 +78,14 @@ export function ToolProxy({ appId }: { appId: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [saved, setSaved] = useState(false);
+  const { settings, update } = useSettings();
+  const previous = settings.previousProxyByApp[appId];
+  const [testResult, setTestResult] = useState<string | null>(null);
   const selectedId = proxyConfig?.perApp[appId] ?? 'inherit';
   const selected = profiles.find((p) => p.id === (selectedId === 'inherit' ? proxyConfig?.globalProfileId : selectedId));
   const choose = async (value: string) => {
     setBusy(true); setError(null); setSaved(false);
-    try { await saveToolProxy(appId, value); setSaved(true); }
+    try { await saveToolProxy(appId, value); update(current => ({ previousProxyByApp: { ...current.previousProxyByApp, [appId]: selectedId } })); setSaved(true); }
     catch (cause) { setError(cause); }
     finally { setBusy(false); }
   };
@@ -98,6 +102,9 @@ export function ToolProxy({ appId }: { appId: string }) {
         <Button disabled={busy} onClick={() => setEditing(newProxyProfile())}><Plus size={16} aria-hidden="true" />{t('proxy:newProfile')}</Button>
         {selected && <Button disabled={busy} onClick={() => setEditing(selected)}><Pencil size={16} aria-hidden="true" />{t('common:edit')}</Button>}
       </div>
+      {previous !== undefined && <Button disabled={busy} onClick={() => void choose(previous)}>{t('ux:restoreConnection')}</Button>}
+      {selected && <Button disabled={busy} onClick={async () => { setBusy(true); setError(null); setTestResult(null); try { const result = await ipc.proxyTest(selected, 'handshake'); if (!result.ok) throw new Error(result.detail); setTestResult(result.detail); } catch (cause) { setError(cause); } finally { setBusy(false); } }}>{t('proxy:handshake')}</Button>}
+      {testResult && <p role="status" className="text-sm text-success">{testResult}</p>}
       {saved && <p role="status" className="text-sm text-success">{t('connectionsUx:toolProxySaved')}</p>}
     </>}
     {error != null && <ErrorNotice error={error} />}

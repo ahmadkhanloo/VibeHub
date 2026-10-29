@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "apinex",
+  "name": "APInex",
+  "officialUrl": "https://apinex.bond/",
+  "modelsDocUrl": "https://apinex.bond/subscription",
+  "freeAccess": "free_tier",
+  "requiresAccount": true,
+  "requiresApiKey": true,
+  "usageTermsUrl": "https://apinex.bond/subscription",
+  "supportedApps": {
+    "qoder": "unknown"
+  },
+  "eligibilityStatus": "unknown",
+  "lastVerified": "2026-10-28",
+  "notes": {
+    "fa": "سهمیه و دسترسی مدل‌های رایگان ممکن است به اشتراک یا شرایط حساب وابسته باشد؛ پیش از استفاده در پنل بررسی کنید.",
+    "en": "Free model allowance and access may depend on subscription or account conditions; check the dashboard before use."
+  },
+  "endpoint": {
+    "baseUrl": "https://api.apinex.bond/v1",
+    "kind": "openai-compatible"
+  }
+}

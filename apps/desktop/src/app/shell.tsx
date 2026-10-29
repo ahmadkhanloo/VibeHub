@@ -1,9 +1,10 @@
+
+import { ipc } from '@/services/ipc';
+import { Tooltip } from '@/components/Tooltip';
 import { Suspense, useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
-  BookOpen,
-  Compass,
   House,
   Languages,
   PanelLeftClose,
@@ -11,11 +12,9 @@ import {
   Network,
   Search,
   Settings,
-  Stethoscope,
-  Boxes,
-  Bell,
 } from "lucide-react";
 import { useSettings } from "./settings";
+import { AccountsNotice } from '@/features/accounts/AccountsNotice';
 import { Button, Spinner } from "@/components/ui";
 import vibeHubMark from "@/assets/vibehub-mark.svg";
 export function AppShell() {
@@ -23,9 +22,7 @@ export function AppShell() {
   const { settings, update } = useSettings();
   const navigate = useNavigate();
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(
-    () => matchMedia("(max-width:1199px)").matches,
-  );
+  const [collapsed, setCollapsed] = useState(true);
   const [query, setQuery] = useState("");
   const search = useRef<HTMLInputElement>(null);
   const main = useRef<HTMLElement>(null);
@@ -41,7 +38,7 @@ export function AppShell() {
     };
     window.addEventListener("keydown", key);
     const mq = matchMedia("(max-width:1199px)");
-    const resize = () => setCollapsed(mq.matches);
+    const resize = () => { if (mq.matches) setCollapsed(true); };
     mq.addEventListener("change", resize);
     return () => {
       window.removeEventListener("keydown", key);
@@ -54,26 +51,22 @@ export function AppShell() {
     heading?.setAttribute("tabindex", "-1");
     heading?.focus({ preventScroll: true });
   }, [location.pathname]);
+  useEffect(() => { void (async () => { for (const id of ['qoder', 'zcode']) { try { await ipc.appAccounts(id, 'list'); } catch { /* The accounts page supplies actionable diagnostics. */ } } })(); }, []);
   const items = [
     { to: "/", icon: House, label: t("ux:workspace") },
-    { to: "/discover", icon: Compass, label: t("ux:discover") },
-    { to: "/models", icon: Boxes, label: t("ux:models") },
-    { to: "/proxy", icon: Network, label: t("ux:proxy") },
-    { to: "/guides", icon: BookOpen, label: t("ux:guides") },
-    { to: "/doctor", icon: Stethoscope, label: t("ux:doctor") },
+    { to: "/connections", icon: Network, label: t("ux:connections") },
   ];
   const link = (item: (typeof items)[number]) => (
-    <NavLink
+    <Tooltip key={item.to} text={item.label}><NavLink
       key={item.to}
       to={item.to}
       end={item.to === "/"}
       aria-label={item.label}
-      title={collapsed ? item.label : undefined}
       className="vh-nav-link"
     >
       <item.icon aria-hidden="true" size={20} />
       <span className="vh-nav-label">{item.label}</span>
-    </NavLink>
+    </NavLink></Tooltip>
   );
   return (
     <div className="flex h-full overflow-hidden">
@@ -97,8 +90,8 @@ export function AppShell() {
             height={32}
           />
           {!collapsed && (
-            <span className="text-lg font-bold" dir="ltr">
-              VibeHub
+            <span className="text-lg font-bold" dir={settings.language === 'fa' ? 'rtl' : 'ltr'}>
+              {t('common:appName')}
             </span>
           )}
         </div>
@@ -106,11 +99,10 @@ export function AppShell() {
           {items.map(link)}
         </nav>
         <div className="mt-6 space-y-1 border-t border-border pt-4">
-          {link({ to: "/offers", icon: Bell, label: t("ux:offers") })}
           {link({ to: "/settings", icon: Settings, label: t("ux:settings") })}
           <Button
             variant="ghost"
-            className="w-full"
+            className="w-full vh-sidebar-toggle"
             aria-expanded={!collapsed}
             aria-label={t(collapsed ? "nav:expand" : "nav:collapse")}
             onClick={() => setCollapsed(!collapsed)}
@@ -125,10 +117,10 @@ export function AppShell() {
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 shrink-0 items-center gap-4 border-b border-border bg-surface px-6">
+        <header className="vh-topbar">
           <form
             role="search"
-            className="relative max-w-2xl flex-1"
+            className="relative vh-search-form"
             onSubmit={(e) => {
               e.preventDefault();
               navigate("/search?q=" + encodeURIComponent(query.trim()));
@@ -160,7 +152,9 @@ export function AppShell() {
           </form>
           <Button
             variant="ghost"
-            aria-label={t(
+            className="vh-language-toggle"
+            aria-label={t(settings.language === 'fa' ? 'common:switchLanguageToEnglish' : 'common:switchLanguageToPersian')}
+            title={t(
               settings.language === "fa"
                 ? "common:switchLanguageToEnglish"
                 : "common:switchLanguageToPersian",
@@ -176,7 +170,9 @@ export function AppShell() {
         <main id="main-content" ref={main} tabIndex={-1} className="vh-main">
           <div className="vh-content">
             <Suspense fallback={<Spinner />}>
-              <Outlet />
+
+        <AccountsNotice />
+        <Outlet />
             </Suspense>
           </div>
         </main>
