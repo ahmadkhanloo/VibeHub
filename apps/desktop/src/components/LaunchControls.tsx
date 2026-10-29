@@ -108,10 +108,10 @@ export function LaunchControls({
         <ErrorNotice error={failure}
           message={failureKind ? t(`launchFailure.${failureKind}`, { name }) : undefined}
           recovery={failureKind ? t(`launchFailure.${failureKind}Recovery`, { name }) : undefined}
-          onRetry={failureKind && !busy ? () => { void ctx.launch(id, kind, mode); } : undefined} />
+          onRetry={!busy ? () => { void ctx.launch(id, kind, mode); } : undefined} />
         <AppPath appId={id} />
         <Link className="vh-link" to={`/app/${id}?tab=connections`}>{t("connections")}</Link>
-        {failureKind && <Link className="vh-button vh-button-ghost text-sm" to={`/doctor?tool=${encodeURIComponent(id)}&kind=app`}>{t('doctor')}</Link>}
+        {<Link className="vh-button vh-button-ghost text-sm" to={`/doctor?tool=${encodeURIComponent(id)}&kind=app`}>{t('doctor')}</Link>}
       </div>}
     </div>
   );

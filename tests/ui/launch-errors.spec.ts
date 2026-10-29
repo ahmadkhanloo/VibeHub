@@ -33,12 +33,13 @@ for (const language of ['fa','en']) test(`Qoder port conflict is a localized inl
 
 test('persisted launch errors keep their explanation and recovery after reopening the hub', async ({ page }) => {
   await mockNative(page);
-  await page.addInitScript(() => { (window as any).__mock.launchStates.zcode = { phase: 'failed', error: 'VIBEHUB_LAUNCH_ALREADY_OPEN' }; });
+  await page.addInitScript(() => { (window as any).__mock.launchStates.zcode = { phase: 'failed', error: 'Native operation timed out; inspect the current state before retrying' }; });
   await page.goto('/');
   await expect(page.getByRole('alert')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Choose app executable', exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('alert')).toBeVisible();
+  await expect(page.getByRole('link', {name:'Diagnostics',exact:true})).toBeVisible();
   await page.evaluate(() => { (window as any).__mock.launchStates.zcode = { phase: 'idle' }; });
   await page.getByRole('alert').getByRole('button', { name: 'Try again', exact: true }).click();
   await expect(page.getByRole('alert')).toHaveCount(0);
