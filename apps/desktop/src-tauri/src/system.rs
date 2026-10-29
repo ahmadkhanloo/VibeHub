@@ -128,7 +128,7 @@ pub fn powershell(app: &tauri::AppHandle, mut request: Value) -> Result<Value> {
     }
     let timeout = match request["operation"].as_str() {
         Some("detect" | "detect-editors") => Duration::from_secs(15),
-        Some("launch-state" | "launch-states") => Duration::from_secs(5),
+        Some("launch-state" | "launch-states") => Duration::from_secs(15),
         Some("account-app-state" | "account-app-open") => Duration::from_secs(10),
         Some("account-app-close") => Duration::from_secs(20),
         _ => Duration::from_secs(150),

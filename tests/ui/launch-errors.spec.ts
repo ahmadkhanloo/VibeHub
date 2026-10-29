@@ -44,3 +44,23 @@ test('persisted launch errors keep their explanation and recovery after reopenin
   await expect(page.getByRole('alert')).toHaveCount(0);
   expect(await page.evaluate(() => (window as any).__mock.calls.filter((call: any) => call.cmd === 'launch_app').length)).toBe(1);
 });
+
+
+test('a transient status-read failure remains unknown and clears on recheck without a launch alert', async ({ page }) => {
+  await mockNative(page);
+  await page.addInitScript(() => {
+    const host=window as any, original=host.__TAURI_INTERNALS__.invoke;
+    let failed=false;
+    host.__TAURI_INTERNALS__.invoke=async (command: string,args: any) => {
+      if(command==='launch_states' && !failed){failed=true;throw Error('Native operation timed out');}
+      return original(command,args);
+    };
+  });
+  await page.goto('/');
+  await expect(page.getByRole('button', {name:'Run with RTL ZCode',exact:true})).toBeDisabled();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await page.getByRole('button',{name:'Check again ZCode',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Run with RTL ZCode',exact:true})).toBeEnabled();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  expect(await page.evaluate(() => (window as any).__mock.calls.filter((call:any) => call.cmd==='launch_app').length)).toBe(0);
+});

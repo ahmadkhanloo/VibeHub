@@ -89,10 +89,8 @@ export function ToolProvider({ children }: { children: ReactNode }) {
     try {
       const next = await ipc.launchStates(ids);
       acceptStates(next);
-    } catch (error) {
-      setFailures((old) => ({ ...old, ...Object.fromEntries(ids.map((id) => [
-        "app:" + id, String(error),
-      ])) }));
+    } catch {
+      // A failed status read is unknown state, not a failed launch. Recovery must not leave a stale launch alert.
       setStates((old) => ({ ...old, ...Object.fromEntries(ids.map((id) => [id, undefined])) }));
     } finally { polling.current = false; }
   }, [acceptStates]);
