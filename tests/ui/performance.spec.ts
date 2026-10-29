@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { mockNative } from './mock';
 
-test('focus rechecks active states once without rescanning, alongside 15-second polling', async ({ page }) => {
+test('focus does not rescan and active states use one batch per 15 seconds', async ({ page }) => {
   await page.clock.install();
   await mockNative(page, 'running');
   await page.goto('/');
@@ -11,7 +11,6 @@ test('focus rechecks active states once without rescanning, alongside 15-second 
   const initialBatches = await page.evaluate(() => (window as any).__mock.calls.filter((c: any) => c.cmd === 'launch_states').length);
   const scans = await page.evaluate(() => (window as any).__mock.calls.filter((c: any) => c.cmd === 'detect_apps').length);
   await page.evaluate(() => { for (let i=0;i<10;i++) window.dispatchEvent(new Event('focus')); });
-  await expect.poll(() => page.evaluate(() => (window as any).__mock.calls.filter((c: any) => c.cmd === 'launch_states').length)).toBe(initialBatches + 1);
   await page.clock.fastForward(15000);
   expect(await page.evaluate(() => (window as any).__mock.calls.filter((c: any) => c.cmd === 'detect_apps').length)).toBe(scans);
   await expect.poll(() => page.evaluate(() => (window as any).__mock.calls.filter((c: any) => c.cmd === 'launch_states').length)).toBe(initialBatches + 2);

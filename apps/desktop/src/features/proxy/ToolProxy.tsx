@@ -1,4 +1,4 @@
-import { Tooltip } from '@/components/Tooltip';
+import { useSettings } from '@/app/settings';
 import { useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -63,7 +63,7 @@ export function ProxyProfileEditor({ profile, onClose, onSaved }: {
           {field('password', t('proxy:password'), <Input id={`${id}-password`} dir="ltr" type="password" autoComplete="new-password" value={password} placeholder={draft.hasPassword ? t('connectionsUx:keepPassword') : ''} onChange={(e) => setPassword(e.target.value)} />)}
         </>}
       </fieldset>
-      <Tooltip text={t('proxy:passwordStoredVault')} />
+      <p className="text-sm leading-6 text-muted">{t('proxy:passwordStoredVault')}</p>
       {local && (draft.username || password || draft.hasPassword) && <p className="text-sm text-warning">{t('connectionsUx:authenticatedLaunch')}</p>}
       {error != null && <ErrorNotice error={error} />}
       <div className="flex justify-end gap-2"><Button disabled={busy} onClick={onClose}>{t('common:cancel')}</Button><Button type="submit" variant="primary" loading={busy}>{t('common:save')}</Button></div>
@@ -78,16 +78,19 @@ export function ToolProxy({ appId }: { appId: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [saved, setSaved] = useState(false);
+  const { settings, update } = useSettings();
+  const previous = settings.previousProxyByApp[appId];
+  const [testResult, setTestResult] = useState<string | null>(null);
   const selectedId = proxyConfig?.perApp[appId] ?? 'inherit';
   const selected = profiles.find((p) => p.id === (selectedId === 'inherit' ? proxyConfig?.globalProfileId : selectedId));
   const choose = async (value: string) => {
     setBusy(true); setError(null); setSaved(false);
-    try { await saveToolProxy(appId, value); setSaved(true); }
+    try { await saveToolProxy(appId, value); update(current => ({ previousProxyByApp: { ...current.previousProxyByApp, [appId]: selectedId } })); setSaved(true); }
     catch (cause) { setError(cause); }
     finally { setBusy(false); }
   };
   return <div className="space-y-3" data-testid="tool-proxy">
-    <Tooltip text={t('connectionsUx:toolProxyIntro')} />
+    <p className="text-sm leading-6 text-muted">{t('connectionsUx:toolProxyIntro')}</p>
     {!proxyConfig ? <ErrorNotice error={t('connectionsUx:proxyReadFailed')} onRetry={() => { void refreshProxy().catch(setError); }} /> : <>
       <div className="flex flex-wrap items-end gap-3">
         <label className="block min-w-56 flex-1 space-y-2 text-sm"><span className="block font-medium">{t('connectionsUx:thisToolProxy')}</span>
@@ -99,10 +102,13 @@ export function ToolProxy({ appId }: { appId: string }) {
         <Button disabled={busy} onClick={() => setEditing(newProxyProfile())}><Plus size={16} aria-hidden="true" />{t('proxy:newProfile')}</Button>
         {selected && <Button disabled={busy} onClick={() => setEditing(selected)}><Pencil size={16} aria-hidden="true" />{t('common:edit')}</Button>}
       </div>
+      {previous !== undefined && <Button disabled={busy} onClick={() => void choose(previous)}>{t('ux:restoreConnection')}</Button>}
+      {selected && <Button disabled={busy} onClick={async () => { setBusy(true); setError(null); setTestResult(null); try { const result = await ipc.proxyTest(selected, 'handshake'); if (!result.ok) throw new Error(result.detail); setTestResult(result.detail); } catch (cause) { setError(cause); } finally { setBusy(false); } }}>{t('proxy:handshake')}</Button>}
+      {testResult && <p role="status" className="text-sm text-success">{testResult}</p>}
       {saved && <p role="status" className="text-sm text-success">{t('connectionsUx:toolProxySaved')}</p>}
     </>}
     {error != null && <ErrorNotice error={error} />}
-    <p className="text-sm leading-7 text-muted">{t('connectionsUx:proxyScope')}</p>
+    <p className="text-sm leading-6 text-muted">{t('connectionsUx:proxyScope')}</p>
     <Link className="text-sm text-primary underline underline-offset-4" to="/proxy">{t('connectionsUx:manageProxy')}</Link>
     {editing && <ProxyProfileEditor key={editing.id} profile={editing} onClose={() => setEditing(null)} onSaved={async (profile) => {
       await refreshProxy();

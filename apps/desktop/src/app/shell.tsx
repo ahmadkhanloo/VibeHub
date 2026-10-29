@@ -1,12 +1,10 @@
-import { FeedActivity } from './FeedActivity';
+
 import { ipc } from '@/services/ipc';
 import { Tooltip } from '@/components/Tooltip';
 import { Suspense, useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
-  BookOpen,
-  Compass,
   House,
   Languages,
   PanelLeftClose,
@@ -14,10 +12,6 @@ import {
   Network,
   Search,
   Settings,
-  Stethoscope,
-  Boxes,
-  Bell,
-  Users,
 } from "lucide-react";
 import { useSettings } from "./settings";
 import { AccountsNotice } from '@/features/accounts/AccountsNotice';
@@ -60,12 +54,7 @@ export function AppShell() {
   useEffect(() => { void (async () => { for (const id of ['qoder', 'zcode']) { try { await ipc.appAccounts(id, 'list'); } catch { /* The accounts page supplies actionable diagnostics. */ } } })(); }, []);
   const items = [
     { to: "/", icon: House, label: t("ux:workspace") },
-    { to: "/discover", icon: Compass, label: t("ux:discover") },
-    { to: "/models", icon: Boxes, label: t("ux:models") },
-    { to: "/accounts", icon: Users, label: t("accounts:title") },
-    { to: "/proxy", icon: Network, label: t("ux:proxy") },
-    { to: "/guides", icon: BookOpen, label: t("ux:guides") },
-    { to: "/doctor", icon: Stethoscope, label: t("ux:doctor") },
+    { to: "/connections", icon: Network, label: t("ux:connections") },
   ];
   const link = (item: (typeof items)[number]) => (
     <Tooltip key={item.to} text={item.label}><NavLink
@@ -110,7 +99,6 @@ export function AppShell() {
           {items.map(link)}
         </nav>
         <div className="mt-6 space-y-1 border-t border-border pt-4">
-          {link({ to: "/offers", icon: Bell, label: t("ux:offers") })}
           {link({ to: "/settings", icon: Settings, label: t("ux:settings") })}
           <Button
             variant="ghost"
@@ -182,7 +170,7 @@ export function AppShell() {
         <main id="main-content" ref={main} tabIndex={-1} className="vh-main">
           <div className="vh-content">
             <Suspense fallback={<Spinner />}>
-        <FeedActivity />
+
         <AccountsNotice />
         <Outlet />
             </Suspense>

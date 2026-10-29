@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "VibeHub",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "com.ahmadkhanloo.vibehub",
   "build": {
     "frontendDist": "../dist",
@@ -59,7 +59,11 @@
       "../../../apps/Antigravity/start.ps1": "apps/Antigravity/start.ps1",
       "../../../apps/Antigravity/launch.vbs": "apps/Antigravity/launch.vbs",
       "../../../apps/Antigravity/injector.mjs": "apps/Antigravity/injector.mjs",
-      "../../../apps/Antigravity/style.mjs": "apps/Antigravity/style.mjs"
+      "../../../apps/Antigravity/style.mjs": "apps/Antigravity/style.mjs",
+      "../../../apps/ZCode/rtl.ico": "apps/ZCode/rtl.ico",
+      "../../../apps/Qoder/rtl.ico": "apps/Qoder/rtl.ico",
+      "../../../apps/Antigravity/rtl.ico": "apps/Antigravity/rtl.ico",
+      "../../../apps/DeepSeekHarness/rtl.ico": "apps/DeepSeekHarness/rtl.ico"
     },
     "icon": [
       "icons/32x32.png",

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "orcarouter",
+  "name": "OrcaRouter",
+  "officialUrl": "https://www.orcarouter.ai/",
+  "modelsDocUrl": "https://www.orcarouter.ai/free",
+  "freeAccess": "free_tier",
+  "requiresAccount": true,
+  "requiresApiKey": true,
+  "usageTermsUrl": "https://www.orcarouter.ai/free",
+  "supportedApps": {
+    "qoder": "unknown"
+  },
+  "eligibilityStatus": "unknown",
+  "lastVerified": "2026-10-28",
+  "notes": {
+    "fa": "مدل‌های رایگان محدودیت و شرایط احراز حساب دارند؛ قیمت و شناسه را پیش از استفاده در پنل بررسی کنید.",
+    "en": "Free models have limits and account eligibility requirements; check the model ID and price before use."
+  },
+  "endpoint": {
+    "baseUrl": "https://api.orcarouter.ai/v1",
+    "kind": "openai-compatible"
+  }
+}

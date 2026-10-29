@@ -415,3 +415,10 @@ fn live_network_routes() {
     let path = std::env::var("VIBEHUB_NETWORK_REPORT").unwrap();
     std::fs::write(path, serde_json::to_vec_pretty(&reports).unwrap()).unwrap();
 }
+
+#[test]
+fn free_status_requires_supported_provider_evidence() {
+    assert_eq!(super::model_free_status("openrouter", "vendor/model:free", &serde_json::json!({})), Some(true));
+    assert_eq!(super::model_free_status("radeon-cloud", "model", &serde_json::json!({"free": true})), Some(true));
+    assert_eq!(super::model_free_status("custom", "model-free", &serde_json::json!({"free": true})), None);
+}

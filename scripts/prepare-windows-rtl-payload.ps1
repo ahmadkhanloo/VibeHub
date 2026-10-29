@@ -25,10 +25,10 @@ try {
   Copy-Item -LiteralPath (Join-Path (Split-Path -Parent $nodeSource) 'LICENSE') -Destination (Join-Path $payload 'NODE-LICENSE.md') -Force
 
   $files = @{
-    ZCode = @('start.ps1', 'launch.vbs', 'injector.mjs')
-    Qoder = @('start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs', 'doctor.mjs', 'LICENSE')
-    Antigravity = @('start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs')
-    DeepSeekHarness = @('start.ps1', 'launch.vbs', 'injector.mjs')
+    ZCode = @('rtl.ico', 'start.ps1', 'launch.vbs', 'injector.mjs')
+    Qoder = @('rtl.ico', 'start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs', 'doctor.mjs', 'LICENSE')
+    Antigravity = @('rtl.ico', 'start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs')
+    DeepSeekHarness = @('rtl.ico', 'start.ps1', 'launch.vbs', 'injector.mjs')
   }
   foreach ($id in $files.Keys) {
     $destination = Join-Path $payload $id

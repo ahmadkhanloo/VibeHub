@@ -104,5 +104,6 @@
     "tokens": "tokens",
     "credits": "Credits",
     "units": "units"
-  }
+  },
+  "undoSwitch": "Return to {{name}}"
 }

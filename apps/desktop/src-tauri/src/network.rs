@@ -274,6 +274,38 @@ pub async fn api_test(
     }
 }
 
+fn model_free_status(provider: &str, id: &str, item: &Value) -> Option<bool> {
+    if provider == "openrouter" && id.ends_with(":free") { Some(true) }
+    else if provider == "radeon-cloud" { item["free"].as_bool() }
+    else { None }
+}
+
+pub async fn connection_models(connection: Value, profile: Option<Value>) -> Result<Value> {
+    crate::domain::validate_provider_connection(&connection)?;
+    let provider = field(&connection, "providerId")?.to_owned();
+    let base = safe_url(field(&connection, "baseUrl")?)?;
+    let endpoint = format!("{}/models", base.as_str().trim_end_matches('/'));
+    let service = format!("vibehub.provider-key.connection.{}", field(&connection, "id")?);
+    let (http, secret) = crate::system::blocking(move || Ok((client(profile.as_ref())?, storage::vault_get(&service)?))).await?;
+    let mut request = http.get(endpoint);
+    if let Some(key) = secret {
+        request = if provider == "anthropic" { request.header("x-api-key", key).header("anthropic-version", "2023-06-01") }
+            else if provider == "google" { request.header("x-goog-api-key", key) }
+            else { request.bearer_auth(key) };
+    } else if provider != "ollama" { return Err("Save an API key before listing models".into()); }
+    let response = request.send().await.map_err(|_| "Model list request failed; check the connection and proxy")?;
+    if !response.status().is_success() { return Err(format!("Model list request returned HTTP {}", response.status().as_u16())); }
+    let body = bounded_json(response, 4 * 1024 * 1024).await?;
+    let items = body["data"].as_array().or_else(|| body["models"].as_array()).ok_or("Provider did not return a supported model list")?;
+    let models: Vec<Value> = items.iter().take(3000).filter_map(|item| {
+        let id = item["id"].as_str().or_else(|| item["name"].as_str())?;
+        if id.is_empty() || id.len() > 256 || id.chars().any(char::is_control) { return None; }
+        let free = model_free_status(&provider, id, item);
+        Some(json!({"id": id, "free": free}))
+    }).collect();
+    Ok(json!({"models":models,"checkedAt":chrono::Utc::now().to_rfc3339()}))
+}
+
 pub async fn connection_test(connection: Value, profile: Option<Value>) -> Result<Value> {
     crate::domain::validate_provider_connection(&connection)?;
     let service = format!(

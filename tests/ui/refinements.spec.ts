@@ -1,29 +1,15 @@
 import { test, expect } from '@playwright/test';
 import { mockNative } from './mock';
 
-test('compact search keeps Ctrl+K and theme previews persist only on click', async ({ page }) => {
-  await mockNative(page);
-  await page.goto('/settings');
-  const search = page.locator('.vh-search-form');
-  await expect(search).toHaveCSS('height', '36px');
-  await expect(search).toHaveCSS('width', '240px');
+test('compact search keeps Ctrl+K and appearance has one theme with three modes', async ({ page }) => {
+  await mockNative(page); await page.goto('/settings');
   await page.keyboard.press('Control+k');
   await expect(page.getByRole('searchbox').first()).toBeFocused();
-  await expect(search).toHaveCSS('width', '320px');
-  const previews = page.locator('button').filter({ has: page.locator('.vh-theme-preview') });
-  await expect(previews).toHaveCount(8);
-  const before = await page.evaluate(() => localStorage.getItem('vibehub.settings.v1'));
-  await previews.last().hover();
-  expect(await page.evaluate(() => localStorage.getItem('vibehub.settings.v1'))).toBe(before);
-  await previews.last().click();
-  await expect(previews.last()).toHaveAttribute('aria-pressed', 'true');
-  await page.reload();
-  await expect(previews.last()).toHaveAttribute('aria-pressed', 'true');
-  await page.getByRole('tab', { name: 'Terminal', exact: true }).click();
-  await expect(page).toHaveURL(/section=terminal/);
-  await page.goBack();
-  await expect(page.getByRole('tab', { name: 'Appearance', exact: true })).toHaveAttribute('aria-selected', 'true');
-  await page.screenshot({ path: 'output/account-offer-refinements/themes-en.png', fullPage: true });
+  await expect(page.locator('.vh-theme-preview')).toHaveCount(0);
+  const mode = page.getByRole('combobox', {name:'Mode', exact:true});
+  await mode.selectOption('dark'); await page.reload();
+  await expect(mode).toHaveValue('dark');
+  await expect(page.getByRole('tab', { name: 'Terminal', exact: true })).toHaveCount(0);
 });
 
 test('Persian brand and tooltip support focus, Escape and touch click', async ({ page }) => {
@@ -43,8 +29,7 @@ test('Persian brand and tooltip support focus, Escape and touch click', async ({
 
 test('desktop profile removal requires confirmation and leaves the signed-in profile alone', async ({ page }) => {
   await mockNative(page);
-  await page.goto('/accounts');
-  await page.getByRole('combobox', { name: 'App', exact: true }).selectOption('qoder');
+  await page.goto('/app/qoder?tab=accounts');
   await expect(page.getByText('Local fixture', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Remove', exact: true }).click();
   await expect(page.getByRole('dialog')).toContainText('signed-in account');

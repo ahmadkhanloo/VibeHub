@@ -38,7 +38,7 @@ test('all eight catalog apps render local brand images with external requests bl
 test('settings terminal deep link opens its panel and cancellation preserves data', async ({ page }) => {
   await mockNative(page);
   await page.goto('/settings?panel=terminal');
-  await expect(page.getByRole('tab', { name: 'Terminal', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tab', { name: 'Terminal', exact: true })).toHaveCount(0);
   await page.getByRole('tab', { name: 'Data and about', exact: true }).click();
   const reset = page.getByRole('button', { name: 'Reset interface preferences', exact: true });
   await reset.click();
@@ -47,7 +47,7 @@ test('settings terminal deep link opens its panel and cancellation preserves dat
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('vibehub.settings.v1')!).onboardingDone)).toBe(true);
 });
 
-const routes = ['/', '/discover', '/app/zcode', '/models', '/accounts', '/proxy', '/settings', '/guides', '/guides/extensions', '/learning', '/offers'];
+const routes = ['/', '/discover', '/app/zcode', '/app/zcode?tab=connections', '/app/chatgpt?tab=accounts', '/connections/api', '/connections/proxy', '/settings', '/settings?section=updates', '/app/qoder?tab=guide'];
 for (const language of ['fa', 'en']) for (const mode of ['light', 'dark']) {
   test(`minimal interface has no overflow or accessibility violations (${language}, ${mode})`, async ({ page }) => {
     test.setTimeout(180000);
@@ -73,7 +73,7 @@ for (const language of ['fa', 'en']) for (const mode of ['light', 'dark']) {
       }
       const scan = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
       expect(scan.violations.map(item => ({ id: item.id, targets: item.nodes.map(node => node.target) })), route).toEqual([]);
-      await page.screenshot({ path: `output/minimal-redesign/verified/${language}-${mode}-${route.slice(1).replaceAll('/', '-') || 'home'}.png`, animations: 'disabled' });
+      await page.screenshot({ path: `output/minimal-redesign/verified/${language}-${mode}-${route.slice(1).replace(/[^a-z0-9-]/gi, '-') || 'home'}.png`, animations: 'disabled' });
     }
     expect(errors).toEqual([]);
   });
@@ -96,4 +96,37 @@ test('expanded settings and model editor fit a narrow window', async ({ page }) 
   expect(await page.getByRole('dialog').evaluate(dialog => dialog.scrollWidth <= dialog.clientWidth + 1)).toBe(true);
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).not.toBeVisible();
+});
+
+
+test('project launch uses the selected app and records only accepted folders', async ({ page }) => {
+  await mockNative(page);
+  await page.goto('/app/zcode');
+  await page.evaluate(() => { (window as any).__mock.selectedFolder = 'C:\\Projects\\پروژه با فاصله'; });
+  await page.getByRole('button', { name: 'Choose project folder', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('vibehub.settings.v1')!).recentProjects.length)).toBe(1);
+  const calls = await page.evaluate(() => (window as any).__mock.calls.filter((call: any) => call.cmd === 'launch_app'));
+  expect(calls[0].args.req).toMatchObject({ appId: 'zcode', cwd: 'C:\\Projects\\پروژه با فاصله' });
+  await page.getByRole('button', { name: 'Go to app ZCode', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => (window as any).__mock.calls.some((call: any) => call.cmd === 'launch_app' && call.args.req.focus === true))).toBe(true);
+});
+
+test('failed project launch shows recovery and does not pollute recent projects', async ({ page }) => {
+  await mockNative(page, 'launchFailed');
+  await page.goto('/app/zcode');
+  await page.evaluate(() => { (window as any).__mock.selectedFolder = 'C:\\Missing'; });
+  await page.getByRole('button', { name: 'Choose project folder', exact: true }).click();
+  await expect(page.getByRole('alert').first()).toBeVisible();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('vibehub.settings.v1')!).recentProjects)).toEqual([]);
+});
+
+test('contextual API and proxy selections can be undone after reload', async ({ page }) => {
+  await mockNative(page);
+  await page.goto('/app/zcode?tab=connections');
+  const api = page.getByRole('combobox', { name: 'API reference (manual setup)', exact: true });
+  await api.selectOption('connection-local');
+  await page.reload();
+  await expect(api).toHaveValue('connection-local');
+  await page.getByRole('button', { name: 'Undo last connection selection', exact: true }).click();
+  await expect(api).toHaveValue('');
 });

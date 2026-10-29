@@ -709,6 +709,7 @@ impl Broker {
             return Err(err("externalChanged"));
         }
         let mut committed = self.state.clone();
+        if self.state["activeId"] != id { committed["previousId"] = self.state["activeId"].clone(); }
         committed["activeId"] = json!(id);
         committed["pendingId"] = Value::Null;
         committed["lastSwitch"] = json!(now());
@@ -844,7 +845,7 @@ impl Broker {
             })
             .collect();
         let mut value = json!({"accounts":accounts,"activeId":self.state["activeId"],"pendingId":self.state["pendingId"],
-            "settings":self.state["settings"],"lastSwitch":self.state["lastSwitch"],"notice":self.state["notice"]});
+            "previousId":self.state["previousId"],"settings":self.state["settings"],"lastSwitch":self.state["lastSwitch"],"notice":self.state["notice"]});
         value["cliReady"] = json!(self.binary.is_some());
         value["supportedVersion"] = json!(SUPPORTED);
         value["desktopRunning"] = self.desktop["running"].clone();

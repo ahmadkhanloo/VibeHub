@@ -1,4 +1,4 @@
-# Qoder RTL - launcher
+﻿# Qoder RTL - launcher
 #
 #   normal:  powershell -ExecutionPolicy Bypass -File start.ps1
 #   hidden:  launch.vbs calls this with -Gui (no console window at all)
@@ -118,7 +118,9 @@ if ($owner) {
   }
 
   Say "starting Qoder with --remote-debugging-port=$Port"
-  Start-Process -FilePath $exe -ArgumentList "--remote-debugging-port=$Port" | Out-Null
+  $launchArgs = "--remote-debugging-port=$Port"
+  if ($env:VIBEHUB_PROJECT) { $launchArgs += ' "' + ($env:VIBEHUB_PROJECT.TrimEnd('\') + '\.') + '"' }
+  Start-Process -FilePath $exe -ArgumentList $launchArgs | Out-Null
   for ($i = 0; $i -lt 40; $i++) {
     Start-Sleep -Milliseconds 500
     $owner = PortOwner $Port

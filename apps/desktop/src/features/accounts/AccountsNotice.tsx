@@ -19,7 +19,7 @@ export function AccountsNotice() {
     void check(); const timer = setInterval(() => void check(), 30000);
     return () => { disposed = true; clearInterval(timer); };
   }, [pathname, i18n.language]);
-  return pending && pathname !== '/accounts' ? <p role="status" className="mb-4 rounded-lg border border-border bg-surface p-4 text-sm">
-    {t('notices.restartRequired')} <Link className="vh-link ms-2" to="/accounts">{t('title')}</Link>
+  return pending && pathname !== '/accounts' && pathname !== '/app/chatgpt' ? <p role="status" className="mb-4 rounded-lg border border-border bg-surface p-4 text-sm">
+    {t('notices.restartRequired')} <Link className="vh-link ms-2" to="/app/chatgpt?tab=accounts">{t('title')}</Link>
   </p> : null;
 }

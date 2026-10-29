@@ -24,8 +24,8 @@ export function DesktopAccounts({ appId }: { appId: string }) {
   const notice = snapshot?.notice?.replace('accounts:', '');
   return <div className="space-y-4">
     <div className="flex flex-wrap items-center gap-2">
-      <Button disabled={busy || snapshot?.capabilities.canImport === false} onClick={() => void act('import')}><RefreshCw size={16} aria-hidden="true" />{t('reload')}</Button>
-      <Button variant="primary" disabled={busy || snapshot?.capabilities.canLogin === false} onClick={() => void act('login')}><Plus size={16} aria-hidden="true" />{t('add')}</Button>
+      {snapshot?.capabilities.canImport && <Button disabled={busy} onClick={() => void act('import')}><RefreshCw size={16} aria-hidden="true" />{t('reload')}</Button>}
+      {snapshot?.capabilities.canLogin && <Button variant="primary" disabled={busy} onClick={() => void act('login')}><Plus size={16} aria-hidden="true" />{t('add')}</Button>}
       <Tooltip text={t('desktopAccountsHint')} />
     </div>
     {error && !dialog && <ErrorNotice error={error} message={error} onRetry={() => void act('list')} />}
@@ -46,7 +46,7 @@ export function DesktopAccounts({ appId }: { appId: string }) {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button size="sm" disabled={busy} onClick={() => void act('refresh', { id: account.id })}>{t('refresh')}</Button>
-          <Button size="sm" variant="primary" disabled={busy || !snapshot.capabilities.canSwitch || snapshot.activeId === account.id} onClick={() => setDialog({ action: 'switch', account })}>{t('switch')}</Button>
+          {snapshot.capabilities.canSwitch && <Button size="sm" variant="primary" disabled={busy || snapshot.activeId === account.id} onClick={() => setDialog({ action: 'switch', account })}>{t('switch')}</Button>}
           <Button size="sm" variant="ghost" disabled={busy} onClick={() => { setName(account.name); setDialog({ action: 'rename', account }); }}>{t('rename')}</Button>
           <Button size="sm" variant="ghost" disabled={busy} onClick={() => setDialog({ action: 'delete', account })}>{t('delete')}</Button>
           <Tooltip text={t('checked', { date: account.checkedAt ? new Date(account.checkedAt * 1000).toLocaleString() : t('unknown') })} />

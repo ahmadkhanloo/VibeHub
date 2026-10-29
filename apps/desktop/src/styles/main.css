@@ -221,3 +221,7 @@ a.vh-app-identity:hover h2{color:var(--primary);}
 .vh-sidebar .vh-tooltip-anchor,.vh-sidebar .vh-tooltip-anchor>a{width:100%;}
 
 .vh-tooltip{max-height:calc(100vh - 16px);overflow-y:auto;}
+
+/* Long contextual connection names fit narrow layouts without hiding controls. */
+.vh-card select { max-width:100%; }
+.vh-card .min-w-56 { min-width:0; }

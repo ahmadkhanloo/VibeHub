@@ -104,6 +104,7 @@ const feedFlights = new Map<string, Promise<FeedSyncResult>>();
 const accountReads = new Map<string, Promise<DesktopAccountsSnapshot>>();
 
 export const ipc = {
+  appPath: (appId: string, path: string) => invoke<void>('app_path', { appId, path }),
   appAccounts: (appId: string, action: string, payload: Record<string, unknown> = {}) => {
     if (action !== 'list') return invoke<DesktopAccountsSnapshot>('app_accounts', { appId, action, payload });
     const current = accountReads.get(appId); if (current) return current;
@@ -115,6 +116,7 @@ export const ipc = {
   detectEditors: () => invoke<DetectedEditor[]>('detect_editors'),
   rtlComponents: () => invoke<RtlComponentStatus[]>('rtl_components'),
   launchEditor: (editorId: string, rtl = false) => invoke<EditorLaunchOutcome>('launch_editor', { editorId, rtl }),
+  focusApp: (appId: string) => invoke<LaunchOutcome>('launch_app', { req: { appId, rtl: false, focus: true } }),
   launchApp: (req: LaunchRequest) => invoke<LaunchOutcome>('launch_app', { req }),
   launchStates: (appIds: string[]) => invoke<Record<string, LaunchState>>('launch_states', { appIds }),
   launchState: (appId: string) => invoke<LaunchState>('launch_state', { appId }),
@@ -132,10 +134,6 @@ export const ipc = {
   proxyTest: (profile: ProxyProfile, level: 'tcp' | 'handshake' | 'request') =>
     invoke<ProxyTestResult>('proxy_test', { profile, level }),
 
-  terminalDetect: () => invoke<TerminalSetupState>('terminal_detect'),
-  terminalInstallOhMyPosh: () => invoke<InstallRunResult>('terminal_install_ohmyposh'),
-  terminalInstallFont: (which: 'nerd' | 'vazirmatn') => invoke<FontInstallResult>('terminal_install_font', { which }),
-  terminalApplyTheme: () => invoke<{ ok: boolean; backupPath?: string; detail: string }>('terminal_apply_theme'),
   terminalUndo: () => invoke<{ ok: boolean; detail: string }>('terminal_undo'),
 
   doctorRun: () => invoke<DoctorCheck[]>('doctor_run'),
@@ -153,6 +151,7 @@ export const ipc = {
   providerCredentialsInventory: () => invoke<ProviderCredentialInventory>('provider_credentials_inventory'),
   providerCredentialsClear: (connectionIds: string[], legacyProviderIds: string[]) =>
     invoke<CredentialClearResult>('provider_credentials_clear', { connectionIds, legacyProviderIds }),
+  providerConnectionModels: (id: string) => invoke<{ models: { id: string; free: boolean | null }[]; checkedAt: string }>('provider_connection_models', { id }),
   providerConnectionTest: (id: string) => invoke<ApiTestReport>('provider_connection_test', { id }),
 
   feedSync: async (feedBaseUrl: string): Promise<FeedSyncResult> => {
@@ -186,6 +185,7 @@ export interface CodexAccount {
   windows: { bucket: string; name: string; remaining: number | null; minutes: number | null; resetsAt: number | null }[];
 }
 export interface AccountsSnapshot {
+  previousId?: string | null;
   accounts: CodexAccount[]; activeId: string | null; pendingId: string | null; notice: string | null;
   settings: { enabled: boolean; threshold: number }; lastSwitch: number; cliReady: boolean; nativePreview?: boolean;
   supportedVersion: string; desktopRunning: boolean; desktopVerified: boolean; loginPending: boolean;

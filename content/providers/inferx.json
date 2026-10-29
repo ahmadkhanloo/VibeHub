@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "inferx",
+  "name": "InferX",
+  "officialUrl": "https://inferx.net/",
+  "modelsDocUrl": "https://inferx.net/pricing",
+  "freeAccess": "free_tier",
+  "requiresAccount": true,
+  "requiresApiKey": true,
+  "usageTermsUrl": "https://inferx.net/pricing",
+  "supportedApps": {
+    "qoder": "unknown"
+  },
+  "eligibilityStatus": "unknown",
+  "lastVerified": "2026-10-28",
+  "notes": {
+    "fa": "سرویس مدل رایگان معرفی می‌کند؛ قیمت و شناسه را در پنل بررسی کنید، چون صفحات سرویس درباره تخفیف فعلی یکسان نیستند. نشانی ممکن است مخصوص حساب باشد.",
+    "en": "Free models are advertised; check current pricing and model ID in the console because published discounts differ. The endpoint may be account-specific."
+  },
+  "endpoint": {
+    "baseUrl": "https://model.inferx.net/v1",
+    "kind": "openai-compatible"
+  }
+}

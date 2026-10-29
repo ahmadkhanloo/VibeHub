@@ -3,6 +3,7 @@ $adapter = Join-Path $PSScriptRoot '..\apps\desktop\src-tauri\src\windows.ps1'
 $ast = [Management.Automation.Language.Parser]::ParseFile($adapter, [ref]$null, [ref]$null)
 $definition = $ast.Find({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Get-LaunchState' }, $true)
 . ([scriptblock]::Create($definition.Extent.Text))
+function Find-App { return $null }
 $script:appAlive = $false
 $script:injectorAlive = $true
 function Get-CimInstance {

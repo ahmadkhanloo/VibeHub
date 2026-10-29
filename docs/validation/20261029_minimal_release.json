@@ -1,0 +1,159 @@
+{
+  "date": "2026-10-29",
+  "version": "0.2.0-beta.1",
+  "basis": "Initial local working tree, preserving existing uncommitted VibeHub work and merging current origin/main fixes",
+  "items": [
+    {
+      "critique": "product_scope",
+      "before": "partial",
+      "after": "implemented",
+      "result": "Apps / Connections / Settings; coding-app management definition in both languages"
+    },
+    {
+      "critique": "offers_feed",
+      "before": "partial",
+      "after": "implemented",
+      "result": "Removed main activity, offers route redirects to Add apps; unreachable page removed"
+    },
+    {
+      "critique": "long_running_learning",
+      "before": "open",
+      "after": "implemented",
+      "result": "Moved to docs/tutorials/long-running.en.md and .fa.md; standalone UI removed"
+    },
+    {
+      "critique": "skills_plugins_learning",
+      "before": "partial",
+      "after": "implemented",
+      "result": "Removed standalone library; external guides retained; app guide embedded"
+    },
+    {
+      "critique": "single_theme",
+      "before": "partial",
+      "after": "implemented",
+      "result": "One graphite palette, light/dark/system; family/accent CSS removed and old preferences migrated"
+    },
+    {
+      "critique": "terminal_customization",
+      "before": "partial",
+      "after": "implemented",
+      "result": "Removed UI and install/apply IPC commands; legacy managed-profile undo remains in Settings"
+    },
+    {
+      "critique": "first_run",
+      "before": "partial",
+      "after": "implemented",
+      "result": "Direct apps route with automatic scan, language control already on first screen"
+    },
+    {
+      "critique": "unsupported_account_picker",
+      "before": "partial",
+      "after": "implemented",
+      "result": "Global selector removed; Qoder/ZCode contextual read/import/login only; switch hidden unless backend capability true"
+    },
+    {
+      "critique": "advanced_feed_url",
+      "before": "open",
+      "after": "implemented",
+      "result": "Feed URL and manual sync inside Advanced under Updates; no feed notifications"
+    },
+    {
+      "critique": "inactive_update_control",
+      "before": "resolved_before",
+      "after": "implemented",
+      "result": "Only working manual updater controls exposed"
+    },
+    {
+      "critique": "home_my_apps",
+      "before": "partial",
+      "after": "implemented",
+      "result": "One Apps destination; dead MyApps deleted"
+    },
+    {
+      "critique": "discover_api_split",
+      "before": "resolved_before",
+      "after": "implemented",
+      "result": "Add apps contains applications; API catalog only under Connections"
+    },
+    {
+      "critique": "contextual_app_workspace",
+      "before": "partial",
+      "after": "implemented",
+      "result": "Launch/project/accounts/connections/embedded guide on app page"
+    },
+    {
+      "critique": "contextual_doctor",
+      "before": "partial",
+      "after": "implemented",
+      "result": "Not in primary nav; available at errors and Settings Data"
+    },
+    {
+      "critique": "api_scope",
+      "before": "partial",
+      "after": "implemented",
+      "result": "Renamed to API connections; app selection explicitly manual reference; no injection claims"
+    },
+    {
+      "critique": "account_capabilities",
+      "before": "partial",
+      "after": "implemented",
+      "result": "Unsupported switching stays fail-closed; supported operations visible; Codex return-to-previous selection added"
+    },
+    {
+      "critique": "launch_status",
+      "before": "partial",
+      "after": "implemented",
+      "result": "Starting, unknown, failed and running shown; external processes and surviving injectors checked"
+    },
+    {
+      "critique": "open_projects",
+      "before": "open",
+      "after": "implemented",
+      "result": "Native directory picker, six recent folders, chosen app/mode, exact GUI argument and CLI working directory"
+    },
+    {
+      "critique": "focus_running_window",
+      "before": "resolved_before",
+      "after": "implemented",
+      "result": "Active main action focuses owned app window; status recheck retained"
+    },
+    {
+      "critique": "card_summary",
+      "before": "open",
+      "after": "implemented",
+      "result": "Active account/quota when available, RTL/mode and proxy/API reference visible"
+    },
+    {
+      "critique": "inline_recovery",
+      "before": "partial",
+      "after": "implemented",
+      "result": "Executable picker for supported desktop apps, local proxy handshake test, account login/import, diagnostics and retry"
+    },
+    {
+      "critique": "undo_changes",
+      "before": "partial",
+      "after": "implemented",
+      "result": "Persisted previous app API/proxy selection; previous Codex saved account; failure rollback and third-party-change guards retained"
+    },
+    {
+      "critique": "release_and_install",
+      "before": "open",
+      "after": "pending",
+      "result": "Pending signed beta release and installation verification"
+    }
+  ],
+  "verification": {
+    "node": "33 passed",
+    "native_windows": "39 assertions passed; synthetic GUI child validates Persian/spaces/metacharacters in project path",
+    "launch_lifecycle": "3 assertions passed",
+    "rust": "38 unit tests and 39 backend integration tests passed; four live exercises ignored",
+    "ui": "74 scenarios passed across full run and targeted recheck of the 10 updated scenarios (64 + 10); targeted acceptance: 11 passed",
+    "checks": "TypeScript, production UI build, translation parity (885 keys), content validation, native IPC coverage, Qoder discovery/runtime and signature regression checks passed"
+  },
+  "limits": [
+    "Clean Windows 10/11 acceptance remains unverified",
+    "Signed installed upgrade cycle remains unverified",
+    "Qoder/ZCode account switch remains intentionally unavailable until live acceptance",
+    "Real provider authentication and per-app proxy traffic are not established by local synthetic checks"
+  ]
+}

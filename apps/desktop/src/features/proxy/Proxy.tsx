@@ -1,4 +1,3 @@
-import { Tooltip } from '@/components/Tooltip';
 import { Disclosure } from '@/components/Disclosure';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -52,7 +51,7 @@ export function ProxyPage() {
         {defaultProfile && <div className="flex flex-wrap items-center gap-2"><Badge tone="primary">{t('proxy:defaultProfile')}</Badge><span className="text-sm">{defaultProfile.name}</span><Badge tone="muted">{t(`proxy:mode.${defaultProfile.mode}`)}</Badge></div>}
         <Toggle checked={config.requireProxy} disabled={busy !== null} onChange={(requireProxy) => { void saveConfig({ requireProxy }); }} label={t('proxy:requireProxy')} />
       </div>
-      <p className="text-sm leading-7 text-muted">{t('proxy:requireProxyHint')}</p>
+      <p className="max-w-3xl text-sm leading-7 text-muted">{t('proxy:requireProxyHint')}</p>
       <details className="text-sm"><summary className="cursor-pointer font-medium">{t('connectionsUx:proxyLimitations')}</summary><p className="mt-2 max-w-3xl leading-7 text-muted">{t('proxy:editorProxyHint')}</p></details>
     </Card>}
     <section aria-labelledby="proxy-profiles-heading"><SectionTitle action={<Button size="sm" disabled={busy !== null} onClick={() => void act('refresh', async () => { await refreshProxy(); })}><RefreshCw size={16} aria-hidden="true" />{t('connectionsUx:refreshProfiles')}</Button>}><span id="proxy-profiles-heading">{t('proxy:profiles')}</span></SectionTitle>
@@ -67,7 +66,7 @@ export function ProxyPage() {
         </Card>;
       })}</div>}
     </section>
-    <Tooltip text={[t('proxy:scopeNote'), t('proxy:termsNote')].join(' ')} />
+    <Disclosure title={t('ux:help')}><p className="max-w-3xl text-sm leading-7 text-muted">{t('proxy:scopeNote')}</p><p className="max-w-3xl text-sm leading-7 text-muted">{t('proxy:termsNote')}</p></Disclosure>
     {editing && <ProxyProfileEditor key={editing.id} profile={editing} onClose={() => setEditing(null)} onSaved={async (profile) => { await refreshProxy(); setTests((current) => { const next = { ...current }; delete next[profile.id]; return next; }); setMessage(t('connectionsUx:profileSaved')); }} />}
     <Modal open={!!deleting} title={t(inUse ? 'connectionsUx:profileInUse' : 'connectionsUx:deleteProxy')} onClose={() => setDeleting(null)} busy={busy !== null}>
       <p className="text-sm leading-7">{t(inUse ? 'connectionsUx:profileInUseHint' : 'connectionsUx:deleteProxyHint', { name: deleting?.name })}</p>

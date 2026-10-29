@@ -1,14 +1,12 @@
 import { useState } from 'react';
 import { SlidersHorizontal } from 'lucide-react';
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { filterApps } from "@catalog";
-import { normalizeSearch } from "@core";
 import { useCatalog } from "@/lib/catalog";
 import { useToolContext } from "@/app/tool-context";
 import { CatalogRow } from "@/components/CatalogRow";
 import {
-  Badge,
   Button,
   EmptyState,
   ErrorNotice,
@@ -16,13 +14,13 @@ import {
   Tabs,
 } from "@/components/ui";
 export function DiscoverPage() {
-  const { t, i18n } = useTranslation(["ux", "apps"]);
+  const { t } = useTranslation(["ux", "apps"]);
   const [params, setParams] = useSearchParams();
   const catalog = useCatalog();
   const ctx = useToolContext();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const activeFilters = Number(params.get('oss') === '1') + Number(params.get('rtl') === '1');
-  const tabs = ["all", "ide", "cli", "providers", "installed"];
+  const tabs = ["all", "ide", "cli", "installed"];
   const tab = tabs.includes(params.get("tab") ?? "")
     ? params.get("tab")!
     : "all";
@@ -40,11 +38,6 @@ export function DiscoverPage() {
       : tab === "cli"
         ? a.kind === "cli_agent"
         : true,
-  );
-  const services = catalog.providers.filter((p) =>
-    normalizeSearch(
-      p.name + " " + p.id + " " + p.notes.fa + " " + p.notes.en,
-    ).includes(normalizeSearch(query)),
   );
   const change = (key: string, value: string) =>
     setParams((old) => {
@@ -90,36 +83,11 @@ export function DiscoverPage() {
       {query && <Button size="sm" onClick={() => change("q", "")}>{t("ux:clearSearch")}: {query}</Button>}
       <p role="status" className="vh-section-kicker">
         {t("ux:searchCount", {
-          count: tab === "providers" ? services.length : results.length,
+          count: results.length,
         })}
       </p>
       <div id="discover-results" role="tabpanel" aria-labelledby={"discover-results-tab-"+tab}>
-      {tab === "providers" ? (
-        <div className="vh-tool-list">
-          {services.map((p) => (
-            <Link
-              className="vh-tool-row"
-              key={p.id}
-              to={"/models?provider=" + p.id}
-            >
-              <div className="min-w-0 flex-1">
-                <h2 className="font-bold">{p.name}</h2>
-                <p className="vh-row-description">
-                  {p.notes[i18n.language.startsWith("fa") ? "fa" : "en"]}
-                </p>
-              </div>
-              <Badge>
-                {t(
-                  "ux:" +
-                    (p.freeAccess === "unknown"
-                      ? "unknownAccess"
-                      : p.freeAccess),
-                )}
-              </Badge>
-            </Link>
-          ))}
-        </div>
-      ) : results.length ? (
+      {results.length ? (
         <div className="vh-app-grid">
           {results.map((app) => (
             <CatalogRow

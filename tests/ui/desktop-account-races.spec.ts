@@ -16,11 +16,10 @@ test('changing app while account detection is pending never displays the previou
       return result;
     };
   });
-  await page.goto('/accounts');
-  const app = page.getByRole('combobox', { name: 'App', exact: true });
-  await app.selectOption('qoder');
+  await page.goto('/app/qoder?tab=accounts');
   expect(await page.evaluate(() => (window as any).__qoderReads)).toBe(1);
-  await app.selectOption('zcode');
+  await page.getByRole('link', { name: 'Apps', exact: true }).click();
+  await page.goto('/app/zcode?tab=accounts');
   await expect(page.getByRole('heading', { name: 'ZCode account', exact: true })).toBeVisible();
   await page.evaluate(() => (window as any).__releaseQoderAccounts());
   await expect(page.getByRole('heading', { name: 'Qoder account', exact: true })).toHaveCount(0);
@@ -40,8 +39,7 @@ test('token balances keep their units, including zero, and quota failures are vi
       return result;
     };
   });
-  await page.goto('/accounts');
-  await page.getByRole('combobox',{name:'App',exact:true}).selectOption('zcode');
+  await page.goto('/app/zcode?tab=accounts');
   await expect(page.getByText('1,234 tokens remaining',{exact:true})).toBeVisible();
   await expect(page.getByText('0 tokens remaining',{exact:true})).toBeVisible();
   await expect(page.getByText('Granted entitlements; this is not the remaining token balance.',{exact:true})).toHaveCount(0);

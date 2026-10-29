@@ -61,7 +61,7 @@ test('failed app discovery offers retry without an IDE fallback', async ({ page 
 
 test('account switching waits for explicit restart confirmation; cancel sends no confirmation', async ({ page }) => {
   await accountsFixture(page); await page.goto('/accounts');
-  await expect(page.getByRole('heading', { name: 'Codex accounts', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'ChatGPT / Codex', exact: true })).toBeVisible();
   await expect(page.getByText('Quota information is unknown. Refresh to check.')).toBeVisible();
   const work = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Work', exact: true }) }).last();
   await work.getByRole('button', { name: 'Switch account', exact: true }).click();
@@ -114,32 +114,26 @@ test('accounts default to one percent, import JSON through native picker and sco
   expect(request.args.payload).not.toHaveProperty('tokens');
   expect(request.args.payload).not.toHaveProperty('path');
   await page.keyboard.press('Escape');
-  await page.getByRole('combobox', { name: 'App', exact: true }).selectOption('qoder');
+  await page.goto('/app/qoder?tab=accounts');
   await expect(page.getByText('Local fixture', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Import account JSON', exact: true })).toHaveCount(0);
   await expect(page.getByRole('switch')).toHaveCount(0);
-  await page.getByRole('combobox', { name: 'App', exact: true }).selectOption('chatgpt');
+  await page.goto('/app/chatgpt?tab=accounts');
   await page.getByRole('button', { name: 'Add an account', exact:true }).click();
   await expect(page.getByRole('button', { name: 'Import account JSON', exact: true })).toBeVisible();
 });
 
-test('tutorials search skills, disclose compatibility and link to original sources', async ({ page }) => {
+test('standalone tutorials move out of the main product', async ({ page }) => {
   await accountsFixture(page); await page.goto('/guides/extensions');
-  await page.getByRole('searchbox', { name: 'Search guides' }).fill('pdf');
-  await expect(page.getByRole('heading', { name: 'pdf', exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'docx', exact: true })).toHaveCount(0);
-  await page.locator('summary').filter({hasText:/^pdf$/}).click();
-  await page.getByText('Read installation guide', { exact: true }).click();
-  await expect(page.getByText(/skill-installer to install pdf/)).toBeVisible();
-  await page.getByRole('button', { name: 'Original source', exact: true }).click();
-  expect(await page.evaluate(() => (window as any).__mock.calls.some((c: any) => c.cmd === 'plugin:opener|open_url' && c.args.url.includes('anthropics/skills/tree/main/skills/pdf')))).toBe(true);
-  await page.getByRole('searchbox', { name: 'Search guides' }).fill('nothing-matches-this');
-  await expect(page.getByRole('heading', { name: 'No matching guides' })).toBeVisible();
+  await expect(page).toHaveURL(/\/$/);
+  await page.goto('/settings?section=data');
+  await page.getByRole('button', { name: 'Open documentation', exact: true }).click();
+  expect(await page.evaluate(() => (window as any).__mock.calls.some((call: any) => call.cmd === 'plugin:opener|open_url' && call.args.url.includes('/docs/tutorials')))).toBe(true);
 });
 
 for (const language of ['en', 'fa']) test(`account page keyboard and accessibility (${language})`, async ({ page }) => {
   await accountsFixture(page, language); await page.goto('/accounts');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText(language === 'fa' ? 'حساب‌های Codex' : 'Codex accounts');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('ChatGPT / Codex');
   await page.getByRole('button', { name: language === 'fa' ? 'افزودن حساب' : 'Add an account', exact:true }).click();
   await page.getByRole('dialog').getByRole('textbox').focus(); await page.keyboard.press('Tab');
   await expect(page.getByRole('button', { name: language === 'fa' ? 'ورود با ChatGPT' : 'Sign in with ChatGPT', exact: true })).toBeFocused();
@@ -147,3 +141,4 @@ for (const language of ['en', 'fa']) test(`account page keyboard and accessibili
   expect(accessibility.violations).toEqual([]);
   if (language === 'fa') await page.screenshot({ path: 'output/playwright/accounts-fa.png', fullPage: true });
 });
+

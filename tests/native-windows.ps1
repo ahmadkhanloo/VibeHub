@@ -1,4 +1,4 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
 $sandbox = Join-Path ([IO.Path]::GetTempPath()) ('vibehub-native-' + [guid]::NewGuid().ToString('N'))
 $null = New-Item -Path $sandbox -ItemType Directory
@@ -33,7 +33,6 @@ function Run-Adapter($request) {
     $line.Substring(13) | ConvertFrom-Json
 }
 try {
-    & (Join-Path $PSScriptRoot 'launch-state-lifecycle.ps1')
     $hubAst = [System.Management.Automation.Language.Parser]::ParseFile($adapter, [ref]$null, [ref]$null)
     $hubFunction = $hubAst.Find({param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Invoke-HubRtlLauncher'}, $true)
     . ([scriptblock]::Create($hubFunction.Extent.Text))
@@ -77,7 +76,7 @@ try {
     [IO.Directory]::CreateDirectory($fakeEditorDir) | Out-Null
     $probeSource = Join-Path $sandbox 'proxy-probe.rs'
     $probeOutput = Join-Path $fakeEditorDir 'proxy-env.txt'
-    $probeCode = 'use std::{env, fs}; fn main() { let proxy = env::var("HTTP_PROXY").unwrap_or_else(|_| "unset".to_string()); fs::write(r#"' + $probeOutput + '"#, proxy).unwrap(); }'
+    $probeCode = 'use std::{env, fs}; fn main() { let args: Vec<String> = env::args().collect(); if let Ok(out) = env::var("VIBEHUB_PROJECT_PROBE") { fs::write(out, format!("{}\n{}", env::current_dir().unwrap().display(), args.get(1).unwrap_or(&String::new()))).unwrap(); } let proxy = env::var("HTTP_PROXY").unwrap_or_else(|_| "unset".to_string()); fs::write(r#"' + $probeOutput + '"#, proxy).unwrap(); }'
     [IO.File]::WriteAllText($probeSource, $probeCode, [Text.UTF8Encoding]::new($false))
     & rustc --edition=2021 $probeSource -o $fakeEditor
     if ($LASTEXITCODE -ne 0) { throw "Could not compile the temporary editor probe (rustc exit $LASTEXITCODE)" }
@@ -104,6 +103,16 @@ try {
     Assert ($proxyLaunch.testProcessCompleted -and $proxyLaunch.testExitCode -eq 0) "The proxy child should exit cleanly; launch result=$($proxyLaunch | ConvertTo-Json -Compress)"
     Assert (Test-Path -LiteralPath $probeOutput) 'The proxy child must record its environment'
     Assert ([IO.File]::ReadAllText($probeOutput) -eq 'socks5h://127.0.0.1:10808') 'The selected proxy should reach the editor child process environment'
+    $project = Join-Path $sandbox "پروژه فارسی ' & dollar $ with spaces"
+    [IO.Directory]::CreateDirectory($project) | Out-Null
+    $env:VIBEHUB_PROJECT_PROBE = Join-Path $sandbox 'project-result.txt'
+    try {
+        $projectLaunch = Run-Adapter @{operation='launch';req=@{appId='antigravity';rtl=$false;cwd=$project};waitForTestExitMs=5000}
+        Assert ($projectLaunch.ok -and $projectLaunch.testExitCode -eq 0) 'Project child must exit successfully'
+        $received = [IO.File]::ReadAllLines($env:VIBEHUB_PROJECT_PROBE)
+        Assert ($received[0] -eq $project) 'Project path must set the child working directory exactly'
+        Assert ([IO.Path]::GetFullPath($received[1]) -eq $project) 'Project folder must reach the GUI as one argument, including Persian, spaces and metacharacters'
+    } finally { Remove-Item Env:VIBEHUB_PROJECT_PROBE -ErrorAction SilentlyContinue }
     $batch = Run-Adapter @{operation='launch-states'; states=@{
         alive=@{pid=$PID;rtl=$false;since='fixture'}
         absent=$null

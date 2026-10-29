@@ -1,4 +1,4 @@
-param([switch]$Gui, [switch]$Discover, [string]$ProxyUrl)
+﻿param([switch]$Gui, [switch]$Discover, [string]$ProxyUrl)
 try {
 $ErrorActionPreference = 'Stop'
 $Dir = Split-Path -Parent $PSCommandPath
@@ -38,6 +38,7 @@ if ($owner) {
   if ($running) { throw 'Antigravity is already open without the RTL port. Fully quit it, including the tray, and start Antigravity RTL.' }
   $launchArgs = "--remote-debugging-address=127.0.0.1 --remote-debugging-port=$Port"
   if ($ProxyUrl) { $launchArgs += ' --proxy-server=' + ($ProxyUrl -replace '^socks5h://','socks5://') }
+  if ($env:VIBEHUB_PROJECT) { $launchArgs += ' "' + ($env:VIBEHUB_PROJECT.TrimEnd('\') + '\.') + '"' }
   Start-Process -FilePath $exe -ArgumentList $launchArgs -WindowStyle Hidden | Out-Null
   for ($i=0; $i -lt 40; $i++) {
     Start-Sleep -Milliseconds 250

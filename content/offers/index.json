@@ -16,7 +16,15 @@
     "nvidia-build",
     "openrouter",
     "ollama",
-    "custom-openai-compatible"
+    "custom-openai-compatible",
+    "radeon-cloud",
+    "inferx",
+    "kira-ai",
+    "clean-apis",
+    "orcarouter",
+    "apinex",
+    "google",
+    "mistral"
   ],
   "offers": [
     "qoder-daily-credits",

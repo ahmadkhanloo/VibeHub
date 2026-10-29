@@ -1,4 +1,4 @@
-# Fixed local adapter. Request data arrives as JSON on stdin, never as PowerShell code.
+﻿# Fixed local adapter. Request data arrives as JSON on stdin, never as PowerShell code.
 $ErrorActionPreference = 'Stop'
 [Console]::InputEncoding = [Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
@@ -185,6 +185,7 @@ function Invoke-HubRtlLauncher([string]$launcherPath) {
 }
 
 function Find-App([string]$id) {
+    if (Get-Command Get-RtlSavedPath -ErrorAction SilentlyContinue) { $saved = Get-RtlSavedPath $id; if ($saved) { return $saved } }
     if ($id -in @('antigravity','chatgpt')) { return Find-DesktopProduct $id }
     if ($id -in @('qoder','zcode','deepseek-harness') -and (Get-Command Get-RtlExecutable -ErrorAction SilentlyContinue)) {
         $folder = switch ($id) { 'qoder' {'Qoder'} 'zcode' {'ZCode'} 'deepseek-harness' {'DeepSeekHarness'} }
@@ -233,8 +234,7 @@ function Detect-Apps {
 
 function Detect-Editors { @() }
 
-function Get-LaunchState($state, [string]$appId) {
-    if (-not $state) { return @{phase='idle'} }
+function Get-LaunchState($state, [string]$appId = '') {
     if ($state.phase -eq 'failed') { return $state }
     if ($state.rtl) {
         $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$([int]$state.injectorPid)" -ErrorAction SilentlyContinue
@@ -257,7 +257,16 @@ function Get-LaunchState($state, [string]$appId) {
             $alive = [bool]$application
         }
     } else { $alive = $state.pid -and [bool](Get-Process -Id ([int]$state.pid) -ErrorAction SilentlyContinue) }
-    if ($alive) { @{phase='running';rtl=[bool]$state.rtl;since=$state.since;port=$state.port} } else { @{phase='idle'} }
+    if ($alive) { return @{phase='running';rtl=[bool]$state.rtl;since=$state.since;port=$state.port} }
+    if ($appId) {
+        $exe = Find-App $appId
+        if ($exe) {
+            if ($null -eq $script:LaunchProcesses) { $script:LaunchProcesses = @(Get-Process -ErrorAction SilentlyContinue) }
+            $running = $script:LaunchProcesses | Where-Object { try { $_.Path -ieq $exe } catch { $false } } | Select-Object -First 1
+            if ($running) { return @{phase='running';rtl=$false;since=$running.StartTime.ToUniversalTime().ToString('o')} }
+        }
+    }
+    @{phase='idle'}
 }
 
 function Terminal-State {
@@ -455,6 +464,25 @@ try {
                 @{ok=$true; name=$font.title; detail='Checksum-verified font installed for the current user. Restart terminals to refresh font lists.'}
             } finally { if (Test-Path -LiteralPath $download) { Remove-Item -LiteralPath $download } }
         }
+        'app-path' {
+            $names = @{qoder=@('Qoder.exe','Qoder IDE.exe','QoderAI.exe');zcode=@('ZCode.exe');'deepseek-harness'=@('DeepSeek Harness.exe','DeepSeek.exe');antigravity=@('Antigravity.exe')}
+            $id = [string]$request.appId
+            $path = [string]$request.path
+            if (-not $names.ContainsKey($id) -or -not [IO.Path]::IsPathRooted($path) -or -not (Test-Path -LiteralPath $path -PathType Leaf) -or [IO.Path]::GetFileName($path) -notin $names[$id]) { throw 'Select the executable belonging to this application.' }
+            Save-RtlPath $id $path
+            @{ok=$true}
+        }
+        'focus-app' {
+            $id = [string]$request.appId
+            if ($id -notin @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','antigravity','chatgpt')) { throw 'Unknown app' }
+            $exe = Find-App $id
+            $target = Get-Process -ErrorAction SilentlyContinue | Where-Object { try { $_.Path -ieq $exe -and $_.MainWindowHandle -ne 0 } catch { $false } } | Select-Object -First 1
+            if (-not $exe -or -not $target) { throw 'No application window was found.' }
+            Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class HubWindow { [DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr h,int n); [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h); }'
+            [HubWindow]::ShowWindowAsync($target.MainWindowHandle,9) | Out-Null
+            if (-not [HubWindow]::SetForegroundWindow($target.MainWindowHandle)) { throw 'Windows did not activate the application window.' }
+            @{ok=$true;rtl=$false;detail='Application window activated'}
+        }
         'launch' {
             $id = [string]$request.req.appId
             if ($id -notin @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','antigravity','chatgpt')) { throw 'Unknown app' }
@@ -462,6 +490,7 @@ try {
             if (-not $exe -and -not $request.req.rtl) { throw 'App is not installed in a recognized location.' }
             $cwd = if ($request.req.cwd) { [string]$request.req.cwd } else { [Environment]::GetFolderPath('UserProfile') }
             if (-not (Test-Path -LiteralPath $cwd -PathType Container)) { throw 'Working directory does not exist.' }
+            $env:VIBEHUB_PROJECT = if ($request.req.cwd) { $cwd } else { '' }
             if ($request.proxyUrl) { $env:HTTP_PROXY=$request.proxyUrl; $env:HTTPS_PROXY=$request.proxyUrl; $env:ALL_PROXY=$request.proxyUrl; $env:NO_PROXY='localhost,127.0.0.1,::1' }
             elseif ($request.direct) { foreach ($name in @('HTTP_PROXY','HTTPS_PROXY','ALL_PROXY','NO_PROXY')) { [Environment]::SetEnvironmentVariable($name,$null,'Process') } }
             if ($request.req.rtl) {
@@ -469,7 +498,9 @@ try {
                 $port = switch ($id) { 'zcode' {9222} 'qoder' {9225} 'deepseek-harness' {9228} 'antigravity' {9231} }
                 $script = Join-Path $root "apps\$folder\start.ps1"
                 if ($id -eq 'antigravity') { $env:ANTIGRAVITY_RTL_EXE = $exe }
+                $alreadyRtl = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
                 Invoke-HubRtlLauncher $script
+                if ($alreadyRtl -and $request.req.cwd) { Start-Process -FilePath $exe -ArgumentList ('"' + ($cwd.TrimEnd('\') + '\.') + '"') -WorkingDirectory $cwd | Out-Null }
                 $injector = Join-Path $root "apps\$folder\injector.mjs"
                 $owner = Get-NetTCPConnection -LocalPort ($port+1) -State Listen -ErrorAction Stop | Select-Object -First 1
                 $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$($owner.OwningProcess)"
@@ -488,7 +519,8 @@ try {
                 $startInfo.FileName = $exe
                 $startInfo.WorkingDirectory = $cwd
                 $startInfo.UseShellExecute = $false
-                if ($request.proxyUrl) { $startInfo.Arguments = '--proxy-server=' + (([string]$request.proxyUrl) -replace '^socks5h://','socks5://') }
+                if ($request.req.cwd) { $startInfo.Arguments = '"' + ($cwd.TrimEnd('\') + '\.') + '"' }
+                if ($request.proxyUrl) { $startInfo.Arguments += ' --proxy-server=' + (([string]$request.proxyUrl) -replace '^socks5h://','socks5://') }
                 $proc = [Diagnostics.Process]::Start($startInfo)
                 $detail = if ($request.proxyUrl) { 'Application started with proxy settings requested; app routing is not verified.' } else { 'Application process started' }
                 $launchResult = @{ok=$true;rtl=$false;pid=$proc.Id;since=[DateTime]::UtcNow.ToString('o');proxyConfigured=[bool]$request.proxyUrl;proxyRoutingVerified=$false;detail=$detail}
@@ -503,7 +535,7 @@ try {
         'launch-states' {
             $states = @{}
             foreach ($entry in $request.states.PSObject.Properties) {
-                $states[$entry.Name] = Get-LaunchState $entry.Value ([string]$entry.Name)
+                $states[$entry.Name] = Get-LaunchState $entry.Value $entry.Name
             }
             $states
         }
@@ -518,11 +550,11 @@ try {
             $true
         }
         'doctor' {
-            foreach ($name in @('node','winget','oh-my-posh')) {
+            foreach ($name in @('node','winget')) {
                 $cmd = Get-Command $name -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
                 @{id=$name;label=@{en=$name;fa=$name};status=$(if($cmd){'pass'}else{'fail'});detail=$(if($cmd){$cmd.Source}else{'Not found on PATH'})}
             }
-            @{id='profile';label=@{en='PowerShell profile';fa='PowerShell profile'};status='unknown';detail=(ProfilePath)}
+
         }
         default { throw 'Unknown native operation' }
     }

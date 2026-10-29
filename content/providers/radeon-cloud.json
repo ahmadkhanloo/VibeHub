@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "radeon-cloud",
+  "name": "Radeon Cloud",
+  "officialUrl": "https://developer.amd.com.cn/radeon/tokenfactory",
+  "modelsDocUrl": "https://amd-aim.github.io/radeon-cloud-docs/guides/token-factory/",
+  "freeAccess": "free_tier",
+  "requiresAccount": true,
+  "requiresApiKey": true,
+  "usageTermsUrl": "https://amd-aim.github.io/radeon-cloud-docs/guides/token-factory/",
+  "supportedApps": {
+    "qoder": "unknown"
+  },
+  "eligibilityStatus": "unknown",
+  "lastVerified": "2026-10-28",
+  "notes": {
+    "fa": "رایگان با سقف روزانه؛ فقط سایت چین و برای آزمایش و توسعه. موجودی مدل‌ها و شرایط حساب را بررسی کنید.",
+    "en": "Free daily allowance on the China site only, for trial and development; check account eligibility and current models."
+  },
+  "endpoint": {
+    "baseUrl": "https://developer.amd.com.cn/radeon/api/v1",
+    "kind": "openai-compatible"
+  }
+}

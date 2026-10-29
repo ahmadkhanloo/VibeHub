@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "kira-ai",
+  "name": "Kira AI",
+  "officialUrl": "https://kiraai.vn/",
+  "modelsDocUrl": "https://kiraai.vn/guide/vscode/",
+  "freeAccess": "free_tier",
+  "requiresAccount": true,
+  "requiresApiKey": true,
+  "usageTermsUrl": "https://kiraai.vn/guide/vscode/",
+  "supportedApps": {
+    "qoder": "unknown"
+  },
+  "eligibilityStatus": "unknown",
+  "lastVerified": "2026-10-28",
+  "notes": {
+    "fa": "مدل رایگان در راهنمای رسمی معرفی شده است؛ موجودی و محدودیت‌ها را در کاتالوگ سرویس بررسی کنید.",
+    "en": "A free model is listed in the official guide; check current availability and limits in the catalog."
+  },
+  "endpoint": {
+    "baseUrl": "https://kiraai.vn/api/v1",
+    "kind": "openai-compatible"
+  }
+}

@@ -20,6 +20,13 @@ async fn codex_accounts(app: tauri::AppHandle, action: String, payload: Value) -
 }
 
 #[tauri::command]
+async fn app_path(app: tauri::AppHandle, app_id: String, path: String) -> Result<()> {
+    if !["qoder", "zcode", "deepseek-harness", "antigravity"].contains(&app_id.as_str()) { return Err("Unsupported app path".into()); }
+    system::run(app, json!({"operation":"app-path", "appId":app_id, "path":path})).await?;
+    Ok(())
+}
+
+#[tauri::command]
 async fn detect_apps(app: tauri::AppHandle) -> Result<Value> {
     system::run(app, json!({"operation":"detect"})).await
 }
@@ -232,6 +239,17 @@ async fn provider_credentials_clear(
 }
 
 #[tauri::command]
+async fn provider_connection_models(app: tauri::AppHandle, id: String) -> Result<Value> {
+    let (connection, profile) = tauri::async_runtime::spawn_blocking(move || {
+        let connections = storage::provider_connections(&storage::provider_connection_file(&app)?)?;
+        let connection = connections.as_array().and_then(|list| list.iter().find(|item| item["id"] == id)).cloned().ok_or("Provider connection does not exist")?;
+        let (profile, _) = storage::selected_profile(&storage::settings(&app)?, "*", None)?;
+        Ok::<_, String>((connection, profile))
+    }).await.map_err(|_| "Provider connection lookup failed")??;
+    network::connection_models(connection, profile).await
+}
+
+#[tauri::command]
 async fn provider_connection_test(app: tauri::AppHandle, id: String) -> Result<Value> {
     let (connection, profile) = tauri::async_runtime::spawn_blocking(move || {
         let path = storage::provider_connection_file(&app)?;
@@ -249,29 +267,6 @@ async fn provider_connection_test(app: tauri::AppHandle, id: String) -> Result<V
     network::connection_test(connection, profile).await
 }
 
-#[tauri::command]
-async fn terminal_detect(app: tauri::AppHandle) -> Result<Value> {
-    system::run(app, json!({"operation":"terminal-detect"})).await
-}
-#[tauri::command]
-async fn terminal_install_ohmyposh(app: tauri::AppHandle) -> Result<Value> {
-    system::install(app, "terminal".into(), "winget", None).await
-}
-#[tauri::command]
-async fn terminal_install_font(app: tauri::AppHandle, which: String) -> Result<Value> {
-    system::run(app, json!({"operation":"font-install", "which":which})).await
-}
-#[tauri::command]
-async fn terminal_apply_theme(app: tauri::AppHandle) -> Result<Value> {
-    tauri::async_runtime::spawn_blocking(move || {
-        let _lock = storage::TERMINAL_LOCK
-            .lock()
-            .map_err(|_| "Terminal lock failed")?;
-        system::powershell(&app, json!({"operation":"terminal-apply"}))
-    })
-    .await
-    .map_err(|_| "Terminal operation failed")?
-}
 #[tauri::command]
 async fn terminal_undo(app: tauri::AppHandle) -> Result<Value> {
     tauri::async_runtime::spawn_blocking(move || {
@@ -362,6 +357,17 @@ async fn launch_app(app: tauri::AppHandle, req: Value) -> Result<Value> {
     if !APP_IDS.contains(&id.as_str()) || !req["rtl"].is_boolean() {
         return Err("Invalid launch request".into());
     }
+    if let Some(cwd) = req.get("cwd") {
+        let path = cwd.as_str().ok_or("Invalid project folder")?;
+        let folder = std::path::Path::new(path);
+        if !folder.is_absolute() || !folder.is_dir() || path.contains(['"', '\n', '\r', '\0']) {
+            return Err("Project folder does not exist or has an invalid path".into());
+        }
+        if id == "chatgpt" { return Err("This application does not support project folders".into()); }
+    }
+    if req["focus"].as_bool() == Some(true) {
+        return system::blocking(move || system::powershell(&app, json!({"operation":"focus-app", "appId":id}))).await;
+    }
     system::blocking(move || {
         storage::run_launch(&launch_file(&app)?, &id, || {
             let mut request = launch_request(&app, &id, req["proxyProfileId"].as_str())?;
@@ -396,26 +402,6 @@ async fn launch_states(app: tauri::AppHandle, app_ids: Vec<String>) -> Result<Va
                 (id, value)
             })
             .collect();
-        if selected
-            .values()
-            .all(|s| s.is_null() || s["phase"] == "failed")
-        {
-            return Ok(Value::Object(
-                selected
-                    .into_iter()
-                    .map(|(id, state)| {
-                        (
-                            id,
-                            if state.is_null() {
-                                json!({"phase":"idle"})
-                            } else {
-                                state
-                            },
-                        )
-                    })
-                    .collect(),
-            ));
-        }
         system::powershell(
             &app,
             json!({"operation":"launch-states", "states":selected}),
@@ -470,6 +456,7 @@ fn app_version(app: tauri::AppHandle) -> String {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_process::init())
@@ -496,6 +483,7 @@ pub fn run() {
             app_version,
             codex_accounts,
             app_accounts,
+            app_path,
             detect_apps,
             detect_editors,
             rtl_components,
@@ -512,10 +500,6 @@ pub fn run() {
             proxy_config,
             proxy_set_config,
             proxy_test,
-            terminal_detect,
-            terminal_install_ohmyposh,
-            terminal_install_font,
-            terminal_apply_theme,
             terminal_undo,
             doctor_run,
             vault_set,
@@ -527,6 +511,7 @@ pub fn run() {
             provider_credentials_inventory,
             provider_credentials_clear,
             provider_connection_test,
+            provider_connection_models,
             api_test,
             feed_sync
         ])

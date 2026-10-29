@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "mistral",
+  "name": "Mistral AI",
+  "officialUrl": "https://console.mistral.ai/",
+  "modelsDocUrl": "https://docs.mistral.ai/admin/billing-usage/usage-limits",
+  "freeAccess": "free_tier",
+  "requiresAccount": true,
+  "requiresApiKey": true,
+  "usageTermsUrl": "https://docs.mistral.ai/admin/billing-usage/usage-limits",
+  "supportedApps": {
+    "qoder": "unknown"
+  },
+  "eligibilityStatus": "unknown",
+  "lastVerified": "2026-10-28",
+  "notes": {
+    "fa": "حالت رایگان سهمیه و محدودیت ماهانه دارد؛ با فعال کردن پرداخت اضافه، پس از سهمیه ممکن است از اعتبار حساب هزینه شود.",
+    "en": "Free mode includes limited monthly usage; enabling pay-as-you-go can charge prepaid credits after the allowance."
+  },
+  "endpoint": {
+    "baseUrl": "https://api.mistral.ai/v1",
+    "kind": "openai-compatible"
+  }
+}

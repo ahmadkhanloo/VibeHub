@@ -7,6 +7,7 @@
   "readingTime": "Reading time",
   "updatedAt": "Last updated",
   "officialSource": "Official source",
+  "githubTutorial": "Full tutorial on GitHub",
   "sections": "Sections",
   "copyCommand": "Copy command",
   "runCommandNote": "Execution only from an allowlist with separate consent; guides never auto-run commands.",

@@ -1291,20 +1291,20 @@ Function CreateRtlShortcuts
     SectionGetFlags ${SEC_ANTIGRAVITY} $R5
   ${EndIf}
   ${If} $R1 & ${SF_SELECTED}
-    CreateShortcut "$R4\ZCode RTL.lnk" "$R0\ZCode\launch.vbs"
-    CreateShortcut "$DESKTOP\ZCode RTL.lnk" "$R0\ZCode\launch.vbs"
+    CreateShortcut "$R4\ZCode RTL.lnk" "$R0\ZCode\launch.vbs" "" "$R0\ZCode\rtl.ico"
+    CreateShortcut "$DESKTOP\ZCode RTL.lnk" "$R0\ZCode\launch.vbs" "" "$R0\ZCode\rtl.ico"
   ${EndIf}
   ${If} $R2 & ${SF_SELECTED}
-    CreateShortcut "$R4\Qoder RTL.lnk" "$R0\Qoder\launch.vbs"
-    CreateShortcut "$DESKTOP\Qoder RTL.lnk" "$R0\Qoder\launch.vbs"
+    CreateShortcut "$R4\Qoder RTL.lnk" "$R0\Qoder\launch.vbs" "" "$R0\Qoder\rtl.ico"
+    CreateShortcut "$DESKTOP\Qoder RTL.lnk" "$R0\Qoder\launch.vbs" "" "$R0\Qoder\rtl.ico"
   ${EndIf}
   ${If} $R3 & ${SF_SELECTED}
-    CreateShortcut "$R4\DeepSeek Harness RTL.lnk" "$R0\DeepSeekHarness\launch.vbs"
-    CreateShortcut "$DESKTOP\DeepSeek Harness RTL.lnk" "$R0\DeepSeekHarness\launch.vbs"
+    CreateShortcut "$R4\DeepSeek Harness RTL.lnk" "$R0\DeepSeekHarness\launch.vbs" "" "$R0\DeepSeekHarness\rtl.ico"
+    CreateShortcut "$DESKTOP\DeepSeek Harness RTL.lnk" "$R0\DeepSeekHarness\launch.vbs" "" "$R0\DeepSeekHarness\rtl.ico"
   ${EndIf}
   ${If} $R5 & ${SF_SELECTED}
-    CreateShortcut "$R4\Antigravity RTL.lnk" "$R0\Antigravity\launch.vbs"
-    CreateShortcut "$DESKTOP\Antigravity RTL.lnk" "$R0\Antigravity\launch.vbs"
+    CreateShortcut "$R4\Antigravity RTL.lnk" "$R0\Antigravity\launch.vbs" "" "$R0\Antigravity\rtl.ico"
+    CreateShortcut "$DESKTOP\Antigravity RTL.lnk" "$R0\Antigravity\launch.vbs" "" "$R0\Antigravity\rtl.ico"
   ${EndIf}
 FunctionEnd
 
@@ -1377,9 +1377,11 @@ Section Uninstall
   Delete "$INSTDIR\apps\migrate-agentrtl-paths.ps1"
   Delete "$INSTDIR\apps\ZCode\start.ps1"
   Delete "$INSTDIR\apps\ZCode\launch.vbs"
+  Delete "$INSTDIR\apps\ZCode\rtl.ico"
   Delete "$INSTDIR\apps\ZCode\injector.mjs"
   Delete "$INSTDIR\apps\Qoder\start.ps1"
   Delete "$INSTDIR\apps\Qoder\launch.vbs"
+  Delete "$INSTDIR\apps\Qoder\rtl.ico"
   Delete "$INSTDIR\apps\Qoder\injector.mjs"
   Delete "$INSTDIR\apps\Qoder\style.mjs"
   Delete "$INSTDIR\apps\Qoder\doctor.mjs"
@@ -1389,10 +1391,12 @@ Section Uninstall
   Delete "$INSTDIR\apps\Qoder\assets\Vazirmatn-Regular.woff2"
   Delete "$INSTDIR\apps\Antigravity\start.ps1"
   Delete "$INSTDIR\apps\Antigravity\launch.vbs"
+  Delete "$INSTDIR\apps\Antigravity\rtl.ico"
   Delete "$INSTDIR\apps\Antigravity\injector.mjs"
   Delete "$INSTDIR\apps\Antigravity\style.mjs"
   Delete "$INSTDIR\apps\DeepSeekHarness\start.ps1"
   Delete "$INSTDIR\apps\DeepSeekHarness\launch.vbs"
+  Delete "$INSTDIR\apps\DeepSeekHarness\rtl.ico"
   Delete "$INSTDIR\apps\DeepSeekHarness\injector.mjs"
   Delete "$INSTDIR\apps\DeepSeekHarness\assets\OFL.txt"
   Delete "$INSTDIR\apps\DeepSeekHarness\assets\Vazirmatn-Bold.woff2"

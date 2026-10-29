@@ -1,5 +1,9 @@
 # VibeHub
 
+Manage and launch coding apps, with Persian support, accounts and connections.
+
+The main navigation is **Apps**, **Connections** (API and proxy), and **Settings**. Open a project folder or a recent project with an installed app, focus its existing window, and configure accounts, connections and guides from that app’s page. Account quotas are shown when available; unavailable values remain explicit. API selections are manual setup references and do not rewrite third-party settings. Connection selections can be undone, and Codex can return to the previous saved account. Qoder/ZCode account viewing is available in their pages; unverified switching is not offered.
+
 ## Development without reinstalling
 
 - `pnpm dev` or `pnpm dev:browser`: open `http://127.0.0.1:1422/`. Vite updates the UI immediately. The visible preview banner means Windows launch/install/proxy operations are simulated; no real account credentials are available.
@@ -7,15 +11,15 @@
 - The existing installed executable is not updated by building the repository. Check the executable path and build date when comparing installed and source behavior.
 - `pnpm test:ui` starts both development servers as needed. Production builds exclude the preview adapter and its fixtures.
 
-### Apps, Codex accounts and learning
+### Apps and Codex accounts
 
 The app catalog includes standalone Antigravity and one ChatGPT/legacy Codex entry alongside the existing apps. General IDE discovery is retired. Proxy profiles are requested on the next launch; a healthy proxy check does not establish that every app request uses it.
 
-Open **Codex accounts** to sign in, import your local Codex account, inspect quotas, rename/remove saved accounts, or switch accounts without VS Code. This integration currently supports **Codex CLI 0.148.0**. It manages Codex authentication, including Codex in the desktop app; it does not switch ordinary ChatGPT chat accounts. Saved profiles use Codex's encrypted auth format with the encryption key in Windows Credential Manager. The local Codex credential store continues to use its configured file/keyring mode.
+Open **ChatGPT / Codex → Accounts** to sign in, import your local Codex account, inspect quotas, rename/remove saved accounts, or switch accounts without VS Code. This integration currently supports **Codex CLI 0.148.0**. It manages Codex authentication, including Codex in the desktop app; it does not switch ordinary ChatGPT chat accounts. Saved profiles use Codex's encrypted auth format with the encryption key in Windows Credential Manager. The local Codex credential store continues to use its configured file/keyring mode.
 
 Automatic switching is off by default. When enabled it checks every five minutes while VibeHub is running, uses a 1% remaining-quota threshold by default, and waits at least ten minutes between switches. Open desktop apps require explicit restart confirmation. **Live Windows desktop account switching remains experimental and unverified.**
 
-Under **Guides → Plugins and skills**, searchable bilingual tutorials cover seven starter skills and GitHub, Figma and OpenAI Developers plugins, with original sources and app-specific installation instructions.
+Long-running agent and plugin/skill tutorials live in the repository’s external documentation. Offers, terminal customization, onboarding steps and theme families are no longer part of the main interface. An undo action remains for terminal profiles modified by older versions.
 
 VibeHub is a free, open-source desktop companion for discovering and configuring AI coding tools. It separates each tool's license, free-access terms, regional eligibility, and VibeHub capabilities; it does not provide model hosting or a proxy service.
 

@@ -1,4 +1,4 @@
-param([switch]$Gui, [switch]$Discover)
+﻿param([switch]$Gui, [switch]$Discover)
 
 $ErrorActionPreference = 'Stop'
 $Port = if ($env:ZCODE_RTL_PORT) { [int]$env:ZCODE_RTL_PORT } else { 9222 }
@@ -99,7 +99,9 @@ if ($owner) {
   exit 1
 } else {
   Say "starting ZCode with --remote-debugging-port=$Port"
-  Start-Process -FilePath $exe -ArgumentList "--remote-debugging-port=$Port" | Out-Null
+  $launchArgs = "--remote-debugging-port=$Port"
+  if ($env:VIBEHUB_PROJECT) { $launchArgs += ' "' + ($env:VIBEHUB_PROJECT.TrimEnd('\') + '\.') + '"' }
+  Start-Process -FilePath $exe -ArgumentList $launchArgs | Out-Null
   for ($i = 0; $i -lt 40; $i++) {
     Start-Sleep -Milliseconds 500
     $info = Get-CdpInfo

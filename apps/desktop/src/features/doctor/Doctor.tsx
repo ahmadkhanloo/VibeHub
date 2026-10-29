@@ -1,4 +1,3 @@
-import { Tooltip } from '@/components/Tooltip';
 import { Disclosure } from '@/components/Disclosure';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -80,7 +79,7 @@ export function DoctorPage() {
 
   return <div className="space-y-6">
     <PageHeader title={t('doctor:title')} actions={<div className="flex flex-wrap gap-2"><Button variant="primary" loading={running} onClick={() => void run()}><Play size={14} aria-hidden="true" />{t('doctor:runChecks')}</Button><Button disabled={!checks || running} onClick={() => void copyReport()}><ClipboardCopy size={14} aria-hidden="true" />{t('doctor:copyReport')}</Button></div>} />
-    <Tooltip text={[t('doctor:purpose'), t('doctor:networkNote')].join(' ')} />
+    <Disclosure title={t('ux:help')}><p>{t('doctor:purpose')}</p><p className="text-sm leading-7 text-muted">{t('doctor:networkNote')}</p></Disclosure>
     {error != null && <ErrorNotice error={error} onRetry={() => void run()} />}
     {copyStatus && <p role={copyStatus === 'error' ? 'alert' : 'status'} className="text-sm">{t(copyStatus === 'success' ? 'journeyUx:doctor.copySuccess' : 'journeyUx:doctor.copyFailure')}</p>}
     {!checks ? <p role="status" className="text-sm text-muted">{running ? t('doctor:running') : t('journeyUx:doctor.notRun')}</p> : <>

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "clean-apis",
+  "name": "Clean APIs",
+  "officialUrl": "https://www.cleanapis.com/",
+  "modelsDocUrl": "https://www.cleanapis.com/pricing",
+  "freeAccess": "free_tier",
+  "requiresAccount": true,
+  "requiresApiKey": true,
+  "usageTermsUrl": "https://www.cleanapis.com/pricing",
+  "supportedApps": {
+    "qoder": "unknown"
+  },
+  "eligibilityStatus": "unknown",
+  "lastVerified": "2026-10-28",
+  "notes": {
+    "fa": "طرح رایگان سهمیه ماهانه دارد؛ پس از پایان سهمیه ممکن است از موجودی حساب هزینه کسر شود.",
+    "en": "The free plan has a monthly allowance; after it is exhausted usage may draw from your account balance."
+  },
+  "endpoint": {
+    "baseUrl": "https://www.cleanapis.com/v1",
+    "kind": "openai-compatible"
+  }
+}

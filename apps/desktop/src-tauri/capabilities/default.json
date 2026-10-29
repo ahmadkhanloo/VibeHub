@@ -10,6 +10,7 @@
     "notification:default",
     "opener:allow-open-url",
     "process:allow-restart",
-    "updater:default"
+    "updater:default",
+    "dialog:allow-open"
   ]
 }

@@ -113,7 +113,12 @@ export function installMockNative({ scenario, language, onboardingDone }: { scen
               return Object.fromEntries(args.appIds.map((id: string) => [id, state.launchStates[id] ?? { phase: "idle" }]));
             case "launch_state":
               return state.launchStates[args.appId] ?? { phase: "idle" };
+            case "plugin:dialog|open":
+              return state.selectedFolder ?? null;
+            case "app_path":
+              return;
             case "launch_app":
+              if (args.req.focus) return { ok: true, rtl: false, detail: 'Focused fixture window' };
               if (state.scenario === "launchFailed")
                 throw Error("Launch failed");
               if (state.config.requireProxy && !state.config.globalProfileId)
@@ -203,15 +208,6 @@ export function installMockNative({ scenario, language, onboardingDone }: { scen
                 failures: [],
               };
             }
-            case "terminal_detect":
-              return {
-                hasOhMyPosh: true,
-                ohMyPoshVersion: "fixture",
-                hasNerdFont: true,
-                nerdFontName: "JetBrainsMono Nerd Font Mono",
-                profilePath: "C:/fixture/profile.ps1",
-                themeApplied: false,
-              };
             case "doctor_run":
               return [
                 {

@@ -42,7 +42,8 @@ interface ToolContext {
     id: string,
     kind: "app" | "editor",
     mode: LaunchMode,
-  ) => Promise<void>;
+    cwd?: string,
+  ) => Promise<boolean | undefined>;
   checkState: (id: string) => Promise<void>;
 }
 const Context = createContext<ToolContext | null>(null);
@@ -177,6 +178,7 @@ export function ToolProvider({ children }: { children: ReactNode }) {
     id: string,
     kind: "app" | "editor",
     mode: LaunchMode,
+    cwd?: string,
   ) => {
     const key = kind + ":" + id;
     if (inFlight.current.has(key)) return;
@@ -196,11 +198,11 @@ export function ToolProvider({ children }: { children: ReactNode }) {
       if (managed) {
         const latest = await ipc.launchState(id);
         setStates((old) => ({ ...old, [id]: latest }));
-        if (launchBlocked(mode, latest, rtlAvailable, false)) return;
+        if (launchBlocked(mode, latest, rtlAvailable, false) && !(cwd && latest.phase === "running")) return false;
       }
       const result =
         kind === "app"
-          ? await ipc.launchApp({ appId: id, rtl: mode === "rtl" })
+          ? await ipc.launchApp({ appId: id, rtl: mode === "rtl", cwd })
           : await ipc.launchEditor(id, mode === "rtl");
       if (result.ok) {
         setMessages((old) => ({ ...old, [key]: "accepted" }));
@@ -215,9 +217,11 @@ export function ToolProvider({ children }: { children: ReactNode }) {
         }));
       }
       if (managed) await checkState(id);
+      return result.ok;
     } catch (error) {
       setFailures((old) => ({ ...old, [key]: String(error) }));
       if (managed) await checkState(id);
+      return false;
     } finally {
       inFlight.current.delete(key);
       setBusy((old) => ({ ...old, [key]: false }));
