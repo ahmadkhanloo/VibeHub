@@ -35,7 +35,8 @@ export function LaunchControls({
   const mode = choice ?? preferredLaunchMode(saved, supportsRtl && id !== "antigravity", available);
   const state = ctx.states[id];
   const key = kind + ":" + id;
-  const failureKind = launchFailureKind(ctx.failures[key]);
+  const failure = ctx.failures[key] || (state?.phase === "failed" ? state.error : undefined);
+  const failureKind = launchFailureKind(failure);
   const busy = ctx.busy[key] ?? false;
   const managed = kind === "app" || id === "antigravity";
   const blocked =
@@ -103,8 +104,8 @@ export function LaunchControls({
           {t("requestAccepted")}
         </p>
       )}
-      {ctx.failures[key] && <div className="space-y-2">
-        <ErrorNotice error={ctx.failures[key]}
+      {failure && <div className="space-y-2">
+        <ErrorNotice error={failure}
           message={failureKind ? t(`launchFailure.${failureKind}`, { name }) : undefined}
           recovery={failureKind ? t(`launchFailure.${failureKind}Recovery`, { name }) : undefined}
           onRetry={failureKind && !busy ? () => { void ctx.launch(id, kind, mode); } : undefined} />

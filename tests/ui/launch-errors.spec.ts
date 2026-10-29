@@ -29,3 +29,18 @@ for (const language of ['fa','en']) test(`Qoder port conflict is a localized inl
   await expect(page.getByRole('dialog')).toHaveCount(0);
   if (language === 'fa') await page.screenshot({ path: 'output/playwright/qoder-friendly-error.png' });
 });
+
+
+test('persisted launch errors keep their explanation and recovery after reopening the hub', async ({ page }) => {
+  await mockNative(page);
+  await page.addInitScript(() => { (window as any).__mock.launchStates.zcode = { phase: 'failed', error: 'VIBEHUB_LAUNCH_ALREADY_OPEN' }; });
+  await page.goto('/');
+  await expect(page.getByRole('alert')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Choose app executable', exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('alert')).toBeVisible();
+  await page.evaluate(() => { (window as any).__mock.launchStates.zcode = { phase: 'idle' }; });
+  await page.getByRole('alert').getByRole('button', { name: 'Try again', exact: true }).click();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  expect(await page.evaluate(() => (window as any).__mock.calls.filter((call: any) => call.cmd === 'launch_app').length)).toBe(1);
+});
