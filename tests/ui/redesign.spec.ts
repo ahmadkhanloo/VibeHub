@@ -11,7 +11,7 @@ test("search includes model services and targets selected provider without savin
   await page.getByRole("searchbox").press("Enter");
   await expect(page).toHaveURL(/search\?q=NVIDIA/);
   await page.getByRole("link", { name: /NVIDIA API Catalog/ }).click();
-  await expect(page).toHaveURL(/models\?provider=nvidia-build/);
+  await expect(page).toHaveURL(/connections\/api\?provider=nvidia-build/);
   await expect(page.getByRole("dialog")).toBeVisible();
   await expect(page.getByRole("dialog").getByRole("combobox")).toHaveValue(
     "nvidia",
@@ -58,7 +58,7 @@ test("daily launch uses RTL once, saves success and remembers explicit normal ch
       (window as any).__mock.calls.filter((c: any) => c.cmd === "launch_app"),
     ),
   ).toHaveLength(1);
-  await expect(run).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Go to app ZCode", exact: true })).toBeEnabled();
   await page.reload();
   await page.getByRole("button", { name: "Launch mode for ZCode", exact: true }).click();
   await page.getByRole("combobox", { name: "Launch mode for ZCode", exact: true }).selectOption("normal");
@@ -202,23 +202,15 @@ test("model editor retains Persian draft when changing locale", async ({
 });
 for (const scenario of ["ready", "empty", "failed", "partial"])
   test(
-    "onboarding scan has explicit " + scenario + " state",
+    "direct app scan handles " + scenario + " state",
     async ({ page }) => {
       await mockNative(page, scenario, "en", false);
       await page.goto("/");
-      expect(
-        await page.evaluate(() =>
-          (window as any).__mock.calls.filter(
-            (c: any) => c.cmd === "detect_apps",
-          ),
-        ),
-      ).toHaveLength(0);
-      await page.getByRole("button", { name: "Next", exact: true }).click();
-      await page.getByRole("button", { name: "Check this computer" }).click();
-      await expect(page.locator("[data-scan-state]")).toHaveAttribute(
-        "data-scan-state",
-        scenario === "failed" ? "error" : scenario,
-      );
+      await expect(page.getByRole('heading', { name: 'Apps', exact: true })).toBeVisible();
+      await expect.poll(() => page.evaluate(() => (window as any).__mock.calls.filter((c: any) => c.cmd === 'detect_apps').length)).toBe(1);
+      await expect(page.getByRole('button', { name: 'Next', exact: true })).toHaveCount(0);
+      if (scenario === 'failed' || scenario === 'partial') await expect(page.getByRole('alert')).toBeVisible();
+      if (scenario === 'empty') await expect(page.getByRole('heading', { name: 'No installed tools found', exact: true })).toBeVisible();
     },
   );
 test("dialogs cancel without writes and restore focus", async ({ page }) => {
@@ -436,7 +428,7 @@ test("reset preferences is explicit and preserves native connection inventory", 
     .getByRole("dialog")
     .getByRole("button", { name: "Reset interface preferences", exact: true })
     .click();
-  await expect(page).toHaveURL(/onboarding/);
+  await expect(page).toHaveURL(/settings/);
   expect(
     await page.evaluate(() => (window as any).__mock.connections.length),
   ).toBe(1);

@@ -146,8 +146,9 @@
     "node": "33 passed",
     "native_windows": "39 assertions passed; synthetic GUI child validates Persian/spaces/metacharacters in project path",
     "launch_lifecycle": "3 assertions passed",
-    "rust": "Local suite passed; live network/account exercises ignored by default",
-    "ui": "Targeted acceptance passed; full suite in progress"
+    "rust": "38 unit tests and 39 backend integration tests passed; four live exercises ignored",
+    "ui": "74 scenarios passed across full run and targeted recheck of the 10 updated scenarios (64 + 10); targeted acceptance: 11 passed",
+    "checks": "TypeScript, production UI build, translation parity (885 keys), content validation, native IPC coverage, Qoder discovery/runtime and signature regression checks passed"
   },
   "limits": [
     "Clean Windows 10/11 acceptance remains unverified",
