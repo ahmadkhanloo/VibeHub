@@ -74,10 +74,9 @@ export function AppSummary({ appId }: { appId: string }) {
       <Link className="vh-account-summary-content" to={`/app/${appId}?tab=accounts`}>
         <span className="vh-summary-line"><UserRound size={14} aria-hidden="true" /><span data-testid={`account-summary-status-${appId}`} data-status={summary?.status ?? 'loading'}>{t(`ux:${accountStatusKey[summary?.status ?? 'loading']}`)}</span></span>
         {summary?.accountName && <bdi className="vh-account-name" data-testid={`account-summary-name-${appId}`}>{summary.accountName}</bdi>}
-        <span className="vh-quota-summary" data-testid={`account-summary-quota-${appId}`} data-status={summary?.quotaStatus ?? 'loading'} dir="auto">
+        <span className="vh-quota-summary" data-testid={`account-summary-quota-${appId}`} data-status={summary?.quotaStatus ?? 'loading'} title={summary?.quotaItems.length ? t(`ux:accountSummary.source.${appId}`) : undefined} dir="auto">
           {summary?.quotaStatus === 'error' ? t('ux:accountSummary.quotaError') : quotaText || t('ux:quotaUnknown')}
         </span>
-        {summary?.quotaItems.length ? <span className="vh-summary-checked">{t(`ux:accountSummary.source.${appId}`)}</span> : null}
         {(summary?.showingPrevious || summary?.stale) && <span className="vh-summary-previous" data-testid={`account-summary-stale-${appId}`}>
           {t(summary.stale ? 'ux:accountSummary.stale' : 'ux:accountSummary.previous')}
         </span>}

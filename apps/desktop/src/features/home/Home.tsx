@@ -38,16 +38,6 @@ export function HomePage() {
     </>} />
     <div className="vh-workspace-meta"><span><i className="vh-count-dot" aria-hidden="true" />{t('workbench:installedCount', {count:tools.length})}</span>{running > 0 && <span><i className="vh-count-dot is-running" aria-hidden="true" />{t('workbench:runningCount', {count:running})}</span>}</div>
     <div className="vh-project-dock"><Projects /></div>
-    <Disclosure title={t('ux:versions.title')}>
-      <p className="text-sm text-muted">{t('ux:versions.note')}</p>
-      {openError != null && <ErrorNotice error={openError} />}
-      <ul className="divide-y divide-border">{tools.map(tool => <li key={tool.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
-        <Link className="vh-link" to={`/app/${tool.id}`}><bdi>{tool.app?.name ?? tool.id}</bdi></Link>
-        <span>{t('ux:versions.installed')}: <bdi>{tool.version || t('ux:versions.unknown')}</bdi></span>
-        {['opencode', 'freebuff'].includes(tool.id) ? <><Button size="sm" variant="ghost" loading={versions[tool.id]?.loading} onClick={() => void checkVersion(tool.id, tool.version)}>{t('ux:versions.check')}</Button><span>{versions[tool.id]?.error ? t('ux:versions.failed') : versions[tool.id]?.version ? `${t('ux:versions.latest')}: ${versions[tool.id]?.version} (${versions[tool.id]?.source})` : t('ux:versions.notChecked')}{versions[tool.id]?.version && ` · ${t('ux:versions.' + (versions[tool.id]?.comparison ?? 'incomparable'))}`}{versions[tool.id]?.checkedAt && ` · ${new Date(versions[tool.id]!.checkedAt!).toLocaleString(i18n.language)}`}</span></> : <span>{t('ux:versions.unsupported')}</span>}
-        {tool.app && <Button size="sm" variant="ghost" onClick={() => void openUrl(tool.app!.websiteUrl).then(() => setOpenError(null)).catch(setOpenError)}>{t('ux:versions.official')}</Button>}
-      </li>)}</ul>
-    </Disclosure>
     {ctx.errors.length > 0 && <ErrorNotice error={ctx.errors.join('\n')} message={ctx.detectionFailed ? undefined : t('partial')} onRetry={() => void ctx.refresh()} />}
     {ctx.loading && !tools.length ? <Spinner /> : !tools.length && !ctx.detectionFailed ? <EmptyState title={t('noInstalled')} sub={t('noInstalledSub')} action={<Link to="/discover" className="vh-button vh-button-primary">{t('discover')}</Link>} /> : !!tools.length && <>
       <div className="vh-app-grid" aria-label={t('workspace')}>
@@ -69,5 +59,15 @@ export function HomePage() {
       </div>
       <Tooltip text={t('launchNote')} />
     </>}
+    <Disclosure title={t('ux:versions.title')}>
+      <p className="text-sm text-muted">{t('ux:versions.note')}</p>
+      {openError != null && <ErrorNotice error={openError} />}
+      <ul className="divide-y divide-border">{tools.map(tool => <li key={tool.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
+        <Link className="vh-link" to={`/app/${tool.id}`}><bdi>{tool.app?.name ?? tool.id}</bdi></Link>
+        <span>{t('ux:versions.installed')}: <bdi>{tool.version || t('ux:versions.unknown')}</bdi></span>
+        {['opencode', 'freebuff'].includes(tool.id) ? <><Button size="sm" variant="ghost" loading={versions[tool.id]?.loading} onClick={() => void checkVersion(tool.id, tool.version)}>{t('ux:versions.check')}</Button><span>{versions[tool.id]?.error ? t('ux:versions.failed') : versions[tool.id]?.version ? `${t('ux:versions.latest')}: ${versions[tool.id]?.version} (${versions[tool.id]?.source})` : t('ux:versions.notChecked')}{versions[tool.id]?.version && ` · ${t('ux:versions.' + (versions[tool.id]?.comparison ?? 'incomparable'))}`}{versions[tool.id]?.checkedAt && ` · ${new Date(versions[tool.id]!.checkedAt!).toLocaleString(i18n.language)}`}</span></> : <span>{t('ux:versions.unsupported')}</span>}
+        {tool.app && <Button size="sm" variant="ghost" onClick={() => void openUrl(tool.app!.websiteUrl).then(() => setOpenError(null)).catch(setOpenError)}>{t('ux:versions.official')}</Button>}
+      </li>)}</ul>
+    </Disclosure>
   </div>;
 }
