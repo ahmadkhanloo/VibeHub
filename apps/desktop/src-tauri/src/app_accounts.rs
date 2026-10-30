@@ -33,6 +33,17 @@ fn operation(id: &str) -> Result<std::sync::MutexGuard<'static, ()>> {
 fn error(key: &str) -> String {
     format!("accounts:{key}")
 }
+fn error_code(reason: &str) -> String {
+    match reason.strip_prefix("accounts:") {
+        Some(code) if matches!(
+            code,
+            "loginRequired" | "network" | "requestFailed" | "protocol" | "identityMismatch" |
+            "unsupportedProvider" | "credentialInvalid" | "balanceUnavailable" | "storage" | "vault" | "busy" |
+            "unsupportedVersion" | "switchUnverified"
+        ) => code.to_owned(),
+        _ => "requestFailed".to_owned(),
+    }
+}
 fn now() -> i64 {
     chrono::Utc::now().timestamp()
 }
@@ -446,22 +457,22 @@ async fn inspect(id: &str, auth: &Value, client: &reqwest::Client) -> Result<Val
         if user["id"] != auth["user"]["id"] {
             return Err(error("identityMismatch"));
         }
-        let quota = get(
+        let quota_result = get(
             client,
             "https://openapi.qoder.sh/api/v2/quota/usage?outerProviders=cmcc",
             credential,
         )
-        .await?;
-        let mut usage = vec![];
-        if let Some(percent) = quota["totalUsagePercentage"].as_f64() {
-            usage.push(json!({"label":"Credits", "remaining":(100.0-percent).clamp(0.0,100.0),"unit":"percent","resetsAt":quota["expiresAt"]}));
+        .await;
+        match quota_result {
+            Ok(quota) => {
+                let mut usage = vec![];
+                if let Some(percent) = quota["totalUsagePercentage"].as_f64() {
+                    usage.push(json!({"label":"Credits", "remaining":(100.0-percent).clamp(0.0,100.0),"unit":"percent","resetsAt":quota["expiresAt"]}));
+                }
+                (quota["userType"].as_str().unwrap_or("Qoder").to_owned(), usage, None, timestamp(&auth["expiresAt"]))
+            }
+            Err(reason) => ("Qoder".to_owned(), vec![], Some(reason), timestamp(&auth["expiresAt"])),
         }
-        (
-            quota["userType"].as_str().unwrap_or("Qoder").to_owned(),
-            usage,
-            None,
-            timestamp(&auth["expiresAt"]),
-        )
     } else {
         verify_zcode_identity(auth)?;
         // Billing current is authenticated by the app's own JWT and returns granted entitlements.
@@ -511,9 +522,13 @@ async fn inspect(id: &str, auth: &Value, client: &reqwest::Client) -> Result<Val
             Err(_) => (names, usage, Some(error("balanceUnavailable")), expires_at),
         }
     };
-    Ok(
-        json!({"id":account_id,"name":name,"email":email,"plan":plan,"usage":usage,"checkedAt":now(),"error":null,"quotaError":quota_error,"expiresAt":expires_at}),
-    )
+    let quota_error_code = quota_error.as_deref().map(|reason| error_code(reason));
+    Ok(json!({
+        "id":account_id,"name":name,"email":email,"plan":plan,"usage":usage,
+        "checkedAt":if quota_error_code.is_none() { Some(now()) } else { None },
+        "error":null,"errorCode":null,"quotaError":quota_error,
+        "quotaErrorCode":quota_error_code,"expiresAt":expires_at
+    }))
 }
 fn atomic(path: &Path, bytes: &[u8]) -> Result<()> {
     let temp = path.with_extension("vibehub.tmp");
@@ -698,6 +713,12 @@ fn upsert_account(state: &mut Value, mut account: Value) -> Result<()> {
     let list = state["accounts"].as_array_mut().ok_or(error("storage"))?;
     if let Some(existing) = list.iter_mut().find(|a| a["id"] == account_id) {
         account["name"] = existing["name"].clone();
+        if !account["quotaErrorCode"].is_null() {
+            account["usage"] = existing["usage"].clone();
+            account["checkedAt"] = existing["checkedAt"].clone();
+        }
+        account["error"] = Value::Null;
+        account["errorCode"] = Value::Null;
         *existing = account;
     } else {
         if list.len() >= 16 {
@@ -758,6 +779,7 @@ pub fn handle(app: &tauri::AppHandle, id: &str, action: &str, payload: Value) ->
     let current = read_current(id, &root);
     let mut state_persisted = false;
     let mut notice: Option<String> = None;
+    let mut summary_error_code: Option<String> = None;
     if matches!(action, "list" | "import") {
         match &current {
             Ok(auth) => {
@@ -783,11 +805,31 @@ pub fn handle(app: &tauri::AppHandle, id: &str, action: &str, payload: Value) ->
                             state["activeId"] = json!(account_id);
                             state["fingerprint"] = json!(fingerprint);
                         }
-                        Err(reason) => notice = Some(reason),
+                        Err(reason) => {
+                            let code = error_code(&reason);
+                            summary_error_code = Some(code.clone());
+                            notice = Some(reason);
+                            if let Some(active) = state["activeId"].as_str().map(str::to_owned) {
+                                if let Some(account) = state["accounts"].as_array_mut().and_then(|items| items.iter_mut().find(|item| item["id"] == active)) {
+                                    account["error"] = json!(code);
+                                    account["errorCode"] = json!(code);
+                                }
+                            }
+                        }
                     }
                 }
             }
-            Err(reason) => notice = Some(reason.clone()),
+            Err(reason) => {
+                let code = error_code(&reason);
+                summary_error_code = Some(code.clone());
+                notice = Some(reason.clone());
+                if let Some(active) = state["activeId"].as_str().map(str::to_owned) {
+                    if let Some(account) = state["accounts"].as_array_mut().and_then(|items| items.iter_mut().find(|item| item["id"] == active)) {
+                        account["error"] = json!(code);
+                        account["errorCode"] = json!(code);
+                    }
+                }
+            }
         }
     } else if action == "login" {
         system::powershell(app, json!({"operation":"account-app-open","appId":id}))?;
@@ -857,6 +899,19 @@ pub fn handle(app: &tauri::AppHandle, id: &str, action: &str, payload: Value) ->
                     // if the follow-up network read fails, so retry does not reuse a consumed token.
                     atomic(&vault, &dpapi(auth.to_string().as_bytes(), true)?)?;
                     run(&auth)?
+                }
+                Err(reason) if action == "refresh" => {
+                    let code = error_code(&reason);
+                    state["accounts"][index]["error"] = json!(code);
+                    state["accounts"][index]["errorCode"] = json!(code);
+                    storage::write(&state_path, &state)?;
+                    return Ok(json!({
+                        "appId":id,"accounts":state["accounts"],"activeId":state["activeId"],
+                        "notice":reason,"errorCode":code,"version":version,
+                        "supportedVersion":if id=="qoder"{"0.4.2"}else{"3.16.3"},
+                        "desktopRunning":desktop["running"],"capabilities":{"canImport":true,"canLogin":true,"canRefresh":true,"canSwitch":compatible && switch_verified(id, version)},
+                        "liveSwitchVerified":switch_verified(id, version)
+                    }));
                 }
                 Err(reason) => return Err(reason),
             };
@@ -954,7 +1009,7 @@ pub fn handle(app: &tauri::AppHandle, id: &str, action: &str, payload: Value) ->
         storage::write(&state_path, &state)?;
     }
     Ok(
-        json!({"appId":id,"accounts":state["accounts"],"activeId":state["activeId"],"notice":notice,"version":version,"supportedVersion":if id=="qoder"{"0.4.2"}else{"3.16.3"},"desktopRunning":desktop["running"],"capabilities":{"canImport":true,"canLogin":true,"canRefresh":true,"canSwitch":compatible && switch_verified(id, version)},"liveSwitchVerified":switch_verified(id, version)}),
+        json!({"appId":id,"accounts":state["accounts"],"activeId":state["activeId"],"notice":notice,"errorCode":summary_error_code,"version":version,"supportedVersion":if id=="qoder"{"0.4.2"}else{"3.16.3"},"desktopRunning":desktop["running"],"capabilities":{"canImport":true,"canLogin":true,"canRefresh":true,"canSwitch":compatible && switch_verified(id, version)},"liveSwitchVerified":switch_verified(id, version)}),
     )
 }
 

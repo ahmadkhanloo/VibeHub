@@ -38,10 +38,12 @@ export function DesktopAccounts({ appId }: { appId: string }) {
           <div className="flex flex-wrap items-center gap-2">{account.id === snapshot.activeId && <Badge tone="primary">{t('active')}</Badge>}<span className="text-xs text-muted">{account.plan}</span></div>
         </div>
         <div className="my-4 space-y-2 text-sm">
+          {account.errorCode && <p role="status" className="text-sm text-danger">{t(`errors.${account.errorCode}`, { defaultValue: t('errors.readFailed') })}</p>}
+          {!account.errorCode && account.error && <p role="status" className="text-sm text-danger">{t(`errors.${account.error}`, { defaultValue: t('errors.readFailed') })}</p>}
           {!account.usage.length && <span className="text-muted">{t('quotaUnknown')}</span>}
           {account.usage.map((usage, index) => <div key={index} className="flex flex-wrap justify-between gap-2"><span dir="auto">{usage.label}</span><span>{usage.remaining != null ? usage.unit === 'percent' ? t('remaining', { percent: Math.round(usage.remaining) }) : t('remainingAmount', { amount: usage.remaining.toLocaleString(i18n.language), unit: t('units.' + usage.unit, { defaultValue: usage.unit }) }) : usage.granted != null ? t('grantedQuota', { amount: Number(usage.granted).toLocaleString(i18n.language), unit: t('units.' + usage.unit, { defaultValue: usage.unit }) }) : t('unknown')}</span></div>)}
           {appId === 'zcode' && account.usage.some(usage => usage.granted != null && usage.remaining == null) && <span className="block text-xs text-muted">{t('grantedNotRemaining')}</span>}
-          {account.quotaError && <p role="status" className="text-sm text-warning">{t('errors.balanceUnavailable')}</p>}
+          {(account.quotaErrorCode || account.quotaError) && <p role="status" className="text-sm text-warning">{t(account.quotaErrorCode === 'balanceUnavailable' || (!account.quotaErrorCode && account.quotaError) ? 'errors.balanceUnavailable' : 'errors.quotaReadFailed')}</p>}
           {account.expiresAt != null && <p className="text-xs text-muted">{t('expires', { date: new Date(account.expiresAt * 1000).toLocaleString(i18n.language) })}</p>}
         </div>
         <div className="flex flex-wrap items-center gap-2">

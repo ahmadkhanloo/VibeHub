@@ -70,6 +70,8 @@
     "browserPreview": "Browser preview cannot read real desktop accounts.",
     "switchUnverified": "Account detection is verified. Switching awaits a real two-account round-trip test on this version.",
     "balanceUnavailable": "The remaining balance could not be verified. Granted quota is shown separately.",
+    "readFailed": "Account information could not be read. Previously saved data may be out of date.",
+    "quotaReadFailed": "Quota information could not be read. Previously saved usage may be out of date.",
     "restartRequired": "Confirm closing and restarting the original app before switching.",
     "unsupportedProvider": "This ZCode connection supports ZAI sign-in. The active sign-in provider is different."
   },

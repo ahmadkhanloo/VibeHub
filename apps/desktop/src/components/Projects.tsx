@@ -28,6 +28,7 @@ export function Projects({ appId }: { appId?: string }) {
   if (appId === 'chatgpt') return null;
   return <section className="vh-card space-y-4" aria-label={t('projects')}>
     <h2 className="font-bold">{t('projects')}</h2>
+    {!settings.recentProjects.length && <p className="text-sm text-muted">{t(installed.length ? 'projectEmptyHelp' : 'projectNoTarget')}</p>}
     <div className="flex flex-wrap gap-3 items-end">
       {!appId && <label className="space-y-2"><span className="block text-sm">{t('openWith')}</span><Select value={selected} onChange={setTarget} options={installed.map(app => ({ value: app.id, label: catalog.apps.find(item => item.id === app.id)?.name ?? app.id }))} /></label>}
       {supportsRtl && <label className="space-y-2"><span className="block text-sm">{t('common:mode')}</span><Select<LaunchMode> value={mode} disabled={state?.phase === 'running'} onChange={mode => setChoice({ id: selected, mode })} options={[{ value: 'normal', label: t('normal') }, { value: 'rtl', label: t('runRtl') }]} /></label>}

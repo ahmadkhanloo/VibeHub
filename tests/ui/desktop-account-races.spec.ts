@@ -17,7 +17,7 @@ test('changing app while account detection is pending never displays the previou
     };
   });
   await page.goto('/app/qoder?tab=accounts');
-  expect(await page.evaluate(() => (window as any).__qoderReads)).toBe(1);
+  await expect.poll(() => page.evaluate(() => (window as any).__qoderReads)).toBe(1);
   await page.getByRole('link', { name: 'Apps', exact: true }).click();
   await page.goto('/app/zcode?tab=accounts');
   await expect(page.getByRole('heading', { name: 'ZCode account', exact: true })).toBeVisible();

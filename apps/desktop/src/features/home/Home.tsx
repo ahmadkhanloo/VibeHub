@@ -9,16 +9,18 @@ import { AppLogo } from '@/components/AppLogo';
 import { LaunchControls } from '@/components/LaunchControls';
 import { Tooltip } from '@/components/Tooltip';
 import { Button, EmptyState, ErrorNotice, PageHeader, Spinner } from '@/components/ui';
+import { useSettings } from '@/app/settings';
 
 export function HomePage() {
   const { t, i18n } = useTranslation(['ux', 'workbench']);
+  const { settings } = useSettings();
   const ctx = useToolContext();
   const catalog = useCatalog();
   const tools = ctx.apps.filter(app => app.installed).map(tool => ({
     ...tool, app: catalog.apps.find(app => app.id === tool.id),
   }));
   const running = tools.filter(tool => ctx.states[tool.id]?.phase === 'running').length;
-  return <div className="vh-workspace space-y-6">
+  return <div className={`vh-workspace ${settings.density === 'compact' ? 'space-y-1' : 'space-y-6'}`}>
     <PageHeader title={t('ux:workspace')} description={t('workbench:workspaceIntro')} actions={<>
       <Button variant="ghost" loading={ctx.loading} onClick={() => void ctx.refresh()} aria-label={t('refresh')} title={t('refresh')}><RefreshCw size={18} aria-hidden="true" /></Button>
       <Link to="/discover" className="vh-button vh-button-primary"><Plus size={16} aria-hidden="true" />{t('addApp')}</Link>

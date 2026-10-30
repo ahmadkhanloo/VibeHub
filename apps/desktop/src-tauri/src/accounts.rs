@@ -24,6 +24,17 @@ static BROKER: Mutex<Option<Broker>> = Mutex::new(None);
 fn err(key: &str) -> String {
     format!("accounts:{key}")
 }
+fn error_code(reason: &str) -> String {
+    match reason.strip_prefix("accounts:") {
+        Some(code) if matches!(
+            code,
+            "loginRequired" | "network" | "timeout" | "requestFailed" | "protocol" |
+            "externalChanged" | "unsupportedVersion" | "configuration" | "storage" |
+            "vault" | "busy" | "desktopAmbiguous"
+        ) => code.to_owned(),
+        _ => "requestFailed".to_owned(),
+    }
+}
 fn now() -> i64 {
     chrono::Utc::now().timestamp()
 }
@@ -554,12 +565,15 @@ impl Broker {
                 .as_array_mut()
                 .unwrap()
                 .push(json!({"id":id,"name":name,
-                "email":email,"plan":null,"windows":[],"checkedAt":null,"error":null}));
+                "email":email,"plan":null,"windows":[],"checkedAt":null,"accountCheckedAt":null,
+                "error":null,"errorCode":null,"quotaErrorCode":null}));
         } else {
             let i = self.index(&id)?;
             self.state["accounts"][i]["windows"] = json!([]);
             self.state["accounts"][i]["checkedAt"] = Value::Null;
             self.state["accounts"][i]["error"] = Value::Null;
+            self.state["accounts"][i]["errorCode"] = Value::Null;
+            self.state["accounts"][i]["quotaErrorCode"] = Value::Null;
         }
         self.save()?;
         Ok(id)
@@ -629,13 +643,15 @@ impl Broker {
         } else {
             self.home(id)?
         };
+        self.state["accounts"][i]["errorCode"] = Value::Null;
+        self.state["accounts"][i]["quotaErrorCode"] = Value::Null;
+        let mut quota_failed = false;
         let result = (|| {
             let mut rpc = self.rpc(&home, !active)?;
             let account = rpc.call("account/read", json!({"refreshToken":false}))?;
             if account["account"]["type"] != "chatgpt" {
                 return Err(err("loginRequired"));
             }
-            let quotas = rpc.call("account/rateLimits/read", json!({}))?;
             let auth = if active {
                 read_global(&home)?
             } else {
@@ -644,19 +660,36 @@ impl Broker {
             if identity(&auth)?.0 != id {
                 return Err(err("externalChanged"));
             }
-            let windows = quota_windows(&quotas);
-            self.state["accounts"][i]["windows"] = json!(windows);
             self.state["accounts"][i]["plan"] = account["account"]["planType"].clone();
-            self.state["accounts"][i]["checkedAt"] = json!(now());
+            self.state["accounts"][i]["accountCheckedAt"] = json!(now());
             if active {
                 self.state["fingerprint"] = json!(fingerprint(&auth));
                 write_vault(&self.home(id)?, &auth)?;
             }
+            let quotas = match rpc.call("account/rateLimits/read", json!({})) {
+                Ok(value) => value,
+                Err(reason) => { quota_failed = true; return Err(reason); }
+            };
+            self.state["accounts"][i]["windows"] = json!(quota_windows(&quotas));
+            self.state["accounts"][i]["checkedAt"] = json!(now());
             Ok(())
         })();
-        self.state["accounts"][i]["error"] = result.as_ref().err().map_or(Value::Null, |e| {
-            json!(e.strip_prefix("accounts:").unwrap_or("requestFailed"))
-        });
+        match &result {
+            Ok(()) => {
+                self.state["accounts"][i]["error"] = Value::Null;
+                self.state["accounts"][i]["errorCode"] = Value::Null;
+                self.state["accounts"][i]["quotaErrorCode"] = Value::Null;
+            }
+            Err(reason) => {
+                let code = error_code(reason);
+                self.state["accounts"][i]["error"] = json!(code);
+                if quota_failed {
+                    self.state["accounts"][i]["quotaErrorCode"] = json!(code);
+                } else {
+                    self.state["accounts"][i]["errorCode"] = json!(code);
+                }
+            }
+        }
         self.save()?;
         result
     }
@@ -841,11 +874,13 @@ impl Broker {
             .map(|a| {
                 json!({
             "id":a["id"],"name":a["name"],"email":a["email"],"plan":a["plan"],
-            "windows":a["windows"],"checkedAt":a["checkedAt"],"error":a["error"]})
+            "windows":a["windows"],"checkedAt":a["checkedAt"],"accountCheckedAt":a["accountCheckedAt"],
+            "error":a["error"],"errorCode":a["errorCode"],"quotaErrorCode":a["quotaErrorCode"]})
             })
             .collect();
         let mut value = json!({"accounts":accounts,"activeId":self.state["activeId"],"pendingId":self.state["pendingId"],
             "previousId":self.state["previousId"],"settings":self.state["settings"],"lastSwitch":self.state["lastSwitch"],"notice":self.state["notice"]});
+        value["errorCode"] = self.state["summaryErrorCode"].clone();
         value["cliReady"] = json!(self.binary.is_some());
         value["supportedVersion"] = json!(SUPPORTED);
         value["desktopRunning"] = self.desktop["running"].clone();
@@ -1082,8 +1117,11 @@ pub fn handle(app: &tauri::AppHandle, action: &str, payload: Value) -> Result<Va
                 .read_initial_account()
                 .and_then(|_| broker.reconcile())
             {
+                broker.state["summaryErrorCode"] = json!(error_code(&error));
                 broker.state["notice"] =
                     json!(error.strip_prefix("accounts:").unwrap_or("storage"));
+            } else {
+                broker.state["summaryErrorCode"] = Value::Null;
             }
         }
         "login" => {

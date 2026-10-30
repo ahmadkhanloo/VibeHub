@@ -70,7 +70,7 @@ try {
 
 for (const appId of appIds) {
   for (const lang of ['fa', 'en']) {
-    const rel = `content/guides/${appId}/${lang}.md`;
+    const rel = `docs/tutorials/${appId}/${lang}.md`;
     let text;
     try {
       text = await readFile(join(root, rel), 'utf8');

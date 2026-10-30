@@ -138,6 +138,25 @@
   "restoreConnection": "Undo last connection selection",
   "accountUnknown": "Account unavailable",
   "quotaUnknown": "Quota unavailable",
+  "accountSummary": {
+    "label": "{{app}} account summary",
+    "loading": "Checking account…",
+    "ready": "Account",
+    "empty": "No active account",
+    "unsupported": "Account information is unsupported",
+    "reauthRequired": "Sign-in required",
+    "error": "Account information could not be read.",
+    "quotaError": "Quota information could not be read.",
+    "stale": "Information is older than five minutes",
+    "previous": "Showing previous information",
+    "checkedAt": "Checked {{date}}",
+    "reauthAction": "Sign in again",
+    "addAction": "Add/import account",
+    "detailsAction": "View account limits",
+    "retry": "Try again"
+  },
+  "projectEmptyHelp": "Choose a project folder to open with a coding app.",
+  "projectNoTarget": "Install a coding app before choosing a project folder.",
   "chooseExecutable": "Choose app executable",
   "recheckFor": "Check again {{name}}"
 }

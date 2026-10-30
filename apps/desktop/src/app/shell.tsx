@@ -1,6 +1,5 @@
 
 import { FeedActivity } from './FeedActivity';
-import { ipc } from '@/services/ipc';
 import { Tooltip } from '@/components/Tooltip';
 import { Suspense, useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -54,7 +53,6 @@ export function AppShell() {
     heading?.setAttribute("tabindex", "-1");
     heading?.focus({ preventScroll: true });
   }, [location.pathname]);
-  useEffect(() => { void (async () => { for (const id of ['qoder', 'zcode']) { try { await ipc.appAccounts(id, 'list'); } catch { /* The accounts page supplies actionable diagnostics. */ } } })(); }, []);
   const items = [
     { to: "/", icon: House, label: t("ux:workspace") },
     { to: "/connections", icon: Network, label: t("ux:connections") },

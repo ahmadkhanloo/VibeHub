@@ -102,16 +102,31 @@ export interface FeedSyncResult {
 
 const feedFlights = new Map<string, Promise<FeedSyncResult>>();
 const accountReads = new Map<string, Promise<DesktopAccountsSnapshot>>();
+const codexAccountReads = new Map<string, Promise<AccountsSnapshot>>();
+
+function accountSummaryChanged(appId: string) {
+  if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('vibehub:account-summary-changed', { detail: { appId } }));
+}
+
+function connectionsChanged() {
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('vibehub:connections-changed'));
+}
 
 export const ipc = {
   appPath: (appId: string, path: string) => invoke<void>('app_path', { appId, path }),
   appAccounts: (appId: string, action: string, payload: Record<string, unknown> = {}) => {
-    if (action !== 'list') return invoke<DesktopAccountsSnapshot>('app_accounts', { appId, action, payload });
+    if (action !== 'list') return invoke<DesktopAccountsSnapshot>('app_accounts', { appId, action, payload }).then(result => { accountSummaryChanged(appId); return result; });
     const current = accountReads.get(appId); if (current) return current;
     const pending = invoke<DesktopAccountsSnapshot>('app_accounts', { appId, action, payload }).finally(() => { if (accountReads.get(appId) === pending) accountReads.delete(appId); });
     accountReads.set(appId, pending); return pending;
   },
-  codexAccounts: (action: AccountsAction, payload: Record<string, unknown> = {}) => invoke<AccountsSnapshot>('codex_accounts', { action, payload }),
+  codexAccounts: (action: AccountsAction, payload: Record<string, unknown> = {}) => {
+    if (action !== 'list') return invoke<AccountsSnapshot>('codex_accounts', { action, payload }).then(result => { accountSummaryChanged('chatgpt'); return result; });
+    const key = String(payload.language ?? '');
+    const current = codexAccountReads.get(key); if (current) return current;
+    const pending = invoke<AccountsSnapshot>('codex_accounts', { action, payload }).finally(() => { if (codexAccountReads.get(key) === pending) codexAccountReads.delete(key); });
+    codexAccountReads.set(key, pending); return pending;
+  },
   detectApps: () => invoke<DetectedApp[]>('detect_apps'),
   detectEditors: () => invoke<DetectedEditor[]>('detect_editors'),
   rtlComponents: () => invoke<RtlComponentStatus[]>('rtl_components'),
@@ -150,8 +165,8 @@ export const ipc = {
     invoke<ApiTestReport>('api_test', { providerId, baseUrl, modelId, keyService }),
   providerConnections: () => invoke<ProviderConnection[]>('provider_connections'),
   providerConnectionSave: (connection: ProviderConnection, key?: string) =>
-    invoke<ProviderConnection[]>('provider_connection_save', { connection, key }),
-  providerConnectionDelete: (id: string) => invoke<ProviderConnection[]>('provider_connection_delete', { id }),
+    invoke<ProviderConnection[]>('provider_connection_save', { connection, key }).then(result => { connectionsChanged(); return result; }),
+  providerConnectionDelete: (id: string) => invoke<ProviderConnection[]>('provider_connection_delete', { id }).then(result => { connectionsChanged(); return result; }),
   providerCredentialsInventory: () => invoke<ProviderCredentialInventory>('provider_credentials_inventory'),
   providerCredentialsClear: (connectionIds: string[], legacyProviderIds: string[]) =>
     invoke<CredentialClearResult>('provider_credentials_clear', { connectionIds, legacyProviderIds }),
@@ -186,10 +201,12 @@ export const ipc = {
 export type AccountsAction = 'list' | 'login' | 'cancel' | 'import' | 'importJson' | 'refresh' | 'rename' | 'delete' | 'switch' | 'dismiss' | 'settings';
 export interface CodexAccount {
   id: string; name: string; email: string; plan: string | null; checkedAt: number | null; error: string | null;
+  errorCode?: string | null; quotaErrorCode?: string | null; accountCheckedAt?: number | null;
   windows: { bucket: string; name: string; remaining: number | null; minutes: number | null; resetsAt: number | null }[];
 }
 export interface AccountsSnapshot {
   previousId?: string | null;
+  errorCode?: string | null;
   accounts: CodexAccount[]; activeId: string | null; pendingId: string | null; notice: string | null;
   settings: { enabled: boolean; threshold: number }; lastSwitch: number; cliReady: boolean; nativePreview?: boolean;
   supportedVersion: string; desktopRunning: boolean; desktopVerified: boolean; loginPending: boolean;
@@ -197,11 +214,12 @@ export interface AccountsSnapshot {
 
 export interface DesktopAccount {
   id: string; name: string; email: string; plan: string; checkedAt: number | null; error: string | null;
-  quotaError?: string | null; expiresAt?: number | null;
+  errorCode?: string | null; quotaError?: string | null; quotaErrorCode?: string | null; expiresAt?: number | null;
   usage: { label: string; remaining?: number | null; granted?: number | string | null; unit: string; resetsAt?: number | string | null }[];
 }
 export interface DesktopAccountsSnapshot {
   appId: string; accounts: DesktopAccount[]; activeId: string | null; notice: string | null;
+  errorCode?: string | null;
   version: string; supportedVersion: string; desktopRunning: boolean; liveSwitchVerified: boolean;
   capabilities: { canImport: boolean; canLogin: boolean; canRefresh: boolean; canSwitch: boolean };
 }

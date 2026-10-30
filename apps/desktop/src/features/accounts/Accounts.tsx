@@ -81,7 +81,9 @@ export function AccountsPage({ embedded = false }: { embedded?: boolean }) {
             {account.id === data.activeId && <Badge tone="primary">{t('active')}</Badge>}
             <Badge tone={account.error ? 'warning' : 'muted'}>{account.plan ?? t('unknown')}</Badge></div>
           <p className="break-all text-sm" dir="auto">{account.email}</p>
-          {account.error && <p role="status" className="text-sm text-danger">{t(`errors.${account.error}`, { defaultValue: t('errors.requestFailed') })}</p>}
+          {account.errorCode && <p role="status" className="text-sm text-danger">{t(`errors.${account.errorCode}`, { defaultValue: t('errors.readFailed') })}</p>}
+          {!account.errorCode && account.error && <p role="status" className="text-sm text-danger">{t(`errors.${account.error}`, { defaultValue: t('errors.readFailed') })}</p>}
+          {account.quotaErrorCode && <p role="status" className="text-sm text-warning">{t(account.quotaErrorCode === 'balanceUnavailable' ? 'errors.balanceUnavailable' : 'errors.quotaReadFailed')}</p>}
           {!account.windows.length && <p className="text-sm text-muted">{t('quotaUnknown')}</p>}
           <dl className="grid gap-3 md:grid-cols-2">{account.windows.map(window => <div key={`${window.bucket}-${window.name}`} className="rounded-lg border border-border p-3">
             <dt className="text-sm"><bdi>{window.bucket}</bdi> · {window.minutes ? t('window', { minutes: window.minutes }) : t('unknown')}</dt>

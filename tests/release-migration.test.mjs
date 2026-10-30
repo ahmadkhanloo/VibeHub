@@ -190,10 +190,11 @@ test('content publishing has only the Pages deployment permissions it needs', as
 
 test('acceptance matrix records real evidence fields and keeps unrun checks non-passing', async () => {
   const matrix = await read('../docs/validation/VibeHub_Release_Acceptance_Matrix.md');
-  for (const status of ['PASS', 'FAIL', 'SKIPPED', 'UNVERIFIED']) {
+  for (const status of ['PASS', 'FAIL', 'UNVERIFIED', 'BLOCKED']) {
     assert.ok(matrix.includes(status), `matrix is missing ${status}`);
   }
-  for (const field of ['CI link', 'GitHub Release URL', 'checksum', 'screenshot', 'log']) {
+  assert.doesNotMatch(matrix, /\bSKIPPED\b/, 'matrix status vocabulary must stay limited to the four current states');
+  for (const field of ['CI link', 'GitHub Release URL', 'SHA-256', 'screenshot', 'log', 'build / commit', 'OS / install', 'result / time', 'evidence']) {
     assert.ok(matrix.toLowerCase().includes(field.toLowerCase()), `matrix is missing ${field}`);
   }
   assert.match(matrix, /critical[\s\S]*failures[\s\S]*block/i);

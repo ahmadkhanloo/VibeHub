@@ -73,19 +73,24 @@ export function ProxyProfileEditor({ profile, onClose, onSaved }: {
 
 export function ToolProxy({ appId }: { appId: string }) {
   const { t } = useTranslation(['connectionsUx', 'proxy', 'common']);
-  const { profiles, proxyConfig, refreshProxy, saveToolProxy } = useToolContext();
+  const { profiles, proxyConfig, refreshProxy, saveToolProxy, states } = useToolContext();
   const [editing, setEditing] = useState<ProxyProfile | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [saved, setSaved] = useState(false);
   const { settings, update } = useSettings();
   const previous = settings.previousProxyByApp[appId];
-  const [testResult, setTestResult] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<{ revision: string; detail: string } | null>(null);
+  const [savedWhileRunning, setSavedWhileRunning] = useState(false);
   const selectedId = proxyConfig?.perApp[appId] ?? 'inherit';
   const selected = profiles.find((p) => p.id === (selectedId === 'inherit' ? proxyConfig?.globalProfileId : selectedId));
+  const missingSelection = !!proxyConfig && selectedId !== 'inherit' && !!selectedId && !selected;
+  const missingInherited = !!proxyConfig && selectedId === 'inherit' && !!proxyConfig.globalProfileId && !selected;
+  const selectedRevision = selected ? JSON.stringify(selected) : '';
+  const running = states[appId]?.phase === 'running';
   const choose = async (value: string) => {
     setBusy(true); setError(null); setSaved(false);
-    try { await saveToolProxy(appId, value); update(current => ({ previousProxyByApp: { ...current.previousProxyByApp, [appId]: selectedId } })); setSaved(true); }
+    try { await saveToolProxy(appId, value); update(current => ({ previousProxyByApp: { ...current.previousProxyByApp, [appId]: selectedId } })); setSavedWhileRunning(running); setTestResult(null); setSaved(true); }
     catch (cause) { setError(cause); }
     finally { setBusy(false); }
   };
@@ -95,17 +100,20 @@ export function ToolProxy({ appId }: { appId: string }) {
       <div className="flex flex-wrap items-end gap-3">
         <label className="block min-w-56 flex-1 space-y-2 text-sm"><span className="block font-medium">{t('connectionsUx:thisToolProxy')}</span>
           <Select value={selectedId} disabled={busy} onChange={(value) => void choose(value)} options={[
-            { value: 'inherit', label: `${t('proxy:inherit')} (${profiles.find((p) => p.id === proxyConfig.globalProfileId)?.name ?? t('proxy:noDefault')})` },
+            { value: 'inherit', label: `${t('proxy:inherit')} (${profiles.find((p) => p.id === proxyConfig.globalProfileId)?.name ?? (proxyConfig.globalProfileId ? t('connectionsUx:proxyProfileUnavailable') : t('proxy:noDefault'))})` },
             ...profiles.filter((p) => !proxyConfig.requireProxy || p.mode === 'http' || p.mode === 'socks5').map((p) => ({ value: p.id, label: p.name })),
           ]} />
         </label>
         <Button disabled={busy} onClick={() => setEditing(newProxyProfile())}><Plus size={16} aria-hidden="true" />{t('proxy:newProfile')}</Button>
         {selected && <Button disabled={busy} onClick={() => setEditing(selected)}><Pencil size={16} aria-hidden="true" />{t('common:edit')}</Button>}
       </div>
+      {(missingSelection || missingInherited) && <p role="status" className="text-sm text-warning">{t('connectionsUx:proxyProfileUnavailable')}</p>}
+      {selected && <p className="text-sm text-muted" data-testid="effective-proxy-profile">{t('connectionsUx:effectiveProxy')}: {selected.mode === 'direct' || selected.mode === 'system' ? t(`proxy:mode.${selected.mode}`) : selected.name}</p>}
       {previous !== undefined && <Button disabled={busy} onClick={() => void choose(previous)}>{t('ux:restoreConnection')}</Button>}
-      {selected && <Button disabled={busy} onClick={async () => { setBusy(true); setError(null); setTestResult(null); try { const result = await ipc.proxyTest(selected, 'handshake'); if (!result.ok) throw new Error(result.detail); setTestResult(result.detail); } catch (cause) { setError(cause); } finally { setBusy(false); } }}>{t('proxy:handshake')}</Button>}
-      {testResult && <p role="status" className="text-sm text-success">{testResult}</p>}
-      {saved && <p role="status" className="text-sm text-success">{t('connectionsUx:toolProxySaved')}</p>}
+      {previous !== undefined && !profiles.some(profile => profile.id === previous) && <p role="status" className="text-sm text-muted">{t('connectionsUx:previousProxyUnavailable')}</p>}
+      {selected && <Button disabled={busy} onClick={async () => { setBusy(true); setError(null); setTestResult(null); try { const result = await ipc.proxyTest(selected, 'handshake'); if (!result.ok) throw new Error(result.detail); setTestResult({ revision: selectedRevision, detail: result.detail }); } catch (cause) { setError(cause); } finally { setBusy(false); } }}>{t('proxy:handshake')}</Button>}
+      {testResult && testResult.revision === selectedRevision && <p role="status" className="text-sm text-success">{t('connectionsUx:connectionTestSucceeded')}: {testResult.detail}</p>}
+      {saved && <p role="status" className="text-sm text-success">{t(savedWhileRunning ? 'connectionsUx:proxyDeferredRunning' : 'connectionsUx:toolProxySaved')}</p>}
     </>}
     {error != null && <ErrorNotice error={error} />}
     <p className="text-sm leading-6 text-muted">{t('connectionsUx:proxyScope')}</p>
@@ -113,7 +121,7 @@ export function ToolProxy({ appId }: { appId: string }) {
     {editing && <ProxyProfileEditor key={editing.id} profile={editing} onClose={() => setEditing(null)} onSaved={async (profile) => {
       await refreshProxy();
       await saveToolProxy(appId, profile.id);
-      setSaved(true);
+      setTestResult(null); setSavedWhileRunning(running); setSaved(true);
     }} />}
   </div>;
 }

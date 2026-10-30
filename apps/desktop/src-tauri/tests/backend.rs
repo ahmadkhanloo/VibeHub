@@ -672,6 +672,8 @@ fn feed_downloads_the_catalog_and_bilingual_guides_from_a_real_http_server() {
                 .trim_start_matches('/');
             let file = if path == "index.json" {
                 root.join("offers/index.json")
+            } else if let Some(guide) = path.strip_prefix("guides/") {
+                root.join("../docs/tutorials").join(guide)
             } else {
                 root.join(path)
             };
