@@ -10,7 +10,7 @@ export async function buildContentSite(destination = join(projectRoot, 'dist-pag
   const contentRoot = join(projectRoot, 'content');
   await mkdir(feedRoot, { recursive: true });
 
-  for (const name of ['apps', 'providers', 'guides', 'learning', 'schemas', 'snapshots']) {
+  for (const name of ['apps', 'providers', 'learning', 'schemas', 'snapshots']) {
     const source = join(contentRoot, name);
     try {
       await cp(source, join(feedRoot, name), { recursive: true, force: true });
@@ -18,6 +18,8 @@ export async function buildContentSite(destination = join(projectRoot, 'dist-pag
       if (error?.code !== 'ENOENT') throw error;
     }
   }
+
+  await cp(join(projectRoot, 'docs/tutorials'), join(feedRoot, 'guides'), { recursive: true, force: true });
 
   const offersSource = join(contentRoot, 'offers');
   const offersTarget = join(feedRoot, 'offers');

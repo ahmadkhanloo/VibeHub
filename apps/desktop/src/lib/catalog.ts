@@ -82,7 +82,7 @@ export function appById(id: string): AppManifest | undefined {
   return apps.find((a) => a.id === id);
 }
 
-export const guideModules = import.meta.glob('../../../../content/guides/**/*.md', {
+export const guideModules = import.meta.glob('../../../../docs/tutorials/**/*.md', {
   eager: true,
   import: 'default',
   query: '?raw',

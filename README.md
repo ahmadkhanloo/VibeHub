@@ -23,7 +23,7 @@ More tools groups accounts, offers, terminal customization, diagnostics, app gui
 
 VibeHub is a free, open-source desktop companion for discovering and configuring AI coding tools. It separates each tool's license, free-access terms, regional eligibility, and VibeHub capabilities; it does not provide model hosting or a proxy service.
 
-**Release channel:** VibeHub is a beta product; use the [GitHub prereleases](https://github.com/ahmadkhanloo/VibeHub/releases) for testing. Clean Windows installation and upgrade acceptance remain pending. The historical AgentRTL v1.x installers are not VibeHub releases. Track evidence and remaining gates in the [acceptance matrix](docs/validation/VibeHub_Release_Acceptance_Matrix.md).
+**Release channel:** VibeHub remains in beta; use the [GitHub prereleases](https://github.com/ahmadkhanloo/VibeHub/releases) for testing. The [acceptance matrix](docs/validation/VibeHub_Release_Acceptance_Matrix.md) is the single source for current scenario status; historical reports provide context only. Clean Windows installation and upgrade acceptance remain open. Historical AgentRTL v1.x installers are not VibeHub releases.
 
 ## Windows setup
 
@@ -71,3 +71,6 @@ The web build verifies the frontend only. The Tauri runtime, native adapters, si
 - [Release acceptance matrix](docs/validation/VibeHub_Release_Acceptance_Matrix.md)
 - [MIT license](LICENSE)
 - [VibeHub repository](https://github.com/ahmadkhanloo/VibeHub)
+
+
+[All tutorials / همهٔ آموزش‌ها](docs/tutorials/README.md)

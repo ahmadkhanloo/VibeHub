@@ -46,7 +46,7 @@ const DEFAULTS: AppSettings = {
   themeMode: "system",
   themeFamily: "graphite",
   accent: "auto",
-  density: "comfortable",
+  density: "compact",
   textSize: "md",
   onboardingDone: false,
   nativeNotifications: false,

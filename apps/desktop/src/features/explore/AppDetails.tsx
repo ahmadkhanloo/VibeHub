@@ -20,7 +20,7 @@ import { DesktopAccounts } from '@/features/accounts/DesktopAccounts';
 
 export function AppDetailsPage() {
   const { appId = '' } = useParams();
-  const { t, i18n } = useTranslation(['ux', 'apps', 'common']);
+  const { t, i18n } = useTranslation(['ux', 'apps', 'common', 'connectionsUx']);
   const catalog = useCatalog();
   const [params, setParams] = useSearchParams();
   const ctx = useToolContext();
@@ -85,7 +85,7 @@ export function AppDetailsPage() {
       </section>
       <section hidden={selectedTab !== 'connections'} className="vh-card">
         <div className="space-y-6">
-          <section><h2 className="mb-3 text-sm font-bold">{t('ux:proxy')}</h2><ToolProxy appId={appId} /></section>
+          <section><h2 className="mb-3 text-sm font-bold">{t('connectionsUx:nextLaunchProxy')}</h2><ToolProxy appId={appId} /></section>
           <AppConnection key={appId} appId={appId} />
           <Disclosure title={t('ux:compatible')}><h2 className="text-sm font-bold">{t('ux:modelSetup')}</h2><p className="text-sm text-muted">{t('ux:modelManual')}</p>
             <h3 className="text-sm font-bold">{t('ux:compatible')}</h3>

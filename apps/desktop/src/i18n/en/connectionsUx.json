@@ -42,5 +42,16 @@
   "profileInUseHint": "“{{name}}” is assigned below. Change these assignments before deleting it; nothing has been detached.",
   "deleteProxy": "Delete proxy profile",
   "deleteProxyHint": "Delete “{{name}}” and its stored password? This cannot be undone.",
-  "changeGlobalFirst": "Change the global default profile first"
+  "changeGlobalFirst": "Change the global default profile first",
+  "nextLaunchProxy": "Proxy for next launch",
+  "inheritEffective": "Inherit global · {{name}}",
+  "proxyProfileUnavailable": "The saved proxy profile is unavailable. Choose an available profile.",
+  "previousProxyUnavailable": "The previous proxy profile no longer exists. Choose a replacement.",
+  "effectiveProxy": "Effective route",
+  "proxyDeferredRunning": "Saved. This applies on the next launch; the open app remains running.",
+  "connectionTestSucceeded": "Connection test succeeded",
+  "apiReferenceShort": "API reference; manual setup",
+  "apiReferenceUnavailable": "The saved API reference is unavailable. Choose another connection.",
+  "apiReferenceReadFailed": "API references could not be read. Try again from Connections.",
+  "previousApiUnavailable": "The previous API reference no longer exists. Choose an available connection."
 }

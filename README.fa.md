@@ -23,7 +23,7 @@
 
 VibeHub یک همراه دسکتاپ رایگان و متن‌باز برای پیدا کردن و پیکربندی ابزارهای AI Coding است. مجوز ابزارها، نوع دسترسی رایگان، شرایط منطقه‌ای و قابلیت‌های خود VibeHub جداگانه نمایش داده می‌شوند؛ VibeHub میزبان مدل یا سرویس پروکسی نیست.
 
-**کانال انتشار:** VibeHub در مرحلهٔ بتا است؛ برای آزمایش از [پیش‌انتشارهای GitHub](https://github.com/ahmadkhanloo/VibeHub/releases) استفاده کنید. آزمون نصب و ارتقا روی ویندوز تمیز هنوز تکمیل نشده است. نسخه‌های تاریخی AgentRTL با شمارهٔ v1.x انتشار VibeHub محسوب نمی‌شوند. شواهد و گیت‌های باقی‌مانده در [ماتریس پذیرش](docs/validation/VibeHub_Release_Acceptance_Matrix.md) ثبت می‌شوند.
+**کانال انتشار:** VibeHub همچنان در مرحلهٔ بتاست؛ برای آزمایش از [پیش‌انتشارهای GitHub](https://github.com/ahmadkhanloo/VibeHub/releases) استفاده کنید. [ماتریس پذیرش](docs/validation/VibeHub_Release_Acceptance_Matrix.md) مرجع یگانهٔ وضعیت جاری سناریوهاست و گزارش‌های تاریخی فقط پیشینه‌اند. پذیرش نصب و ارتقا روی ویندوز تمیز هنوز باز است. نصب‌کننده‌های تاریخی AgentRTL با شمارهٔ v1.x انتشار VibeHub محسوب نمی‌شوند.
 
 ## نصب در ویندوز
 
@@ -71,3 +71,6 @@ Build وب فقط رابط را بررسی می‌کند. اجرای Tauri، ada
 - [ماتریس پذیرش Release](docs/validation/VibeHub_Release_Acceptance_Matrix.md)
 - [مجوز MIT](LICENSE)
 - [مخزن VibeHub](https://github.com/ahmadkhanloo/VibeHub)
+
+
+[All tutorials / همهٔ آموزش‌ها](docs/tutorials/README.md)

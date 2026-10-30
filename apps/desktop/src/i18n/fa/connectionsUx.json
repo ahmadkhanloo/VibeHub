@@ -42,5 +42,16 @@
   "profileInUseHint": "«{{name}}» به موارد زیر تخصیص دارد. پیش از حذف، این انتخاب‌ها را تغییر دهید؛ هیچ تخصیصی خودکار برداشته نشده است.",
   "deleteProxy": "حذف پروفایل پروکسی",
   "deleteProxyHint": "پروفایل «{{name}}» و رمز ذخیره‌شدهٔ آن حذف شوند؟ این کار برگشت‌پذیر نیست.",
-  "changeGlobalFirst": "ابتدا پروفایل پیش‌فرض سراسری را تغییر دهید"
+  "changeGlobalFirst": "ابتدا پروفایل پیش‌فرض سراسری را تغییر دهید",
+  "nextLaunchProxy": "پروکسی اجرای بعدی",
+  "inheritEffective": "ارث‌بری از سراسری · {{name}}",
+  "proxyProfileUnavailable": "پروفایل ذخیره‌شدهٔ پروکسی در دسترس نیست. یک پروفایل موجود انتخاب کنید.",
+  "previousProxyUnavailable": "پروفایل پروکسی قبلی دیگر وجود ندارد. یک جایگزین انتخاب کنید.",
+  "effectiveProxy": "مسیر مؤثر",
+  "proxyDeferredRunning": "ذخیره شد؛ در اجرای بعدی اعمال می‌شود. برنامهٔ باز همچنان اجراست.",
+  "connectionTestSucceeded": "آزمون اتصال موفق بود",
+  "apiReferenceShort": "مرجع API؛ تنظیم دستی",
+  "apiReferenceUnavailable": "مرجع API ذخیره‌شده در دسترس نیست. اتصال دیگری انتخاب کنید.",
+  "apiReferenceReadFailed": "خواندن مرجع‌های API ناموفق بود. از بخش اتصال‌ها دوباره تلاش کنید.",
+  "previousApiUnavailable": "مرجع API قبلی دیگر وجود ندارد. یک اتصال موجود انتخاب کنید."
 }
