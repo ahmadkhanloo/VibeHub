@@ -38,6 +38,7 @@ test('five compact app launch buttons fit at the 1280 by 860 desktop target', as
   await page.setViewportSize({ width: 1280, height: 860 });
 
   await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
 
   const tiles = page.locator('.vh-app-tile');
   await expect(tiles).toHaveCount(5);
@@ -50,17 +51,17 @@ for (const language of ['en', 'fa'] as const) for (const themeMode of ['light', 
     await seedFiveAppHome(page, language, themeMode);
     await page.setViewportSize({ width: 1280, height: 860 });
     await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
     await expect(page.locator('.vh-app-tile')).toHaveCount(5);
     await expectFiveRunButtonsVisible(page);
     await page.evaluate(mode => { document.documentElement.dataset.mode = mode; }, themeMode);
 
     for (const viewport of [{ width: 1280, height: 860 }, { width: 640, height: 430 }]) {
       await page.setViewportSize(viewport);
-      const overflow = await page.locator('html').evaluate(element => ({
+      await expect.poll(() => page.locator('html').evaluate(element => ({
         page: element.scrollWidth > innerWidth,
         main: document.querySelector('main')!.scrollWidth > document.querySelector('main')!.clientWidth + 1,
-      }));
-      expect(overflow).toEqual({ page: false, main: false });
+      }))).toEqual({ page: false, main: false });
     }
   });
 }

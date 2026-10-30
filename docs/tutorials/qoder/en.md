@@ -48,7 +48,7 @@ The claim window opens at 10:00 Singapore time (UTC+8) each day. Each account ca
 - [Credits and usage](https://docs.qoder.com/Credits)
 
 
-# Qoder — English guide
+## Qoder — English guide
 
 ## Introduction
 Qoder is an agentic IDE. Its Community plan with BYOK is the free path (under the vendor's current terms).

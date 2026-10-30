@@ -19,8 +19,8 @@ export function AppConnection({ appId }: { appId: string }) {
     {connectionsError && <ErrorNotice error={t('connectionsUx:apiReferenceReadFailed')} />}
     {missingSelection && <p className="text-sm text-warning" role="status">{t('connectionsUx:apiReferenceUnavailable')}</p>}
     {connection && <div className="text-sm space-y-2"><p><bdi>{connection.baseUrl}</bdi> <CopyButton text={connection.baseUrl} label={t('common:copy')} /></p><p><bdi>{connection.modelId}</bdi> <CopyButton text={connection.modelId} label={t('common:copy')} /></p></div>}
-    {previous !== undefined && connections?.some(item => item.id === previous) && <Button onClick={() => { choose(previous); update(current => { const next = { ...current.previousApiByApp }; delete next[appId]; return { previousApiByApp: next }; }); }}>{t('restoreConnection')}</Button>}
-    {previous !== undefined && connections && !connections.some(item => item.id === previous) && <p className="text-sm text-muted" role="status">{t('connectionsUx:previousApiUnavailable')}</p>}
+    {previous !== undefined && (previous === '' || connections?.some(item => item.id === previous)) && <Button onClick={() => { choose(previous); update(current => { const next = { ...current.previousApiByApp }; delete next[appId]; return { previousApiByApp: next }; }); }}>{t('restoreConnection')}</Button>}
+    {previous !== undefined && previous !== '' && connections && !connections.some(item => item.id === previous) && <p className="text-sm text-muted" role="status">{t('connectionsUx:previousApiUnavailable')}</p>}
     <Link className="vh-link" to="/connections/api">{t('apiConnections')}</Link>
   </div>;
 }

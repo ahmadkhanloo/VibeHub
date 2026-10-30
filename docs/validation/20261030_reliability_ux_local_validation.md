@@ -32,3 +32,7 @@ These are local source, browser-mock, static-check, and Rust test-harness result
 All eight bilingual app guides now have one source under docs/tutorials, alongside the existing feature tutorials and a bilingual index. App GitHub links target the current development branch so they resolve after push. Offline bundling and the published feed use these same files; the feed URL contract stays unchanged. JavaScript regressions (33/33), TypeScript checks, and content validation passed after this migration.
 
 The production build also passed after tutorial consolidation. Its main JavaScript chunk is now 662.20 kB (203.72 kB gzip), above Vite's 500 kB warning threshold, because the complete Qoder tutorial is included in the offline guide source.
+
+## Main integration regressions
+
+CI run 40996384183 found seven browser failures before merge. Corrected the duplicate Qoder heading and restoring the explicit empty API selection; account-race and viewport tests now wait for their asynchronous prerequisites (account read, fonts, layout). The focused desktop-account-races, home-compact-viewport and minimal suites passed locally: 18/18, exit 0, including four language/theme accessibility and overflow sweeps and connection undo after reload. Full CI is rerun before merging and tagging beta.5.
