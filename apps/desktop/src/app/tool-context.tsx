@@ -201,6 +201,20 @@ export function ToolProvider({ children }: { children: ReactNode }) {
   }, [checkStates, refreshAccountSummary, refreshProxy]);
   useEffect(() => { void refresh(); }, [refresh]);
   useEffect(() => {
+    let lastScan = Date.now();
+    const scanOnReturn = () => {
+      if (document.visibilityState !== 'visible' || Date.now() - lastScan < 5000) return;
+      lastScan = Date.now();
+      void refresh();
+    };
+    window.addEventListener('focus', scanOnReturn);
+    document.addEventListener('visibilitychange', scanOnReturn);
+    return () => {
+      window.removeEventListener('focus', scanOnReturn);
+      document.removeEventListener('visibilitychange', scanOnReturn);
+    };
+  }, [refresh]);
+  useEffect(() => {
     const ids = apps.filter(app => app.installed && ['chatgpt', 'qoder', 'zcode'].includes(app.id)).map(app => app.id);
     const refreshVisible = () => {
       if (document.visibilityState !== 'visible') return;

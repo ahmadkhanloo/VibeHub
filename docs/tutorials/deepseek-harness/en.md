@@ -25,3 +25,7 @@ Verified (live test 2026-10-18, version 0.2.1-rc.2). The Vazirmatn font is injec
 
 ## Model options
 Follows the DeepSeek service; BYOK unknown until tested.
+
+## Set up RTL from VibeHub
+
+After installing the app, return to VibeHub or choose Check again. Choose Set up RTL on its tile to create a Start Menu shortcut and select RTL for the next launch. Setup uses bundled files and does not start or close the app. [Full setup and recovery instructions](https://github.com/ahmadkhanloo/VibeHub/blob/main/docs/tutorials/rtl-setup.en.md).

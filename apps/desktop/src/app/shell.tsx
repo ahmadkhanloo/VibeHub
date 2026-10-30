@@ -55,7 +55,7 @@ export function AppShell() {
   }, [location.pathname]);
   const items = [
     { to: "/", icon: House, label: t("ux:workspace") },
-    { to: "/connections", icon: Network, label: t("ux:connections") },
+    { to: "/connections", icon: Network, label: t("ux:apiNotebook") },
     { to: "/tools", icon: Wrench, label: t("workbench:moreTools") },
   ];
   const link = (item: (typeof items)[number]) => (

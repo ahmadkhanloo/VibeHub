@@ -102,6 +102,8 @@ jobs:
           ./tests/native-array-results.ps1
           ./tests/updater-signature-exit.ps1
           ./tests/native-windows.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./tests/rtl-setup.ps1
 
   windows-tauri-build:
     runs-on: windows-latest

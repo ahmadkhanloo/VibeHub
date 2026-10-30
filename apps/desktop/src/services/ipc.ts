@@ -130,6 +130,7 @@ export const ipc = {
   detectApps: () => invoke<DetectedApp[]>('detect_apps'),
   detectEditors: () => invoke<DetectedEditor[]>('detect_editors'),
   rtlComponents: () => invoke<RtlComponentStatus[]>('rtl_components'),
+  rtlSetup: (appId: string) => invoke<{ ok: boolean; shortcut: string }>('rtl_setup', { appId }),
   launchEditor: (editorId: string, rtl = false) => invoke<EditorLaunchOutcome>('launch_editor', { editorId, rtl }),
   focusApp: (appId: string) => invoke<LaunchOutcome>('launch_app', { req: { appId, rtl: false, focus: true } }),
   launchApp: (req: LaunchRequest) => invoke<LaunchOutcome>('launch_app', { req }),

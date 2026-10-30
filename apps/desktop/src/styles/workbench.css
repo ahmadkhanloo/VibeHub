@@ -119,3 +119,5 @@
 [data-density='compact'] .vh-app-grid{row-gap:12px;}
 .vh-effective-proxy{flex:1;min-width:0;}
 .vh-connection-summary[data-status='missing'] .vh-effective-proxy,.vh-connection-summary[data-status='unavailable'] .vh-effective-proxy{color:var(--warning);}
+
+.vh-rtl-setup-button{flex-shrink:0;font-size:12px;padding-inline:6px;gap:4px;}

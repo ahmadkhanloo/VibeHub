@@ -1,4 +1,4 @@
-﻿# Fixed local adapter. Request data arrives as JSON on stdin, never as PowerShell code.
+# Fixed local adapter. Request data arrives as JSON on stdin, never as PowerShell code.
 $ErrorActionPreference = 'Stop'
 [Console]::InputEncoding = [Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
@@ -12,6 +12,84 @@ if (Test-Path -LiteralPath $helpers) { . $helpers }
 $utf8 = [Text.UTF8Encoding]::new($true)
 $begin = '# >>> VibeHub managed prompt >>>'
 $end = '# <<< VibeHub managed prompt <<<'
+
+function Install-HubRtlShortcut([string]$resourceRoot, [string]$appId, [string]$programsRoot) {
+    # IShellLinkW preserves Unicode targets; WScript.Shell rejects some Persian paths.
+    if (-not ('VibeHub.RtlShortcuts' -as [type])) {
+        Add-Type -TypeDefinition @'
+using System;
+using System.Text;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
+namespace VibeHub {
+    [ComImport, Guid("000214F9-0000-0000-C000-000000000046"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IShellLinkW {
+        void GetPath([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder path, int count, IntPtr data, uint flags);
+        void GetIDList(out IntPtr id);
+        void SetIDList(IntPtr id);
+        void GetDescription([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder text, int count);
+        void SetDescription([MarshalAs(UnmanagedType.LPWStr)] string text);
+        void GetWorkingDirectory([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder path, int count);
+        void SetWorkingDirectory([MarshalAs(UnmanagedType.LPWStr)] string path);
+        void GetArguments([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder text, int count);
+        void SetArguments([MarshalAs(UnmanagedType.LPWStr)] string text);
+        void GetHotkey(out short key);
+        void SetHotkey(short key);
+        void GetShowCmd(out int command);
+        void SetShowCmd(int command);
+        void GetIconLocation([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder path, int count, out int index);
+        void SetIconLocation([MarshalAs(UnmanagedType.LPWStr)] string path, int index);
+        void SetRelativePath([MarshalAs(UnmanagedType.LPWStr)] string path, uint reserved);
+        void Resolve(IntPtr window, uint flags);
+        void SetPath([MarshalAs(UnmanagedType.LPWStr)] string path);
+    }
+    public static class RtlShortcuts {
+        static object Create() { return Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("00021401-0000-0000-C000-000000000046"))); }
+        public static string Target(string path) {
+            object value = Create();
+            try {
+                ((IPersistFile)value).Load(path, 0);
+                var buffer = new StringBuilder(32768);
+                ((IShellLinkW)value).GetPath(buffer, buffer.Capacity, IntPtr.Zero, 4);
+                return buffer.ToString();
+            } finally { Marshal.FinalReleaseComObject(value); }
+        }
+        public static void Save(string path, string target, string directory, string icon) {
+            object value = Create();
+            try {
+                var link = (IShellLinkW)value;
+                link.SetPath(target);
+                link.SetArguments("");
+                link.SetWorkingDirectory(directory);
+                link.SetIconLocation(icon, 0);
+                link.SetDescription("VibeHub managed RTL launcher");
+                ((IPersistFile)value).Save(path, true);
+            } finally { Marshal.FinalReleaseComObject(value); }
+        }
+    }
+}
+'@
+    }
+    $folders = @{zcode='ZCode'; qoder='Qoder'; 'deepseek-harness'='DeepSeekHarness'; antigravity='Antigravity'}
+    $names = @{zcode='ZCode'; qoder='Qoder'; 'deepseek-harness'='DeepSeek Harness'; antigravity='Antigravity'}
+    if (-not $folders.ContainsKey($appId)) { throw 'RTL is unavailable for this app.' }
+    $adapter = Join-Path $resourceRoot ('apps\' + $folders[$appId])
+    $required = @((Join-Path $resourceRoot 'apps\rtl-paths.ps1'), (Join-Path $resourceRoot 'apps\rtl-direction.mjs'))
+    $required += @('start.ps1','launch.vbs','injector.mjs','rtl.ico') | ForEach-Object { Join-Path $adapter $_ }
+    if ($appId -in @('qoder','antigravity')) { $required += Join-Path $adapter 'style.mjs' }
+    if ($appId -in @('qoder','deepseek-harness')) {
+        $required += @('Vazirmatn-Regular.woff2','Vazirmatn-Bold.woff2') | ForEach-Object { Join-Path $adapter ('assets\' + $_) }
+    }
+    foreach ($file in $required) { if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { throw 'RTL files are missing. Install the full VibeHub package first.' } }
+    if (-not ((Test-Path -LiteralPath (Join-Path $resourceRoot 'runtime\node.exe') -PathType Leaf) -or (Test-Path -LiteralPath (Join-Path $resourceRoot 'apps\desktop\src-tauri\windows\payload\node.exe') -PathType Leaf))) { throw 'The bundled RTL runtime is missing. Install the full VibeHub package first.' }
+    $directory = Join-Path $programsRoot 'VibeHub'
+    $null = [IO.Directory]::CreateDirectory($directory)
+    $destination = Join-Path $directory ($names[$appId] + ' RTL.lnk')
+    $target = Join-Path $adapter 'launch.vbs'
+    if ((Test-Path -LiteralPath $destination) -and [VibeHub.RtlShortcuts]::Target($destination) -ine $target) { throw 'An unrelated shortcut already uses this name. Keep it or rename it before retrying.' }
+    [VibeHub.RtlShortcuts]::Save($destination, $target, $adapter, (Join-Path $adapter 'rtl.ico'))
+    @{ok=$true;shortcut=$destination}
+}
 
 function ProfilePath { $PROFILE.CurrentUserAllHosts }
 function ProfileText { $p = ProfilePath; if (Test-Path -LiteralPath $p) { [IO.File]::ReadAllText($p) } else { '' } }
@@ -482,6 +560,12 @@ try {
             [HubWindow]::ShowWindowAsync($target.MainWindowHandle,9) | Out-Null
             if (-not [HubWindow]::SetForegroundWindow($target.MainWindowHandle)) { throw 'Windows did not activate the application window.' }
             @{ok=$true;rtl=$false;detail='Application window activated'}
+        }
+        'rtl-setup' {
+            $id = [string]$request.appId
+            if ($id -notin @('zcode','qoder','deepseek-harness','antigravity')) { throw 'RTL is unavailable for this app.' }
+            if (-not (Find-App $id)) { throw 'Install the application first, then check again in VibeHub.' }
+            Install-HubRtlShortcut $root $id ([Environment]::GetFolderPath('Programs'))
         }
         'launch' {
             $id = [string]$request.req.appId

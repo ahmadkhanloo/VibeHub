@@ -21,3 +21,5 @@ All maintained tutorials live in this folder. The app bundles these same files f
 - Long-running tasks: [English](long-running.en.md) · [فارسی](long-running.fa.md)
 
 GitHub tutorial links target the main branch.
+
+- Set up RTL after installing an app: [English](rtl-setup.en.md) · [فارسی](rtl-setup.fa.md)
