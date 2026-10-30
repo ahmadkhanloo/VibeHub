@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "content/**"
+      - "docs/tutorials/**"
       - "scripts/build-content-site.mjs"
       - "scripts/validate-content.mjs"
       - "scripts/collect-offers.mjs"

@@ -20,3 +20,8 @@ test('the Pages artifact contains the validated feed and bilingual guides withou
     await rm(tempRoot, { recursive: true, force: true });
   }
 });
+
+test('canonical tutorial edits trigger content feed publication', async () => {
+  const workflow = await readFile(new URL('../.github/workflows/publish-content.yml', import.meta.url), 'utf8');
+  assert.match(workflow, /paths:[\s\S]*?- "docs\/tutorials\/\*\*"/);
+});
