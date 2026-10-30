@@ -77,6 +77,7 @@ export function AppSummary({ appId }: { appId: string }) {
         <span className="vh-quota-summary" data-testid={`account-summary-quota-${appId}`} data-status={summary?.quotaStatus ?? 'loading'} dir="auto">
           {summary?.quotaStatus === 'error' ? t('ux:accountSummary.quotaError') : quotaText || t('ux:quotaUnknown')}
         </span>
+        {summary?.quotaItems.length ? <span className="vh-summary-checked">{t(`ux:accountSummary.source.${appId}`)}</span> : null}
         {(summary?.showingPrevious || summary?.stale) && <span className="vh-summary-previous" data-testid={`account-summary-stale-${appId}`}>
           {t(summary.stale ? 'ux:accountSummary.stale' : 'ux:accountSummary.previous')}
         </span>}

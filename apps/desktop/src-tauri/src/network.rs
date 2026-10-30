@@ -441,7 +441,7 @@ pub(crate) async fn bounded_bytes(mut response: reqwest::Response, limit: usize)
     Ok(bytes)
 }
 
-async fn bounded_json(response: reqwest::Response, limit: usize) -> Result<Value> {
+pub(crate) async fn bounded_json(response: reqwest::Response, limit: usize) -> Result<Value> {
     serde_json::from_slice(&bounded_bytes(response, limit).await?)
         .map_err(|_| "Invalid JSON response".into())
 }
