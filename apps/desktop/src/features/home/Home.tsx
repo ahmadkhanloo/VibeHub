@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Projects } from '@/components/Projects';
 import { AppSummary } from '@/components/AppSummary';
 import { Link } from 'react-router-dom';
@@ -8,6 +9,9 @@ import { useCatalog } from '@/lib/catalog';
 import { AppLogo } from '@/components/AppLogo';
 import { LaunchControls } from '@/components/LaunchControls';
 import { Tooltip } from '@/components/Tooltip';
+import { Disclosure } from '@/components/Disclosure';
+import { openUrl } from '@tauri-apps/plugin-opener';
+import { ipc } from '@/services/ipc';
 import { Button, EmptyState, ErrorNotice, PageHeader, Spinner } from '@/components/ui';
 import { useSettings } from '@/app/settings';
 
@@ -15,6 +19,13 @@ export function HomePage() {
   const { t, i18n } = useTranslation(['ux', 'workbench']);
   const { settings } = useSettings();
   const ctx = useToolContext();
+  const [openError, setOpenError] = useState<unknown>(null);
+  const [versions, setVersions] = useState<Record<string, { version?: string; source?: string; comparison?: 'newer' | 'current' | 'ahead' | null; checkedAt?: string; error?: boolean; loading?: boolean }>>({});
+  const checkVersion = async (id: string, installedVersion?: string) => {
+    setVersions(old => ({ ...old, [id]: { loading: true } }));
+    try { const result = await ipc.latestToolVersion(id, installedVersion); setVersions(old => ({ ...old, [id]: result })); }
+    catch { setVersions(old => ({ ...old, [id]: { error: true, checkedAt: new Date().toISOString() } })); }
+  };
   const catalog = useCatalog();
   const tools = ctx.apps.filter(app => app.installed).map(tool => ({
     ...tool, app: catalog.apps.find(app => app.id === tool.id),
@@ -48,5 +59,15 @@ export function HomePage() {
       </div>
       <Tooltip text={t('launchNote')} />
     </>}
+    <Disclosure title={t('ux:versions.title')}>
+      <p className="text-sm text-muted">{t('ux:versions.note')}</p>
+      {openError != null && <ErrorNotice error={openError} />}
+      <ul className="divide-y divide-border">{tools.map(tool => <li key={tool.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
+        <Link className="vh-link" to={`/app/${tool.id}`}><bdi>{tool.app?.name ?? tool.id}</bdi></Link>
+        <span>{t('ux:versions.installed')}: <bdi>{tool.version || t('ux:versions.unknown')}</bdi></span>
+        {['opencode', 'freebuff'].includes(tool.id) ? <><Button size="sm" variant="ghost" loading={versions[tool.id]?.loading} onClick={() => void checkVersion(tool.id, tool.version)}>{t('ux:versions.check')}</Button><span>{versions[tool.id]?.error ? t('ux:versions.failed') : versions[tool.id]?.version ? `${t('ux:versions.latest')}: ${versions[tool.id]?.version} (${versions[tool.id]?.source})` : t('ux:versions.notChecked')}{versions[tool.id]?.version && ` · ${t('ux:versions.' + (versions[tool.id]?.comparison ?? 'incomparable'))}`}{versions[tool.id]?.checkedAt && ` · ${new Date(versions[tool.id]!.checkedAt!).toLocaleString(i18n.language)}`}</span></> : <span>{t('ux:versions.unsupported')}</span>}
+        {tool.app && <Button size="sm" variant="ghost" onClick={() => void openUrl(tool.app!.websiteUrl).then(() => setOpenError(null)).catch(setOpenError)}>{t('ux:versions.official')}</Button>}
+      </li>)}</ul>
+    </Disclosure>
   </div>;
 }

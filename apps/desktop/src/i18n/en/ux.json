@@ -152,7 +152,12 @@
     "addAction": "Add/import account",
     "detailsAction": "View account limits",
     "retry": "Try again",
-    "noApiReference": "No API reference"
+    "noApiReference": "No API reference",
+    "source": {
+      "chatgpt": "Quota source: Codex CLI; saved from the last check",
+      "qoder": "Quota source: Qoder service; saved from the last check",
+      "zcode": "Quota source: ZCode service; saved from the last check"
+    }
   },
   "projectEmptyHelp": "Choose a project folder to open with a coding app.",
   "projectNoTarget": "Install a coding app before choosing a project folder.",
@@ -167,5 +172,21 @@
   "rtlSetupFor": "Set up RTL for {{name}}",
   "rtlSetupDownload": "Get the full VibeHub installer",
   "runRtlCompact": "Run RTL",
-  "rtlReady": "RTL ready"
+  "rtlReady": "RTL ready",
+  "versions": {
+    "title": "App versions and updates",
+    "note": "Installed versions come from local detection. Latest versions for OpenCode and Freebuff are checked via npm; visit the official website for other apps.",
+    "installed": "Installed version",
+    "unknown": "Unknown",
+    "official": "Official website",
+    "check": "Check latest",
+    "latest": "Latest version",
+    "failed": "Check failed",
+    "notChecked": "Not checked yet",
+    "unsupported": "Automatic version source unavailable",
+    "newer": "Newer version available",
+    "current": "Matches latest npm release",
+    "ahead": "Installed version is newer",
+    "incomparable": "Cannot compare versions"
+  }
 }
