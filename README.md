@@ -1,6 +1,6 @@
 # VibeHub
 
-> **Current VibeHub download:** [v0.2.0-beta.6 for Windows](https://github.com/ahmadkhanloo/VibeHub/releases/download/v0.2.0-beta.6/VibeHub-Setup.exe) · [Release notes](https://github.com/ahmadkhanloo/VibeHub/releases/tag/v0.2.0-beta.6). The GitHub Latest stable label currently points to legacy AgentRTL v1.x; use this beta link for VibeHub.
+> **Current VibeHub download:** [v0.2.0 for Windows](https://github.com/ahmadkhanloo/VibeHub/releases/download/v0.2.0/VibeHub-Setup.exe) · [Release notes](https://github.com/ahmadkhanloo/VibeHub/releases/tag/v0.2.0).
 
 A workspace for vibe-coding apps, with Persian RTL, accounts, and an API notebook.
 
@@ -25,7 +25,7 @@ More tools groups accounts, offers, terminal customization, diagnostics, app gui
 
 VibeHub is a free, open-source desktop companion for discovering and configuring AI coding tools. It separates each tool's license, free-access terms, regional eligibility, and VibeHub capabilities; it does not provide model hosting or a proxy service.
 
-**Release channel:** VibeHub remains in beta; use the [GitHub prereleases](https://github.com/ahmadkhanloo/VibeHub/releases) for testing. The [acceptance matrix](docs/validation/VibeHub_Release_Acceptance_Matrix.md) is the single source for current scenario status; historical reports provide context only. Clean Windows installation and upgrade acceptance remain open. Historical AgentRTL v1.x installers are not VibeHub releases.
+**Release channel:** See [GitHub releases](https://github.com/ahmadkhanloo/VibeHub/releases) for current builds. The [acceptance matrix](docs/validation/VibeHub_Release_Acceptance_Matrix.md) is the single source for current scenario status; historical reports provide context only. Clean Windows installation and upgrade acceptance remain open. Historical AgentRTL v1.x installers are not VibeHub releases.
 
 ## Windows setup
 
