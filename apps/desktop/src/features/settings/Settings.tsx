@@ -183,7 +183,7 @@ export function SettingsPage() {
       <p className="text-sm text-muted">{t('settings:privacy.noTelemetry')}</p>
       <Link className="vh-link text-sm" to="/doctor">{t('ux:doctor')}</Link>
       <Button disabled={busy !== null} onClick={() => void perform('undo', async () => { const result = await ipc.terminalUndo(); if (!result.ok) throw new Error(result.detail); setMessage(result.detail); })}>{t('ux:terminalRestore')}</Button>
-      <Button disabled={busy !== null} onClick={() => void perform('docs', async () => { await import('@tauri-apps/plugin-opener').then(({ openUrl }) => openUrl('https://github.com/ahmadkhanloo/VibeHub/tree/codex/restore-tools-modern-desktop/docs/tutorials')); })}>{t('ux:externalDocs')}</Button>
+      <Button disabled={busy !== null} onClick={() => void perform('docs', async () => { await import('@tauri-apps/plugin-opener').then(({ openUrl }) => openUrl('https://github.com/ahmadkhanloo/VibeHub/tree/main/docs/tutorials')); })}>{t('ux:externalDocs')}</Button>
       <div className="divide-y divide-border">
         <div className="flex flex-wrap items-center justify-between gap-4 py-4"><div className="max-w-xl"><h3 className="font-semibold">{t('settings:privacy.wipeCache')}</h3><p className="mt-1 text-sm text-muted">{t('settingsUx:cacheHint')}</p></div>
           <Button disabled={busy !== null} onClick={() => { localStorage.removeItem('vibehub.content.v1'); location.reload(); }}>{t('settings:privacy.wipeCache')}</Button></div>

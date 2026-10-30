@@ -20,4 +20,4 @@ All maintained tutorials live in this folder. The app bundles these same files f
 - Extensions: [English](extensions.en.md) · [فارسی](extensions.fa.md)
 - Long-running tasks: [English](long-running.en.md) · [فارسی](long-running.fa.md)
 
-GitHub links currently target the development branch codex/restore-tools-modern-desktop, where these pages are pushed. Update the link revision when this work is merged into main.
+GitHub tutorial links target the main branch.
