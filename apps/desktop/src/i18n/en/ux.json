@@ -32,7 +32,7 @@
   "installNote": "Installation happens through the official publisher. Return here after installing and check again.",
   "launchSetup": "Launch mode",
   "proxy": "Proxy",
-  "models": "API connections",
+  "models": "API notebook",
   "guides": "Guides",
   "doctor": "Diagnostics",
   "offers": "Offers",
@@ -79,7 +79,6 @@
   "found": "Detected for launch",
   "running": "Running",
   "checking": "Checking…",
-  "rtlReady": "RTL ready",
   "editorUnknown": "In-editor behavior and proxy routing have not been tested.",
   "external": "Open official website",
   "vaultFailure": "The credential vault could not complete this action",
@@ -122,7 +121,6 @@
   "terminalRestore": "Restore previous terminal settings",
   "accountsTab": "Accounts",
   "focusApp": "Go to app",
-  "apiConnections": "API connections",
   "projects": "Recent projects",
   "chooseProject": "Choose project folder",
   "openWith": "Open with",
@@ -153,10 +151,21 @@
     "reauthAction": "Sign in again",
     "addAction": "Add/import account",
     "detailsAction": "View account limits",
-    "retry": "Try again"
+    "retry": "Try again",
+    "noApiReference": "No API reference"
   },
   "projectEmptyHelp": "Choose a project folder to open with a coding app.",
   "projectNoTarget": "Install a coding app before choosing a project folder.",
   "chooseExecutable": "Choose app executable",
-  "recheckFor": "Check again {{name}}"
+  "recheckFor": "Check again {{name}}",
+  "rtlSetupHint": "Create a {{name}} RTL shortcut in your Start Menu and use RTL on the next launch from VibeHub. The bundled adapter is used; setup does not launch or close the app. If the app is already open, fully quit it yourself before the next RTL launch.",
+  "rtlSetupMissing": "The RTL adapter or private runtime is missing. Install the full VibeHub package, then check again. Installing {{name}} alone does not provide the VibeHub adapter.",
+  "apiConnections": "API notebook",
+  "rtlSetupFailed": "RTL setup did not finish. Please retry.",
+  "rtlSetupShort": "Set up RTL",
+  "apiNotebook": "API notebook",
+  "rtlSetupFor": "Set up RTL for {{name}}",
+  "rtlSetupDownload": "Get the full VibeHub installer",
+  "runRtlCompact": "Run RTL",
+  "rtlReady": "RTL ready"
 }

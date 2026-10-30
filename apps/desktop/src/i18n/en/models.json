@@ -1,5 +1,5 @@
 {
-  "title": "API connections",
+  "title": "API notebook",
   "connectionIntro": "Save the endpoint, model ID and key and test the connection. To use it in Qoder or another tool, enter the details in that tool’s settings; this notebook does not activate it automatically.",
   "savedConnections": "Saved connections",
   "providerCatalog": "Providers",
@@ -27,7 +27,7 @@
   "tabs": {
     "freeProviders": "Free providers",
     "localModels": "Local models",
-    "apiConnections": "API connections"
+    "apiConnections": "API notebook"
   },
   "filters": {
     "noSignup": "No signup",

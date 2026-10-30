@@ -110,6 +110,8 @@ jobs:
           ./tests/native-array-results.ps1
           ./tests/updater-signature-exit.ps1
           ./tests/native-windows.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./tests/rtl-setup.ps1
 
       - name: Verify private runtime resolution and Unicode path persistence
         shell: pwsh
@@ -139,11 +141,11 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: VibeHub ${{ github.ref_name }}
           releaseBody: |
-            VibeHub 0.2 beta: a modern Persian/English desktop workspace for coding apps. Main navigation: Apps, Connections and More tools, with Settings in the sidebar footer. More tools restores accounts, offers, terminal customization with undo, diagnostics, guides, plugin/skill tutorials, agent lessons, optional setup and appearance. Four theme families, accent colors and notification preferences are available. Open projects, revisit recent folders, focus running apps and review account/quota/connection summaries. API connections remain manual setup references; unsupported desktop account switching stays gated.
+            VibeHub 0.2 beta: a modern Persian/English desktop workspace for coding apps. Main navigation: Apps, API notebook and More tools, with Settings in the sidebar footer. More tools restores accounts, offers, terminal customization with undo, diagnostics, guides, plugin/skill tutorials, agent lessons, optional setup and appearance. Four theme families, accent colors and notification preferences are available. Open projects, revisit recent folders, focus running apps and review account/quota/connection summaries. The API notebook stores manual setup references. App tiles can set up bundled RTL and a Start Menu shortcut after a coding app is installed, including experimental standalone Antigravity chat RTL. Setup does not launch or close vendor apps; unsupported desktop account switching stays gated.
 
             Download `VibeHub-Setup.exe`. This prerelease includes a pinned Node.js runtime and signed Tauri updater assets; the Setup executable does not carry a Windows publisher signature. Clean Windows 10/11 and end-to-end signed upgrade acceptance remain unverified. Qoder/ZCode account switching remains blocked pending live verification; real provider authentication and per-app proxy routing are not claimed by local checks. Historical v1.x releases belong to AgentRTL.
 
-            نسخهٔ آزمایشی ۰٫۲ وایب‌هاب با طراحی تازهٔ فارسی و انگلیسی: برنامه‌ها، اتصال‌ها و ابزارهای بیشتر؛ تنظیمات پایین نوار کناری. حساب‌ها، پیشنهادها، ترمینال با بازگردانی، عیب‌یابی، راهنماها، آموزش پلاگین و اسکیل، کار با ایجنت‌ها و راهنمای شروع اختیاری برگشته‌اند. چهار خانوادهٔ تم، رنگ تأکیدی و تنظیمات اعلان در دسترس‌اند. انتخاب پروژه، پروژه‌های اخیر، رفتن به پنجرهٔ باز و خلاصهٔ حساب و اتصال حفظ شده‌اند. اتصال API مرجع تنظیم دستی است و تعویض حساب تأییدنشده عرضه نمی‌شود.
+            نسخهٔ آزمایشی ۰٫۲ وایب‌هاب با طراحی تازهٔ فارسی و انگلیسی: برنامه‌ها، دفترچهٔ API و ابزارهای بیشتر؛ تنظیمات پایین نوار کناری. حساب‌ها، پیشنهادها، ترمینال با بازگردانی، عیب‌یابی، راهنماها، آموزش پلاگین و اسکیل، کار با ایجنت‌ها و راهنمای شروع اختیاری برگشته‌اند. چهار خانوادهٔ تم، رنگ تأکیدی و تنظیمات اعلان در دسترس‌اند. انتخاب پروژه، پروژه‌های اخیر، رفتن به پنجرهٔ باز و خلاصهٔ حساب و اتصال حفظ شده‌اند. دفترچهٔ API مرجع تنظیم دستی است. کاشی برنامه‌های پشتیبانی‌شده دکمهٔ نصب RTL و ساخت میانبر منوی شروع دارد؛ RTL چت اپ مستقل آنتی‌گرویتی نیز با وضعیت آزمایشی در دسترس است. نصب RTL برنامه را اجرا یا بسته نمی‌کند و تعویض حساب تأییدنشده عرضه نمی‌شود.
 
             فایل `VibeHub-Setup.exe` را نصب کنید. آزمون نصب پاک Windows 10/11 و چرخهٔ کامل ارتقای امضاشده هنوز تأیید نشده است. امضای updater با امضای ناشر ویندوز برای Setup متفاوت است.
           releaseDraft: true

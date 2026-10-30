@@ -1,8 +1,10 @@
 # VibeHub
 
-Manage and launch coding apps, with Persian support, accounts and connections.
+> **Current VibeHub download:** [v0.2.0-beta.6 for Windows](https://github.com/ahmadkhanloo/VibeHub/releases/download/v0.2.0-beta.6/VibeHub-Setup.exe) · [Release notes](https://github.com/ahmadkhanloo/VibeHub/releases/tag/v0.2.0-beta.6). The GitHub Latest stable label currently points to legacy AgentRTL v1.x; use this beta link for VibeHub.
 
-The main navigation is **Apps**, **Connections** (API and proxy), and **More tools**, with **Settings** in the sidebar footer. Open a project folder or a recent project with an installed app, focus its existing window, and configure accounts, connections and guides from that app’s page. Account quotas are shown when available; unavailable values remain explicit. API selections are manual setup references and do not rewrite third-party settings. Connection selections can be undone, and Codex can return to the previous saved account. Qoder/ZCode account viewing is available in their pages; unverified switching is not offered.
+A workspace for vibe-coding apps, with Persian RTL, accounts, and an API notebook.
+
+The main navigation is **Apps**, **API notebook** (saved APIs, with a separate proxy page), and **More tools**, with **Settings** in the sidebar footer. Open a project folder or a recent project with an installed app, focus its existing window, and configure accounts, connections and guides from that app’s page. Account quotas are shown when available; unavailable values remain explicit. API selections are manual setup references and do not rewrite third-party settings. Connection selections can be undone, and Codex can return to the previous saved account. Qoder/ZCode account viewing is available in their pages; unverified switching is not offered.
 
 ## Development without reinstalling
 
@@ -29,7 +31,7 @@ VibeHub is a free, open-source desktop companion for discovering and configuring
 
 The release download will be a single NSIS installer named `VibeHub-Setup.exe`, with two choices:
 
-- **Full VibeHub:** the desktop hub and all three RTL launchers.
+- **Full VibeHub:** the desktop hub and all four RTL launchers.
 - **RTL launchers only:** choose ZCode, Qoder, and/or DeepSeek Harness independently.
 
 The setup includes a private, checksum-verified Node.js 24.22.1 LTS runtime and does not change the system Node installation or PATH. ZCode, Qoder, and DeepSeek Harness remain separate applications: install them from their official sources first, or choose their executable from the RTL shortcut if they are installed in a custom location. Missing applications do not block installing the launchers. MSI output is disabled. Automatic updates are available only in the full VibeHub mode; use the same Setup to update or change RTL-only selections.
@@ -74,3 +76,5 @@ The web build verifies the frontend only. The Tauri runtime, native adapters, si
 
 
 [All tutorials / همهٔ آموزش‌ها](docs/tutorials/README.md)
+
+Install a coding app after VibeHub, then return to the workspace or use Check again. Supported app tiles offer Set up RTL: this creates a per-user Start Menu shortcut and selects RTL for the next launch using bundled files. Antigravity chat RTL remains experimental; see [RTL setup](docs/tutorials/rtl-setup.en.md).

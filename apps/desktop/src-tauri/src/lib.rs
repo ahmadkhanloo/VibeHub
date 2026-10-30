@@ -66,6 +66,14 @@ async fn rtl_components(app: tauri::AppHandle) -> Result<Value> {
 }
 
 #[tauri::command]
+async fn rtl_setup(app: tauri::AppHandle, app_id: String) -> Result<Value> {
+    if !["qoder", "zcode", "deepseek-harness", "antigravity"].contains(&app_id.as_str()) {
+        return Err("RTL is unavailable for this app".into());
+    }
+    system::run(app, json!({"operation":"rtl-setup", "appId":app_id})).await
+}
+
+#[tauri::command]
 async fn launch_editor(
     app: tauri::AppHandle,
     editor_id: String,
@@ -510,6 +518,7 @@ pub fn run() {
             detect_apps,
             detect_editors,
             rtl_components,
+            rtl_setup,
             launch_editor,
             launch_app,
             launch_state,

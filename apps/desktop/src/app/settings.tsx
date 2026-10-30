@@ -19,6 +19,7 @@ export type ResolvedMode = "light" | "dark";
 
 export interface AppSettings {
   launchModeByApp: Record<string, "normal" | "rtl">;
+  rtlSetupByApp: Record<string, boolean>;
   recentProjects: string[];
   apiConnectionByApp: Record<string, string>;
   previousApiByApp: Record<string, string>;
@@ -38,6 +39,7 @@ export interface AppSettings {
 
 const DEFAULTS: AppSettings = {
   launchModeByApp: {},
+  rtlSetupByApp: {},
   recentProjects: [],
   apiConnectionByApp: {},
   previousApiByApp: {},
@@ -76,6 +78,7 @@ function load(): AppSettings {
       ...DEFAULTS,
       ...parsed,
       launchModeByApp,
+      rtlSetupByApp: Object.fromEntries(Object.entries(parsed.rtlSetupByApp ?? {}).filter(([id, value]) => /^[a-z0-9-]+$/.test(id) && value === true)),
       themeFamily: ["graphite", "nord", "catppuccin", "solarized"].includes(parsed.themeFamily) ? parsed.themeFamily : "graphite",
       accent: ["auto", "indigo", "emerald", "violet", "amber"].includes(parsed.accent) ? parsed.accent : "auto",
       recentProjects: Array.isArray(parsed.recentProjects) ? parsed.recentProjects.filter((p: unknown) => typeof p === "string" && p.length > 0).slice(0, 6) : [],

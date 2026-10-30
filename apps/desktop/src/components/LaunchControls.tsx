@@ -1,4 +1,5 @@
 import { AppPath } from "./AppPath";
+import { RtlSetup } from "./RtlSetup";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AlertCircle, ChevronDown, Play, SlidersHorizontal } from "lucide-react";
@@ -76,8 +77,9 @@ export function LaunchControls({
           onClick={() => { if (state?.phase !== "running") { void ctx.launch(id, kind, mode); return; } setFocusing(true); setFocusError(null); void ipc.focusApp(id).catch(setFocusError).finally(() => setFocusing(false)); }}
         >
           <Play aria-hidden="true" size={15} />
-          {state?.phase === "running" ? t("focusApp") : mode === "rtl" ? t("runRtl") : t("run")}
+          {state?.phase === "running" ? t("focusApp") : mode === "rtl" ? t(compact ? "runRtlCompact" : "runRtl") : t("run")}
         </Button>
+        {supportsRtl && <RtlSetup key={id} id={id} name={name} available={!!available} onReady={() => setChoice("rtl")} />}
         {supportsRtl && compact && <Button variant="ghost" aria-label={t('modeFor', { name })} title={t('modeFor', { name })} aria-expanded={optionsOpen} onClick={() => setOptionsOpen(!optionsOpen)}><SlidersHorizontal size={16} aria-hidden="true" /></Button>}
       </div>
       {compact && optionsOpen && <div className="vh-launch-options" onKeyDown={event => { if (event.key === 'Escape') { setOptionsOpen(false); event.currentTarget.previousElementSibling?.querySelector<HTMLButtonElement>('[aria-expanded]')?.focus(); } }}>

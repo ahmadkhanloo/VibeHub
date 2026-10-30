@@ -33,3 +33,7 @@ ZCode is an AI coding agent/IDE used with a user account. VibeHub discovers it, 
 
 ## Model options
 Models and quotas come from the provider; BYOK status is "unknown" until tested in a later release.
+
+## Set up RTL from VibeHub
+
+After installing the app, return to VibeHub or choose Check again. Choose Set up RTL on its tile to create a Start Menu shortcut and select RTL for the next launch. Setup uses bundled files and does not start or close the app. [Full setup and recovery instructions](https://github.com/ahmadkhanloo/VibeHub/blob/main/docs/tutorials/rtl-setup.en.md).

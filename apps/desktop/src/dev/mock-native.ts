@@ -103,6 +103,8 @@ export function installMockNative({ scenario, language, onboardingDone }: { scen
                       via: "standard-path",
                     },
                   ];
+            case "rtl_setup":
+              return { ok: true, shortcut: "C:/Fixtures/RTL.lnk" };
             case "rtl_components":
               return [
                 { id: "zcode", available: state.scenario !== "missing" },

@@ -78,7 +78,7 @@ export function AppDetailsPage() {
         <div className="space-y-3 text-sm">
           <VerificationBadge status={app.capabilities.rtl} />
           {appId === 'antigravity' && <Badge tone="warning">{t('ux:rtlExperimental')}</Badge>}
-          <p className="text-muted">{t(app.capabilities.rtl === 'verified' ? ready ? 'apps:rtlBundled' : 'ux:rtlMissing' : 'apps:rtlUnavailable')}</p>
+          <p className="text-muted">{t(supportsRtl ? ready ? 'apps:rtlBundled' : 'ux:rtlMissing' : 'apps:rtlUnavailable')}</p>
           <p className="text-muted">{t('ux:launchNote')}</p>
           {!installed && <p className="text-muted">{t('ux:installNote')}</p>}
         </div>

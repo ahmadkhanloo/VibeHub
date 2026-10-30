@@ -1,33 +1,34 @@
 # VibeHub Release Acceptance Matrix
 
-**Current snapshot:** 2026-10-30 01:59 +03:30 (Asia/Tehran)
-**Branch / commit:** `codex/restore-tools-modern-desktop` / `9021b649e78d6460263a80561eb62d90df8c95fe` (worktree dirty; current changes are not in this commit)
-**Build:** VibeHub `0.1.0`, local source checkout; no Tauri Setup artifact was produced for this snapshot.
-**Release state:** Beta. No public release was created. Historical records below are context only and do not establish current status.
+**Current snapshot:** 2026-10-30 23:31:36 +03:30 (Asia/Tehran)
+**Branch / source:** `codex/rtl-setup-api-notebook`; base commit `3878224c28bec039b1cd3321b7d98ff23c678ff5` plus the current changes.
+**Build:** VibeHub `0.2.0` source, intended package `v0.2.0-beta.6`. No installer was used for the local checks below.
+**Release state:** Beta. Public beta.5 precedes these changes; beta.6 publication is tracked by its tag workflow. Historical records below do not establish current scenario acceptance.
 
 ## Status meanings
 
-- `PASS` — the exact scenario ran against the stated build/environment and its evidence is linked.
-- `FAIL` — the scenario ran and did not meet its acceptance criterion.
-- `UNVERIFIED` — no current evidence is available; do not infer success.
-- `BLOCKED` — execution cannot proceed until a named prerequisite or test environment is available.
+- `PASS` — the stated scenario ran in its recorded environment and its evidence is linked.
+- `FAIL` — it ran and did not meet its criterion.
+- `UNVERIFIED` — current evidence is missing; do not infer success.
+- `BLOCKED` — a named prerequisite or environment is unavailable.
 
 ## Current status by scenario
 
-Every current scenario records the source build/commit, operating system, install type, result and test date/time, and a linked evidence record. A missing installer is recorded as `No installer` with no checksum; it is never treated as installation evidence.
+Local PASS results apply to the exact mock, fixture, or source environment in the row. They are not native installed-build acceptance. The [local report](20261030_rtl_setup_api_notebook.md) records source revision, commands, results, approximate run window and limitations. Snapshot time: 2026-10-30 23:31:36 +03:30. No installer means no Setup filename or SHA-256 is available for that local check.
 
 | Scenario | Status | Build / commit | OS / install | Result / time | Artifact / SHA-256 | Evidence |
 |---|---|---|---|---|---|---|
-| Account summary state, stale data, auth versus quota errors, retry, and shared reads | PASS | `0.1.0` source checkout, commit `9021b649…` plus dirty changes | Windows `10.0.28000.3231`; Vite browser preview with mocked Tauri IPC; not installed | 4/4 account scenarios passed; approx. 2026-10-30 01:38–01:40 Asia/Tehran; runner interrupted during shutdown after all case results | No installer | [local verification report](20261030_reliability_ux_local_validation.md) |
-| Connection labels, missing profile/API reference, handshake wording, edit invalidation, and next-launch behavior | PASS | `0.1.0` source checkout, commit `9021b649…` plus dirty changes | Windows `10.0.28000.3231`; Vite browser preview with mocked Tauri IPC; not installed | 2/2 connection scenarios passed; approx. 2026-10-30 01:38–01:40 Asia/Tehran; runner interrupted during shutdown after all case results | No installer | [local verification report](20261030_reliability_ux_local_validation.md) |
-| Five compact app cards at 1280×860; English/Persian, light/dark, and 200%-equivalent narrow viewport | PASS | `0.1.0` source checkout, commit `9021b649…` plus dirty changes | Windows `10.0.28000.3231`; Vite browser preview with mocked Tauri IPC; not installed | 5/5 compact-home scenarios passed: 1280×860 fit and 640×430 overflow checks in English/Persian, light/dark; approx. 2026-10-30 01:38–01:40 Asia/Tehran; runner interrupted during shutdown | No installer | [local verification report](20261030_reliability_ux_local_validation.md) |
-| JavaScript regressions | PASS | `0.1.0` source checkout, commit `9021b649…` plus dirty changes; pnpm `12.15.0`, Node `v26.7.0` | Windows `10.0.28000.3231`; repository test runner; not installed | 33 passed, 0 failed; 2026-10-30 approx. 01:40–01:45 Asia/Tehran | No installer | [local verification report](20261030_reliability_ux_local_validation.md) |
-| Rust native tests | PASS | `0.1.0` source checkout, commit `9021b649…` plus dirty changes; Cargo locked dependencies | Windows `10.0.28000.3231`; debug test harness; not installed | 77 passed, 0 failed, 4 ignored; serial rerun; 2026-10-30 approx. 00:57–01:25 Asia/Tehran | No installer | [local verification report](20261030_reliability_ux_local_validation.md) |
-| TypeScript checks and Vite production web build | PASS | `0.1.0` source checkout, commit `9021b649…` plus dirty changes; pnpm `12.15.0`, Node `v26.7.0` | Windows `10.0.28000.3231`; web assets built locally; not installed | Checks passed; build emitted a 662.20 kB chunk warning after tutorial consolidation; 2026-10-30 approx. 01:40–01:45 Asia/Tehran | No installer | [local verification report](20261030_reliability_ux_local_validation.md) |
-| Translation parity, bundled content, and native IPC registration guard | PASS | `0.1.0` source checkout, commit `9021b649…` plus dirty changes; pnpm `12.15.0`, Node `v26.7.0` | Windows `10.0.28000.3231`; local static checks; not installed | 1,074 translation keys; content valid; all UI IPC commands registered; 2026-10-30 approx. 01:40–01:45 Asia/Tehran | No installer | [local verification report](20261030_reliability_ux_local_validation.md) |
-| Clean Windows 10 candidate installation, upgrade, and owned-file removal | BLOCKED | No release candidate; source commit above has uncommitted changes | Clean Windows 10 profile/VM not available in this run; no installer installed | Blocked pending candidate installer and clean test profile; 2026-10-30 01:59 +03:30 Asia/Tehran | No Setup file or SHA-256 | [local verification report](20261030_reliability_ux_local_validation.md) |
-| Clean Windows 11 candidate installation, upgrade, and owned-file removal | BLOCKED | No release candidate; source commit above has uncommitted changes | Clean Windows 11 profile/VM not available in this run; no installer installed | Blocked pending candidate installer and clean test profile; 2026-10-30 01:59 +03:30 Asia/Tehran | No Setup file or SHA-256 | [local verification report](20261030_reliability_ux_local_validation.md) |
-| Per-app real vendor launch/proxy traffic, account switching, and signed updater failure/recovery | UNVERIFIED | No release candidate; source commit above has uncommitted changes | Real vendor accounts/apps and clean installed environment not exercised | No live traffic or account switching performed; signed update path not exercised; 2026-10-30 01:59 +03:30 Asia/Tehran | No Setup or updater artifact / SHA-256 | [local verification report](20261030_reliability_ux_local_validation.md) |
+| Accounts, connections, home, newly installed app detection and API notebook | PASS | 0.2.0 source; base 3878224 plus current changes | Windows 10.0.28000.3231; fresh Vite servers, mocked IPC; not installed | 95 browser cases passed, exit 0; 2026-10-30 23:31:36 +03:30 | No installer | [local report](20261030_rtl_setup_api_notebook.md) |
+| Five launch actions at 1280×860; Persian/English, light/dark, narrow viewport and accessibility | PASS | 0.2.0 source; base 3878224 plus current changes | Windows; browser fixtures; not installed | Included in the complete 95-case PASS; 2026-10-30 23:31:36 +03:30 | No installer | [local report](20261030_rtl_setup_api_notebook.md) |
+| RTL shortcut setup, all four adapters, Persian paths, missing payload and ownership protection | PASS | 0.2.0 source; base 3878224 plus current changes | Windows; real .lnk files in isolated temporary directories; not installed | 21 assertions passed; 2026-10-30 23:31:36 +03:30 | No installer | [native fixture](../../tests/rtl-setup.ps1), [local report](20261030_rtl_setup_api_notebook.md) |
+| JavaScript regressions | PASS | 0.2.0 source; base 3878224 plus current changes | Windows; Node v26.7.0, pnpm 12.15.0; not installed | 33 passed; 2026-10-30 23:31:36 +03:30 | No installer | [local report](20261030_rtl_setup_api_notebook.md) |
+| Rust native suite after final embedded-script change | PASS | 0.2.0 source; base 3878224 plus current changes | Windows; locked debug test harness; not installed | Final rerun: 77 passed, 0 failed, 4 ignored; 2026-10-30 23:31:36 +03:30 | No installer | [local report](20261030_rtl_setup_api_notebook.md) |
+| TypeScript and production web build | PASS | 0.2.0 source; base 3878224 plus current changes | Windows; built web assets; not installed | Checks passed; 673.88 kB main chunk warning; 2026-10-30 23:31:36 +03:30 | No installer | [local report](20261030_rtl_setup_api_notebook.md) |
+| Translation parity, bundled content and native IPC registration | PASS | 0.2.0 source; base 3878224 plus current changes | Windows; local static checks; not installed | 1,083 keys; content valid; UI commands registered; 2026-10-30 23:31:36 +03:30 | No installer | [local report](20261030_rtl_setup_api_notebook.md) |
+| Clean Windows 10 install, upgrade and owned-file removal | BLOCKED | No current installed candidate | Clean Windows 10 profile/VM unavailable | Awaiting clean profile and exact candidate installer; 2026-10-30 23:31:36 +03:30 | No current Setup / SHA-256 | [local report](20261030_rtl_setup_api_notebook.md) |
+| Clean Windows 11 install, upgrade and owned-file removal | BLOCKED | No current installed candidate | Clean Windows 11 profile/VM unavailable | Awaiting clean profile and exact candidate installer; 2026-10-30 23:31:36 +03:30 | No current Setup / SHA-256 | [local report](20261030_rtl_setup_api_notebook.md) |
+| Live Antigravity chat RTL and other real vendor-app traffic | UNVERIFIED | Current adapter source | Real signed-in conversation and vendor routing not exercised | Fixture and shortcut results do not establish live rendering/routing; 2026-10-30 23:31:36 +03:30 | No live evidence | [local report](20261030_rtl_setup_api_notebook.md) |
+| Live account switching and signed update recovery | UNVERIFIED | Current source | Real accounts and clean installed baseline not exercised | No live switching or end-to-end update recovery in this run; 2026-10-30 23:31:36 +03:30 | No current recovery evidence | [local report](20261030_rtl_setup_api_notebook.md) |
 
 ## Historical gate record (not current status)
 

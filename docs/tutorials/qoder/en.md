@@ -79,3 +79,7 @@ Qoder is an agentic IDE. Its Community plan with BYOK is the free path (under th
 
 ## Model options
 BYOK is supported in Qoder (reported); configure keys through Qoder's own official settings. The "verified" label arrives after the adapter test.
+
+## Set up RTL from VibeHub
+
+After installing the app, return to VibeHub or choose Check again. Choose Set up RTL on its tile to create a Start Menu shortcut and select RTL for the next launch. Setup uses bundled files and does not start or close the app. [Full setup and recovery instructions](https://github.com/ahmadkhanloo/VibeHub/blob/main/docs/tutorials/rtl-setup.en.md).
