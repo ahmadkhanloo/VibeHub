@@ -1,5 +1,7 @@
 # RTL setup from app tiles and API notebook
 
+> **Superseded for release status; historical only.** Current release status and gate results are tracked in [VibeHub_Release_Acceptance_Matrix.md](VibeHub_Release_Acceptance_Matrix.md). This report records the source/mock run described below and does not set current acceptance.
+
 Snapshot: 2026-10-30 23:31:36 +03:30 (Asia/Tehran). Source: branch `codex/rtl-setup-api-notebook`, base commit `3878224c28bec039b1cd3321b7d98ff23c678ff5` plus the current changes. VibeHub base version `0.2.0`; intended public package `v0.2.0-beta.6`. Host: Windows `10.0.28000.3231`, Node `v26.7.0`, pnpm `12.15.0`. These checks use source, mock IPC, and isolated temporary files, with no installed vendor app launched or changed.
 
 ## Behavior

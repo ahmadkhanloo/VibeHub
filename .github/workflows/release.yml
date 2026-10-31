@@ -70,6 +70,25 @@ jobs:
           $releaseConfigJson = ($releaseConfig | ConvertTo-Json -Depth 20) + [Environment]::NewLine
           [IO.File]::WriteAllText($releaseConfigPath, $releaseConfigJson, [Text.UTF8Encoding]::new($false))
 
+      - name: Refuse to overwrite a published Release and reset any stale draft
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          $json = gh release view $tag --json isDraft --repo $env:GITHUB_REPOSITORY 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            "No existing Release for $tag; a fresh draft will be created." | Add-Content $env:GITHUB_STEP_SUMMARY
+            exit 0
+          }
+          $release = $json | ConvertFrom-Json
+          if (-not $release.isDraft) {
+            throw "Release $tag is already published and its assets are treated as immutable. Cut a new patch tag instead of republishing."
+          }
+          gh release delete $tag --yes --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -ne 0) { throw "Could not reset the stale draft Release $tag" }
+          "Deleted the stale draft Release for $tag; this run starts from a clean draft. The tag ref is preserved." | Add-Content $env:GITHUB_STEP_SUMMARY
+
       - name: Set up Node.js
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
@@ -143,24 +162,29 @@ jobs:
           projectPath: apps/desktop
           tagName: ${{ github.ref_name }}
           releaseName: VibeHub ${{ github.ref_name }}
-          releaseBody: |
-            Version 0.2.1 fixes Windows Setup: full installations no longer create standalone RTL shortcuts, and RTL-only installations create labeled shortcuts for selected apps with RTL-badged icons. An isolated Windows CI runner tested installing 0.2.0, upgrading to this candidate, RTL-only installation and removal; it is not a clean Windows 10/11 test or an end-to-end signed updater test.
-
-            نسخهٔ ۰٫۲٫۱ میانبرها را اصلاح می‌کند: نصب کامل میانبر مستقل RTL نمی‌سازد و نصب صرفاً RTL برای ابزارهای انتخاب‌شده میانبر با نشان RTL ایجاد می‌کند. نصب و ارتقا در محیط آزمایشی CI بررسی شده، اما نصب پاک ویندوز ۱۰ و ۱۱ و چرخهٔ کامل ارتقای امضاشده هنوز تأیید نشده است.
-
-            VibeHub 0.2: a modern Persian/English desktop workspace for coding apps. Main navigation: Apps, API notebook and More tools, with Settings in the sidebar footer. More tools restores accounts, offers, terminal customization with undo, diagnostics, guides, plugin/skill tutorials, agent lessons, optional setup and appearance. Four theme families, accent colors and notification preferences are available. Open projects, revisit recent folders, focus running apps and review account/quota/connection summaries. The API notebook stores manual setup references. App tiles can set up bundled RTL and a Start Menu shortcut after a coding app is installed, including experimental standalone Antigravity chat RTL. Setup does not launch or close vendor apps; unsupported desktop account switching stays gated.
-
-            Download `VibeHub-Setup.exe`. This release includes a pinned Node.js runtime and signed Tauri updater assets; the Setup executable does not carry a Windows publisher signature. Clean Windows 10/11 and end-to-end signed upgrade acceptance remain unverified. Qoder/ZCode account switching remains blocked pending live verification; real provider authentication and per-app proxy routing are not claimed by local checks. Historical v1.x releases belong to AgentRTL.
-
-            نسخهٔ ۰٫۲ وایب‌هاب با طراحی تازهٔ فارسی و انگلیسی: برنامه‌ها، دفترچهٔ API و ابزارهای بیشتر؛ تنظیمات پایین نوار کناری. حساب‌ها، پیشنهادها، ترمینال با بازگردانی، عیب‌یابی، راهنماها، آموزش پلاگین و اسکیل، کار با ایجنت‌ها و راهنمای شروع اختیاری برگشته‌اند. چهار خانوادهٔ تم، رنگ تأکیدی و تنظیمات اعلان در دسترس‌اند. انتخاب پروژه، پروژه‌های اخیر، رفتن به پنجرهٔ باز و خلاصهٔ حساب و اتصال حفظ شده‌اند. دفترچهٔ API مرجع تنظیم دستی است. کاشی برنامه‌های پشتیبانی‌شده دکمهٔ نصب RTL و ساخت میانبر منوی شروع دارد؛ RTL چت اپ مستقل آنتی‌گرویتی نیز با وضعیت آزمایشی در دسترس است. نصب RTL برنامه را اجرا یا بسته نمی‌کند و تعویض حساب تأییدنشده عرضه نمی‌شود.
-
-            فایل `VibeHub-Setup.exe` را نصب کنید. آزمون نصب پاک Windows 10/11 و چرخهٔ کامل ارتقای امضاشده هنوز تأیید نشده است. امضای updater با امضای ناشر ویندوز برای Setup متفاوت است.
           releaseDraft: true
           prerelease: ${{ contains(github.ref_name, '-') }}
           generateReleaseNotes: true
           uploadUpdaterJson: true
           uploadUpdaterSignatures: true
           args: --config src-tauri/tauri.release.conf.json
+
+      - name: Render the public Release body
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          $version = $tag.Substring(1)
+          $prerelease = if ($tag -match '-') { 'true' } else { 'false' }
+          $notesPath = Join-Path $env:RUNNER_TEMP 'vibehub-generated-notes.md'
+          gh release view $tag --json body -q .body --repo $env:GITHUB_REPOSITORY | Set-Content -LiteralPath $notesPath -Encoding utf8NoBOM
+          if ($LASTEXITCODE -ne 0) { throw 'Could not read the generated Release notes from the draft Release' }
+          $bodyPath = Join-Path $env:RUNNER_TEMP 'vibehub-release-body.md'
+          node scripts/render-release-body.mjs .github/release-body.md $bodyPath $tag $version $prerelease $notesPath
+          if ($LASTEXITCODE -ne 0) { throw 'Could not render the public Release body from its template' }
+          gh release edit $tag --notes-file $bodyPath --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -ne 0) { throw 'Could not apply the rendered Release body to the draft Release' }
 
       - name: Publish Setup as VibeHub-Setup.exe
         shell: pwsh
@@ -176,6 +200,11 @@ jobs:
             gh release delete-asset $tag 'VibeHub-Setup.exe' --yes --repo $env:GITHUB_REPOSITORY
             if ($LASTEXITCODE -ne 0) { throw 'Could not replace the existing VibeHub-Setup.exe draft asset' }
           }
+          $aliasSignature = @($release.assets | Where-Object name -ceq 'VibeHub-Setup.exe.sig')
+          if ($aliasSignature.Count -gt 0) {
+            gh release delete-asset $tag 'VibeHub-Setup.exe.sig' --yes --repo $env:GITHUB_REPOSITORY
+            if ($LASTEXITCODE -ne 0) { throw 'Could not replace the existing VibeHub-Setup.exe.sig draft asset' }
+          }
 
           $setups = @($release.assets | Where-Object { $_.name -match 'setup\.exe$' -and $_.name -cne 'VibeHub-Setup.exe' })
           if ($setups.Count -ne 1) { throw 'Expected one Tauri-generated NSIS Setup executable before assigning the stable download name' }
@@ -188,34 +217,41 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Could not download updater signatures' }
           $releasePath = Join-Path $verifyDir 'release.json'
           [IO.File]::WriteAllText($releasePath, ($release | ConvertTo-Json -Depth 20), [Text.UTF8Encoding]::new($false))
-          node scripts/normalize-updater-release.mjs (Join-Path $verifyDir 'latest.json') $releasePath $verifyDir
+          node scripts/normalize-updater-release.mjs (Join-Path $verifyDir 'latest.json') $releasePath $verifyDir "$env:GITHUB_REPOSITORY" "$tag"
           if ($LASTEXITCODE -ne 0) { throw 'Could not normalize public signed updater URLs' }
-          gh release upload $tag (Join-Path $verifyDir 'latest.json') --clobber --repo $env:GITHUB_REPOSITORY
-          if ($LASTEXITCODE -ne 0) { throw 'Could not upload normalized updater metadata' }
           $latest = Get-Content (Join-Path $verifyDir 'latest.json') -Raw | ConvertFrom-Json
+          if (-not $latest.platforms) { throw 'latest.json has no updater platforms after normalization' }
+          $canonicalBase = "https://github.com/$($env:GITHUB_REPOSITORY)/releases/download/$([Uri]::EscapeDataString($tag))/"
           foreach ($platform in $latest.platforms.PSObject.Properties) {
-            $updaterUri = [Uri]$platform.Value.url
-            $updaterName = [Uri]::UnescapeDataString(($updaterUri.AbsolutePath -split '/')[-1])
+            $updaterUrl = [string]$platform.Value.url
+            if ($updaterUrl -match 'untagged-') { throw "Updater URL must never reference a draft upload: $updaterUrl" }
+            if (-not $updaterUrl.StartsWith($canonicalBase, [StringComparison]::Ordinal)) { throw "Updater URL must use the canonical tagged release path: $updaterUrl" }
+            $updaterName = [Uri]::UnescapeDataString((([Uri]$updaterUrl).AbsolutePath -split '/')[-1])
             if ($updaterName -notmatch '\.nsis\.zip$') { throw "Tauri updater URL must target its signed NSIS archive before renaming Setup: $updaterName" }
           }
+          gh release upload $tag (Join-Path $verifyDir 'latest.json') --clobber --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -ne 0) { throw 'Could not upload normalized updater metadata' }
 
           gh release download $tag --pattern $setups[0].name --dir $verifyDir --repo $env:GITHUB_REPOSITORY
           if ($LASTEXITCODE -ne 0) { throw 'Could not download the Tauri-generated Setup executable' }
           $source = Join-Path $verifyDir $setups[0].name
-          $stableSetup = Join-Path $env:RUNNER_TEMP 'VibeHub-Setup.exe'
-          Copy-Item -LiteralPath $source -Destination $stableSetup -Force
-          gh release delete-asset $tag $setups[0].name --yes --repo $env:GITHUB_REPOSITORY
-          if ($LASTEXITCODE -ne 0) { throw 'Could not remove the versioned Setup asset from the draft Release' }
-          gh release upload $tag $stableSetup --repo $env:GITHUB_REPOSITORY
-          if ($LASTEXITCODE -ne 0) { throw 'Could not upload VibeHub-Setup.exe to the draft Release' }
+          if (-not (Test-Path -LiteralPath $source -PathType Leaf)) { throw 'The Tauri-generated Setup executable is missing after download' }
           $versionedSignature = Join-Path $verifyDir "$($setups[0].name).sig"
-          if (-not (Test-Path -LiteralPath $versionedSignature)) { throw 'Setup signature is missing' }
+          if (-not (Test-Path -LiteralPath $versionedSignature -PathType Leaf)) { throw 'Setup signature is missing' }
+          $stableSetup = Join-Path $env:RUNNER_TEMP 'VibeHub-Setup.exe'
           $stableSignature = "$stableSetup.sig"
-          Copy-Item -LiteralPath $versionedSignature -Destination $stableSignature
+          Copy-Item -LiteralPath $source -Destination $stableSetup -Force
+          Copy-Item -LiteralPath $versionedSignature -Destination $stableSignature -Force
+          if ((Get-FileHash -LiteralPath $stableSetup -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash) {
+            throw 'Stable Setup copy does not match the Tauri-generated executable'
+          }
+          # Upload the user-facing alias first so a mid-step failure never leaves the draft without a Setup download.
+          gh release upload $tag $stableSetup $stableSignature --clobber --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -ne 0) { throw 'Could not upload VibeHub-Setup.exe and its signature to the draft Release' }
+          gh release delete-asset $tag $setups[0].name --yes --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -ne 0) { throw 'Could not remove the versioned Setup asset after the stable alias was uploaded' }
           gh release delete-asset $tag "$($setups[0].name).sig" --yes --repo $env:GITHUB_REPOSITORY
-          if ($LASTEXITCODE -ne 0) { throw 'Could not rename the versioned Setup signature' }
-          gh release upload $tag $stableSignature --repo $env:GITHUB_REPOSITORY
-          if ($LASTEXITCODE -ne 0) { throw 'Could not upload VibeHub-Setup.exe.sig' }
+          if ($LASTEXITCODE -ne 0) { throw 'Could not remove the versioned Setup signature after the stable alias was uploaded' }
 
       - name: Generate and attach CycloneDX SBOM
         uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
@@ -303,11 +339,15 @@ jobs:
           if (-not $latest.platforms) { throw 'latest.json has no updater platforms' }
           $expectedVersion = $tag.Substring(1)
           if (($latest.version -replace '^v', '') -ne $expectedVersion) { throw "latest.json version does not match release tag $tag" }
+          $canonicalBase = "https://github.com/$($env:GITHUB_REPOSITORY)/releases/download/$([Uri]::EscapeDataString($tag))/"
           foreach ($platform in $latest.platforms.PSObject.Properties) {
             if ([string]::IsNullOrWhiteSpace([string]$platform.Value.url) -or [string]::IsNullOrWhiteSpace([string]$platform.Value.signature)) {
               throw "latest.json has an incomplete updater entry for $($platform.Name)"
             }
-            $updaterUri = [Uri]$platform.Value.url
+            $updaterUrl = [string]$platform.Value.url
+            if ($updaterUrl -match 'untagged-') { throw "Refusing to publish a manifest with a draft upload URL: $updaterUrl" }
+            if (-not $updaterUrl.StartsWith($canonicalBase, [StringComparison]::Ordinal)) { throw "Refusing to publish a non-canonical updater URL: $updaterUrl" }
+            $updaterUri = [Uri]$updaterUrl
             $assetName = [Uri]::UnescapeDataString(($updaterUri.AbsolutePath -split '/')[-1])
             if ($assetName -notmatch '\.nsis\.zip$') { throw "Updater URL must point to the signed NSIS updater bundle, not the standard Setup executable: $assetName" }
             if (-not ($assets.Name -contains $assetName)) { throw "Updater URL has no matching Release asset: $assetName" }
@@ -393,3 +433,59 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "Public updater signature verification failed for $($signature.Name)" }
           }
           "Verified publicly downloadable Release: $($release.url)" | Add-Content $env:GITHUB_STEP_SUMMARY
+
+      - name: Verify tagged updater manifest and asset reachability
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_IS_PRERELEASE: ${{ contains(github.ref_name, '-') }}
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          $version = $tag.Substring(1)
+          $repository = $env:GITHUB_REPOSITORY
+          $base = "https://github.com/$repository/releases/download/$([Uri]::EscapeDataString($tag))"
+          $manifestUrl = "$base/latest.json"
+
+          $manifestResponse = Invoke-WebRequest -Uri $manifestUrl -MaximumRedirection 10
+          if ($manifestResponse.StatusCode -ne 200) { throw "Tagged updater manifest is not publicly reachable: $manifestUrl" }
+          $manifest = $manifestResponse.Content | ConvertFrom-Json
+          if (-not $manifest.platforms) { throw 'Public tagged manifest has no updater platforms' }
+          if (($manifest.version -replace '^v', '') -ne $version) { throw "Public tagged manifest version does not match $tag" }
+
+          foreach ($platform in $manifest.platforms.PSObject.Properties) {
+            $updaterUrl = [string]$platform.Value.url
+            if ($updaterUrl -match 'untagged-') { throw "Public updater URL references a draft upload: $updaterUrl" }
+            if (-not $updaterUrl.StartsWith("$base/", [StringComparison]::Ordinal)) { throw "Public updater URL is not the canonical tagged download: $updaterUrl" }
+            $archiveResponse = Invoke-WebRequest -Uri $updaterUrl -Method Head -MaximumRedirection 10
+            if ($archiveResponse.StatusCode -ne 200) { throw "Signed updater archive is not publicly reachable: $updaterUrl" }
+            $signatureUrl = "$updaterUrl.sig"
+            $signatureResponse = Invoke-WebRequest -Uri $signatureUrl -MaximumRedirection 10
+            if ($signatureResponse.StatusCode -ne 200) { throw "Updater signature is not publicly reachable: $signatureUrl" }
+            if ($signatureResponse.Content.Trim() -ne ([string]$platform.Value.signature).Trim()) {
+              throw "Public updater signature differs from latest.json: $signatureUrl"
+            }
+          }
+
+          $releaseInfo = gh release view $tag --json isLatest,isPrerelease --repo $repository | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { throw 'Could not determine whether this Release is the latest stable Release' }
+          if ($env:RELEASE_IS_PRERELEASE -eq 'false' -and $releaseInfo.isLatest) {
+            $latestUrl = "https://github.com/$repository/releases/latest/download/latest.json"
+            $matched = $false
+            for ($attempt = 1; $attempt -le 6; $attempt++) {
+              try {
+                $candidate = (Invoke-WebRequest -Uri $latestUrl -MaximumRedirection 10).Content | ConvertFrom-Json
+                if (($candidate.version -replace '^v', '') -eq $version) { $matched = $true; break }
+                Write-Host "releases/latest still serves $($candidate.version); retrying."
+              } catch {
+                Write-Host "releases/latest check attempt $attempt failed: $($_.Exception.Message)"
+              }
+              Start-Sleep -Seconds 10
+            }
+            if (-not $matched) { throw "releases/latest/download/latest.json does not serve $version after publication" }
+          } elseif ($env:RELEASE_IS_PRERELEASE -eq 'true') {
+            "Skipping releases/latest check: $tag is a prerelease." | Add-Content $env:GITHUB_STEP_SUMMARY
+          } else {
+            "Skipping releases/latest check: an existing newer stable Release is latest." | Add-Content $env:GITHUB_STEP_SUMMARY
+          }
+
+          "Public tagged manifest, updater archive, signature, and latest-release manifest verified for $tag." | Add-Content $env:GITHUB_STEP_SUMMARY

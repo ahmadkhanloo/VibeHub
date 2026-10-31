@@ -1,33 +1,39 @@
-## VibeHub for Windows x64
+## VibeHub {{VERSION}} for Windows x64
 
-This release is built from the validated source revision shown below. Download the installer from this Release page. A portable archive is provided only when it has been built and tested for this version.
+> Download `VibeHub-Setup.exe` from this Release. The [acceptance matrix](https://github.com/ahmadkhanloo/VibeHub/blob/{{TAG}}/docs/validation/VibeHub_Release_Acceptance_Matrix.md) is the source for what has actually been verified.
+
+VibeHub is a free, open-source desktop workspace for AI coding tools. It does not host models or provide a proxy service. Clean Windows 10 and 11 installation, upgrade and removal acceptance remain open unless the matrix records a passing run for the exact published build.
 
 | File | Purpose |
 |---|---|
-| `VibeHub_*_x64-setup.exe` | Windows NSIS installer |
-| `VibeHub_*_x64.msi` | Windows MSI installer |
-| `latest.json`, updater bundles, and `.sig` files | Signed Tauri updater metadata and artifacts |
+| `VibeHub-Setup.exe` | Windows NSIS installer; it does not carry a Windows publisher (Authenticode) signature |
+| `latest.json`, `VibeHub_*_x64-setup.nsis.zip`, and `.sig` files | Signed Tauri updater metadata and artifacts |
 | `checksums-sha256.txt` | SHA-256 hashes for the public release assets |
-| `VibeHub-source-*.zip` | Source snapshot for this tag |
+| `VibeHub-*-source.zip` | Source snapshot for this tag |
 | `VibeHub-SBOM.cdx.json` | CycloneDX software bill of materials |
 | `LICENSE`, `THIRD_PARTY_LICENSES.md` | Project and third-party license notices |
 
-Verify the installer checksum before running it. The updater signature is verified by VibeHub against its embedded public key. Read the [release acceptance matrix](../docs/validation/VibeHub_Release_Acceptance_Matrix.md) for Windows test coverage and limitations.
+Verify the installer SHA-256 against `checksums-sha256.txt` before running it. Updates are manual: open **Settings → Updates → Check now**. The updater archive is signed and VibeHub verifies it against its embedded public key.
+
+{{PRERELEASE_NOTICE}}
+
+{{GENERATED_NOTES}}
 
 ## فارسی
 
-### VibeHub برای Windows x64
+### VibeHub {{VERSION}} برای Windows x64
 
-این نسخه از همان revision بازبینی‌شدهٔ سورس که پایین صفحه نمایش داده می‌شود ساخته شده است. نصب‌کننده را از همین صفحهٔ Release بگیرید. آرشیو portable فقط وقتی ضمیمه می‌شود که برای همین نسخه ساخته و عملاً آزموده شده باشد.
+> فایل `VibeHub-Setup.exe` را از همین صفحهٔ Release بگیرید. [ماتریس پذیرش](https://github.com/ahmadkhanloo/VibeHub/blob/{{TAG}}/docs/validation/VibeHub_Release_Acceptance_Matrix.md) مرجع وضعیت واقعاً آزموده‌شده است.
+
+VibeHub یک میزکار دسکتاپ رایگان و متن‌باز برای ابزارهای AI Coding است؛ میزبان مدل یا سرویس پروکسی نیست. پذیرش نصب، ارتقا و حذف روی ویندوز ۱۰ و ۱۱ تمیز باز است، مگر اینکه ماتریس برای همین build منتشرشده اجرای موفقی ثبت کرده باشد.
 
 | فایل | کاربرد |
 |---|---|
-| `VibeHub_*_x64-setup.exe` | نصب‌کنندهٔ NSIS ویندوز |
-| `VibeHub_*_x64.msi` | نصب‌کنندهٔ MSI ویندوز |
-| `latest.json`، بسته‌های updater و فایل‌های `.sig` | metadata و artifactهای امضاشدهٔ Tauri updater |
-| `checksums-sha256.txt` | checksum فایل‌های عمومی Release |
-| `VibeHub-source-*.zip` | snapshot سورس همین tag |
+| `VibeHub-Setup.exe` | نصب‌کنندهٔ NSIS ویندوز؛ امضای ناشر (Authenticode) ندارد |
+| `latest.json`، `VibeHub_*_x64-setup.nsis.zip` و فایل‌های `.sig` | metadata و artifactهای امضاشدهٔ updater |
+| `checksums-sha256.txt` | هش SHA-256 فایل‌های عمومی Release |
+| `VibeHub-*-source.zip` | snapshot سورس همین tag |
 | `VibeHub-SBOM.cdx.json` | فهرست اجزای نرم‌افزار به قالب CycloneDX |
 | `LICENSE`، `THIRD_PARTY_LICENSES.md` | مجوز پروژه و noticeهای وابستگی‌های ثالث |
 
-پیش از اجرا checksum نصب‌کننده را بررسی کنید. updater درون VibeHub امضا را با کلید عمومی تعبیه‌شده می‌سنجد. پوشش آزمون Windows و محدودیت‌ها در [ماتریس پذیرش Release](../docs/validation/VibeHub_Release_Acceptance_Matrix.md) است.
+پیش از اجرا، SHA-256 نصب‌کننده را با `checksums-sha256.txt` بسنجید. به‌روزرسانی دستی است: **تنظیمات ← به‌روزرسانی‌ها ← بررسی کن**. بستهٔ updater امضا شده و VibeHub آن را با کلید عمومی تعبیه‌شده می‌سنجد.
