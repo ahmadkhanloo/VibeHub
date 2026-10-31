@@ -57,9 +57,9 @@ jobs:
             $gateRows = @($matrix -split '\r?\n' | Where-Object { $_ -match '^\| Gate 18\b' })
             if ($gateRows.Count -eq 0) { throw 'Stable release blocked: the acceptance matrix has no Gate 18 rows.' }
             $pendingRows = @($gateRows | Where-Object { $_ -notmatch '^\| Gate 18\b.*\| PASS \|' })
-            # The owner explicitly requested the v0.2.0 stable release with these limitations disclosed.
-            if ($pendingRows.Count -gt 0 -and $tag -eq 'v0.2.0') {
-              "Owner-authorized v0.2.0 release exception; Gate 18 remains unverified:`n$($pendingRows -join "`n")" | Add-Content $env:GITHUB_STEP_SUMMARY
+            # Owner-authorized releases: retain unverified Gate 18 results and disclose them.
+            if ($pendingRows.Count -gt 0 -and $tag -in @('v0.2.0', 'v0.2.1')) {
+              "Owner-authorized $tag release exception; Gate 18 remains unverified:`n$($pendingRows -join "`n")" | Add-Content $env:GITHUB_STEP_SUMMARY
             } elseif ($pendingRows.Count -gt 0) {
               throw "Stable release blocked until Gate 18 is PASS for every scenario:`n$($pendingRows -join "`n")"
             }
@@ -144,6 +144,10 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: VibeHub ${{ github.ref_name }}
           releaseBody: |
+            Version 0.2.1 fixes Windows Setup: full installations no longer create standalone RTL shortcuts, and RTL-only installations create labeled shortcuts for selected apps with RTL-badged icons. An isolated Windows CI runner tested installing 0.2.0, upgrading to this candidate, RTL-only installation and removal; it is not a clean Windows 10/11 test or an end-to-end signed updater test.
+
+            نسخهٔ ۰٫۲٫۱ میانبرها را اصلاح می‌کند: نصب کامل میانبر مستقل RTL نمی‌سازد و نصب صرفاً RTL برای ابزارهای انتخاب‌شده میانبر با نشان RTL ایجاد می‌کند. نصب و ارتقا در محیط آزمایشی CI بررسی شده، اما نصب پاک ویندوز ۱۰ و ۱۱ و چرخهٔ کامل ارتقای امضاشده هنوز تأیید نشده است.
+
             VibeHub 0.2: a modern Persian/English desktop workspace for coding apps. Main navigation: Apps, API notebook and More tools, with Settings in the sidebar footer. More tools restores accounts, offers, terminal customization with undo, diagnostics, guides, plugin/skill tutorials, agent lessons, optional setup and appearance. Four theme families, accent colors and notification preferences are available. Open projects, revisit recent folders, focus running apps and review account/quota/connection summaries. The API notebook stores manual setup references. App tiles can set up bundled RTL and a Start Menu shortcut after a coding app is installed, including experimental standalone Antigravity chat RTL. Setup does not launch or close vendor apps; unsupported desktop account switching stays gated.
 
             Download `VibeHub-Setup.exe`. This release includes a pinned Node.js runtime and signed Tauri updater assets; the Setup executable does not carry a Windows publisher signature. Clean Windows 10/11 and end-to-end signed upgrade acceptance remain unverified. Qoder/ZCode account switching remains blocked pending live verification; real provider authentication and per-app proxy routing are not claimed by local checks. Historical v1.x releases belong to AgentRTL.

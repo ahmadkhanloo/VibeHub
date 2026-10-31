@@ -1,7 +1,7 @@
 {
   "name": "vibehub",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Manage and launch coding apps, with Persian support, accounts and connections.",
   "license": "MIT",
   "packageManager": "pnpm@12.15.0",
