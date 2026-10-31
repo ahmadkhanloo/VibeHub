@@ -61,4 +61,3 @@ test('terminal changes require confirmation and retain the restore action', asyn
   await expect(apply).toBeEnabled();
   expect(await page.evaluate(() => (window as any).__mock.calls.filter((c: any) => ['terminal_apply_theme', 'terminal_undo'].includes(c.cmd)).map((c: any) => c.cmd))).toEqual(['terminal_apply_theme', 'terminal_undo']);
 });
-
