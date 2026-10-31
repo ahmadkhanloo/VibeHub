@@ -13,6 +13,8 @@ test('the Pages artifact contains the validated feed and bilingual guides withou
     const index = JSON.parse(await readFile(join(destination, 'feed', 'index.json'), 'utf8'));
     const qoderGuide = await readFile(join(destination, 'feed', 'guides', 'qoder', 'fa.md'), 'utf8');
 
+    const reviewGuide = await readFile(join(destination, 'feed', 'guides', 'code-review', 'fa.md'), 'utf8');
+    assert.match(reviewGuide, /بازبینی کد/);
     assert.equal(index.schemaVersion, 1);
     assert.match(qoderGuide, /Qoder/);
     await assert.rejects(readFile(join(destination, 'src', 'main.tsx')));

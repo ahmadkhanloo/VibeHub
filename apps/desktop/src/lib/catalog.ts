@@ -54,6 +54,14 @@ export function validateRemoteGuides(raw: unknown, catalog: Catalog): Record<str
     assertNoExecutablePayload(text);
     guides[key] = text;
   }
+  for (const lang of ['fa', 'en']) {
+    const key = `code-review/${lang}`;
+    const text = (raw as Record<string, unknown>)[key];
+    if (text === undefined) continue; // Older feeds do not include this tutorial.
+    if (typeof text !== 'string' || !text.trim() || text.length > 128 * 1024) throw new Error(`Invalid guide: ${key}`);
+    assertNoExecutablePayload(text);
+    guides[key] = text;
+  }
   return guides;
 }
 

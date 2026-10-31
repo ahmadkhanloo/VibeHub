@@ -501,6 +501,16 @@ pub async fn feed_sync(profile: Option<Value>, base: String) -> Result<Value> {
             guides.insert(format!("{id}/{lang}"), json!(text));
         }
     }
+    // The tutorial is optional for compatibility with older content feeds.
+    for lang in ["fa", "en"] {
+        if let Ok(response) = client.get(format!("{root}guides/code-review/{lang}.md")).send().await {
+            if response.status().is_success() {
+                let text = String::from_utf8(bounded_bytes(response, 128 * 1024).await?)
+                    .map_err(|_| "Feed guide is not UTF-8")?;
+                guides.insert(format!("code-review/{lang}"), json!(text));
+            }
+        }
+    }
     // The UI applies the shared strict Zod schemas before accepting this data.
     // Downloads never provide executable commands or package mappings.
     Ok(

@@ -47,6 +47,7 @@ const ToolsPage = lazy(async () => ({default: (await import('@/features/tools/To
 const AccountsHub = lazy(async () => ({default: (await import('@/features/accounts/AccountsHub')).AccountsHub}));
 const OffersPage = lazy(async () => ({default: (await import('@/features/offers/Offers')).OffersPage}));
 const ExtensionsPage = lazy(async () => ({default: (await import('@/features/guides/Extensions')).ExtensionsPage}));
+const CodeReviewPage = lazy(async () => ({default: (await import('@/features/learning/CodeReview')).CodeReviewPage}));
 const LongRunningPage = lazy(async () => ({default: (await import('@/features/learning/LongRunning')).LongRunningPage}));
 const Onboarding = lazy(async () => ({default: (await import('@/features/onboarding/Onboarding')).Onboarding}));
 
@@ -89,6 +90,7 @@ function Gate() {
         <Route path="/guides/:appId" element={<GuidesPage />} />
         <Route path="/offers" element={<OffersPage />} />
         <Route path="/learning" element={<LongRunningPage />} />
+        <Route path="/learning/code-review" element={<CodeReviewPage />} />
         <Route path="/models" element={<LegacyModels />} />
         <Route path="/doctor" element={<DoctorPage />} />
         <Route path="/settings" element={<SettingsPage />} />

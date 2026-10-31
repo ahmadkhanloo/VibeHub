@@ -32,5 +32,7 @@
   "connection": "Connection",
   "launchIssue": "Review and fix launch error",
   "brandCaption": "Your coding workspace",
-  "openSettings": "App settings"
+  "openSettings": "App settings",
+  "codeReviewTool": "Code review with agents",
+  "codeReviewToolHint": "Practical steps for reviewing, approving and releasing changes."
 }
