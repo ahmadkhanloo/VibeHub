@@ -25,18 +25,20 @@ More tools groups accounts, offers, terminal customization, diagnostics, app gui
 
 VibeHub is a free, open-source desktop companion for discovering and configuring AI coding tools. It separates each tool's license, free-access terms, regional eligibility, and VibeHub capabilities; it does not provide model hosting or a proxy service.
 
-**Release channel:** See [GitHub releases](https://github.com/ahmadkhanloo/VibeHub/releases) for current builds. The [acceptance matrix](docs/validation/VibeHub_Release_Acceptance_Matrix.md) is the single source for current scenario status; historical reports provide context only. Clean Windows installation and upgrade acceptance remain open. Historical AgentRTL v1.x installers are not VibeHub releases.
+**Release channel:** The stable line is **v0.2.1**; see [GitHub releases](https://github.com/ahmadkhanloo/VibeHub/releases/tag/v0.2.1) for the current build. The [acceptance matrix](docs/validation/VibeHub_Release_Acceptance_Matrix.md) is the single source for current scenario status; historical reports provide context only. Clean Windows installation and upgrade acceptance remain open. Historical AgentRTL v1.x installers are not VibeHub releases.
 
 ## Windows setup
 
-The release download will be a single NSIS installer named `VibeHub-Setup.exe`, with two choices:
+The release download is a single NSIS installer named `VibeHub-Setup.exe`, with two choices:
 
 - **Full VibeHub:** the desktop hub and all four RTL adapters. Setup does not create standalone RTL shortcuts in this mode.
 - **RTL launchers only:** choose ZCode, Qoder, DeepSeek Harness, and/or Antigravity independently. Setup creates RTL-labeled shortcuts for the selected apps.
 
-The setup includes a private, checksum-verified Node.js 24.22.1 LTS runtime and does not change the system Node installation or PATH. ZCode, Qoder, and DeepSeek Harness remain separate applications: install them from their official sources first, or choose their executable from the RTL shortcut if they are installed in a custom location. Missing applications do not block installing the launchers. MSI output is disabled. Automatic updates are available only in the full VibeHub mode; use the same Setup to update or change RTL-only selections.
+The setup includes a private, checksum-verified Node.js 24.22.1 LTS runtime and does not change the system Node installation or PATH. ZCode, Qoder, DeepSeek Harness, and Antigravity remain separate applications: install them from their official sources first, or choose their executable from the RTL shortcut if they are installed in a custom location. Missing applications do not block installing the launchers. MSI output is disabled.
 
-These installer paths still need clean Windows 10 and 11 installation, upgrade, and removal evidence before public release.
+In full VibeHub mode, **Settings → Updates** checks the signed update feed manually; there is no background download and no update installs without your confirmation. RTL-only installs are updated by running the same Setup. `VibeHub-Setup.exe` does not carry a Windows publisher Authenticode signature; the updater archive is separately signed and verified by the app.
+
+Clean Windows 10 and 11 installation, upgrade, and removal acceptance remains open. The [acceptance matrix](docs/validation/VibeHub_Release_Acceptance_Matrix.md) records the evidence collected so far, including the repaired updater manifests.
 
 ## Development
 

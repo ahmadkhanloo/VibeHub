@@ -1,5 +1,7 @@
 # VibeHub reliability and UX local validation
 
+> **Superseded for release status; historical only.** Current release status and gate results are tracked in [VibeHub_Release_Acceptance_Matrix.md](VibeHub_Release_Acceptance_Matrix.md). This report records the local run described below and does not set current acceptance.
+
 **Run window:** 2026-10-30, approximately 00:57–01:45 Asia/Tehran; final focused browser run approximately 01:38–01:40. Per-command timestamps were not captured for each local check; the acceptance matrix records approximate completion windows and links this evidence.
 
 **Source:** branch `codex/restore-tools-modern-desktop`, commit `9021b649e78d6460263a80561eb62d90df8c95fe`, with uncommitted changes. **Host:** Windows `10.0.28000.3231`; Node `v26.7.0`; pnpm `12.15.0`. No Tauri app was installed and no installer was produced for this run.

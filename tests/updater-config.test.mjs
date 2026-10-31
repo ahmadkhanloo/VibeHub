@@ -18,6 +18,9 @@ test('production updater configuration replaces only the public key placeholder'
 
   assert.equal(configured.plugins.updater.pubkey, publicKey);
   assert.equal(configured.plugins.updater.endpoints[0], 'https://github.com/ahmadkhanloo/VibeHub/releases/latest/download/latest.json');
+  for (const endpoint of configured.plugins.updater.endpoints) {
+    assert.doesNotMatch(endpoint, /untagged-/, 'the updater endpoint must never reference a draft upload path');
+  }
   assert.match(JSON.stringify(configured), /VibeHub/);
   assert.doesNotMatch(JSON.stringify(configured), /PRIVATE KEY/);
   assert.deepEqual(withUpdaterPublicKey(config, publicKey), config);

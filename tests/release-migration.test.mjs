@@ -187,6 +187,55 @@ test('release publishing is tag-only, least-privilege, and signs updater artifac
   assert.doesNotMatch(workflow, /pull_request:/);
 });
 
+test('release normalizes updater URLs against the tagged download path instead of draft asset URLs', async () => {
+  const workflow = await read('../.github/workflows/release.yml');
+
+  assert.match(
+    workflow,
+    /node scripts\/normalize-updater-release\.mjs \(Join-Path \$verifyDir 'latest\.json'\) \$releasePath \$verifyDir "\$env:GITHUB_REPOSITORY" "\$tag"/,
+    'the normalizer must receive the repository and tag so URLs never use draft upload paths',
+  );
+  assert.match(workflow, /if \(\$updaterUrl -match 'untagged-'\) \{ throw "Updater URL must never reference a draft upload/);
+  assert.match(
+    workflow,
+    /\$canonicalBase = "https:\/\/github\.com\/\$\(\$env:GITHUB_REPOSITORY\)\/releases\/download\/\$\(\[Uri\]::EscapeDataString\(\$tag\)\)\/"/,
+  );
+  assert.match(workflow, /Updater URL must use the canonical tagged release path/);
+  assert.match(workflow, /if \(\$updaterUrl -match 'untagged-'\) \{ throw "Refusing to publish a manifest with a draft upload URL/);
+  assert.match(workflow, /Refusing to publish a non-canonical updater URL/);
+
+  const aliasUpload = workflow.indexOf('gh release upload $tag $stableSetup $stableSignature');
+  const versionedDeletion = workflow.indexOf('gh release delete-asset $tag $setups[0].name --yes');
+  assert.ok(aliasUpload >= 0, 'the stable Setup alias must be uploaded');
+  assert.ok(versionedDeletion > aliasUpload, 'the versioned Setup must be deleted only after the alias is uploaded');
+  assert.match(workflow, /Stable Setup copy does not match the Tauri-generated executable/);
+});
+
+test('release refuses to overwrite published assets and verifies public updater URLs after publishing', async () => {
+  const workflow = await read('../.github/workflows/release.yml');
+
+  assert.match(workflow, /Refuse to overwrite a published Release and reset any stale draft/);
+  assert.match(workflow, /if \(-not \$release\.isDraft\) \{/);
+  assert.match(workflow, /Cut a new patch tag instead of republishing/);
+  assert.ok(
+    workflow.indexOf('gh release delete $tag --yes --repo $env:GITHUB_REPOSITORY') < workflow.indexOf('- name: Build signed Windows installers'),
+    'a stale draft must be reset before a new draft is uploaded',
+  );
+
+  assert.match(workflow, /node scripts\/render-release-body\.mjs \.github\/release-body\.md \$bodyPath \$tag \$version \$prerelease \$notesPath/);
+  assert.match(workflow, /gh release edit \$tag --notes-file \$bodyPath/);
+  assert.doesNotMatch(workflow, /releaseBody:/, 'the version-specific body must come from the template and generated notes');
+
+  assert.match(workflow, /manifestUrl = "\$base\/latest\.json"/);
+  assert.match(workflow, /Tagged updater manifest is not publicly reachable/);
+  assert.match(workflow, /Public updater URL is not the canonical tagged download/);
+  assert.match(workflow, /Signed updater archive is not publicly reachable/);
+  assert.match(workflow, /Updater signature is not publicly reachable/);
+  assert.match(workflow, /Public updater signature differs from latest\.json/);
+  assert.match(workflow, /releases\/latest\/download\/latest\.json/);
+  assert.match(workflow, /does not serve \$version after publication/);
+});
+
 test('content publishing has only the Pages deployment permissions it needs', async () => {
   const workflow = await read('../.github/workflows/publish-content.yml');
   assert.match(workflow, /actions\/deploy-pages@/);
@@ -208,5 +257,15 @@ test('acceptance matrix records real evidence fields and keeps unrun checks non-
     assert.ok(matrix.toLowerCase().includes(field.toLowerCase()), `matrix is missing ${field}`);
   }
   assert.match(matrix, /critical[\s\S]*failures[\s\S]*block/i);
-  assert.doesNotMatch(matrix, /^\| Gate (?:18|19)[^|]*\| PASS \|/mi);
+  assert.doesNotMatch(
+    matrix,
+    /^\| Gate 18[^|]*\| PASS\b/mi,
+    'Gate 18 must stay non-PASS until clean-machine evidence exists',
+  );
+  const gate19PassRows = matrix
+    .split(/\r?\n/)
+    .filter((line) => /^\| Gate 19[^|]*\| PASS\b/i.test(line));
+  for (const row of gate19PassRows) {
+    assert.match(row, /\[[^\]]+\]\([^)]+\)/, 'a Gate 19 PASS row must link its evidence');
+  }
 });
