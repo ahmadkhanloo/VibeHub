@@ -32,5 +32,7 @@
   "connection": "اتصال",
   "launchIssue": "بررسی و رفع خطای اجرا",
   "brandCaption": "محیط کار برنامه‌نویسی",
-  "openSettings": "تنظیمات برنامه"
+  "openSettings": "تنظیمات برنامه",
+  "codeReviewTool": "بازبینی کد با ایجنت",
+  "codeReviewToolHint": "مراحل عملی بررسی، تأیید و انتشار تغییرات."
 }
