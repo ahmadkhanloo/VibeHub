@@ -31,8 +31,8 @@ VibeHub is a free, open-source desktop companion for discovering and configuring
 
 The release download will be a single NSIS installer named `VibeHub-Setup.exe`, with two choices:
 
-- **Full VibeHub:** the desktop hub and all four RTL launchers.
-- **RTL launchers only:** choose ZCode, Qoder, and/or DeepSeek Harness independently.
+- **Full VibeHub:** the desktop hub and all four RTL adapters. Setup does not create standalone RTL shortcuts in this mode.
+- **RTL launchers only:** choose ZCode, Qoder, DeepSeek Harness, and/or Antigravity independently. Setup creates RTL-labeled shortcuts for the selected apps.
 
 The setup includes a private, checksum-verified Node.js 24.22.1 LTS runtime and does not change the system Node installation or PATH. ZCode, Qoder, and DeepSeek Harness remain separate applications: install them from their official sources first, or choose their executable from the RTL shortcut if they are installed in a custom location. Missing applications do not block installing the launchers. MSI output is disabled. Automatic updates are available only in the full VibeHub mode; use the same Setup to update or change RTL-only selections.
 

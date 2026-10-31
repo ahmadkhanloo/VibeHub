@@ -21,14 +21,17 @@ try {
   if ((Get-FileHash -LiteralPath $nodeSource -Algorithm SHA256).Hash -ne $nodeHash) {
     throw 'Node.js executable SHA-256 mismatch.'
   }
-  Copy-Item -LiteralPath $nodeSource -Destination (Join-Path $payload 'node.exe') -Force
+  $existingNode = Join-Path $payload 'node.exe'
+  if (-not (Test-Path -LiteralPath $existingNode -PathType Leaf) -or (Get-FileHash -LiteralPath $existingNode -Algorithm SHA256).Hash -ne $nodeHash) {
+    Copy-Item -LiteralPath $nodeSource -Destination $existingNode -Force
+  }
   Copy-Item -LiteralPath (Join-Path (Split-Path -Parent $nodeSource) 'LICENSE') -Destination (Join-Path $payload 'NODE-LICENSE.md') -Force
 
   $files = @{
-    ZCode = @('rtl.ico', 'start.ps1', 'launch.vbs', 'injector.mjs')
-    Qoder = @('rtl.ico', 'start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs', 'doctor.mjs', 'LICENSE')
-    Antigravity = @('rtl.ico', 'start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs')
-    DeepSeekHarness = @('rtl.ico', 'start.ps1', 'launch.vbs', 'injector.mjs')
+    ZCode = @('rtl.ico', 'rtl-shortcut.ico', 'start.ps1', 'launch.vbs', 'injector.mjs')
+    Qoder = @('rtl.ico', 'rtl-shortcut.ico', 'start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs', 'doctor.mjs', 'LICENSE')
+    Antigravity = @('rtl.ico', 'rtl-shortcut.ico', 'start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs')
+    DeepSeekHarness = @('rtl.ico', 'rtl-shortcut.ico', 'start.ps1', 'launch.vbs', 'injector.mjs')
   }
   foreach ($id in $files.Keys) {
     $destination = Join-Path $payload $id

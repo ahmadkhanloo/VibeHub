@@ -26,6 +26,24 @@ try {
         $again = Install-HubRtlShortcut $root $id $programs
         Assert ($again.shortcut -eq $result.shortcut) "$id setup must be idempotent"
     }
+    # Exercise the real VBS-to-PowerShell handoff through each Windows shortcut.
+    $previousMarker = $env:VIBEHUB_TEST_MARKER
+    try {
+        $names = @{zcode='ZCode'; qoder='Qoder'; 'deepseek-harness'='DeepSeek Harness'; antigravity='Antigravity'}
+        $folders = @{zcode='ZCode'; qoder='Qoder'; 'deepseek-harness'='DeepSeekHarness'; antigravity='Antigravity'}
+        foreach ($id in $folders.Keys) {
+            $folder = $folders[$id]
+            $adapter = Join-Path $root ("apps/" + $folder)
+            Copy-Item -LiteralPath (Join-Path $repo ("apps/" + $folder + "/launch.vbs")) -Destination (Join-Path $adapter 'launch.vbs') -Force
+            [IO.File]::WriteAllText((Join-Path $adapter 'start.ps1'), 'param([switch]$Gui); [IO.File]::WriteAllText($env:VIBEHUB_TEST_MARKER, [string]$Gui)')
+            $marker = Join-Path $sandbox ($id + '.txt')
+            $env:VIBEHUB_TEST_MARKER = $marker
+            Start-Process -FilePath (Join-Path $programs ("VibeHub/" + $names[$id] + " RTL.lnk"))
+            $deadline = [DateTime]::UtcNow.AddSeconds(15)
+            while (-not (Test-Path -LiteralPath $marker) -and [DateTime]::UtcNow -lt $deadline) { Start-Sleep -Milliseconds 200 }
+            Assert ((Test-Path -LiteralPath $marker) -and [IO.File]::ReadAllText($marker) -eq 'True') "$id shortcut must start its own PowerShell launcher with -Gui"
+        }
+    } finally { $env:VIBEHUB_TEST_MARKER = $previousMarker }
     $failed = $false
     try { Install-HubRtlShortcut $root '../outside' $programs } catch { $failed = $true }
     Assert $failed 'Unknown apps and traversal must be rejected'

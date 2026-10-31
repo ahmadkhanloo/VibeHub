@@ -113,7 +113,17 @@ test('Windows Setup has full and component-selected RTL modes without MSI output
   assert.match(template, /\$InstallMode == "full"[\s\S]*?SectionSetFlags \$\{SEC_INSTALL\} \$\{SF_SELECTED\}/);
   assert.match(template, /\$InstallMode == "rtl"[\s\S]*?SectionSetFlags \$\{SEC_RUNTIME\} \$\{SF_SELECTED\}/);
   assert.match(template, /\$UpdateMode = 1[\s\S]*?Abort/);
-  assert.match(template, /Call CreateRtlShortcuts/);
+  assert.match(template, /\$InstallMode == "rtl"[\s\S]*?Call CreateRtlShortcuts[\s\S]*?\$\{Else\}[\s\S]*?Call RemoveBrokenFullRtlShortcuts/);
+  assert.match(template, /Function CreateRtlShortcuts[\s\S]*?StrCpy \$R0 "\$INSTDIR\\apps"/);
+  assert.match(template, /RemoveBrokenFullRtlShortcut[\s\S]*?IsShortcutTarget/);
+  const stateSection = template.match(/Section "-VibeHub installation state"[\s\S]*?SectionEnd/)?.[0] ?? '';
+  const fullBranch = stateSection.split('${Else}')[1]?.split('${EndIf}')[0] ?? '';
+  assert.ok(fullBranch.includes('Call RemoveBrokenFullRtlShortcuts'));
+  assert.ok(!fullBranch.includes('Call CreateRtlShortcuts'), 'Full installation must not create RTL shortcuts');
+
+  for (const folder of ['ZCode', 'Qoder', 'DeepSeekHarness', 'Antigravity']) {
+    assert.match(template, new RegExp(`\\$R0\\\\${folder}\\\\rtl-shortcut\\.ico`));
+  }
   assert.match(template, /Inno Setup: Selected Components/);
   assert.match(template, /Function SeedLegacySelection/);
   assert.match(template, /Function PageSetupChoice[\s\S]*?nsDialogs::SetRTL/);
