@@ -995,14 +995,10 @@ Section "-VibeHub installation state" SEC_INSTALL_STATE
     Call CreateRtlShortcuts
   ${Else}
     StrCpy $SelectedComponents "zcode,qoder,deepseek-harness,antigravity"
-    Call CreateRtlShortcuts
+    Call RemoveBrokenFullRtlShortcuts
   ${EndIf}
   ${If} $LegacyAgentRTL != ""
-    ${If} $InstallMode == "rtl"
-      StrCpy $R6 "$INSTDIR\apps"
-    ${Else}
-      StrCpy $R6 "$INSTDIR\resources\apps"
-    ${EndIf}
+    StrCpy $R6 "$INSTDIR\apps"
     ExecWait '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "$R6\migrate-agentrtl-paths.ps1" -LegacyInstallDir "$LegacyInstallDir"' $0
   ${EndIf}
   WriteRegStr HKCU "${INSTALL_STATE_KEY}" "schemaVersion" "1"
@@ -1269,42 +1265,69 @@ Function LeaveSetupChoice
   SectionSetFlags ${SEC_RUNTIME} ${SF_SELECTED}
 FunctionEnd
 
+!macro RemoveBrokenFullRtlShortcut shortcut folder
+  !insertmacro IsShortcutTarget "${shortcut}" "$INSTDIR\resources\apps\${folder}\launch.vbs"
+  Pop $0
+  ${If} $0 = 1
+    Delete "${shortcut}"
+  ${EndIf}
+!macroend
+
+Function RemoveBrokenFullRtlShortcuts
+  SetShellVarContext current
+  !insertmacro MUI_STARTMENU_GETFOLDER Application $AppStartMenuFolder
+  ${If} $AppStartMenuFolder == ""
+    StrCpy $AppStartMenuFolder "VibeHub"
+  ${EndIf}
+  !insertmacro RemoveBrokenFullRtlShortcut "$SMPROGRAMS\$AppStartMenuFolder\ZCode RTL.lnk" "ZCode"
+  !insertmacro RemoveBrokenFullRtlShortcut "$DESKTOP\ZCode RTL.lnk" "ZCode"
+  !insertmacro RemoveBrokenFullRtlShortcut "$SMPROGRAMS\$AppStartMenuFolder\Qoder RTL.lnk" "Qoder"
+  !insertmacro RemoveBrokenFullRtlShortcut "$DESKTOP\Qoder RTL.lnk" "Qoder"
+  !insertmacro RemoveBrokenFullRtlShortcut "$SMPROGRAMS\$AppStartMenuFolder\DeepSeek Harness RTL.lnk" "DeepSeekHarness"
+  !insertmacro RemoveBrokenFullRtlShortcut "$DESKTOP\DeepSeek Harness RTL.lnk" "DeepSeekHarness"
+  !insertmacro RemoveBrokenFullRtlShortcut "$SMPROGRAMS\$AppStartMenuFolder\Antigravity RTL.lnk" "Antigravity"
+  !insertmacro RemoveBrokenFullRtlShortcut "$DESKTOP\Antigravity RTL.lnk" "Antigravity"
+FunctionEnd
+
+; Never replace a shortcut owned by another application.
+!macro CreateOwnedRtlShortcut shortcut target icon
+  ${If} ${FileExists} "${shortcut}"
+    !insertmacro IsShortcutTarget "${shortcut}" "${target}"
+    Pop $0
+    ${If} $0 != 1
+      DetailPrint "Keeping unrelated shortcut: ${shortcut}"
+    ${Else}
+      CreateShortcut "${shortcut}" "${target}" "" "${icon}"
+    ${EndIf}
+  ${Else}
+    CreateShortcut "${shortcut}" "${target}" "" "${icon}"
+  ${EndIf}
+!macroend
+
 Function CreateRtlShortcuts
   SetShellVarContext current
-  ${If} $InstallMode == "full"
-    StrCpy $R0 "$INSTDIR\resources\apps"
-    StrCpy $R4 "$SMPROGRAMS\$AppStartMenuFolder"
-  ${Else}
-    StrCpy $R0 "$INSTDIR\apps"
-    StrCpy $R4 "$SMPROGRAMS\VibeHub"
-  ${EndIf}
+  StrCpy $R0 "$INSTDIR\apps"
+  StrCpy $R4 "$SMPROGRAMS\VibeHub"
   CreateDirectory "$R4"
-  ${If} $InstallMode == "full"
-    StrCpy $R1 ${SF_SELECTED}
-    StrCpy $R2 ${SF_SELECTED}
-    StrCpy $R3 ${SF_SELECTED}
-    StrCpy $R5 ${SF_SELECTED}
-  ${Else}
-    SectionGetFlags ${SEC_ZCODE} $R1
-    SectionGetFlags ${SEC_QODER} $R2
-    SectionGetFlags ${SEC_DEEPSEEK} $R3
-    SectionGetFlags ${SEC_ANTIGRAVITY} $R5
-  ${EndIf}
+  SectionGetFlags ${SEC_ZCODE} $R1
+  SectionGetFlags ${SEC_QODER} $R2
+  SectionGetFlags ${SEC_DEEPSEEK} $R3
+  SectionGetFlags ${SEC_ANTIGRAVITY} $R5
   ${If} $R1 & ${SF_SELECTED}
-    CreateShortcut "$R4\ZCode RTL.lnk" "$R0\ZCode\launch.vbs" "" "$R0\ZCode\rtl.ico"
-    CreateShortcut "$DESKTOP\ZCode RTL.lnk" "$R0\ZCode\launch.vbs" "" "$R0\ZCode\rtl.ico"
+    !insertmacro CreateOwnedRtlShortcut "$R4\ZCode RTL.lnk" "$R0\ZCode\launch.vbs" "$R0\ZCode\rtl-shortcut.ico"
+    !insertmacro CreateOwnedRtlShortcut "$DESKTOP\ZCode RTL.lnk" "$R0\ZCode\launch.vbs" "$R0\ZCode\rtl-shortcut.ico"
   ${EndIf}
   ${If} $R2 & ${SF_SELECTED}
-    CreateShortcut "$R4\Qoder RTL.lnk" "$R0\Qoder\launch.vbs" "" "$R0\Qoder\rtl.ico"
-    CreateShortcut "$DESKTOP\Qoder RTL.lnk" "$R0\Qoder\launch.vbs" "" "$R0\Qoder\rtl.ico"
+    !insertmacro CreateOwnedRtlShortcut "$R4\Qoder RTL.lnk" "$R0\Qoder\launch.vbs" "$R0\Qoder\rtl-shortcut.ico"
+    !insertmacro CreateOwnedRtlShortcut "$DESKTOP\Qoder RTL.lnk" "$R0\Qoder\launch.vbs" "$R0\Qoder\rtl-shortcut.ico"
   ${EndIf}
   ${If} $R3 & ${SF_SELECTED}
-    CreateShortcut "$R4\DeepSeek Harness RTL.lnk" "$R0\DeepSeekHarness\launch.vbs" "" "$R0\DeepSeekHarness\rtl.ico"
-    CreateShortcut "$DESKTOP\DeepSeek Harness RTL.lnk" "$R0\DeepSeekHarness\launch.vbs" "" "$R0\DeepSeekHarness\rtl.ico"
+    !insertmacro CreateOwnedRtlShortcut "$R4\DeepSeek Harness RTL.lnk" "$R0\DeepSeekHarness\launch.vbs" "$R0\DeepSeekHarness\rtl-shortcut.ico"
+    !insertmacro CreateOwnedRtlShortcut "$DESKTOP\DeepSeek Harness RTL.lnk" "$R0\DeepSeekHarness\launch.vbs" "$R0\DeepSeekHarness\rtl-shortcut.ico"
   ${EndIf}
   ${If} $R5 & ${SF_SELECTED}
-    CreateShortcut "$R4\Antigravity RTL.lnk" "$R0\Antigravity\launch.vbs" "" "$R0\Antigravity\rtl.ico"
-    CreateShortcut "$DESKTOP\Antigravity RTL.lnk" "$R0\Antigravity\launch.vbs" "" "$R0\Antigravity\rtl.ico"
+    !insertmacro CreateOwnedRtlShortcut "$R4\Antigravity RTL.lnk" "$R0\Antigravity\launch.vbs" "$R0\Antigravity\rtl-shortcut.ico"
+    !insertmacro CreateOwnedRtlShortcut "$DESKTOP\Antigravity RTL.lnk" "$R0\Antigravity\launch.vbs" "$R0\Antigravity\rtl-shortcut.ico"
   ${EndIf}
 FunctionEnd
 
@@ -1354,7 +1377,7 @@ Section Uninstall
 
   ${If} $InstallMode == "full"
     !insertmacro CheckIfAppIsRunning "$INSTDIR\${MAINBINARYNAME}.exe" "${PRODUCTNAME}"
-    ExecWait '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "$INSTDIR\resources\cleanup.ps1" -Root "$INSTDIR\resources"'
+    ExecWait '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "$INSTDIR\cleanup.ps1" -Root "$INSTDIR"'
   ${Else}
     ExecWait '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "$INSTDIR\cleanup.ps1" -Root "$INSTDIR"'
   ${EndIf}
@@ -1378,10 +1401,12 @@ Section Uninstall
   Delete "$INSTDIR\apps\ZCode\start.ps1"
   Delete "$INSTDIR\apps\ZCode\launch.vbs"
   Delete "$INSTDIR\apps\ZCode\rtl.ico"
+  Delete "$INSTDIR\apps\ZCode\rtl-shortcut.ico"
   Delete "$INSTDIR\apps\ZCode\injector.mjs"
   Delete "$INSTDIR\apps\Qoder\start.ps1"
   Delete "$INSTDIR\apps\Qoder\launch.vbs"
   Delete "$INSTDIR\apps\Qoder\rtl.ico"
+  Delete "$INSTDIR\apps\Qoder\rtl-shortcut.ico"
   Delete "$INSTDIR\apps\Qoder\injector.mjs"
   Delete "$INSTDIR\apps\Qoder\style.mjs"
   Delete "$INSTDIR\apps\Qoder\doctor.mjs"
@@ -1392,11 +1417,13 @@ Section Uninstall
   Delete "$INSTDIR\apps\Antigravity\start.ps1"
   Delete "$INSTDIR\apps\Antigravity\launch.vbs"
   Delete "$INSTDIR\apps\Antigravity\rtl.ico"
+  Delete "$INSTDIR\apps\Antigravity\rtl-shortcut.ico"
   Delete "$INSTDIR\apps\Antigravity\injector.mjs"
   Delete "$INSTDIR\apps\Antigravity\style.mjs"
   Delete "$INSTDIR\apps\DeepSeekHarness\start.ps1"
   Delete "$INSTDIR\apps\DeepSeekHarness\launch.vbs"
   Delete "$INSTDIR\apps\DeepSeekHarness\rtl.ico"
+  Delete "$INSTDIR\apps\DeepSeekHarness\rtl-shortcut.ico"
   Delete "$INSTDIR\apps\DeepSeekHarness\injector.mjs"
   Delete "$INSTDIR\apps\DeepSeekHarness\assets\OFL.txt"
   Delete "$INSTDIR\apps\DeepSeekHarness\assets\Vazirmatn-Bold.woff2"
@@ -1441,9 +1468,16 @@ Section Uninstall
   StrCpy $R0 "$INSTDIR\apps"
   StrCpy $R4 "$SMPROGRAMS\VibeHub"
   ${If} $InstallMode == "full"
-    StrCpy $R0 "$INSTDIR\resources\apps"
     !insertmacro MUI_STARTMENU_GETFOLDER Application $AppStartMenuFolder
     StrCpy $R4 "$SMPROGRAMS\$AppStartMenuFolder"
+    !insertmacro RemoveBrokenFullRtlShortcut "$R4\ZCode RTL.lnk" "ZCode"
+    !insertmacro RemoveBrokenFullRtlShortcut "$DESKTOP\ZCode RTL.lnk" "ZCode"
+    !insertmacro RemoveBrokenFullRtlShortcut "$R4\Qoder RTL.lnk" "Qoder"
+    !insertmacro RemoveBrokenFullRtlShortcut "$DESKTOP\Qoder RTL.lnk" "Qoder"
+    !insertmacro RemoveBrokenFullRtlShortcut "$R4\DeepSeek Harness RTL.lnk" "DeepSeekHarness"
+    !insertmacro RemoveBrokenFullRtlShortcut "$DESKTOP\DeepSeek Harness RTL.lnk" "DeepSeekHarness"
+    !insertmacro RemoveBrokenFullRtlShortcut "$R4\Antigravity RTL.lnk" "Antigravity"
+    !insertmacro RemoveBrokenFullRtlShortcut "$DESKTOP\Antigravity RTL.lnk" "Antigravity"
   ${EndIf}
   !insertmacro IsShortcutTarget "$R4\ZCode RTL.lnk" "$R0\ZCode\launch.vbs"
   Pop $0
