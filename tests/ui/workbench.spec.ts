@@ -3,10 +3,11 @@ import { mockNative } from './mock';
 
 test('more tools restores every destination while keeping the main navigation focused', async ({ page }) => {
   await mockNative(page);
+  const routes = ['/accounts', '/offers', '/terminal', '/doctor', '/guides', '/guides/extensions', '/learning', '/learning/code-review', '/onboarding', '/settings?section=appearance'];
   await page.goto('/tools');
-  await expect(page.locator('.vh-tool-card')).toHaveCount(10);
+  await expect(page.locator('.vh-tool-card')).toHaveCount(routes.length);
   await expect(page.locator('nav .vh-nav-link')).toHaveCount(3);
-  for (const route of ['/accounts', '/offers', '/terminal', '/doctor', '/guides', '/guides/extensions', '/learning', '/learning/code-review', '/onboarding', '/settings?section=appearance']) {
+  for (const route of routes) {
     await page.goto('/tools');
     await page.locator(`.vh-tool-card[href="${route}"]`).click();
     await expect(page.locator('h1').first()).toBeVisible();
