@@ -1,6 +1,6 @@
 [package]
 name = "vibehub"
-version = "0.2.0"
+version = "0.2.1"
 description = "Manage and launch coding apps with Persian support, accounts and connections"
 authors = ["VibeHub contributors"]
 license = "MIT"

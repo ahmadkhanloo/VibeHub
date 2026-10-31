@@ -1,6 +1,6 @@
 # VibeHub
 
-> **Current VibeHub download:** [v0.2.0 for Windows](https://github.com/ahmadkhanloo/VibeHub/releases/download/v0.2.0/VibeHub-Setup.exe) · [Release notes](https://github.com/ahmadkhanloo/VibeHub/releases/tag/v0.2.0).
+> **Current VibeHub download:** [v0.2.1 for Windows](https://github.com/ahmadkhanloo/VibeHub/releases/download/v0.2.1/VibeHub-Setup.exe) · [Release notes](https://github.com/ahmadkhanloo/VibeHub/releases/tag/v0.2.1).
 
 A workspace for vibe-coding apps, with Persian RTL, accounts, and an API notebook.
 

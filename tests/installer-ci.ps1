@@ -1,7 +1,8 @@
 $ErrorActionPreference = 'Stop'
 if ($env:CI -ne 'true' -or -not $env:RUNNER_TEMP) { throw 'Run only on a disposable CI runner.' }
 $repo = Split-Path -Parent $PSScriptRoot
-$candidate = Join-Path $repo 'apps/desktop/src-tauri/target/release/bundle/nsis/VibeHub_0.2.0_x64-setup.exe'
+$version = (Get-Content (Join-Path $repo 'apps/desktop/src-tauri/tauri.conf.json') -Raw | ConvertFrom-Json).version
+$candidate = Join-Path $repo "apps/desktop/src-tauri/target/release/bundle/nsis/VibeHub_${version}_x64-setup.exe"
 $base = Join-Path $env:RUNNER_TEMP 'vibehub-install-test'
 $install = Join-Path $base 'app'
 $baseline = Join-Path $base 'baseline.exe'
@@ -44,4 +45,4 @@ foreach ($item in @(@('ZCode','ZCode'),@('Qoder','Qoder'),@('DeepSeek Harness','
 }
 Run-Setup (Join-Path $install 'uninstall.exe') '/S'
 foreach ($name in $names) { if (Test-Path (Join-Path $desktop "$name RTL.lnk")) { throw "Uninstall left shortcut: $name" } }
-Write-Output 'PASS: actual full baseline install, same-version /UPDATE, RTL-only install and uninstall on disposable Windows runner. Updater signature verification and Windows 10/11 are not covered.'
+Write-Output 'PASS: actual full baseline install, baseline-to-candidate /UPDATE, RTL-only install and uninstall on disposable Windows runner. Updater signature verification and Windows 10/11 are not covered.'
