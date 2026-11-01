@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { AppSummary } from '@/components/AppSummary';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -8,7 +7,6 @@ import { useCatalog } from '@/lib/catalog';
 import { AppLogo } from '@/components/AppLogo';
 import { LaunchControls } from '@/components/LaunchControls';
 import { Tooltip } from '@/components/Tooltip';
-import { ipc } from '@/services/ipc';
 import { Button, EmptyState, ErrorNotice, PageHeader, Spinner } from '@/components/ui';
 import { useSettings } from '@/app/settings';
 
@@ -16,12 +14,6 @@ export function HomePage() {
   const { t } = useTranslation(['ux', 'workbench']);
   const { settings } = useSettings();
   const ctx = useToolContext();
-  const [versions, setVersions] = useState<Record<string, { version?: string; source?: string; comparison?: 'newer' | 'current' | 'ahead' | null; checkedAt?: string; error?: boolean; loading?: boolean }>>({});
-  const checkVersion = async (id: string, installedVersion?: string) => {
-    setVersions(old => ({ ...old, [id]: { loading: true } }));
-    try { const result = await ipc.latestToolVersion(id, installedVersion); setVersions(old => ({ ...old, [id]: result })); }
-    catch { setVersions(old => ({ ...old, [id]: { error: true, checkedAt: new Date().toISOString() } })); }
-  };
   const catalog = useCatalog();
   const appTools = ctx.apps.filter(app => app.installed).map(tool => ({
       ...tool, name: catalog.apps.find(app => app.id === tool.id)?.name ?? tool.id,
@@ -63,18 +55,5 @@ export function HomePage() {
       </div>
       <Tooltip text={t('launchNote')} />
     </>}
-    <section className="vh-update-checks space-y-3" aria-labelledby="version-check-heading">
-      <h2 id="version-check-heading" className="font-semibold">{t('ux:versions.title')}</h2>
-      <ul className="divide-y divide-border">{tools.map(tool => {
-        const supported = tool.kind === 'app' && ['opencode', 'freebuff'].includes(tool.id);
-        const name = tool.kind === 'app' ? tool.app?.name ?? tool.id : tool.name;
-        const href = tool.kind === 'editor' ? `/editor/${tool.id}` : `/app/${tool.id}`;
-        const result = versions[tool.id];
-        return <li key={tool.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
-        <Link className="vh-link" to={href}><bdi>{name}</bdi></Link>
-        {supported ? <><Button size="sm" variant="ghost" loading={result?.loading} onClick={() => void checkVersion(tool.id, tool.version)}>{t('ux:versions.check')}</Button><span role="status">{result?.loading ? t('ux:versions.checking') : result?.error ? t('ux:versions.failed') : result?.version ? t('ux:versions.' + (result.comparison ?? 'incomparable')) : t('ux:versions.notChecked')}</span></> : <span role="status">{t('ux:versions.unsupported')}</span>}
-        </li>;
-      })}</ul>
-    </section>
   </div>;
 }

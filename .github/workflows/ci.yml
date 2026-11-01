@@ -104,6 +104,8 @@ jobs:
           ./tests/updater-response.ps1
           ./tests/native-windows.ps1
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./tests/persian-terminal.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./tests/rtl-setup.ps1
 
   windows-tauri-build:

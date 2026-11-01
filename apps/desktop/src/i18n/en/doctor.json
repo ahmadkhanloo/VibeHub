@@ -45,5 +45,21 @@
     "updater": "Check for the official update again; the package signature must remain valid.",
     "crash": "Review details locally and copy the sanitized report for support."
   },
-  "noSecrets": "Copied reports redact local paths and text that resembles keys, passwords, or access tokens."
+  "noSecrets": "Copied reports redact local paths and text that resembles keys, passwords, or access tokens.",
+  "ready": "Ready",
+  "progress": "{{done}} of {{total}} groups checked",
+  "groups": {
+    "native": "System prerequisites",
+    "apps": "Apps and installation paths",
+    "rtlAdapters": "RTL components",
+    "proxyConfig": "Proxy configuration",
+    "modelConnections": "Model connections"
+  },
+  "groupHints": {
+    "native": "Check required tools on the execution path.",
+    "apps": "Detect installed apps and their versions.",
+    "rtlAdapters": "Check bundled components for installed apps; live injection is not tested.",
+    "proxyConfig": "Read the selected profile; no network request is sent.",
+    "modelConnections": "Read saved connections; keys and model responses are not tested."
+  }
 }

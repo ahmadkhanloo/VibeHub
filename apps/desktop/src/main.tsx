@@ -50,6 +50,7 @@ const TerminalPage = lazy(async () => ({default: (await import('@/features/termi
 const OffersPage = lazy(async () => ({default: (await import('@/features/offers/Offers')).OffersPage}));
 const ExtensionsPage = lazy(async () => ({default: (await import('@/features/guides/Extensions')).ExtensionsPage}));
 const CodeReviewPage = lazy(async () => ({default: (await import('@/features/learning/CodeReview')).CodeReviewPage}));
+const LearningPage = lazy(async () => ({default: (await import('@/features/learning/Learning')).LearningPage}));
 const LongRunningPage = lazy(async () => ({default: (await import('@/features/learning/LongRunning')).LongRunningPage}));
 const Onboarding = lazy(async () => ({default: (await import('@/features/onboarding/Onboarding')).Onboarding}));
 
@@ -84,14 +85,15 @@ function Gate() {
         />
         <Route
           path="/long-running"
-          element={<Navigate to="/learning" replace />}
+          element={<Navigate to="/learning/long-running" replace />}
         />
         <Route path="/guides" element={<GuidesPage />} />
         <Route path="/guides/extensions" element={<ExtensionsPage />} />
         <Route path="/accounts" element={<Navigate to="/" replace />} />
         <Route path="/guides/:appId" element={<GuidesPage />} />
         <Route path="/offers" element={<OffersPage />} />
-        <Route path="/learning" element={<LongRunningPage />} />
+        <Route path="/learning" element={<LearningPage />} />
+        <Route path="/learning/long-running" element={<LongRunningPage />} />
         <Route path="/learning/code-review" element={<CodeReviewPage />} />
         <Route path="/models" element={<LegacyModels />} />
         <Route path="/doctor" element={<DoctorPage />} />

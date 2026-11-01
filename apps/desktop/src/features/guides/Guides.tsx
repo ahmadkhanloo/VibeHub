@@ -25,12 +25,13 @@ export function GuidesPage({ embedded = false }: { embedded?: boolean }) {
   const preferred = guideText(selected, settings.language);
   const alternateLanguage = settings.language === 'fa' ? 'en' : 'fa';
   const markdown = preferred ?? guideText(selected, alternateLanguage);
-  const sections = useMemo(() => markdown ? guideSections(markdown) : [], [markdown]);
+  const sections = useMemo(() => markdown ? guideSections(markdown).filter(section => !['نصب RTL از وایب‌هاب', 'Set up RTL from VibeHub'].includes(section.title)) : [], [markdown]);
   const needle = query.trim().toLocaleLowerCase();
   const filtered = needle ? sections.filter((section) => `${section.title} ${section.body}`.toLocaleLowerCase().includes(needle)) : sections;
 
   return <div className="space-y-6">
     {!embedded && <><PageHeader title={t('guides.title')} description={t('guides:subtitle')} /><LearningNav /></>}
+    <Link to="/learning" className="inline-flex min-h-11 items-center text-sm text-primary hover:underline">{t('guides:sharedLink')}</Link>
     {error != null && <ErrorNotice error={error} />}
     <div className={embedded ? "space-y-4" : "vh-course-layout"}>
       {!embedded && <nav aria-label={t('guides:pickApp')} className="vh-course-nav">

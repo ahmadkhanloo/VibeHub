@@ -23,7 +23,17 @@
   "installOmp": "Install Oh My Posh (winget)",
   "ompCommand": "Install command:",
   "installFont": "Install JetBrainsMono Nerd Font Mono",
-  "installVazir": "Install Vazirmatn (for Persian UI and terminal fallback)",
+  "installVazir": "Install Vazirmatn font",
+  "persian": {
+    "title": "Connected Persian letters in PowerShell",
+    "description": "Run PowerShell inside RtlTerminal for connected Persian letters. This separate terminal host provides text shaping; a font or UTF-8 alone is insufficient. Right alignment is not required.",
+    "install": "Install RtlTerminal for PowerShell",
+    "source": "Official release and manual download",
+    "requirements": "Version 1.1.4 for 64-bit Windows 10 build 19041 or newer; SHA-256 verified download. Installation requires Windows administrator approval.",
+    "confirm": "Download the official RtlTerminal 1.1.4 installer and run it after SHA-256 verification. Approve the Windows administrator prompt. This installs a separate terminal host; your default terminal and PowerShell profile are unchanged.",
+    "verify": "After installing, open Rtl Terminal from Start and select PowerShell. Type the sample below and check that its letters join. Installation success does not verify visual rendering.",
+    "undo": "Remove it from Windows Settings → Installed apps → Rtl Terminal. The theme restore action below only removes the prompt customization."
+  },
   "fontSource": "Source: official Nerd Fonts & Vazirmatn repositories — OFL 1.1 license",
   "applyTheme": "Apply theme to the PowerShell profile",
   "applyWhat": "What happens: your $PROFILE is backed up and a marked idempotent block is added; no duplicate lines are created.",

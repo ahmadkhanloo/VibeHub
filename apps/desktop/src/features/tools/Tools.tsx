@@ -11,7 +11,7 @@ const tools = [
   { to: '/guides', icon: BookOpen, title: 'guidesTool', description: 'guidesToolHint', group: 'learn' },
   { to: '/guides/extensions', icon: Puzzle, title: 'extensionsTool', description: 'extensionsToolHint', group: 'learn' },
   { to: '/learning/code-review', icon: BookOpen, title: 'codeReviewTool', description: 'codeReviewToolHint', group: 'learn' },
-  { to: '/learning', icon: GraduationCap, title: 'learningTool', description: 'learningToolHint', group: 'learn' },
+  { to: '/learning/long-running', icon: GraduationCap, title: 'learningTool', description: 'learningToolHint', group: 'learn' },
   { to: '/onboarding', icon: WandSparkles, title: 'onboardingTool', description: 'onboardingToolHint', group: 'personalize' },
   { to: '/settings?section=appearance', icon: Palette, title: 'appearanceTool', description: 'appearanceToolHint', group: 'personalize' },
 ] as const;

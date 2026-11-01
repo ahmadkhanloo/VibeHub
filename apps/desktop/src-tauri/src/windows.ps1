@@ -388,6 +388,32 @@ function Get-LaunchState($state, [string]$appId = '') {
     @{phase='idle'}
 }
 
+function Find-PersianTerminal {
+    $candidate = Join-Path $env:ProgramFiles 'behnamapps\Rtl Terminal\RtlTerminal.exe'
+    if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
+    $candidate = Join-Path $env:LOCALAPPDATA 'Programs\behnamapps\Rtl Terminal\RtlTerminal.exe'
+    if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
+    return $null
+}
+
+function Install-PersianTerminal {
+    if (Find-PersianTerminal) { return @{ok=$true;detail='RtlTerminal is already installed.'} }
+    if (-not [Environment]::Is64BitOperatingSystem -or [Environment]::OSVersion.Version.Build -lt 19041) { throw 'RtlTerminal requires 64-bit Windows 10 build 19041 or newer.' }
+    # Pinned upstream release asset digest; do not execute a mutable latest download.
+    $url = 'https://github.com/mirbehnam/RtlTerminal/releases/download/v1.1.4/RtlTerminal-Setup-1.1.4-x64.exe'
+    $expected = 'B9F60B9761FB7410994FCB33293111E012C1D79256E5BCFAB0B4D62D16B4A096'
+    $download = Join-Path ([IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString('N') + '.exe')
+    try {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $download -TimeoutSec 120
+        if ((Get-FileHash -LiteralPath $download -Algorithm SHA256).Hash -ne $expected) { throw 'RtlTerminal SHA-256 mismatch. Installer was not executed.' }
+        $installer = Start-Process -FilePath $download -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/NOCLOSEAPPLICATIONS') -Verb RunAs -WindowStyle Hidden -Wait -PassThru
+        if ($installer.ExitCode -ne 0) { throw "RtlTerminal installer failed (exit $($installer.ExitCode))." }
+        if (-not (Find-PersianTerminal)) { throw 'Installer finished but RtlTerminal was not found. Check the installation directory.' }
+        @{ok=$true;detail='RtlTerminal installed. Open it from Start, select PowerShell, and check the Persian sample. Remove it using Windows Installed apps.'}
+    } finally { if (Test-Path -LiteralPath $download) { Remove-Item -LiteralPath $download } }
+}
+
 function Terminal-State {
     $omp = Get-Command oh-my-posh -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
     $fonts = @('HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts','HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Fonts')
@@ -400,6 +426,9 @@ function Terminal-State {
     }
     $profilePathValue = ProfilePath
     $result = @{ hasOhMyPosh = [bool]$omp; hasNerdFont = $hasFont; profilePath = $profilePathValue; themeApplied = [bool]([regex]::IsMatch((ProfileText), (ThemeBlockPattern))) }
+    $persianTerminal = Find-PersianTerminal
+    $result.hasPersianTerminal = [bool]$persianTerminal
+    if ($persianTerminal) { $result.persianTerminalPath = $persianTerminal }
     if ($omp) { $version = & $omp.Source version 2>$null; if ($LASTEXITCODE -eq 0) { $result.ohMyPoshVersion = [string]($version | Select-Object -First 1) } }
     if ($hasFont) { $result.nerdFontName = 'JetBrainsMono Nerd Font Mono' }
     if (Test-Path -LiteralPath "$profilePathValue.vibehub.bak") { $result.backupPath = "$profilePathValue.vibehub.bak" }
@@ -536,6 +565,7 @@ try {
             $launchResult
         }
         'terminal-detect' { Terminal-State }
+        'terminal-install-persian' { Install-PersianTerminal }
         'terminal-apply' {
             if (-not (Get-Command oh-my-posh -CommandType Application -ErrorAction SilentlyContinue)) { throw 'Install Oh My Posh before applying the theme.' }
             $profilePathValue = ProfilePath

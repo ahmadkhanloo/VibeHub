@@ -69,7 +69,9 @@ test('offers survive corrupt read-state storage and never ask for notification p
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/offers');
   await expect(page).toHaveURL(/offers/);
-  await expect(page.getByRole('switch', { name: 'System notifications (optional)', exact: true })).toHaveCount(0);
+  const notifications = page.getByRole('switch', { name: 'System notifications (optional)', exact: true });
+  await expect(notifications).toBeVisible();
+  await expect(notifications).not.toBeChecked();
   const calls = await page.evaluate(() => (window as unknown as { journeyCalls: string[] }).journeyCalls);
   expect(calls.some((command) => command.includes('notification'))).toBe(false);
   expect(errors).toEqual([]);

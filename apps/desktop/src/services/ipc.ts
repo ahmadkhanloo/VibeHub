@@ -129,7 +129,6 @@ export const ipc = {
     const pending = invoke<AccountsSnapshot>('codex_accounts', { action, payload }).finally(() => { if (codexAccountReads.get(key) === pending) codexAccountReads.delete(key); });
     codexAccountReads.set(key, pending); return pending;
   },
-  latestToolVersion: (appId: string, installedVersion?: string) => invoke<{ version: string; source: string; comparison: 'newer' | 'current' | 'ahead' | null; checkedAt: string }>('latest_tool_version', { appId, installedVersion: installedVersion ?? null }),
   detectApps: () => invoke<DetectedApp[]>('detect_apps'),
   detectEditors: () => invoke<DetectedEditor[]>('detect_editors'),
   rtlComponents: () => invoke<RtlComponentStatus[]>('rtl_components'),
@@ -155,6 +154,7 @@ export const ipc = {
     invoke<ProxyTestResult>('proxy_test', { profile, level }),
 
   terminalDetect: () => invoke<TerminalSetupState>('terminal_detect'),
+  terminalInstallPersian: () => invoke<{ ok: boolean; detail: string }>('terminal_install_persian'),
   terminalInstallOhMyPosh: () => invoke<InstallRunResult>('terminal_install_ohmyposh'),
   terminalInstallFont: (which: 'nerd' | 'vazirmatn') => invoke<FontInstallResult>('terminal_install_font', { which }),
   terminalApplyTheme: () => invoke<{ ok: boolean; backupPath?: string; detail: string }>('terminal_apply_theme'),

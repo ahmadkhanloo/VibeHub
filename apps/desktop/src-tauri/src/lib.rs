@@ -31,42 +31,6 @@ async fn detect_apps(app: tauri::AppHandle) -> Result<Value> {
     system::run(app, json!({"operation":"detect"})).await
 }
 
-fn compare_tool_version(installed: Option<&str>, latest: &semver::Version) -> Option<&'static str> {
-    installed.and_then(|v| semver::Version::parse(v.trim_start_matches('v')).ok())
-        .map(|version| if version < *latest { "newer" } else if version == *latest { "current" } else { "ahead" })
-}
-
-#[cfg(test)]
-#[test]
-fn tool_version_comparison_handles_unknown_and_prereleases() {
-    let latest = semver::Version::parse("1.2.0").unwrap();
-    assert_eq!(compare_tool_version(Some("v1.1.0"), &latest), Some("newer"));
-    assert_eq!(compare_tool_version(Some("1.2.0"), &latest), Some("current"));
-    assert_eq!(compare_tool_version(Some("1.3.0"), &latest), Some("ahead"));
-    assert_eq!(compare_tool_version(Some("1.2.0-beta.1"), &latest), Some("newer"));
-    assert_eq!(compare_tool_version(Some("unknown"), &latest), None);
-}
-
-#[tauri::command]
-async fn latest_tool_version(app: tauri::AppHandle, app_id: String, installed_version: Option<String>) -> Result<Value> {
-    let (url, source) = match app_id.as_str() {
-        "opencode" => ("https://registry.npmjs.org/opencode-ai/latest", "npm: opencode-ai"),
-        "freebuff" => ("https://registry.npmjs.org/freebuff/latest", "npm: freebuff"),
-        _ => return Err("No verified version source for this app".into()),
-    };
-    let client = system::blocking(move || {
-        let (profile, _) = storage::selected_profile(&storage::settings(&app)?, "*", None)?;
-        network::client(profile.as_ref())
-    }).await?;
-    let response = client.get(url).send().await.map_err(|_| "Version source unavailable")?
-        .error_for_status().map_err(|_| "Version source unavailable")?;
-    let body = network::bounded_json(response, 256 * 1024).await?;
-    let version = body["version"].as_str().ok_or("Missing version")?;
-    let latest = semver::Version::parse(version).map_err(|_| "Invalid version")?;
-    let comparison = compare_tool_version(installed_version.as_deref(), &latest);
-    Ok(json!({"version":version,"source":source,"comparison":comparison,"checkedAt":chrono::Utc::now().to_rfc3339()}))
-}
-
 #[tauri::command]
 async fn detect_editors(app: tauri::AppHandle) -> Result<Value> {
     system::run(app, json!({"operation":"detect-editors"})).await
@@ -298,6 +262,10 @@ async fn provider_connection_test(app: tauri::AppHandle, id: String) -> Result<V
 #[tauri::command]
 async fn terminal_detect(app: tauri::AppHandle) -> Result<Value> {
     system::run(app, json!({"operation":"terminal-detect"})).await
+}
+#[tauri::command]
+async fn terminal_install_persian(app: tauri::AppHandle) -> Result<Value> {
+    system::run(app, json!({"operation":"terminal-install-persian"})).await
 }
 #[tauri::command]
 async fn terminal_install_ohmyposh(app: tauri::AppHandle) -> Result<Value> {
@@ -536,7 +504,6 @@ pub fn run() {
             app_accounts,
             app_path,
             detect_apps,
-            latest_tool_version,
             detect_editors,
             rtl_components,
             focus_editor,
@@ -555,6 +522,7 @@ pub fn run() {
             proxy_set_config,
             proxy_test,
             terminal_detect,
+            terminal_install_persian,
             terminal_install_ohmyposh,
             terminal_install_font,
             terminal_apply_theme,
