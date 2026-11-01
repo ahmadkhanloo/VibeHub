@@ -1,5 +1,9 @@
 {
   "appName": "VibeHub",
+  "windowMinimize": "Minimize window",
+  "windowMaximize": "Maximize window",
+  "windowRestore": "Restore window",
+  "windowClose": "Close window",
   "tagline": "Manage and launch coding apps, with Persian support, accounts and connections.",
   "languagePersian": "Persian",
   "languageEnglish": "English",

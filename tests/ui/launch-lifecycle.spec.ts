@@ -5,7 +5,7 @@ test('returning after externally closing ZCode rechecks status without scanning 
   await mockNative(page, 'running');
   await page.goto('/');
   await expect(page.getByRole('button', { name: 'Go to app ZCode', exact: true })).toBeEnabled();
-  const run = page.getByRole('button', { name: 'Run with RTL ZCode', exact: true });
+  const run = page.getByRole('button', { name: 'Run RTL ZCode', exact: true });
   const scans = await page.evaluate(() => (window as any).__mock.calls.filter((call: any) => call.cmd === 'detect_apps').length);
   await page.evaluate(() => { (window as any).__mock.launchStates.zcode = { phase: 'idle' }; window.dispatchEvent(new Event('focus')); });
   await expect(run).toBeEnabled();
@@ -30,7 +30,7 @@ test('already-open retry checks current process state before allowing a new laun
     };
   });
   await page.goto('/');
-  await page.getByRole('button', { name: 'Run with RTL ZCode', exact: true }).click();
+  await page.getByRole('button', { name: 'Run RTL ZCode', exact: true }).click();
   await expect(page.getByRole('alert')).toBeVisible();
   await page.evaluate(() => { (window as any).__mock.launchStates.zcode = { phase: 'idle' }; });
   await page.getByRole('alert').getByRole('button').click();
@@ -38,11 +38,12 @@ test('already-open retry checks current process state before allowing a new laun
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
-test('running status has an explicit recheck for windows that do not regain focus', async ({ page }) => {
+test('running apps expose a focus action and block the separate RTL action until idle', async ({ page }) => {
   await mockNative(page, 'running');
   await page.goto('/');
   await expect(page.getByRole('button', { name: 'Go to app ZCode', exact: true })).toBeEnabled();
-  await page.evaluate(() => { (window as any).__mock.launchStates.zcode = { phase: 'idle' }; });
-  await page.getByRole('button', { name: 'Check again ZCode', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Run with RTL ZCode', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Run RTL ZCode', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Run RTL ZCode', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: 'Go to app ZCode', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => (window as any).__mock.calls.some((call: any) => call.cmd === 'launch_app' && call.args.req.appId === 'zcode' && call.args.req.focus === true))).toBe(true);
 });

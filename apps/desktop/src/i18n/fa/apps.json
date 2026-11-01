@@ -1,6 +1,8 @@
 {
   "title": "برنامه‌ها",
   "filters": "فیلترها",
+  "installedUnknown": "وضعیت برنامه‌های نصب‌شده مشخص نشد",
+  "installedUnknownHint": "پیش از انتخاب برنامه برای نصب، دوباره بررسی کنید.",
   "openSourceOnly": "فقط متن‌باز",
   "freeAccessType": "نوع دسترسی رایگان",
   "allAccess": "همه",

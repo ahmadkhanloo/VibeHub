@@ -3,6 +3,8 @@
   "connectionIntro": "Save the endpoint, model ID and key and test the connection. To use it in Qoder or another tool, enter the details in that tool’s settings; this notebook does not activate it automatically.",
   "savedConnections": "Saved connections",
   "providerCatalog": "Providers",
+  "createApiKey": "Create API key",
+  "manualConnectionHint": "Create a key on the provider’s official site, then enter its endpoint, model ID, and key in the compatible app’s own settings.",
   "addConnection": "Add connection",
   "noConnections": "No connections saved yet.",
   "newConnection": "New connection",
@@ -77,5 +79,7 @@
   "unknownList": "Models with unknown pricing",
   "noFree": "No free models confirmed in the response.",
   "proxyTroubleshooting": "If the service did not respond, check your internet connection and global proxy profile, host, port and HTTP or SOCKS5 type, then run the proxy test. Other causes are also possible.",
-  "openProxySettings": "Open proxy center"
+  "openProxySettings": "Open proxy center",
+  "openKeyPortal": "Open API key page",
+  "openProvider": "Open provider site"
 }

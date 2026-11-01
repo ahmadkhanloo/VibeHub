@@ -3,6 +3,7 @@
   "appearance": {
     "title": "Appearance",
     "language": "Language",
+      "followSystem": "Use the system light or dark setting",
     "mode": "Mode",
     "modeSystem": "System",
     "modeLight": "Light",

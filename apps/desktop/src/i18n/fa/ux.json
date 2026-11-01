@@ -1,6 +1,5 @@
 {
   "workspace": "برنامه‌ها",
-  "workspaceSub": "ابزارهای نصب‌شده را از همین‌جا اجرا و آماده کنید.",
   "discover": "کشف ابزارها",
   "discoverSub": "ابزار متناسب با کارتان را انتخاب کنید؛ شرایط دسترسی و سازگاری را پیش از نصب ببینید.",
   "searchLabel": "جست‌وجو…",
@@ -170,6 +169,8 @@
   "rtlSetupShort": "نصب RTL",
   "apiNotebook": "دفترچهٔ API",
   "rtlSetupFor": "نصب RTL برای {{name}}",
+  "rtlRepair": "تعمیر RTL",
+  "rtlRepairFor": "تعمیر راست‌چین {{name}}",
   "rtlSetupDownload": "دریافت نصب‌کنندهٔ کامل وایب‌هاب",
   "runRtlCompact": "اجرای RTL",
   "rtlReady": "RTL آماده",

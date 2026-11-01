@@ -2,7 +2,7 @@
   "identifier": "com.ahmadkhanloo.vibehub.dev",
   "app": {
     "windows": [{
-      "label": "main", "title": "VibeHub — Development", "width": 1280, "height": 860,
+      "label": "main", "title": "VibeHub — Development", "width": 1280, "height": 860, "decorations": false,
       "minWidth": 960, "minHeight": 640, "resizable": true
     }]
   }

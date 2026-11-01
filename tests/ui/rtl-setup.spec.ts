@@ -9,7 +9,8 @@ test('a newly detected app can set up RTL without launching or closing it', asyn
     host.__installedLater = false;
     host.__TAURI_INTERNALS__.invoke = async (cmd: string, args: any = {}) => {
       if (cmd === 'detect_apps') return host.__installedLater ? [{ id: 'qoder', installed: true, path: 'C:/Fixtures/Qoder.exe', via: 'fixture' }] : [];
-      if (cmd === 'rtl_setup') return { ok: true, shortcut: 'C:/Fixtures/Qoder RTL.lnk' };
+      if (cmd === 'rtl_components') return [{ id: 'qoder', available: true, configured: !!host.__rtlConfigured }];
+      if (cmd === 'rtl_setup') { host.__rtlConfigured = true; return { ok: true, shortcut: 'C:/Fixtures/Qoder RTL.lnk' }; }
       return original(cmd, args);
     };
   });
@@ -22,8 +23,8 @@ test('a newly detected app can set up RTL without launching or closing it', asyn
   await tile.getByRole('button', { name: 'Set up RTL for Qoder', exact: true }).click();
   await page.screenshot({ path: 'output/rtl-setup-confirmation.png', fullPage: true });
   await page.getByRole('dialog').getByRole('button', { name: 'Set up RTL', exact: true }).click();
-  await expect(tile.getByRole('button', { name: 'Run with RTL Qoder', exact: true })).toBeVisible();
-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('vibehub.settings.v1')!).rtlSetupByApp?.qoder)).toBe(true);
+  await expect(tile.getByRole('button', { name: 'Run RTL Qoder', exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('vibehub.settings.v1')!).launchModeByApp.qoder)).toBe('rtl');
   expect(await page.evaluate(() => (window as any).__mock.calls.filter((call: any) => ['launch_app', 'stop_rtl'].includes(call.cmd)))).toEqual([]);
 });
 
@@ -32,6 +33,7 @@ test('Antigravity exposes experimental RTL setup and keeps failed setup retryabl
   await page.addInitScript(() => {
     const host = window as any, original = host.__TAURI_INTERNALS__.invoke;
     host.__TAURI_INTERNALS__.invoke = async (cmd: string, args: any = {}) => {
+      if (cmd === 'rtl_components') return [{ id: 'antigravity', available: true, configured: false }];
       if (cmd === 'rtl_setup') throw new Error('Fixture shortcut could not be saved');
       return original(cmd, args);
     };

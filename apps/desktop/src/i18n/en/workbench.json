@@ -22,17 +22,16 @@
   "onboardingToolHint": "Set up your language and installed apps step by step.",
   "appearanceTool": "Appearance and themes",
   "appearanceToolHint": "Choose a color family, accent, and light or dark mode.",
-  "workspaceIntro": "Launch your coding app or pick up a project.",
   "installedCount": "{{count}} apps installed",
   "runningCount": "{{count}} running",
   "yourApps": "Your apps",
-  "projectPanel": "Projects",
-  "projectHint": "Choose a folder and open it with your preferred app.",
   "account": "Account",
   "connection": "Connection",
   "launchIssue": "Review and fix launch error",
   "brandCaption": "Your coding workspace",
   "openSettings": "App settings",
   "codeReviewTool": "Code review with agents",
-  "codeReviewToolHint": "Practical steps for reviewing, approving and releasing changes."
+  "codeReviewToolHint": "Practical steps for reviewing, approving and releasing changes.",
+  "ideProvider": "Google",
+  "ideFreeAccess": "Free IDE"
 }

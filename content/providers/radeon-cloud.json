@@ -20,5 +20,11 @@
   "endpoint": {
     "baseUrl": "https://developer.amd.com.cn/radeon/api/v1",
     "kind": "openai-compatible"
+  },
+  "logo": "radeon-cloud",
+  "keyUrl": "https://amd-aim.github.io/radeon-cloud-docs/guides/token-factory/",
+  "gettingStarted": {
+    "fa": "از پیوند رسمی، کلید API بسازید. سپس نشانی API، شناسهٔ مدل و کلید را در برنامهٔ سازگار ثبت کنید؛ سازگاری هر برنامه در راهنمای همان برنامه مشخص شده است.",
+    "en": "Create an API key from the official link. Then enter the API endpoint, model ID, and key in a compatible client; each app’s guide lists its verified compatibility."
   }
 }

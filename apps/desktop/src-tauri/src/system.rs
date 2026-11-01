@@ -50,6 +50,7 @@ pub fn resource_root(app: &tauri::AppHandle) -> Result<std::path::PathBuf> {
     }
 }
 
+#[cfg(test)]
 pub fn rtl_runtime_available(root: &std::path::Path) -> bool {
     [
         "runtime/node.exe",

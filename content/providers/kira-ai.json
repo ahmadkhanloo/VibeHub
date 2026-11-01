@@ -20,5 +20,11 @@
   "endpoint": {
     "baseUrl": "https://kiraai.vn/api/v1",
     "kind": "openai-compatible"
+  },
+  "logo": "kira-ai",
+  "keyUrl": "https://kiraai.vn/guide/vscode/",
+  "gettingStarted": {
+    "fa": "از پیوند رسمی، کلید API بسازید. سپس نشانی API، شناسهٔ مدل و کلید را در برنامهٔ سازگار ثبت کنید؛ سازگاری هر برنامه در راهنمای همان برنامه مشخص شده است.",
+    "en": "Create an API key from the official link. Then enter the API endpoint, model ID, and key in a compatible client; each app’s guide lists its verified compatibility."
   }
 }

@@ -22,17 +22,16 @@
   "onboardingToolHint": "زبان و برنامه‌های نصب‌شده را قدم‌به‌قدم تنظیم کنید.",
   "appearanceTool": "ظاهر و تم‌ها",
   "appearanceToolHint": "خانوادهٔ رنگ، رنگ تأکیدی و حالت روشن یا تاریک.",
-  "workspaceIntro": "برنامهٔ دلخواهت را اجرا کن یا با یک پروژه ادامه بده.",
   "installedCount": "{{count}} برنامهٔ نصب‌شده",
   "runningCount": "{{count}} در حال اجرا",
   "yourApps": "برنامه‌های شما",
-  "projectPanel": "پروژه‌ها",
-  "projectHint": "پوشه‌ای را انتخاب کن و با برنامهٔ دلخواه بازش کن.",
   "account": "حساب",
   "connection": "اتصال",
   "launchIssue": "بررسی و رفع خطای اجرا",
   "brandCaption": "محیط کار برنامه‌نویسی",
   "openSettings": "تنظیمات برنامه",
   "codeReviewTool": "بازبینی کد با ایجنت",
-  "codeReviewToolHint": "مراحل عملی بررسی، تأیید و انتشار تغییرات."
+  "codeReviewToolHint": "مراحل عملی بررسی، تأیید و انتشار تغییرات.",
+  "ideProvider": "گوگل",
+  "ideFreeAccess": "محیط توسعهٔ رایگان"
 }

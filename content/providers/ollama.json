@@ -25,5 +25,11 @@
   "endpoint": {
     "baseUrl": "http://127.0.0.1:11434",
     "kind": "ollama"
+  },
+  "logo": "ollama",
+  "keyUrl": "https://ollama.com/settings/keys",
+  "gettingStarted": {
+    "fa": "برای مدل محلی، Ollama را اجرا کنید و نشانی سرویس محلی را در برنامهٔ سازگار وارد کنید؛ برای مدل‌های ابری، حساب و کلید لازم است. سازگاری هر برنامه را در راهنمای همان برنامه بررسی کنید.",
+    "en": "For local models, run Ollama and enter its local endpoint in a compatible client. Cloud models require an account and key. Check each app’s guide for its compatibility status."
   }
 }

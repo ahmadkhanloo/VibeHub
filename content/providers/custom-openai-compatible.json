@@ -20,5 +20,11 @@
   "notes": {
     "fa": "هر Endpoint سازگار با OpenAI؛ هزینه و شرایط سرویس را خود Endpoint تعیین میکند و VibeHub آن را تضمین نمیکند.",
     "en": "Any OpenAI-compatible endpoint; cost and terms are defined by that endpoint and are not guaranteed by VibeHub."
+  },
+  "logo": "custom-openai-compatible",
+  "keyUrl": "https://platform.openai.com/api-keys",
+  "gettingStarted": {
+    "fa": "از پیوند رسمی، کلید API بسازید. سپس نشانی API، شناسهٔ مدل و کلید را در برنامهٔ سازگار ثبت کنید؛ سازگاری هر برنامه در راهنمای همان برنامه مشخص شده است.",
+    "en": "Create an API key from the official link. Then enter the API endpoint, model ID, and key in a compatible client; each app’s guide lists its verified compatibility."
   }
 }

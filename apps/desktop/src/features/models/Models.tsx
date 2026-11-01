@@ -3,7 +3,8 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ExternalLink, KeyRound, Plus, Save, Trash2, Zap } from 'lucide-react';
-import { Badge, Button, Card, CopyButton, EmptyState, ErrorNotice, Input, Modal, PageHeader, SectionTitle, Tabs } from '@/components/ui';
+import { Badge, Button, Card, CopyButton, EmptyState, ErrorNotice, Input, Modal, PageHeader, SectionTitle } from '@/components/ui';
+import { ProviderLogo } from '@/components/ProviderLogo';
 import { useCatalog } from '@/lib/catalog';
 import { ipc, type ApiTestReport, type ProviderConnection } from '@/services/ipc';
 import { openUrl } from '@tauri-apps/plugin-opener';
@@ -87,10 +88,8 @@ function ConnectionReport({ report }: { report: ApiTestReport }) {
 export function ModelsPage() {
   const { t, i18n } = useTranslation(['models', 'connectionsUx', 'common', 'apps']);
   const { apps, providers } = useCatalog();
-  const [params, setParams] = useSearchParams();
+  const [params] = useSearchParams();
   const providerParam = params.get('provider') ?? '';
-  const requestedTab = params.get('tab');
-  const tab = requestedTab === 'localModels' || requestedTab === 'apiConnections' || requestedTab === 'freeProviders' ? requestedTab : providerParam === 'ollama' ? 'localModels' : providerParam === 'custom-openai-compatible' ? 'apiConnections' : 'freeProviders';
   const lang = i18n.language.startsWith('fa') ? 'fa' : 'en';
   const [connections, setConnections] = useState<ProviderConnection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,13 +104,10 @@ export function ModelsPage() {
   const [error, setError] = useState<unknown>(null);
   const [message, setMessage] = useState('');
   const operation = useRef(false);
-  const providerOpened = useRef('');
   const reload = async () => { setLoading(true); setError(null); try { setConnections(await ipc.providerConnections()); } catch (cause) { setError(cause); } finally { setLoading(false); } };
   useEffect(() => { void reload(); }, []);
-  useEffect(() => { if (providerParam === providerOpened.current) return; providerOpened.current = providerParam; const preset = PRESETS.find((p) => p.providerId === presetId(providerParam)); if (preset) { setEditing(false); setDraft(makeConnection(preset)); } }, [providerParam]);
   const startNew = (providerId?: string) => { setEditing(false); setError(null); setDraft(makeConnection(PRESETS.find((p) => p.providerId === providerId) ?? PRESETS.find((p) => p.providerId === 'openrouter')!)); };
   const act = async (fn: () => Promise<void>) => { if (operation.current) return; operation.current = true; setBusy(true); setError(null); setMessage(''); try { await fn(); } catch (cause) { setError(cause); } finally { operation.current = false; setBusy(false); } };
-  const shown = providers.filter((p) => tab === 'localModels' ? p.id === 'ollama' : tab === 'apiConnections' ? p.id === 'custom-openai-compatible' : !['ollama', 'custom-openai-compatible'].includes(p.id));
   return <div className="space-y-8">
     <PageHeader title={t('models:title')} actions={<Button variant="primary" onClick={() => startNew()}><Plus size={16} aria-hidden="true" />{t('models:addConnection')}</Button>} />
     <p className="text-sm leading-7 text-muted">{t('models:connectionIntro')}</p>
@@ -133,8 +129,20 @@ export function ModelsPage() {
         </Card>;
       })}</div>}
     </section>
-    <section aria-labelledby="model-provider-catalog"><SectionTitle><span id="model-provider-catalog">{t('models:providerCatalog')}</span></SectionTitle><Tabs panelId="provider-results" value={tab} onChange={(value) => setParams((current) => { const next = new URLSearchParams(current); next.set('tab', value); return next; })} label={t('models:providerCatalog')} items={(['freeProviders', 'localModels', 'apiConnections'] as const).map((value) => ({ value, label: t(`models:tabs.${value}`) }))} />
-      <div id="provider-results" role="tabpanel" aria-labelledby={"provider-results-tab-"+tab} className="mt-4 vh-record-list">{shown.map((provider) => <Card key={provider.id} className={`space-y-3 ${provider.id === providerParam ? 'border-primary' : ''}`} data-testid={`provider-${provider.id}`}><div className="flex flex-wrap items-start justify-between gap-3"><h3 className="text-base font-bold">{provider.name}</h3><Badge tone="muted">{t(`connectionsUx:freeAccess.${provider.freeAccess}`)}</Badge></div><Button size="sm" variant="primary" onClick={() => startNew(presetId(provider.id))}><Plus size={16} aria-hidden="true" />{t('models:useProvider')}</Button><Disclosure title={t('ux:details')} className="vh-inline-disclosure"><p className="max-w-3xl text-sm leading-7 text-muted">{provider.notes[lang]}</p><div className="flex flex-wrap gap-3 text-sm text-muted"><span>{t('models:countryStatus')}: {t(`common:${provider.eligibilityStatus}`)}</span><span>{t('connectionsUx:catalogVerified')}: <bdi>{provider.lastVerified}</bdi></span></div><div className="flex flex-wrap gap-2"><Button size="sm" onClick={() => void act(async () => { await openUrl(provider.officialUrl); })}><ExternalLink size={16} aria-hidden="true" />{t('models:officialUrl')}</Button><Button size="sm" variant="ghost" onClick={() => void act(async () => { await openUrl(provider.usageTermsUrl); })}>{t('models:terms')}</Button></div></Disclosure></Card>)}</div>
+    <section aria-labelledby="model-provider-catalog"><SectionTitle><span id="model-provider-catalog">{t('models:providerCatalog')}</span></SectionTitle>
+      <div className="vh-provider-grid mt-4">{providers.map((provider) => {
+        const preset = PRESETS.find((item) => catalogId(item.providerId) === provider.id);
+        const verifiedApps = Object.entries(provider.supportedApps).filter(([, status]) => status === 'verified');
+        return <Card key={provider.id} className={`vh-provider-card space-y-3 ${provider.id === providerParam ? 'border-primary' : ''}`} data-testid={`provider-${provider.id}`}>
+          <div className="flex min-w-0 items-center gap-3"><ProviderLogo id={provider.logo ?? provider.id} name={provider.name} /><div className="min-w-0 flex-1"><h3 className="break-words text-sm font-bold">{provider.name}</h3><p className="text-xs text-muted">{t(`connectionsUx:freeAccess.${provider.freeAccess}`)}</p></div></div>
+          <Button size="sm" className="w-full" onClick={() => void act(async () => { await openUrl(provider.keyUrl ?? provider.officialUrl); })}><ExternalLink size={15} aria-hidden="true" />{t(provider.requiresApiKey === true ? 'models:openKeyPortal' : 'models:openProvider')}</Button>
+          <Disclosure title={t('ux:details')} className="vh-inline-disclosure"><p className="text-sm leading-6 text-muted">{provider.notes[lang]}</p><p className="text-sm leading-6">{provider.gettingStarted?.[lang] ?? t('models:manualConnectionHint')}</p>
+            <p className="text-xs text-muted">{t('connectionsUx:catalogVerified')}: <bdi>{provider.lastVerified}</bdi></p>
+            {verifiedApps.length > 0 && preset ? <div className="space-y-2"><Button size="sm" variant="primary" onClick={() => startNew(preset.providerId)}><Plus size={15} aria-hidden="true" />{t('models:useProvider')}</Button><ul className="space-y-1 text-xs text-muted">{verifiedApps.map(([id]) => <li key={id}>{apps.find((app) => app.id === id)?.name ?? id}</li>)}</ul></div> : <p className="text-xs text-muted">{t('models:noVerifiedTools')}</p>}
+            <div className="flex flex-wrap gap-2"><Button size="sm" variant="ghost" onClick={() => void act(async () => { await openUrl(provider.modelsDocUrl ?? provider.officialUrl); })}>{t('models:officialUrl')}</Button><Button size="sm" variant="ghost" onClick={() => void act(async () => { await openUrl(provider.usageTermsUrl); })}>{t('models:terms')}</Button></div>
+          </Disclosure>
+        </Card>;
+      })}</div>
     </section>
     <Disclosure title={t('ux:help')}><p className="text-sm text-muted">{t('models:noAutomaticInjection')}</p></Disclosure>
     {draft && <ConnectionEditor key={draft.id} connection={draft} existing={editing} onClose={() => setDraft(null)} onSaved={(saved) => { setConnections(saved); setModelLists({}); setReports({}); setMessage(t('connectionsUx:connectionSaved')); }} />}

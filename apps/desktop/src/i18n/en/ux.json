@@ -1,6 +1,5 @@
 {
   "workspace": "Apps",
-  "workspaceSub": "Launch and prepare the tools installed on this computer.",
   "discover": "Discover tools",
   "discoverSub": "Choose a tool for your work. Review access terms and compatibility before installing.",
   "searchLabel": "Search…",
@@ -170,6 +169,8 @@
   "rtlSetupShort": "Set up RTL",
   "apiNotebook": "API notebook",
   "rtlSetupFor": "Set up RTL for {{name}}",
+  "rtlRepair": "Repair RTL",
+  "rtlRepairFor": "Repair RTL for {{name}}",
   "rtlSetupDownload": "Get the full VibeHub installer",
   "runRtlCompact": "Run RTL",
   "rtlReady": "RTL ready",

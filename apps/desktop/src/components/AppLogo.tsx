@@ -17,6 +17,7 @@ const logos: Record<string, string> = {
   mimocode: mimoLogo,
   opencode: opencodeLogo,
   antigravity: antigravityLogo,
+  'antigravity-ide': antigravityLogo,
   chatgpt: chatgptLogo,
 };
 

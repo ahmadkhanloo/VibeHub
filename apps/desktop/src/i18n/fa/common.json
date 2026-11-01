@@ -1,5 +1,9 @@
 {
   "appName": "وایب‌هاب",
+  "windowMinimize": "کوچک کردن پنجره",
+  "windowMaximize": "بزرگ کردن پنجره",
+  "windowRestore": "بازگرداندن اندازهٔ پنجره",
+  "windowClose": "بستن پنجره",
   "tagline": "مدیریت و اجرای برنامه‌های کدنویسی، با پشتیبانی فارسی، حساب و اتصال.",
   "languagePersian": "فارسی",
   "languageEnglish": "انگلیسی",

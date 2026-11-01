@@ -2,20 +2,14 @@ import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { mockNative } from './mock';
 
-test('compact launch options support keyboard dismissal without changing saved preferences', async ({ page }) => {
+test('normal and RTL actions are separate and do not depend on a saved launch mode', async ({ page }) => {
   await mockNative(page);
   await page.goto('/');
-  const options = page.getByRole('button', { name: 'Launch mode for ZCode', exact: true });
-  await expect(options).toHaveAttribute('aria-expanded', 'false');
-  await options.click();
-  const mode = page.getByRole('combobox', { name: 'Launch mode for ZCode', exact: true });
-  await mode.selectOption('normal');
-  await mode.focus();
-  await page.keyboard.press('Escape');
-  await expect(options).toBeFocused();
-  await expect(options).toHaveAttribute('aria-expanded', 'false');
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('vibehub.settings.v1')!).launchModeByApp.zcode)).toBeUndefined();
-  await expect(page.getByRole('button', { name: 'Run ZCode', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Launch mode for ZCode', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Run ZCode', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => (window as any).__mock.calls.some((call: any) => call.cmd === 'launch_app' && call.args.req.appId === 'zcode' && call.args.req.rtl === false))).toBe(true);
+  await expect(page.getByRole('button', { name: 'Run RTL ZCode', exact: true })).toBeVisible();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('vibehub.settings.v1')!).launchModeByApp.zcode)).toBe('normal');
 });
 
 test('catalog apps render local images or icon fallbacks with external requests blocked', async ({ page }) => {
@@ -23,23 +17,20 @@ test('catalog apps render local images or icon fallbacks with external requests 
   await page.route('https://**/*', route => route.abort());
   await page.goto('/discover');
   const tiles = page.locator('.vh-catalog-tile');
-  await expect(tiles).toHaveCount(9);
+  await expect(tiles).toHaveCount(8);
   await expect.poll(() => tiles.locator('img').evaluateAll(images => images.every(image => (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0))).toBe(true);
   expect(await tiles.locator('img').evaluateAll(images => images.every(image => (image as HTMLImageElement).src.startsWith('data:image/') || new URL((image as HTMLImageElement).src).origin === location.origin))).toBe(true);
-  await page.getByRole('button', { name: 'Filters', exact: true }).click();
-  const openSource = page.getByRole('checkbox', { name: 'Open-source only' });
-  await openSource.click();
-  await expect(openSource).toBeChecked();
-  await expect(page.getByRole('button', { name: 'Filters (1)', exact: true })).toHaveAttribute('aria-expanded', 'true');
-  await page.getByRole('button', { name: 'Filters (1)', exact: true }).click();
-  await expect(page).toHaveURL(/oss=1/);
+  await expect(page.getByRole('button', { name: /Filters|Open-source/i })).toHaveCount(0);
+  await expect(page.getByRole('tab')).toHaveCount(0);
 });
 
-test('settings terminal deep link opens its panel and cancellation preserves data', async ({ page }) => {
+test('legacy terminal settings link opens the standalone install tools page and cancellation preserves data', async ({ page }) => {
   await mockNative(page);
   await page.goto('/settings?panel=terminal');
-  await expect(page.getByRole('tab', { name: 'Terminal', exact: true })).toHaveAttribute('aria-selected', 'true');
-  await page.getByRole('tab', { name: 'Data and about', exact: true }).click();
+  await expect(page).toHaveURL(/\/terminal$/);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(page.getByText(/Oh My Posh/).first()).toBeVisible();
+  await page.goto('/settings?section=data');
   const reset = page.getByRole('button', { name: 'Reset interface preferences', exact: true });
   await reset.click();
   await page.keyboard.press('Escape');
@@ -82,7 +73,7 @@ for (const language of ['fa', 'en']) for (const mode of ['light', 'dark']) {
 test('expanded settings and model editor fit a narrow window', async ({ page }) => {
   await mockNative(page, 'ready', 'fa');
   await page.setViewportSize({ width: 320, height: 900 });
-  await page.goto('/settings?panel=terminal');
+  await page.goto('/terminal');
   await expect(page.locator('h1').first()).toBeVisible();
   for (const details of await page.locator('main details').all()) {
     const summary = details.locator(':scope > summary');

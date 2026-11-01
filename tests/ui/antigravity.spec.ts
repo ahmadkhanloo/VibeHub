@@ -70,15 +70,12 @@ test('new-document injection waits for product configuration and survives reload
 });
 
 
-test('standalone Antigravity exposes experimental RTL, defaults to normal and uses app IPC', async ({ page }) => {
+test('standalone Antigravity exposes separate experimental RTL and normal actions through app IPC', async ({ page }) => {
   await mockNative(page, 'antigravity');
-  await page.goto('/');
-  const row = page.locator('article').filter({has:page.getByRole('heading', {name:'Antigravity',exact:true})});
-  await row.getByRole('button', {name:'Launch mode for Antigravity',exact:true}).click();
-  await expect(row.getByText('Chat RTL · experimental')).toBeVisible();
-  await expect(row.getByRole('combobox')).toHaveValue('normal');
-  await row.getByRole('combobox').selectOption('rtl');
-  await row.getByRole('button', {name:/^Run/}).click();
+  await page.goto('/app/antigravity');
+  await expect(page.getByText('Chat RTL · experimental')).toBeVisible();
+  await expect(page.getByRole('button', {name:'Run Antigravity', exact:true})).toBeVisible();
+  await page.getByRole('button', {name:'Run RTL Antigravity',exact:true}).click();
   await expect.poll(() => page.evaluate(() => (window as any).__mock.calls.filter((c: any) => c.cmd === 'launch_app'))).toEqual([{cmd:'launch_app',args:{req:{appId:'antigravity',rtl:true}}}]);
   expect(await page.evaluate(() => (window as any).__mock.calls.some((c: any) => c.cmd === 'launch_editor'))).toBe(false);
 });

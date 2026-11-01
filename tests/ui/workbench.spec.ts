@@ -1,18 +1,17 @@
 import { test, expect } from '@playwright/test';
 import { mockNative } from './mock';
 
-test('more tools restores every destination while keeping the main navigation focused', async ({ page }) => {
+test('the sidebar links directly to each destination and legacy routes remain usable', async ({ page }) => {
   await mockNative(page);
-  const routes = ['/accounts', '/offers', '/terminal', '/doctor', '/guides', '/guides/extensions', '/learning', '/learning/code-review', '/onboarding', '/settings?section=appearance'];
-  await page.goto('/tools');
-  await expect(page.locator('.vh-tool-card')).toHaveCount(routes.length);
-  await expect(page.locator('nav .vh-nav-link')).toHaveCount(3);
-  for (const route of routes) {
-    await page.goto('/tools');
-    await page.locator(`.vh-tool-card[href="${route}"]`).click();
-    await expect(page.locator('h1').first()).toBeVisible();
-    if (route === '/terminal') await expect(page).toHaveURL(/settings\?section=terminal/);
-    else await expect(page).toHaveURL(new RegExp(route.replace('?', '\\?') + '$'));
+  await page.goto('/');
+  const sidebar = page.getByRole('navigation', { name: 'Main navigation' });
+  for (const [label, route] of [['API notebook','/connections/api'],['Proxy','/connections/proxy'],['Offers and news','/offers'],['Install terminal tools','/terminal'],['Diagnostics','/doctor'],['Learn','/learning'],['Guides','/guides']]) {
+    await expect(sidebar.getByRole('link', { name: label, exact: true })).toHaveAttribute('href', route);
+  }
+  await expect(sidebar.getByRole('link', { name: /More tools/i })).toHaveCount(0);
+  for (const [legacy, destination] of [['/tools','/'],['/accounts','/'],['/connections','/connections/api'],['/proxy','/connections/proxy'],['/settings?panel=terminal','/terminal']]) {
+    await page.goto(legacy);
+    await expect.poll(() => new URL(page.url()).pathname).toBe(destination);
   }
 });
 
@@ -20,8 +19,8 @@ test('restored theme family and accent survive reload', async ({ page }) => {
   await mockNative(page);
   await page.goto('/settings');
   await expect(page.locator('.vh-theme-preview')).toHaveCount(8);
-  await page.getByRole('combobox', { name: 'Theme family', exact: true }).selectOption('nord');
-  await page.getByRole('combobox', { name: 'Accent', exact: true }).selectOption('emerald');
+  await page.locator('button[data-theme="nord"][data-mode="dark"]').click();
+  await page.getByRole('button', { name: 'Emerald', exact: true }).click();
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'nord');
   await expect(page.locator('html')).toHaveAttribute('data-accent', 'emerald');

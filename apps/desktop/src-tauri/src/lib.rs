@@ -74,31 +74,15 @@ async fn detect_editors(app: tauri::AppHandle) -> Result<Value> {
 
 #[tauri::command]
 async fn rtl_components(app: tauri::AppHandle) -> Result<Value> {
-    system::blocking(move || {
-    let root = system::resource_root(&app)?;
-    let runtime_ready = system::rtl_runtime_available(&root);
-    let components = [
-        ("zcode", "ZCode"),
-        ("qoder", "Qoder"),
-        ("deepseek-harness", "DeepSeekHarness"),
-        ("antigravity", "Antigravity"),
-    ]
-    .into_iter()
-    .map(|(id, folder)| {
-        let adapter = root.join("apps").join(folder);
-        json!({
-            "id": id,
-            "available": runtime_ready
-                && root.join("apps/rtl-paths.ps1").is_file()
-                && adapter.join("start.ps1").is_file()
-                && adapter.join("injector.mjs").is_file()
-                && (!matches!(folder, "Qoder" | "Antigravity") || adapter.join("style.mjs").is_file())
-        })
-    })
-    .collect::<Vec<_>>();
-    Ok(json!(components))
+    system::run(app, json!({"operation":"rtl-components"})).await
+}
 
-    }).await
+#[tauri::command]
+async fn focus_editor(app: tauri::AppHandle, editor_id: String) -> Result<Value> {
+    if !EDITOR_IDS.contains(&editor_id.as_str()) {
+        return Err("Unknown supported editor".into());
+    }
+    system::run(app, json!({"operation":"focus-editor", "editorId":editor_id})).await
 }
 
 #[tauri::command]
@@ -555,6 +539,7 @@ pub fn run() {
             latest_tool_version,
             detect_editors,
             rtl_components,
+            focus_editor,
             rtl_setup,
             launch_editor,
             launch_app,
