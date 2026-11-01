@@ -1,5 +1,7 @@
 # ZCode — English guide
 
+![Educational workflow schematic](../../../apps/desktop/public/tutorials/zcode.svg)
+
 ## Introduction
 ZCode is an AI coding agent/IDE used with a user account. VibeHub discovers it, launches it, and injects RTL so Persian text renders correctly.
 

@@ -1,5 +1,11 @@
 # ChatGPT / Codex
 
+![Educational workflow schematic](../../../apps/desktop/public/tutorials/chatgpt.svg)
+
+## Access from Iran and regional restrictions
+
+Iran is absent from [ChatGPT's supported countries](https://help.openai.com/en/articles/7947663-chatgpt-supported-countries), checked November 1, 2026. Network restrictions may require a connectivity workaround or proxy. Changing IP does not remove account-region restrictions; accounts may be blocked. Access from Iran is untested here. Check Codex and API-provider eligibility separately.
+
 ## Overview
 ChatGPT desktop and legacy Codex detection, with a standalone Codex account panel in VibeHub.
 

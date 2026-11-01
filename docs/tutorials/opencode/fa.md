@@ -1,5 +1,7 @@
 # OpenCode — راهنمای فارسی
 
+![نقشهٔ آموزشی مسیر کار (شماتیک)](../../../apps/desktop/public/tutorials/opencode.svg)
+
 ## معرفی
 OpenCode ایجنت کدنویسی CLI متن‌باز است. هزینهٔ مدل جدا از خود ابزار است و با Providerهای رایگان (مدل‌های free در OpenRouter یا Ollama محلی) می‌توان رایگان از آن استفاده کرد.
 

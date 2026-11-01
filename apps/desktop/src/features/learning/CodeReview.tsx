@@ -5,6 +5,8 @@ import Markdown from 'react-markdown';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { ErrorNotice, PageHeader } from '@/components/ui';
 import { guideText, useCatalog } from '@/lib/catalog';
+import { GuideIllustration } from '@/components/GuideIllustration';
+import { LearningNav } from '@/features/guides/LearningNav';
 
 export function CodeReviewPage() {
   const { i18n } = useTranslation();
@@ -16,9 +18,11 @@ export function CodeReviewPage() {
   return <div className="mx-auto max-w-3xl space-y-6">
     <Link to="/tools" className="text-sm text-primary hover:underline">{lang === 'fa' ? 'بازگشت به ابزارها' : 'Back to tools'}</Link>
     <PageHeader title={title} />
+    <LearningNav />
+    <GuideIllustration topic="code-review" />
     {error != null && <ErrorNotice error={error} />}
     <article className="guide break-words rounded-xl border border-border p-5 text-base leading-8" lang={lang} dir={lang === 'fa' ? 'rtl' : 'ltr'}>
-      <Markdown skipHtml components={{ h1: () => null, a: ({ href, children }) => <button type="button" className="inline text-primary underline underline-offset-4" onClick={() => { if (href && /^https?:\/\//i.test(href)) void openUrl(href).catch(setError); }}>{children}</button> }}>{guideText('code-review', lang) ?? ''}</Markdown>
+      <Markdown skipHtml components={{ h1: () => null, img: () => null, a: ({ href, children }) => <button type="button" className="inline text-primary underline underline-offset-4" onClick={() => { if (href && /^https?:\/\//i.test(href)) void openUrl(href).catch(setError); }}>{children}</button> }}>{guideText('code-review', lang) ?? ''}</Markdown>
     </article>
     <button type="button" className="text-sm text-primary underline underline-offset-4" onClick={() => void openUrl(github).catch(setError)}>{lang === 'fa' ? 'متن آموزش در گیت‌هاب' : 'Tutorial on GitHub'} ↗</button>
   </div>;

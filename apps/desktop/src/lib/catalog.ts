@@ -3,7 +3,8 @@ import { useMemo, useSyncExternalStore } from 'react';
 // overlays this via the feed_sync IPC after schema validation on the Rust side.
 
 import { loadCatalog, classifyOffers, type Catalog, type OfferView } from '@catalog';
-import { assertNoExecutablePayload, type AppManifest, type ProviderManifest } from '@core';
+import { assertNoExecutablePayload, parseLearningTutorials, type LearningTutorial, type AppManifest, type ProviderManifest } from '@core';
+import bundledLearning from '../../../../content/learning/extensions.json';
 
 const appModules = import.meta.glob('../../../../content/apps/*.json', { eager: true, import: 'default' });
 const providerModules = import.meta.glob('../../../../content/providers/*.json', { eager: true, import: 'default' });
@@ -28,17 +29,19 @@ export const apps: AppManifest[] = bundledCatalog.apps;
 export const providers: ProviderManifest[] = bundledCatalog.providers;
 
 const remoteGuides: Record<string, string> = {};
+let learning = parseLearningTutorials(bundledLearning);
 let revision = 0;
 const listeners = new Set<() => void>();
 export function useCatalog() {
  const version = useSyncExternalStore((listener) => {listeners.add(listener);return () => {listeners.delete(listener);};}, () => revision);
- return useMemo(() => ({apps: [...apps], providers: [...providers], offers: [...bundledCatalog.offers]}), [version]);
+ return useMemo(() => ({apps: [...apps], providers: [...providers], offers: [...bundledCatalog.offers], learning: [...learning]}), [version]);
 }
 export function clearContentCache() {
  localStorage.removeItem('vibehub.content.v1');
  apps.splice(0,apps.length,...initialCatalog.apps);
  providers.splice(0,providers.length,...initialCatalog.providers);
  bundledCatalog.offers.splice(0,bundledCatalog.offers.length,...initialCatalog.offers);
+ learning = parseLearningTutorials(bundledLearning);
  for (const key of Object.keys(remoteGuides)) delete remoteGuides[key];
  revision++;listeners.forEach(listener=>listener());
 }
@@ -65,15 +68,16 @@ export function validateRemoteGuides(raw: unknown, catalog: Catalog): Record<str
   return guides;
 }
 
-export function applyRemoteCatalog(catalog: Catalog, guides: Record<string, string>): void {
+export function applyRemoteCatalog(catalog: Catalog, guides: Record<string, string>, tutorials?: LearningTutorial[]): void {
   apps.splice(0, apps.length, ...catalog.apps);
   providers.splice(0, providers.length, ...catalog.providers);
   bundledCatalog.offers.splice(0, bundledCatalog.offers.length, ...catalog.offers);
   for (const key of Object.keys(remoteGuides)) delete remoteGuides[key];
   Object.assign(remoteGuides, guides);
+  if (tutorials !== undefined) learning = tutorials;
   revision++; listeners.forEach(listener=>listener());
   window.dispatchEvent(new Event('vibehub:catalog-updated'));
-  try { localStorage.setItem('vibehub.content.v1', JSON.stringify({ catalog, guides })); } catch { /* Current in-memory content remains usable. */ }
+  try { localStorage.setItem('vibehub.content.v1', JSON.stringify({ catalog, guides, learning })); } catch { /* Current in-memory content remains usable. */ }
 }
 
 try {
@@ -82,7 +86,8 @@ try {
     assertNoExecutablePayload(cached);
     const raw = JSON.parse(cached);
     const catalog = loadCatalog(raw.catalog);
-    applyRemoteCatalog(catalog, validateRemoteGuides(raw.guides, catalog));
+    const tutorials = raw.learning === undefined ? undefined : parseLearningTutorials(raw.learning);
+    applyRemoteCatalog(catalog, validateRemoteGuides(raw.guides, catalog), tutorials);
   }
 } catch { /* Invalid cache or unavailable storage: use the bundled snapshot. */ }
 

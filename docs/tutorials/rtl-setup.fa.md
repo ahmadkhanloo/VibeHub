@@ -1,5 +1,7 @@
 # نصب RTL پس از نصب برنامهٔ کدنویسی
 
+![نقشهٔ آموزشی مسیر کار (شماتیک)](../../apps/desktop/public/tutorials/rtl.svg)
+
 [English](rtl-setup.en.md)
 
 ## نصب و شناسایی برنامه

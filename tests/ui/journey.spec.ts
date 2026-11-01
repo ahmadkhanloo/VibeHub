@@ -38,7 +38,7 @@ test('guide search has a real empty state and does not invent a review date', as
   await expect(page.getByRole('heading', { name: 'No sections match your search.' })).toBeVisible();
   await expect(page.getByText('Loading…', { exact: true })).toHaveCount(0);
   await page.getByRole('searchbox', { name: 'Search guides' }).fill('');
-  await expect(page.getByRole('heading', { name: 'Introduction', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '0. Learning path and product choice — beginner', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: /Working with coding assistants/ })).toHaveCount(0);
 });
 
@@ -48,7 +48,7 @@ test('a missing preferred guide announces and renders the available language', a
   await page.goto('/guides/qoder');
   await page.getByRole('searchbox', { name: 'Search guides' }).fill('RTL');
   await expect(page.getByRole('status')).toContainText('Showing Persian instead.');
-  await expect(page.locator('[lang="fa-IR"][dir="rtl"]')).toContainText('تزریق');
+  await expect(page.locator('[lang="fa-IR"][dir="rtl"]')).toContainText('میانبر');
 });
 
 test('native prerequisite failure does not discard independent diagnostic results', async ({ page }) => {

@@ -9,6 +9,7 @@ import {
   providerManifestSchema,
   offerSchema,
   feedIndexSchema,
+  parseLearningTutorials,
   assertNoExecutablePayload,
 } from '../packages/core/src/schemas.ts';
 
@@ -88,18 +89,7 @@ for (const appId of appIds) {
 }
 
 try {
-  const tutorials = await readJson('content/learning/extensions.json');
-  if (!Array.isArray(tutorials) || tutorials.length !== 10) throw new Error('Expected seven skills and three plugins');
-  const ids = new Set();
-  for (const item of tutorials) {
-    if (!item.id || ids.has(item.id) || !['skill', 'plugin'].includes(item.kind)) throw new Error('Invalid tutorial identity');
-    ids.add(item.id);
-    if (!/^https:\/\//.test(item.source) || !/^\d{4}-\d{2}-\d{2}$/.test(item.checked)) throw new Error(`Invalid source/date: ${item.id}`);
-    for (const key of ['summary', 'compatibility', 'prerequisites', 'install', 'use', 'remove', 'troubleshoot']) {
-      for (const lang of ['fa', 'en']) if (!item[key]?.[lang]?.trim()) throw new Error(`Missing ${key}/${lang}: ${item.id}`);
-    }
-    assertNoExecutablePayload(JSON.stringify(item));
-  }
+  const tutorials = parseLearningTutorials(await readJson('content/learning/extensions.json'));
   console.log(`OK learning tutorials (${tutorials.length})`);
 } catch (e) { fail('learning tutorials', e); }
 

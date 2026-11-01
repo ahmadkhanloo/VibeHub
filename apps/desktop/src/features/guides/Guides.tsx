@@ -9,6 +9,8 @@ import { Card, EmptyState, ErrorNotice, Input, PageHeader } from '@/components/u
 import { useCatalog, guideSections, guideText } from '@/lib/catalog';
 import { useSettings } from '@/app/settings';
 import { openUrl } from '@tauri-apps/plugin-opener';
+import { GuideIllustration } from '@/components/GuideIllustration';
+import { LearningNav } from './LearningNav';
 
 export function GuidesPage({ embedded = false }: { embedded?: boolean }) {
   const { appId } = useParams();
@@ -28,18 +30,20 @@ export function GuidesPage({ embedded = false }: { embedded?: boolean }) {
   const filtered = needle ? sections.filter((section) => `${section.title} ${section.body}`.toLocaleLowerCase().includes(needle)) : sections;
 
   return <div className="space-y-6">
-    {!embedded && <PageHeader title={t('guides.title')} />}
+    {!embedded && <><PageHeader title={t('guides.title')} description={t('guides:subtitle')} /><LearningNav /></>}
     {error != null && <ErrorNotice error={error} />}
-    <div className={embedded ? "space-y-4" : "grid gap-6 lg:grid-cols-[200px_minmax(0,1fr)]"}>
-      {!embedded && <nav aria-label={t('guides:pickApp')} className="space-y-1">
+    <div className={embedded ? "space-y-4" : "vh-course-layout"}>
+      {!embedded && <nav aria-label={t('guides:pickApp')} className="vh-course-nav">
+        <p>{t('guides:pickApp')}</p>
         {apps.map((item) => <Link key={item.id} to={`/guides/${item.id}`} aria-current={item.id === selected ? 'page' : undefined} className={`flex min-h-11 items-center rounded-lg border px-3 py-2 text-sm ${item.id === selected ? 'border-primary bg-primary/5 font-bold text-primary' : 'border-transparent hover:bg-surface-alt'}`}><AppLogo appId={item.id} name={item.name} size={28} /><span className="ms-3">{item.name}</span></Link>)}
       </nav>}
-      <Card className="min-w-0 space-y-6">
+      <Card className="vh-course-reader min-w-0 space-y-6">
         {markdown && app ? <>
           <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
             <div><h2 className="text-xl font-bold">{app.name}</h2><p className="mt-2 text-xs text-muted">{t('guides.unknownRevision')}</p></div>
             <button type="button" className="inline-flex items-center gap-2 text-sm text-primary hover:underline" onClick={() => void openUrl(app.docsUrl ?? app.websiteUrl).catch(setError)}><ExternalLink size={14} aria-hidden="true" />{t('guides:officialSource')}</button>
           </div>
+          <GuideIllustration topic={selected} />
           {<button type="button" className="inline-flex min-h-11 items-center gap-2 text-sm text-primary hover:underline" onClick={() => void openUrl(`https://github.com/ahmadkhanloo/VibeHub/blob/main/docs/tutorials/${selected}/${preferred ? settings.language : alternateLanguage}.md`).catch(setError)}><ExternalLink size={14} aria-hidden="true" />{t('guides:githubTutorial')}</button>}
           {!preferred && <p role="status" className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">{t('guides.fallback', { language: t(alternateLanguage === 'fa' ? 'common:languagePersian' : 'common:languageEnglish') })}</p>}
           <label className="block space-y-2 text-sm font-medium"><span>{t('guides:searchGuides')}</span><Input type="search" dir="auto" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t('guides.searchPlaceholder')} /></label>

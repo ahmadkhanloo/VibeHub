@@ -1,5 +1,7 @@
 # OpenCode — English guide
 
+![Educational workflow schematic](../../../apps/desktop/public/tutorials/opencode.svg)
+
 ## Introduction
 OpenCode is an open-source CLI coding agent. Model costs are separate from the tool; with free providers (OpenRouter free models or local Ollama) it is usable at no cost.
 

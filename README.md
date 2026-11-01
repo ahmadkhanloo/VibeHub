@@ -2,6 +2,8 @@
 
 > **Current VibeHub download:** [v0.2.1 for Windows](https://github.com/ahmadkhanloo/VibeHub/releases/download/v0.2.1/VibeHub-Setup.exe) · [Release notes](https://github.com/ahmadkhanloo/VibeHub/releases/tag/v0.2.1).
 
+**Learning-library prerelease:** `v0.2.2-beta.1` adds topic and difficulty filters, grouped document skills, offline tutorial diagrams, Claude Code/LiteLLM guidance, and remotely refreshed extension tutorials. Stable remains `v0.2.1`; clean Windows acceptance is still open. See the [learning library](docs/tutorials/README.md) and [Claude Code guide](docs/tutorials/claude-code/en.md).
+
 A workspace for vibe-coding apps, with Persian RTL, accounts, and an API notebook.
 
 The main navigation is **Apps**, **API notebook** (saved APIs, with a separate proxy page), and **More tools**, with **Settings** in the sidebar footer. Open a project folder or a recent project with an installed app, focus its existing window, and configure accounts, connections and guides from that app’s page. Account quotas are shown when available; unavailable values remain explicit. API selections are manual setup references and do not rewrite third-party settings. Connection selections can be undone, and Codex can return to the previous saved account. Qoder/ZCode account viewing is available in their pages; unverified switching is not offered.

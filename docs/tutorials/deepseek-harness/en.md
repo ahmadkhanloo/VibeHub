@@ -1,5 +1,7 @@
 # DeepSeek Harness — English guide
 
+![Educational workflow schematic](../../../apps/desktop/public/tutorials/deepseek-harness.svg)
+
 ## Introduction
 DeepSeek Harness is the desktop client for the DeepSeek agent. VibeHub detects it, launches it, and applies RTL.
 
@@ -25,6 +27,12 @@ Verified (live test 2026-10-18, version 0.2.1-rc.2). The Vazirmatn font is injec
 
 ## Model options
 Follows the DeepSeek service; BYOK unknown until tested.
+
+## Intermediate: web login and free model allowances
+
+Open **DeepSeek 网页登录（免费模型）** in VibeHub's plugins and skills page for installation, login, model selection, removal and troubleshooting of unofficial `dsh-deepseek-web-login`. [Plugin source](https://github.com/cv-superding/dsh-deepseek-web-login)
+
+This uses a Web account allowance, not unlimited free official API access. Documentation checked November 1, 2026; installation and authenticated use remain untested.
 
 ## Set up RTL from VibeHub
 

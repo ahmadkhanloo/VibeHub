@@ -422,3 +422,36 @@ fn free_status_requires_supported_provider_evidence() {
     assert_eq!(super::model_free_status("radeon-cloud", "model", &serde_json::json!({"free": true})), Some(true));
     assert_eq!(super::model_free_status("custom", "model-free", &serde_json::json!({"free": true})), None);
 }
+
+#[test]
+fn feed_downloads_learning_and_only_treats_404_as_an_older_feed() {
+    for (status, body) in [(200, "[]"), (404, "{}"), (500, "{}"), (200, "broken json")] {
+        let server = listener();
+        let port = server.local_addr().unwrap().port();
+        let handle = thread::spawn(move || {
+            // Empty catalog plus two optional code-review guides and learning.
+            for _ in 0..4 {
+                let (mut stream, _) = server.accept().unwrap();
+                let text = request(&mut stream);
+                let path = text.split_whitespace().nth(1).unwrap();
+                match path {
+                    "/feed/index.json" => response(&mut stream, 200,
+                        r#"{"schemaVersion":1,"generatedAt":"2026-11-01","apps":[],"providers":[],"offers":[]}"#, ""),
+                    "/feed/learning/extensions.json" => response(&mut stream, status, body, ""),
+                    "/feed/guides/code-review/fa.md" | "/feed/guides/code-review/en.md" => response(&mut stream, 404, "{}", ""),
+                    _ => panic!("Unexpected feed request: {path}"),
+                }
+            }
+        });
+        let result = tauri::async_runtime::block_on(feed_sync(
+            Some(json!({"id":"direct","name":"Direct","mode":"direct"})),
+            format!("http://127.0.0.1:{port}/feed"),
+        ));
+        handle.join().unwrap();
+        match (status, body) {
+            (200, "[]") => assert_eq!(result.unwrap()["learning"], json!([])),
+            (404, _) => assert!(result.unwrap().get("learning").is_none()),
+            _ => assert!(result.is_err()),
+        }
+    }
+}

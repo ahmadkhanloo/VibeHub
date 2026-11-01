@@ -511,11 +511,22 @@ pub async fn feed_sync(profile: Option<Value>, base: String) -> Result<Value> {
             }
         }
     }
+    // A 404 supports feeds published before extension tutorials were added.
+    let response = client.get(format!("{root}learning/extensions.json"))
+        .send().await.map_err(|_| "Feed tutorials unavailable")?;
+    let learning = if response.status() == reqwest::StatusCode::NOT_FOUND {
+        None
+    } else {
+        if !response.status().is_success() {
+            return Err("Feed tutorials returned an HTTP error".into());
+        }
+        Some(bounded_json(response, 2 * 1024 * 1024).await?)
+    };
     // The UI applies the shared strict Zod schemas before accepting this data.
     // Downloads never provide executable commands or package mappings.
-    Ok(
-        json!({"ok":true,"updated":true,"detail":"Downloaded feed; shared schema validation required before use","generatedAt":index["generatedAt"],"catalog":catalog,"guides":guides}),
-    )
+    let mut result = json!({"ok":true,"updated":true,"detail":"Downloaded feed; shared schema validation required before use","generatedAt":index["generatedAt"],"catalog":catalog,"guides":guides});
+    if let Some(learning) = learning { result["learning"] = learning; }
+    Ok(result)
 }
 
 #[cfg(test)]

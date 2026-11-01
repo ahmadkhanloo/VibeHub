@@ -648,7 +648,8 @@ fn feed_downloads_the_catalog_and_bilingual_guides_from_a_real_http_server() {
     let index: serde_json::Value = serde_json::from_slice(&std::fs::read(root.join("offers/index.json")).unwrap()).unwrap();
     let app_count = index["apps"].as_array().unwrap().len();
     let provider_count = index["providers"].as_array().unwrap().len();
-    let request_count = 1 + app_count * 3 + provider_count + index["offers"].as_array().unwrap().len();
+    // Index, app manifests + bilingual guides, two shared review guides, learning.
+    let request_count = 4 + app_count * 3 + provider_count + index["offers"].as_array().unwrap().len();
     let server = std::thread::spawn(move || {
         use std::io::{Read, Write};
         let start = std::time::Instant::now();
@@ -697,7 +698,12 @@ fn feed_downloads_the_catalog_and_bilingual_guides_from_a_real_http_server() {
     .unwrap();
     assert_eq!(result["catalog"]["apps"].as_array().unwrap().len(), app_count);
     assert_eq!(result["catalog"]["providers"].as_array().unwrap().len(), provider_count);
-    assert_eq!(result["guides"].as_object().unwrap().len(), app_count * 2);
+    assert_eq!(result["guides"].as_object().unwrap().len(), app_count * 2 + 2);
+    let learning: serde_json::Value = serde_json::from_slice(
+        &std::fs::read(std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../content/learning/extensions.json")).unwrap(),
+    ).unwrap();
+    assert_eq!(result["learning"], learning);
     assert!(
         result["guides"]["qoder/fa"]
             .as_str()

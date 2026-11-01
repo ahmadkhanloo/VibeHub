@@ -10,6 +10,38 @@ const freeAccess = z.enum(['free_forever', 'free_tier', 'trial', 'ad_supported',
 
 export const schemaVersion = z.literal(1);
 
+const tutorialText = z.object({ fa: z.string().trim().min(1).max(32768), en: z.string().trim().min(1).max(32768) }).strict();
+export const learningTutorialSchema = z.object({
+  id: z.string().regex(/^[a-z0-9-]+$/).max(128),
+  name: z.string().trim().min(1).max(256),
+  kind: z.enum(['skill', 'plugin', 'extension']),
+  topic: z.enum(['ui', 'documents', 'testing', 'models', 'integrations', 'extensions']).optional(),
+  level: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
+  order: z.number().int().min(0).max(10000).optional(),
+  source: z.string().url().refine(value => new URL(value).protocol === 'https:', 'HTTPS source required'),
+  checked: z.string().date(),
+  summary: tutorialText,
+  compatibility: tutorialText,
+  prerequisites: tutorialText,
+  install: tutorialText,
+  use: tutorialText,
+  remove: tutorialText,
+  troubleshoot: tutorialText,
+}).strict();
+
+export type LearningTutorial = z.infer<typeof learningTutorialSchema>;
+
+export function parseLearningTutorials(raw: unknown): LearningTutorial[] {
+  const entries = z.array(learningTutorialSchema).max(1000).parse(raw);
+  const ids = new Set<string>();
+  for (const item of entries) {
+    if (ids.has(item.id)) throw new Error(`Duplicate tutorial: ${item.id}`);
+    ids.add(item.id);
+  }
+  assertNoExecutablePayload(JSON.stringify(entries));
+  return entries;
+}
+
 export const appManifestSchema = z.object({
   schemaVersion,
   id: z.string().regex(/^[a-z0-9-]+$/),
