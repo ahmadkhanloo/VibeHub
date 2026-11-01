@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "id": "claude-code",
+  "name": "Claude Code",
+  "summary": {
+    "fa": "دستیار کدنویسی ترمینالی Anthropic؛ همراه راهنمای اتصال به LiteLLM برای مسیریابی مدل‌ها، با محدودیت سازگاری و دسترسی منطقه‌ای.",
+    "en": "Anthropic's terminal coding agent, with a LiteLLM routing guide and explicit compatibility and regional-access limits."
+  },
+  "kind": "cli_agent",
+  "platforms": ["windows", "linux", "macos"],
+  "websiteUrl": "https://code.claude.com/",
+  "docsUrl": "https://code.claude.com/docs/en/setup",
+  "isOpenSource": false,
+  "freeAccess": "unknown",
+  "freeAccessDetails": {
+    "fa": "استفادهٔ رایگان دائمی تأیید نشده است؛ هزینه و سهمیه به حساب، API یا ارائه‌دهندهٔ پشت درگاه بستگی دارد. نصب ابزار به معنی دریافت مدل رایگان نیست.",
+    "en": "No permanent free usage is verified; billing and quotas depend on the account, API or gateway provider. Installing the client does not provide free model access."
+  },
+  "requiresSignup": null,
+  "requiresPaymentCard": null,
+  "sourceOfFreeAccess": "https://code.claude.com/docs/en/setup",
+  "lastVerified": "2026-11-01",
+  "capabilities": {
+    "install": "reported",
+    "launch": "unknown",
+    "rtl": "unsupported",
+    "proxy": "unknown",
+    "terminal": "reported",
+    "byok": "reported"
+  },
+  "installMethods": [{
+    "method": "guide",
+    "idOrUrl": "https://code.claude.com/docs/en/setup",
+    "note": {
+      "fa": "نصب دستی از مستندات رسمی؛ VibeHub نصب یا احراز هویت را خودکار نمی‌کند. RTL اختصاصی برای این برنامه ارائه نمی‌شود.",
+      "en": "Manual installation from official docs; VibeHub does not automate installation or authentication. No app-specific RTL integration is provided."
+    }
+  }],
+  "eligibility": [{
+    "countryCode": "IR",
+    "networkAccess": "not_tested",
+    "accountPolicy": "review_terms",
+    "sourceUrl": "https://www.anthropic.com/legal/supported-regions",
+    "confidence": "low",
+    "verifiedBy": "official-documentation-review",
+    "regionNotes": {
+      "fa": "ایران در فهرست مشاهده‌شده نیست؛ صفحهٔ فعلی تاریخ اجرای ۱۲ نوامبر ۲۰۲۶ دارد که از تاریخ بررسی جلوتر است. شرایط معتبر در زمان استفاده را بررسی کنید. پروکسی یا LiteLLM مجوز حساب ایجاد نمی‌کند؛ اتصال از ایران آزمایش نشده است.",
+      "en": "Iran is absent from the observed list; the current page is effective November 12, 2026, after this review date. Check the terms effective when using the service. A proxy or LiteLLM does not establish account eligibility; connectivity from Iran is untested."
+    }
+  }]
+}

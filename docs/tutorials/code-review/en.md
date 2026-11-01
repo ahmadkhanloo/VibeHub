@@ -1,5 +1,7 @@
 # Review code with an agent
 
+![Educational workflow schematic](../../../apps/desktop/public/tutorials/code-review.svg)
+
 ## From change to release
 
 Local checks → AI review → Security → Tests and build → Human approval → Staged release → Monitor and rollback
@@ -29,6 +31,8 @@ Where available, use a merge queue, feature flags and staged releases. Keep roll
 After three review rounds, step back and reassess the approach. In later rounds review only new changes and avoid repeating findings.
 
 ## Review prompt
+
+For Claude services, check account-region eligibility. Network restrictions from Iran may require a connectivity workaround or proxy; this does not remove account restrictions. The [Anthropic regions page](https://www.anthropic.com/legal/supported-regions) observed on November 1 displayed an effective date of November 12, 2026. Check the policy effective when you use it.
 
 > Review the current changes against the request and surrounding code. Report real bugs, security risks and untested behavior with file, line and reason. Show test output and review limitations; omit cosmetic findings. Do not merge any change without my review.
 

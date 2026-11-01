@@ -5,6 +5,8 @@ import { Link } from 'react-router-dom';
 import { Check, ClipboardCopy, ExternalLink } from 'lucide-react';
 import { Button, ErrorNotice, PageHeader, SectionTitle } from '@/components/ui';
 import { openUrl } from '@tauri-apps/plugin-opener';
+import { GuideIllustration } from '@/components/GuideIllustration';
+import { LearningNav } from '@/features/guides/LearningNav';
 
 const SOURCE = 'https://github.com/anthropics/cwc-long-running-agents';
 
@@ -26,6 +28,8 @@ export function LongRunningPage() {
   return <div className="mx-auto max-w-3xl space-y-6">
     <Link to="/guides" className="text-sm text-primary hover:underline">{t('journeyUx:learning.back')}</Link>
     <PageHeader title={t('journeyUx:learning.title')} actions={<Button variant="ghost" size="sm" onClick={() => void openUrl(SOURCE).catch(setError)}><ExternalLink size={14} aria-hidden="true" />{t('learning:source')}</Button>} />
+    <LearningNav />
+    <GuideIllustration topic="long-running" />
     {error != null && <ErrorNotice error={error} />}
     <ol className="space-y-3">
       {[1, 2, 3, 4].map(step => <li key={step}><Disclosure title={<h2 className="inline">{step}. {t(`learning:steps.${step}.title`)}</h2>} defaultOpen={step === 1}><p className="text-sm leading-7 text-muted">{t(`learning:steps.${step}.body`)}</p></Disclosure></li>)}

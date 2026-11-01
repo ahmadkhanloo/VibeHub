@@ -10,7 +10,8 @@
     "mimocode",
     "opencode",
     "qoder",
-    "zcode"
+    "zcode",
+    "claude-code"
   ],
   "providers": [
     "nvidia-build",

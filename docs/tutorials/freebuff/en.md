@@ -1,5 +1,7 @@
 # Freebuff — English guide
 
+![Educational workflow schematic](../../../apps/desktop/public/tutorials/freebuff.svg)
+
 ## Introduction
 Freebuff (correct spelling; not the unrelated FreeBuf security-news site) is a coding agent with Apache-2.0 code and ad-supported free model access in official clients.
 

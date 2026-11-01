@@ -1,5 +1,7 @@
 # Working with coding assistants
 
+![Educational workflow schematic](../../apps/desktop/public/tutorials/long-running.svg)
+
 Practical guidance for planning, choosing a model, and checking an assistant's work.
 
 This is an educational example specifically for Claude Code, not a ready-made system that works unchanged with every assistant. Useful patterns include criteria that fail until evidence is checked, a separate evaluator with fresh context, and progress notes for handing work to the next session. Its authors describe it as example ingredients from the Code with Claude event; adapt the ideas for other tools instead of copying the hooks blindly.

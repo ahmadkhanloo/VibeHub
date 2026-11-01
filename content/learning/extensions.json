@@ -1,6 +1,47 @@
 [
   {
+    "id": "dsh-deepseek-web-login",
+    "topic": "models",
+    "level": "intermediate",
+    "order": 10,
+    "name": "DeepSeek 网页登录（免费模型） — ورود وب دیپ‌سیک",
+    "kind": "plugin",
+    "source": "https://github.com/cv-superding/dsh-deepseek-web-login",
+    "checked": "2026-11-01",
+    "summary": {
+      "fa": "آموزش تکمیلی: اتصال حساب وب DeepSeek به DeepSeek Harness با افزونهٔ غیررسمی dsh-deepseek-web-login. سهمیهٔ وب، API رایگان نامحدود نیست. بررسی مستندات انجام شده؛ نصب و ورود محلی آزموده نشده است.",
+      "en": "Intermediate: connect a DeepSeek Web account to DeepSeek Harness using unofficial dsh-deepseek-web-login. Web allowance does not mean unlimited free API. Documentation checked; local installation/login untested."
+    },
+    "compatibility": {
+      "fa": "DeepSeek Harness؛ افزونهٔ مرورگر یا Qoder نیست. نسخهٔ سازگار را در Releases بررسی کنید.",
+      "en": "DeepSeek Harness; not a browser or Qoder extension. Check compatible versions in Releases."
+    },
+    "prerequisites": {
+      "fa": "Harness نصب‌شده، حساب شخصی DeepSeek و Edge یا Chrome. افزونه به نشست ورود دسترسی دارد؛ منبع و شرایط حساب را پیش از نصب بخوانید.",
+      "en": "Installed Harness, your DeepSeek account, Edge or Chrome. The plugin accesses your login session; review its source and account terms."
+    },
+    "install": {
+      "fa": "از صفحهٔ Releases مخزن، بستهٔ tgz سازگار را بگیرید و طبق README نصب کنید. روش Git مستندشده در ترمینال: dsh plugin --profile desktop add github:cv-superding/dsh-deepseek-web-login سپس Harness را دوباره باز کنید.",
+      "en": "Use a compatible release tgz following the README, or the documented Git command: dsh plugin --profile desktop add github:cv-superding/dsh-deepseek-web-login Then restart Harness."
+    },
+    "use": {
+      "fa": "Settings → DeepSeek 网页登录 → 浏览器窗口登录 را باز کنید و وارد chat.deepseek.com شوید. سپس در انتخاب‌گر مدل، DeepSeek 网页版（免费） و 快速模式 را انتخاب و یک پیام کوتاه آزمایش کنید.",
+      "en": "Open Settings → DeepSeek 网页登录 → 浏览器窗口登录; sign in at chat.deepseek.com. In the model picker choose DeepSeek 网页版（免费） → 快速模式 and test a short message."
+    },
+    "remove": {
+      "fa": "ابتدا از حساب در تنظیمات افزونه خارج شوید، سپس افزونه را در بخش Plugins غیرفعال یا حذف کنید. حذف بسته را معادل خروج از حساب فرض نکنید.",
+      "en": "Sign out in the plugin settings, then disable/remove it in Plugins. Do not assume package removal signs you out."
+    },
+    "troubleshoot": {
+      "fa": "اگر گزینهٔ مدل نیست، بارگذاری افزونه و ورود را بررسی کنید. برای خطای مرورگر، Edge/Chrome و نسخهٔ سازگار را بررسی کنید. هنگام محدودیت سرویس، متوقف شوید و بعداً امتحان کنید؛ ابزارها ممکن است ناپایدار باشند. توکن ورود را منتشر نکنید.",
+      "en": "Missing model: check plugin loading and login. Browser errors: check Edge/Chrome and version compatibility. On service limits, stop and retry later; tools may be unreliable. Never share login tokens."
+    }
+  },
+  {
     "id": "frontend-design",
+    "topic": "ui",
+    "level": "beginner",
+    "order": 10,
     "name": "frontend-design",
     "kind": "skill",
     "source": "https://github.com/anthropics/skills/tree/main/skills/frontend-design",
@@ -36,6 +77,9 @@
   },
   {
     "id": "webapp-testing",
+    "topic": "testing",
+    "level": "intermediate",
+    "order": 10,
     "name": "webapp-testing",
     "kind": "skill",
     "source": "https://github.com/anthropics/skills/tree/main/skills/webapp-testing",
@@ -71,6 +115,9 @@
   },
   {
     "id": "pdf",
+    "topic": "documents",
+    "level": "beginner",
+    "order": 10,
     "name": "pdf",
     "kind": "skill",
     "source": "https://github.com/anthropics/skills/tree/main/skills/pdf",
@@ -106,6 +153,9 @@
   },
   {
     "id": "docx",
+    "topic": "documents",
+    "level": "beginner",
+    "order": 20,
     "name": "docx",
     "kind": "skill",
     "source": "https://github.com/anthropics/skills/tree/main/skills/docx",
@@ -141,6 +191,9 @@
   },
   {
     "id": "xlsx",
+    "topic": "documents",
+    "level": "beginner",
+    "order": 30,
     "name": "xlsx",
     "kind": "skill",
     "source": "https://github.com/anthropics/skills/tree/main/skills/xlsx",
@@ -176,6 +229,9 @@
   },
   {
     "id": "pptx",
+    "topic": "documents",
+    "level": "beginner",
+    "order": 40,
     "name": "pptx",
     "kind": "skill",
     "source": "https://github.com/anthropics/skills/tree/main/skills/pptx",
@@ -211,6 +267,9 @@
   },
   {
     "id": "skill-creator",
+    "topic": "extensions",
+    "level": "intermediate",
+    "order": 10,
     "name": "skill-creator",
     "kind": "skill",
     "source": "https://github.com/anthropics/skills/tree/main/skills/skill-creator",
@@ -246,6 +305,9 @@
   },
   {
     "id": "github",
+    "topic": "integrations",
+    "level": "beginner",
+    "order": 10,
     "name": "GitHub",
     "kind": "plugin",
     "source": "https://github.com/github/github-mcp-server",
@@ -259,8 +321,8 @@
       "fa": "محیط‌های ChatGPT/Codex دارای پشتیبانی پلاگین؛ دسترسی به حساب و فضای کاری وابسته است. افزونه VS Code مسیر نصب دیگری دارد."
     },
     "prerequisites": {
-      "en": "Plugin-directory access and the provider account or permissions requested by the plugin.",
-      "fa": "دسترسی به فهرست پلاگین‌ها و حساب یا مجوزهای درخواستی سرویس مربوط."
+      "en": "Plugin access and provider permissions. If using ChatGPT as host, Iran is not supported; a network workaround or proxy does not remove account restrictions. Check https://help.openai.com/en/articles/7947663-chatgpt-supported-countries (reviewed 2026-11-01). The connected service has separate terms.",
+      "fa": "دسترسی پلاگین و مجوز سرویس. اگر میزبان ChatGPT است، ایران پشتیبانی نمی‌شود؛ برای رفع محدودیت اتصال ممکن است ابزار عبور از محدودیت شبکه یا پروکسی لازم باشد، اما محدودیت حساب باقی است. منبع: https://help.openai.com/en/articles/7947663-chatgpt-supported-countries (بررسی ۲۰۲۶-۱۱-۰۱). سرویس متصل شرایط جدا دارد."
     },
     "install": {
       "en": "In ChatGPT desktop, open Plugins, search for GitHub, review its details, install it and complete the requested connection. In Codex CLI use /plugins and your configured marketplace.",
@@ -281,6 +343,9 @@
   },
   {
     "id": "figma",
+    "topic": "integrations",
+    "level": "beginner",
+    "order": 20,
     "name": "Figma",
     "kind": "plugin",
     "source": "https://github.com/openai/plugins/tree/main/plugins/figma",
@@ -294,8 +359,8 @@
       "fa": "محیط‌های ChatGPT/Codex دارای پشتیبانی پلاگین؛ دسترسی به حساب و فضای کاری وابسته است. افزونه VS Code مسیر نصب دیگری دارد."
     },
     "prerequisites": {
-      "en": "Plugin-directory access and the provider account or permissions requested by the plugin.",
-      "fa": "دسترسی به فهرست پلاگین‌ها و حساب یا مجوزهای درخواستی سرویس مربوط."
+      "en": "Plugin access and provider permissions. If using ChatGPT as host, Iran is not supported; a network workaround or proxy does not remove account restrictions. Check https://help.openai.com/en/articles/7947663-chatgpt-supported-countries (reviewed 2026-11-01). The connected service has separate terms.",
+      "fa": "دسترسی پلاگین و مجوز سرویس. اگر میزبان ChatGPT است، ایران پشتیبانی نمی‌شود؛ برای رفع محدودیت اتصال ممکن است ابزار عبور از محدودیت شبکه یا پروکسی لازم باشد، اما محدودیت حساب باقی است. منبع: https://help.openai.com/en/articles/7947663-chatgpt-supported-countries (بررسی ۲۰۲۶-۱۱-۰۱). سرویس متصل شرایط جدا دارد."
     },
     "install": {
       "en": "In ChatGPT desktop, open Plugins, search for Figma, review its details, install it and complete the requested connection. In Codex CLI use /plugins and your configured marketplace.",
@@ -316,6 +381,9 @@
   },
   {
     "id": "openai-developers",
+    "topic": "integrations",
+    "level": "beginner",
+    "order": 30,
     "name": "OpenAI Developers",
     "kind": "plugin",
     "source": "https://developers.openai.com/learn/developers-codex-plugin",
@@ -329,8 +397,8 @@
       "fa": "محیط‌های ChatGPT/Codex دارای پشتیبانی پلاگین؛ دسترسی به حساب و فضای کاری وابسته است. افزونه VS Code مسیر نصب دیگری دارد."
     },
     "prerequisites": {
-      "en": "Plugin-directory access and the provider account or permissions requested by the plugin.",
-      "fa": "دسترسی به فهرست پلاگین‌ها و حساب یا مجوزهای درخواستی سرویس مربوط."
+      "en": "Plugin access and provider permissions. If using ChatGPT as host, Iran is not supported; a network workaround or proxy does not remove account restrictions. Check https://help.openai.com/en/articles/7947663-chatgpt-supported-countries (reviewed 2026-11-01). The connected service has separate terms.",
+      "fa": "دسترسی پلاگین و مجوز سرویس. اگر میزبان ChatGPT است، ایران پشتیبانی نمی‌شود؛ برای رفع محدودیت اتصال ممکن است ابزار عبور از محدودیت شبکه یا پروکسی لازم باشد، اما محدودیت حساب باقی است. منبع: https://help.openai.com/en/articles/7947663-chatgpt-supported-countries (بررسی ۲۰۲۶-۱۱-۰۱). سرویس متصل شرایط جدا دارد."
     },
     "install": {
       "en": "In ChatGPT desktop, open Plugins, search for OpenAI Developers, review its details, install it and complete the requested connection. In Codex CLI use /plugins and your configured marketplace.",

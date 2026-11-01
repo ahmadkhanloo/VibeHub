@@ -1,85 +1,75 @@
-# Getting started with Qoder
+# Qoder — learn the interface and use free model allowances
 
-[فارسی](fa.md) | English
+![Educational workflow schematic](../../../apps/desktop/public/tutorials/qoder.svg)
 
-This guide covers the **Qoder desktop app**. Qoder IDE is a separate product and its layout can differ. Labels and available models may change with updates. Official documentation checked on 28 October 2026.
+English | [فارسی](fa.md)
 
-## 1. Install and sign in
+## 0. Learning path and product choice — beginner
 
-1. Download Qoder for your operating system from [qoder.com](https://qoder.com/) and follow the installer.
-2. Open Qoder and choose **Sign in**. Complete the provider's sign-in flow in your browser, then return to the app. Create an account if needed and review the provider's terms.
-3. If VibeHub detects your installed Qoder, you can launch it from its app page. If sign-in fails, check the connection and the [official troubleshooting](https://docs.qoder.com/qoder/troubleshooting).
+Follow lessons 1–6 in order; 7–8 are intermediate. Outcome: open a project, recognize the interface, complete a small task, and check both cost and output.
 
-## 2. Open a project
+**Qoder IDE** provides a code editor; **Qoder** organizes Agent tasks. Their layouts differ. Read the lesson for your product. Sources checked **November 1, 2026**; this is documentation review, not an authenticated account test.
 
-1. Select **Coding** in the upper-left corner.
-2. Select an existing workspace or add a local project folder as a workspace. Start with a small project and back up uncommitted work.
-3. Check the workspace, branch and execution mode below the message box. **Local** works in the selected folder; **Worktree** uses a separate copy for a supported Git project.
+## 1. Install, sign in and open a project — beginner
 
-## 3. Choose a model and start a task
+Download your product from the [official site](https://qoder.com/download) and sign in. Create a practice folder containing `hello.txt` with the text “Hello”.
 
-1. Open the model selector below the message box. Choose **Auto** or an available model/tier appropriate to the task. Availability and credit consumption depend on the account and current pricing.
-2. Keep **Ask every time** selected for access permissions while learning. Describe the goal, the files in scope and how to verify the result. For example: “Explain this project and suggest a small improvement; do not change files yet.”
-3. Send the request. Read the conversation and tool actions as the agent works, and respond to any approval prompts only after reviewing them.
+- **Qoder IDE:** Open the folder; Ctrl+L opens Chat on Windows.
+- **Qoder:** Choose Coding at the upper left and add the folder as a workspace.
 
-## 4. Files, browser and progress
+Checkpoint: confirm the intended folder and open your file. [IDE quick start](https://docs.qoder.com/quick-start) · [Qoder quickstart](https://docs.qoder.com/qoder/quickstart)
 
-The task conversation shows messages and tool activity. The work surface beside it can show files, a browser or review tabs. Open the task sidebar and use **Add tab** to select the relevant surface; layout and labels may vary by version.
+## 2. Recognize Qoder IDE — beginner
 
-- **Files:** browse the workspace and open a file to inspect its contents. Avoid exposing passwords or unrelated private files.
-- **Built-in browser:** choose **Add tab → Open built-in browser**, enter a full web address or local preview address, and inspect the page beside the task. See the [browser guide](https://docs.qoder.com/qoder/browser).
-- **Progress:** follow tool calls and responses in the conversation and inspect the task monitor when available. An agent's final message alone does not establish that its work is correct.
-- **Changes:** choose **Add tab → Open review** or open the uncommitted-changes count in the task monitor. Select the desired change source, inspect additions and deletions for each file, and run appropriate checks. Review before staging, reverting, committing or pushing. See [code review](https://docs.qoder.com/qoder/review-and-commit).
+Locate the file list, the editor showing your file, and Chat (Ctrl+L). Find the composer, history, mode and model controls.
 
-## 5. Claim the daily gift
+**Ask** answers questions without editing code. **Agent** can search, edit files and use tools. Practice in Ask: “Explain hello.txt; do not change anything.” Check that the answer concerns your file and its contents remain unchanged. [Interface and modes](https://docs.qoder.com/user-guide/chat/overview)
 
-According to the [official daily credits page](https://docs.qoder.com/events/100credits), checked 28 October 2026:
+## 3. Recognize Qoder desktop — beginner
 
-1. Sign in to an eligible individual Qoder International account in the **Qoder desktop app**.
-2. Open **Usage**, then select the gift icon in the lower-left corner to open the promotion.
-3. Claim the available 100 credits manually. Check your balance on the Qoder website under avatar → **Settings → Usage**; the reward appears as Add-on Credits.
+**Coding** organizes work by workspace; **General** by folder. Find your tasks in the sidebar. Below the composer, check the model and access permissions. **Local** uses the current folder; **Worktree** makes a separate working copy for supported Git repositories.
 
-The claim window opens at 10:00 Singapore time (UTC+8) each day. Each account can claim once per window; missed claims cannot be recovered. Each claimed reward expires after 30 days. Teams and Enterprise accounts are excluded. The offer and its end date can change, so check the official page and the app for current terms.
+Start with **Ask every time**. Request: “Read hello.txt and explain it without changing it.” Check the selected workspace. [Official quickstart](https://docs.qoder.com/qoder/quickstart)
 
-## More help
+## 4. Choose a free model and check cost — beginner
 
-- [Official quickstart](https://docs.qoder.com/qoder/quickstart)
-- [Start a new task](https://docs.qoder.com/qoder/new-task)
-- [Credits and usage](https://docs.qoder.com/Credits)
+Open the model picker near the composer and explicitly select a model. Read its **current rate and Free badge before sending**. A listed model is not necessarily free. Avoid Auto for this exercise so that your intended model is explicit. [IDE selector](https://docs.qoder.com/user-guide/chat/model-tier-selector) · [Qoder selector](https://docs.qoder.com/qoder/model-selector)
 
+Status on November 1, 2026:
 
-## Qoder — English guide
+- **Qwen3.8-Flash:** Daily free allowance for International individual accounts, including Free accounts with zero Credits. Extended; no end date announced.
+- **DeepSeek-Flash:** Published deadline: November 1, 00:00 Singapore / October 31, 19:30 Tehran. It has passed; do not assume an extension.
+- **Efficient:** Free access depends on account eligibility; do not assume every Free account qualifies.
 
-## Introduction
-Qoder is an agentic IDE. Its Community plan with BYOK is the free path (under the vendor's current terms).
+For Qwen3.8-Flash, select it without claiming anything. The allowance is limited; continued use after exhaustion can consume Credits. Some features call other models with separate charges. [Qwen terms](https://docs.qoder.com/events/flashoffer) · [DeepSeek terms](https://docs.qoder.com/events/deepseek-flash-free)
 
-## Free access
-- Free Community/BYOK plan; see [the official site](https://qoder.com/) for details and caps.
-- The software is not open source; "free" and "open source" are different things.
+Checkpoint: verify the chosen model and current rate, send one short request and inspect Usage. Stop if the free rate or allowance is unavailable.
 
-## Install
-1. Get the official installer from the vendor.
-2. VibeHub detects standard installs (`Programs\Qoder IDE`, `Programs\Qoder`, `.qoder-versions` folders) and custom locations (previously resolved paths or a running process).
+## 5. Daily Credits versus a free model — beginner
 
-## First run
-1. Click **Launch with RTL**; VibeHub waits for a real Qoder window on the debug port before declaring the injection ready.
-2. Run Doctor to verify.
+Gift Credits are a spendable balance; an eligible free model call does not consume Credits within its allowance. In **Qoder desktop**, open Usage → gift icon and manually claim 100 Credits. Eligible International individual accounts qualify; Teams and Enterprise do not.
 
-## Proxy & Iran access
-- **Community report (unverified, 2026-10-26):** signup sometimes needed a proxy, and direct connection worked afterwards. This is one dated local experience, not a general rule.
-- Read the official terms before signing up.
+The window starts daily at 10:00 Singapore / **05:30 Tehran**. Each claimed batch expires after 30 days. On the website, avatar → Settings → Usage shows Add-on Credits. Terms can change. [Official offer](https://docs.qoder.com/events/100credits)
 
-## RTL
-- Status: **verified** (live test 2026-10-18, version 0.4.4). Injection covers every frame and window and survives reloads.
+## 6. Make and verify one small change — practical
 
-## Troubleshooting
-- **Port 9225 busy:** VibeHub shows the remediation path (close the occupier or change the port).
-- **Qoder already open without the debug port:** fully quit (window + tray) and relaunch via VibeHub.
-- **Injector died later:** the RTL shortcut revives it automatically.
+Use Agent in IDE, or a Coding task in Qoder. Recheck the model and rate, then request:
 
-## Model options
-BYOK is supported in Qoder (reported); configure keys through Qoder's own official settings. The "verified" label arrives after the adapter test.
+> Add only the line “My first Qoder exercise” to hello.txt. Change no other file. Explain the change and how you checked it.
 
-## Set up RTL from VibeHub
+Read the actual file and compare it with your request. Pass when that single line appears in the intended file. For real code, run relevant tests or builds too; review before committing.
 
-After installing the app, return to VibeHub or choose Check again. Choose Set up RTL on its tile to create a Start Menu shortcut and select RTL for the next launch. Setup uses bundled files and does not start or close the app. [Full setup and recovery instructions](https://github.com/ahmadkhanloo/VibeHub/blob/main/docs/tutorials/rtl-setup.en.md).
+## 7. Bring your own API key — intermediate
+
+BYOK follows the provider account's pricing and allowances; it does not guarantee free usage. In IDE, open Qoder IDE Settings → Models → + Add, choose provider/model, supply your key, verify, then select it in Chat. Repo Wiki can consume Qoder Credits separately. [Custom models](https://docs.qoder.com/user-guide/chat/custom-models)
+
+“DeepSeek 网页登录（免费模型）” belongs to **DeepSeek Harness**. Do not install it in Qoder; find its tutorial in VibeHub's plugins and skills page.
+
+## 8. VibeHub, RTL and troubleshooting — intermediate
+
+After installation, rescan in VibeHub. Install RTL prepares a shortcut; see the [RTL guide](https://github.com/ahmadkhanloo/VibeHub/blob/main/docs/tutorials/rtl-setup.en.md).
+
+- **Missing model:** check product version, account and available models.
+- **Credits deducted:** inspect Usage, allowance, actual model, Auto and features with separate model calls.
+- **Login/network error:** see [Qoder troubleshooting](https://docs.qoder.com/qoder/troubleshooting).
+- **RTL launch failure:** inspect VibeHub's error and Doctor; fully close an already-running app before relaunching.
