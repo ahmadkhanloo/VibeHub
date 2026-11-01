@@ -131,6 +131,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./tests/native-array-results.ps1
           ./tests/updater-signature-exit.ps1
+          ./tests/updater-response.ps1
           ./tests/native-windows.ps1
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./tests/rtl-setup.ps1
@@ -440,6 +441,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_IS_PRERELEASE: ${{ contains(github.ref_name, '-') }}
         run: |
+          . ./scripts/release-http.ps1
           $tag = $env:GITHUB_REF_NAME
           $version = $tag.Substring(1)
           $repository = $env:GITHUB_REPOSITORY
@@ -448,7 +450,7 @@ jobs:
 
           $manifestResponse = Invoke-WebRequest -Uri $manifestUrl -MaximumRedirection 10
           if ($manifestResponse.StatusCode -ne 200) { throw "Tagged updater manifest is not publicly reachable: $manifestUrl" }
-          $manifest = $manifestResponse.Content | ConvertFrom-Json
+          $manifest = (ConvertFrom-ReleaseHttpContent -Content $manifestResponse.Content) | ConvertFrom-Json
           if (-not $manifest.platforms) { throw 'Public tagged manifest has no updater platforms' }
           if (($manifest.version -replace '^v', '') -ne $version) { throw "Public tagged manifest version does not match $tag" }
 
@@ -461,19 +463,23 @@ jobs:
             $signatureUrl = "$updaterUrl.sig"
             $signatureResponse = Invoke-WebRequest -Uri $signatureUrl -MaximumRedirection 10
             if ($signatureResponse.StatusCode -ne 200) { throw "Updater signature is not publicly reachable: $signatureUrl" }
-            if ($signatureResponse.Content.Trim() -ne ([string]$platform.Value.signature).Trim()) {
+            if ((ConvertFrom-ReleaseHttpContent -Content $signatureResponse.Content).Trim() -ne ([string]$platform.Value.signature).Trim()) {
               throw "Public updater signature differs from latest.json: $signatureUrl"
             }
           }
 
-          $releaseInfo = gh release view $tag --json isLatest,isPrerelease --repo $repository | ConvertFrom-Json
-          if ($LASTEXITCODE -ne 0) { throw 'Could not determine whether this Release is the latest stable Release' }
+          $releaseInfo = $null
+          if ($env:RELEASE_IS_PRERELEASE -ne 'true') {
+            $releaseInfo = gh release view $tag --json isLatest,isPrerelease --repo $repository | ConvertFrom-Json
+            if ($LASTEXITCODE -ne 0) { throw 'Could not determine whether this Release is the latest stable Release' }
+          }
           if ($env:RELEASE_IS_PRERELEASE -eq 'false' -and $releaseInfo.isLatest) {
             $latestUrl = "https://github.com/$repository/releases/latest/download/latest.json"
             $matched = $false
             for ($attempt = 1; $attempt -le 6; $attempt++) {
               try {
-                $candidate = (Invoke-WebRequest -Uri $latestUrl -MaximumRedirection 10).Content | ConvertFrom-Json
+                $response = Invoke-WebRequest -Uri $latestUrl -MaximumRedirection 10
+                $candidate = (ConvertFrom-ReleaseHttpContent -Content $response.Content) | ConvertFrom-Json
                 if (($candidate.version -replace '^v', '') -eq $version) { $matched = $true; break }
                 Write-Host "releases/latest still serves $($candidate.version); retrying."
               } catch {
