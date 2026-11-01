@@ -16,6 +16,7 @@
         "title": "VibeHub",
         "width": 1280,
         "height": 860,
+        "decorations": false,
         "minWidth": 960,
         "minHeight": 640,
         "resizable": true,

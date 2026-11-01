@@ -51,7 +51,10 @@ export interface AppManifest {
 export interface ProviderManifest {
   id: string;
   name: string;
+  logo?: string;
   officialUrl: string;
+  keyUrl?: string;
+  gettingStarted?: LocalizedText;
   modelsDocUrl?: string;
   freeAccess: FreeAccess;
   requiresAccount: boolean | null;

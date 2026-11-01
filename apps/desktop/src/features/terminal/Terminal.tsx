@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle2, Download, Package, Undo2, XCircle } from 'lucide-react';
-import { Button, Card, ErrorNotice, Modal, SectionTitle } from '@/components/ui';
+import { Button, Card, ErrorNotice, Modal, PageHeader, SectionTitle } from '@/components/ui';
 import { ipc } from '@/services/ipc';
 import type { TerminalSetupState } from '@core';
 
@@ -50,6 +50,7 @@ export function TerminalPage() {
   const blocked = !!busy || detecting || !state;
 
   return <section className="space-y-6" aria-busy={detecting || !!busy}>
+    <PageHeader title={t('terminal:title')} />
     <p className="text-sm leading-7 text-muted">{t('terminal:subtitle')}</p>
     {error != null && confirmation === null && <ErrorNotice error={error} onRetry={() => void detect()} />}
     {completed && <p role="status" className="text-sm text-success">{t('journeyUx:terminal.actionComplete')}</p>}

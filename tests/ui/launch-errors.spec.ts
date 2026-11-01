@@ -14,7 +14,7 @@ for (const language of ['fa','en']) test(`Qoder port conflict is a localized inl
   });
   await page.goto('/');
   const row = page.locator('article').filter({ has: page.getByRole('heading', { name: 'Qoder', exact: true }) });
-  await row.getByRole('button', { name: language === 'fa' ? 'اجرای راست‌چین Qoder' : 'Run with RTL Qoder', exact: true }).click();
+  await row.getByRole('button', { name: language === 'fa' ? 'اجرای RTL Qoder' : 'Run RTL Qoder', exact: true }).click();
   const alert = row.getByRole('alert');
   await expect(alert).toHaveClass(/vh-error/);
   await expect(alert).toContainText(language === 'fa' ? 'اتصال لازم برای اجرای راست‌چین درگیر است.' : 'Another launch is using the connection needed for RTL.');
@@ -41,7 +41,7 @@ test('persisted launch errors keep their explanation and recovery after reopenin
   await page.reload();
   await page.locator('.vh-launch-error > summary').click();
   await expect(page.getByRole('alert')).toBeVisible();
-  await expect(page.getByRole('link', {name:'Diagnostics',exact:true})).toBeVisible();
+  await expect(page.getByTestId('app-tile-zcode').getByRole('link', {name:'Diagnostics',exact:true})).toBeVisible();
   await page.evaluate(() => { (window as any).__mock.launchStates.zcode = { phase: 'idle' }; });
   await page.getByRole('alert').getByRole('button', { name: 'Try again', exact: true }).click();
   await expect(page.getByRole('alert')).toHaveCount(0);
@@ -60,10 +60,10 @@ test('a transient status-read failure remains unknown and clears on recheck with
     };
   });
   await page.goto('/');
-  await expect(page.getByRole('button', {name:'Run with RTL ZCode',exact:true})).toBeDisabled();
+  await expect(page.getByRole('button', {name:'Run RTL ZCode',exact:true})).toBeDisabled();
   await expect(page.getByRole('alert')).toHaveCount(0);
   await page.getByRole('button',{name:'Check again ZCode',exact:true}).click();
-  await expect(page.getByRole('button',{name:'Run with RTL ZCode',exact:true})).toBeEnabled();
+  await expect(page.getByRole('button',{name:'Run RTL ZCode',exact:true})).toBeEnabled();
   await expect(page.getByRole('alert')).toHaveCount(0);
   expect(await page.evaluate(() => (window as any).__mock.calls.filter((call:any) => call.cmd==='launch_app').length)).toBe(0);
 });

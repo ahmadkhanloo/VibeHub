@@ -41,6 +41,7 @@ export interface DetectedEditor {
 export interface RtlComponentStatus {
   id: string;
   available: boolean;
+  configured: boolean;
 }
 
 export interface EditorLaunchOutcome {
@@ -134,6 +135,7 @@ export const ipc = {
   rtlComponents: () => invoke<RtlComponentStatus[]>('rtl_components'),
   rtlSetup: (appId: string) => invoke<{ ok: boolean; shortcut: string }>('rtl_setup', { appId }),
   launchEditor: (editorId: string, rtl = false) => invoke<EditorLaunchOutcome>('launch_editor', { editorId, rtl }),
+  focusEditor: (editorId: string) => invoke<EditorLaunchOutcome>('focus_editor', { editorId }),
   focusApp: (appId: string) => invoke<LaunchOutcome>('launch_app', { req: { appId, rtl: false, focus: true } }),
   launchApp: (req: LaunchRequest) => invoke<LaunchOutcome>('launch_app', { req }),
   launchStates: (appIds: string[]) => invoke<Record<string, LaunchState>>('launch_states', { appIds }),

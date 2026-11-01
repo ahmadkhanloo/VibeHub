@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { mockNative } from './mock';
 
-test('version checks show source, comparison and failures without inventing results', async ({ page }) => {
+test('installed versions stay on app cards while update checks report status only', async ({ page }) => {
   await mockNative(page);
   await page.addInitScript(() => {
     const host = window as any;
@@ -21,13 +21,14 @@ test('version checks show source, comparison and failures without inventing resu
     };
   });
   await page.goto('/');
+  await expect(page.getByTestId('app-tile-opencode').locator('.vh-app-version')).toHaveText('1.0.0');
   await page.getByText('App versions and updates').click();
   const opencode = page.locator('li').filter({ hasText: 'OpenCode' });
   const freebuff = page.locator('li').filter({ hasText: 'Freebuff' });
   await opencode.getByRole('button', { name: 'Check latest' }).click();
-  await expect(opencode).toContainText('1.1.0');
   await expect(opencode).toContainText('Newer version available');
-  await expect(opencode).toContainText('npm: opencode-ai');
+  await expect(opencode).not.toContainText('1.1.0');
+  await expect(opencode).not.toContainText('npm: opencode-ai');
   await freebuff.getByRole('button', { name: 'Check latest' }).click();
   await expect(freebuff).toContainText('Check failed');
   await expect(page.locator('li').filter({ hasText: 'Qoder' })).toContainText('Automatic version source unavailable');

@@ -1,0 +1,73 @@
+{
+  "reviewedOn": "2026-11-01",
+  "notice": "Provider marks identify their respective service providers. These small favicons are bundled locally; the interface never fetches logo images at runtime. Missing icons use a text fallback.",
+  "assets": [
+    {
+      "file": "clean-apis.png",
+      "provider": "clean-apis",
+      "source": "https://www.google.com/s2/favicons/?sz=128&domain_url=https%3A%2F%2Fwww.cleanapis.com%2F",
+      "retrieval": "official-domain-favicon-cache"
+    },
+    {
+      "file": "custom-openai-compatible.png",
+      "provider": "custom-openai-compatible",
+      "source": "https://www.google.com/s2/favicons/?sz=128&domain_url=https%3A%2F%2Fplatform.openai.com%2Fdocs%2Fapi-reference",
+      "retrieval": "official-domain-favicon-cache"
+    },
+    {
+      "file": "google.png",
+      "provider": "google",
+      "source": "https://www.google.com/s2/favicons/?sz=128&domain_url=https%3A%2F%2Faistudio.google.com%2F",
+      "retrieval": "official-domain-favicon-cache"
+    },
+    {
+      "file": "inferx.ico",
+      "provider": "inferx",
+      "source": "https://inferx.net/favicon.ico",
+      "retrieval": "official-site-favicon"
+    },
+    {
+      "file": "kira-ai.png",
+      "provider": "kira-ai",
+      "source": "https://www.google.com/s2/favicons/?sz=128&domain_url=https%3A%2F%2Fkiraai.vn%2F",
+      "retrieval": "official-domain-favicon-cache"
+    },
+    {
+      "file": "mistral.png",
+      "provider": "mistral",
+      "source": "https://www.google.com/s2/favicons/?sz=128&domain_url=https%3A%2F%2Fconsole.mistral.ai%2F",
+      "retrieval": "official-domain-favicon-cache"
+    },
+    {
+      "file": "nvidia-build.ico",
+      "provider": "nvidia-build",
+      "source": "https://build.nvidia.com/favicon.ico",
+      "retrieval": "official-site-favicon"
+    },
+    {
+      "file": "ollama.png",
+      "provider": "ollama",
+      "source": "https://www.google.com/s2/favicons/?sz=128&domain_url=https%3A%2F%2Follama.com%2F",
+      "retrieval": "official-domain-favicon-cache"
+    },
+    {
+      "file": "openrouter.ico",
+      "provider": "openrouter",
+      "source": "https://openrouter.ai/favicon.ico",
+      "retrieval": "official-site-favicon"
+    },
+    {
+      "file": "orcarouter.ico",
+      "provider": "orcarouter",
+      "source": "https://www.orcarouter.ai/favicon.ico",
+      "retrieval": "official-site-favicon"
+    },
+    {
+      "file": "radeon-cloud.ico",
+      "provider": "radeon-cloud",
+      "source": "https://developer.amd.com.cn/favicon.ico",
+      "retrieval": "official-site-favicon"
+    }
+  ]
+}
+

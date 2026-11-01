@@ -23,7 +23,6 @@ import {
 import { useSettings } from "./settings";
 import { useCatalog } from "@/lib/catalog";
 import { launchBlocked, launchFailureKind } from "@core";
-import { accountSummaryError, accountSummaryFromSnapshot, type AccountSummary } from "@/features/accounts/account-summary";
 interface ToolContext {
   apps: DetectedApp[];
   editors: DetectedEditor[];
@@ -32,7 +31,6 @@ interface ToolContext {
   proxyConfig: ProxyConfig | null;
   connections: ProviderConnection[] | null;
   connectionsError: boolean;
-  accountSummaries: Record<string, AccountSummary | undefined>;
   loading: boolean;
   errors: string[];
   detectionFailed: boolean;
@@ -43,8 +41,6 @@ interface ToolContext {
   refresh: () => Promise<void>;
   refreshProxy: () => Promise<void>;
   refreshConnections: () => Promise<void>;
-  refreshAccountSummary: (appId: string) => Promise<void>;
-  retryAccountSummary: (appId: string) => Promise<void>;
   saveToolProxy: (appId: string, profileId: string) => Promise<void>;
   launch: (
     id: string,
@@ -63,7 +59,6 @@ export function ToolProvider({ children }: { children: ReactNode }) {
     [proxyConfig, setProxyConfig] = useState<ProxyConfig | null>(null);
   const [connections, setConnections] = useState<ProviderConnection[] | null>(null),
     [connectionsError, setConnectionsError] = useState(false);
-  const [accountSummaries, setAccountSummaries] = useState<Record<string, AccountSummary | undefined>>({});
   const [loading, setLoading] = useState(true),
     [errors, setErrors] = useState<string[]>([]),
     [detectionFailed, setDetectionFailed] = useState(false);
@@ -77,9 +72,7 @@ export function ToolProvider({ children }: { children: ReactNode }) {
     scan = useRef<Promise<void> | null>(null),
     proxyWrite = useRef<Promise<void>>(Promise.resolve()),
     polling = useRef(false),
-    connectionFlight = useRef<Promise<void> | null>(null),
-    accountFlights = useRef(new Map<string, Promise<void>>()),
-    accountQueued = useRef(new Set<string>());
+    connectionFlight = useRef<Promise<void> | null>(null);
   const { settings, update } = useSettings();
   const catalog = useCatalog();
   const acceptStates = useCallback((next: Record<string, LaunchState>) => {
@@ -124,73 +117,32 @@ export function ToolProvider({ children }: { children: ReactNode }) {
     setProxyConfig(configResult.status === 'fulfilled' ? configResult.value : null);
     await refreshConnections();
   }, [refreshConnections]);
-  const refreshAccountSummary = useCallback((appId: string) => {
-    const current = accountFlights.current.get(appId);
-    if (current) {
-      accountQueued.current.add(appId);
-      return current;
-    }
-    const pending = (async () => {
-      do {
-        accountQueued.current.delete(appId);
-        setAccountSummaries(old => old[appId] ? old : {
-          ...old,
-          [appId]: {
-            appId, accountId: null, status: 'loading', quotaStatus: 'loading', accountName: '', quotaItems: [], checkedAt: null,
-            stale: false, showingPrevious: false, errorCode: null, quotaErrorCode: null, canRefresh: false, canAdd: false,
-          },
-        });
-        try {
-          const snapshot = appId === 'chatgpt'
-            ? await ipc.codexAccounts('list', { language: settings.language.startsWith('fa') ? 'fa' : 'en' })
-            : await ipc.appAccounts(appId, 'list');
-          const summary = accountSummaryFromSnapshot(appId, snapshot);
-          setAccountSummaries(old => ({ ...old, [appId]: summary }));
-        } catch {
-          setAccountSummaries(old => ({ ...old, [appId]: accountSummaryError(appId, old[appId]) }));
-        }
-      } while (accountQueued.current.has(appId));
-    })().finally(() => { accountFlights.current.delete(appId); });
-    accountFlights.current.set(appId, pending);
-    return pending;
-  }, [settings.language]);
-  const retryAccountSummary = useCallback(async (appId: string) => {
-    const accountId = accountSummaries[appId]?.accountId;
-    try {
-      if (appId === 'chatgpt') await ipc.codexAccounts('refresh', { ...(accountId ? { id: accountId } : {}), language: settings.language.startsWith('fa') ? 'fa' : 'en' });
-      else if (accountId) await ipc.appAccounts(appId, 'refresh', { id: accountId });
-    } catch { /* The subsequent shared read presents the native structured status. */ }
-    await refreshAccountSummary(appId);
-  }, [accountSummaries, refreshAccountSummary, settings.language]);
   const refresh = useCallback(() => {
     if (scan.current) return scan.current;
     setLoading(true);
     const task = (async () => {
       const result = await Promise.allSettled([
         ipc.detectApps(),
+        ipc.detectEditors(),
         ipc.rtlComponents(),
         refreshProxy(),
       ]);
-      const [a, c] = result;
+      const [a, e, c] = result;
       setErrors(
         result
           .filter((r) => r.status === "rejected")
           .map((r) => String((r as PromiseRejectedResult).reason)),
       );
       setDetectionFailed(a.status === "rejected");
-      if (a.status === "fulfilled") {
-        setApps(a.value);
-        for (const app of a.value) {
-          if (app.installed && ['chatgpt', 'qoder', 'zcode'].includes(app.id)) void refreshAccountSummary(app.id);
-        }
-
-      } else setApps([]);
-      setEditors([]);
+      if (a.status === "fulfilled") setApps(a.value);
+      else setApps([]);
+      setEditors(e.status === "fulfilled" ? e.value : []);
       setComponents(c.status === "fulfilled" ? c.value : []);
       setLoading(false);
       // Inventory is usable before potentially slow process checks complete.
       const ids = [
         ...(a.status === "fulfilled" ? a.value.filter((x) => x.installed).map((x) => x.id) : []),
+        ...(e.status === "fulfilled" ? e.value.filter((x) => x.installed).map((x) => x.id) : []),
       ];
       void checkStates(ids);
     })().finally(() => {
@@ -198,7 +150,7 @@ export function ToolProvider({ children }: { children: ReactNode }) {
     });
     scan.current = task;
     return task;
-  }, [checkStates, refreshAccountSummary, refreshProxy]);
+  }, [checkStates, refreshProxy]);
   useEffect(() => { void refresh(); }, [refresh]);
   useEffect(() => {
     let lastScan = Date.now();
@@ -215,29 +167,12 @@ export function ToolProvider({ children }: { children: ReactNode }) {
     };
   }, [refresh]);
   useEffect(() => {
-    const ids = apps.filter(app => app.installed && ['chatgpt', 'qoder', 'zcode'].includes(app.id)).map(app => app.id);
-    const refreshVisible = () => {
-      if (document.visibilityState !== 'visible') return;
-      for (const id of ids) void refreshAccountSummary(id);
-    };
-    const onAccountChange = (event: Event) => {
-      const appId = (event as CustomEvent<{ appId?: string }>).detail?.appId;
-      if (appId && ids.includes(appId)) void refreshAccountSummary(appId);
-    };
     const onConnectionsChange = () => { void refreshConnections(); };
-    const timer = setInterval(refreshVisible, 30000);
-    window.addEventListener('focus', refreshVisible);
-    document.addEventListener('visibilitychange', refreshVisible);
-    window.addEventListener('vibehub:account-summary-changed', onAccountChange);
     window.addEventListener('vibehub:connections-changed', onConnectionsChange);
     return () => {
-      clearInterval(timer);
-      window.removeEventListener('focus', refreshVisible);
-      document.removeEventListener('visibilitychange', refreshVisible);
-      window.removeEventListener('vibehub:account-summary-changed', onAccountChange);
       window.removeEventListener('vibehub:connections-changed', onConnectionsChange);
     };
-  }, [apps, refreshAccountSummary, refreshConnections]);
+  }, [refreshConnections]);
   useEffect(() => {
     const onReturn = () => {
       if (document.visibilityState !== 'visible') return;
@@ -285,7 +220,7 @@ export function ToolProvider({ children }: { children: ReactNode }) {
     const key = kind + ":" + id;
     if (inFlight.current.has(key)) return;
     const rtlAvailable =
-      components.some((c) => c.id === id && c.available) &&
+      components.some((c) => c.id === id && c.available && c.configured) &&
       (id === "antigravity" || catalog.apps.some(
         (a) => a.id === id && a.capabilities.rtl === "verified",
       ));
@@ -339,7 +274,6 @@ export function ToolProvider({ children }: { children: ReactNode }) {
         proxyConfig,
         connections,
         connectionsError,
-        accountSummaries,
         loading,
         errors,
         detectionFailed,
@@ -350,8 +284,6 @@ export function ToolProvider({ children }: { children: ReactNode }) {
         refresh,
         refreshProxy,
         refreshConnections,
-        refreshAccountSummary,
-        retryAccountSummary,
         saveToolProxy,
         launch,
         checkState,

@@ -1,6 +1,8 @@
 {
   "title": "Apps",
   "filters": "Filters",
+  "installedUnknown": "Installed apps could not be checked",
+  "installedUnknownHint": "Check again before choosing an app to install.",
   "openSourceOnly": "Open-source only",
   "freeAccessType": "Free access type",
   "allAccess": "All",

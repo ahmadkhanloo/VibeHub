@@ -264,6 +264,7 @@ function Invoke-HubRtlLauncher([string]$launcherPath) {
 
 function Find-App([string]$id) {
     if (Get-Command Get-RtlSavedPath -ErrorAction SilentlyContinue) { $saved = Get-RtlSavedPath $id; if ($saved) { return $saved } }
+    if ($id -eq 'antigravity-ide') { $editor = Detect-Editors | Where-Object { $_.id -eq $id } | Select-Object -First 1; if ($editor) { return [string]$editor.path }; return $null }
     if ($id -in @('antigravity','chatgpt')) { return Find-DesktopProduct $id }
     if ($id -in @('qoder','zcode','deepseek-harness') -and (Get-Command Get-RtlExecutable -ErrorAction SilentlyContinue)) {
         $folder = switch ($id) { 'qoder' {'Qoder'} 'zcode' {'ZCode'} 'deepseek-harness' {'DeepSeekHarness'} }
@@ -310,7 +311,47 @@ function Detect-Apps {
     }
 }
 
-function Detect-Editors { @() }
+function Detect-Editors {
+    $candidates = @(
+        "$env:LOCALAPPDATA\Programs\Antigravity IDE\Antigravity IDE.exe",
+        "$env:ProgramFiles\Antigravity IDE\Antigravity IDE.exe",
+        "${env:ProgramFiles(x86)}\Antigravity IDE\Antigravity IDE.exe"
+    )
+    $path = $candidates | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+    if ($path) {
+        $file = Get-Item -LiteralPath $path
+        $version = $file.VersionInfo.ProductVersion
+        $result = @{ id='antigravity-ide'; name='Antigravity IDE'; installed=$true; path=$path; via='standard-path' }
+        if ($version) { $result.version = $version }
+        $result
+    }
+}
+
+function Get-RtlComponents([string]$resourceRoot) {
+    $names = @{zcode='ZCode';qoder='Qoder';'deepseek-harness'='DeepSeekHarness';antigravity='Antigravity'}
+    $labels = @{zcode='ZCode';qoder='Qoder';'deepseek-harness'='DeepSeek Harness';antigravity='Antigravity'}
+    $runtime = (Test-Path -LiteralPath (Join-Path $resourceRoot 'runtime\node.exe') -PathType Leaf) -or
+        (Test-Path -LiteralPath (Join-Path $resourceRoot 'apps\desktop\src-tauri\windows\payload\node.exe') -PathType Leaf)
+    foreach ($id in @('zcode','qoder','deepseek-harness','antigravity')) {
+        $adapter = Join-Path $resourceRoot ('apps\' + $names[$id])
+        $required = @((Join-Path $resourceRoot 'apps\rtl-paths.ps1'), (Join-Path $resourceRoot 'apps\rtl-direction.mjs'))
+        $required += @('start.ps1','launch.vbs','injector.mjs','rtl.ico') | ForEach-Object { Join-Path $adapter $_ }
+        if ($id -in @('qoder','antigravity')) { $required += Join-Path $adapter 'style.mjs' }
+        if ($id -in @('qoder','deepseek-harness')) { $required += @('Vazirmatn-Regular.woff2','Vazirmatn-Bold.woff2') | ForEach-Object { Join-Path $adapter ('assets\' + $_) } }
+        $available = $runtime -and ($required | ForEach-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Where-Object { -not $_ } | Measure-Object).Count -eq 0 -and [bool](Find-App $id)
+        $shortcut = Join-Path ([Environment]::GetFolderPath('Programs')) ('VibeHub\' + $labels[$id] + ' RTL.lnk')
+        $configured = $false
+        if ($available -and (Test-Path -LiteralPath $shortcut -PathType Leaf)) {
+            try {
+                $shell = New-Object -ComObject WScript.Shell
+                $target = $shell.CreateShortcut($shortcut).TargetPath
+                $expected = Join-Path $adapter 'launch.vbs'
+                $configured = $target -ieq $expected -and (Test-Path -LiteralPath $target -PathType Leaf)
+            } catch { $configured = $false }
+        }
+        @{id=$id;available=$available;configured=$configured}
+    }
+}
 
 function Get-LaunchState($state, [string]$appId = '') {
     if ($state.phase -eq 'failed') { return $state }
@@ -437,6 +478,7 @@ try {
         }
         'detect' { @(Detect-Apps) }
         'detect-editors' { ,@(Detect-Editors) }
+        'rtl-components' { @(Get-RtlComponents $root) }
         'launch-editor' {
             $id = [string]$request.editorId
             if ($id -notin @('vscode','vscode-insiders','antigravity','antigravity-ide','cursor','windsurf','zed','trae','kiro','vscodium')) { throw 'Unknown detected editor.' }
@@ -560,6 +602,18 @@ try {
             [HubWindow]::ShowWindowAsync($target.MainWindowHandle,9) | Out-Null
             if (-not [HubWindow]::SetForegroundWindow($target.MainWindowHandle)) { throw 'Windows did not activate the application window.' }
             @{ok=$true;rtl=$false;detail='Application window activated'}
+        }
+        'focus-editor' {
+            $id = [string]$request.editorId
+            if ($id -ne 'antigravity-ide') { throw 'Unknown supported editor.' }
+            $editor = Detect-Editors | Where-Object { $_.id -eq $id } | Select-Object -First 1
+            if (-not $editor) { throw 'Antigravity IDE is no longer installed at a recognized path. Refresh the app list.' }
+            $target = Get-Process -ErrorAction SilentlyContinue | Where-Object { try { $_.Path -ieq $editor.path -and $_.MainWindowHandle -ne 0 } catch { $false } } | Select-Object -First 1
+            if (-not $target) { throw 'No Antigravity IDE window was found.' }
+            Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class HubEditorWindow { [DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr h,int n); [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h); }'
+            [HubEditorWindow]::ShowWindowAsync($target.MainWindowHandle,9) | Out-Null
+            if (-not [HubEditorWindow]::SetForegroundWindow($target.MainWindowHandle)) { throw 'Windows did not activate Antigravity IDE.' }
+            @{ok=$true;rtl=$false;detail='Antigravity IDE window activated'}
         }
         'rtl-setup' {
             $id = [string]$request.appId

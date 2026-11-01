@@ -2,21 +2,19 @@ import { Disclosure } from '@/components/Disclosure';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, Download, Moon, RefreshCw, Sun } from 'lucide-react';
-import { Badge, Button, ErrorNotice, Input, Modal, PageHeader, Select, Toggle, Tabs } from '@/components/ui';
-import { useSettings, type Accent, type ThemeFamily, type ThemeModeSetting } from '@/app/settings';
+import { Badge, Button, ErrorNotice, Input, Modal, PageHeader, Toggle, Tabs } from '@/components/ui';
+import { useSettings, type Accent, type ThemeFamily } from '@/app/settings';
 import { ipc, type CredentialClearResult, type ProviderCredentialInventory } from '@/services/ipc';
 import { check } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 
-import { TerminalPage } from '@/features/terminal/Terminal';
 import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
 
 const FAMILIES: ThemeFamily[] = ['graphite', 'nord', 'catppuccin', 'solarized'];
 const ACCENTS: Accent[] = ['auto', 'indigo', 'emerald', 'violet', 'amber'];
 
-const MODES: ThemeModeSetting[] = ['system', 'light', 'dark'];
 const LEGACY_NAMES: Record<string, string> = { openrouter: 'OpenRouter', 'nvidia-build': 'NVIDIA', 'custom-openai-compatible': 'OpenAI-compatible' };
 
 function ThemeGallery() {
@@ -50,10 +48,14 @@ function ThemeGallery() {
 
 export function SettingsPage() {
   const { t } = useTranslation(['settingsUx', 'settings', 'common']);
-  const { settings, update } = useSettings();
+  const { settings, update, resolvedMode } = useSettings();
+  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const panels = ['appearance', 'terminal', 'updates', 'notifications', 'data'];
-  const selectedPanel = params.get('panel') === 'terminal' ? 'terminal' : panels.includes(params.get('section') ?? '') ? params.get('section')! : 'appearance';
+  const panels = ['appearance', 'updates', 'notifications', 'data'];
+  const selectedPanel = panels.includes(params.get('section') ?? '') ? params.get('section')! : 'appearance';
+  useEffect(() => {
+    if (params.get('section') === 'terminal' || params.get('panel') === 'terminal') navigate('/terminal', { replace: true });
+  }, [navigate, params]);
   const [version, setVersion] = useState<string | null>(null);
   const [availableUpdate, setAvailableUpdate] = useState<Awaited<ReturnType<typeof check>>>(null);
   const [checked, setChecked] = useState(false);
@@ -113,24 +115,19 @@ export function SettingsPage() {
 
     <section hidden={selectedPanel !== 'appearance'} className="vh-settings-panel space-y-4">
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <label className="block space-y-2 text-sm"><span>{t('settings:appearance.language')}</span>
-          <Select value={settings.language} onChange={(language) => update({ language })} options={[{ value: 'fa', label: t('common:languagePersian') }, { value: 'en', label: t('common:languageEnglish') }]} /></label>
-        <label className="block space-y-2 text-sm"><span>{t('settings:appearance.mode')}</span>
-          <Select<ThemeModeSetting> value={settings.themeMode} onChange={(themeMode) => update({ themeMode })} options={MODES.map((mode) => ({ value: mode, label: t(`settings:appearance.mode${mode.charAt(0).toUpperCase()}${mode.slice(1)}`) }))} /></label>
-        <label className="block space-y-2 text-sm"><span>{t('settings:appearance.family')}</span>
-          <Select<ThemeFamily> value={settings.themeFamily} onChange={(themeFamily) => update({ themeFamily })} options={FAMILIES.map((family) => ({ value: family, label: t(`settings:appearance.families.${family}`) }))} /></label>
-        <label className="block space-y-2 text-sm"><span>{t('settings:appearance.accent')}</span>
-          <Select<Accent> value={settings.accent} onChange={(accent) => update({ accent })} options={ACCENTS.map((accent) => ({ value: accent, label: t(`settings:appearance.accents.${accent}`) }))} /></label>
+      <div className="grid gap-5 sm:grid-cols-2">
+        <div className="space-y-2 text-sm"><span className="block font-medium">{t('settings:appearance.language')}</span><div className="vh-choice-group" role="group" aria-label={t('settings:appearance.language')}>
+          {(['fa', 'en'] as const).map(language => <button key={language} type="button" aria-pressed={settings.language === language} onClick={() => update({ language })}>{t(language === 'fa' ? 'common:languagePersian' : 'common:languageEnglish')}</button>)}
+        </div></div>
+        <div className="space-y-2 text-sm"><Toggle checked={settings.themeMode === 'system'} onChange={follow => update({ themeMode: follow ? 'system' : resolvedMode })} label={t('settings:appearance.followSystem')} /></div>
+        <div className="space-y-2 text-sm sm:col-span-2"><span className="block font-medium">{t('settings:appearance.accent')}</span><div className="vh-accent-choices" role="group" aria-label={t('settings:appearance.accent')}>
+          {ACCENTS.map(accent => <button key={accent} type="button" aria-label={t(`settings:appearance.accents.${accent}`)} aria-pressed={settings.accent === accent} onClick={() => update({ accent })}>
+            <span className="vh-accent-swatch" data-accent-choice={accent} aria-hidden="true">{settings.accent === accent && <Check size={15} />}</span><span>{t(`settings:appearance.accents.${accent}`)}</span>
+          </button>)}
+        </div></div>
       </div>
       <ThemeGallery />
     </section>
-
-    <section hidden={selectedPanel !== 'terminal'} className="vh-settings-panel">{selectedPanel === 'terminal' && <TerminalPage />}</section>
-
-
-
-
 
     <section hidden={selectedPanel !== 'updates'} className="vh-settings-panel space-y-4">
 
@@ -182,7 +179,6 @@ export function SettingsPage() {
 
       <p className="text-sm text-muted">{t('settings:privacy.noTelemetry')}</p>
       <Link className="vh-link text-sm" to="/doctor">{t('ux:doctor')}</Link>
-      <Button disabled={busy !== null} onClick={() => void perform('undo', async () => { const result = await ipc.terminalUndo(); if (!result.ok) throw new Error(result.detail); setMessage(result.detail); })}>{t('ux:terminalRestore')}</Button>
       <Button disabled={busy !== null} onClick={() => void perform('docs', async () => { await import('@tauri-apps/plugin-opener').then(({ openUrl }) => openUrl('https://github.com/ahmadkhanloo/VibeHub/tree/main/docs/tutorials')); })}>{t('ux:externalDocs')}</Button>
       <div className="divide-y divide-border">
         <div className="flex flex-wrap items-center justify-between gap-4 py-4"><div className="max-w-xl"><h3 className="font-semibold">{t('settings:privacy.wipeCache')}</h3><p className="mt-1 text-sm text-muted">{t('settingsUx:cacheHint')}</p></div>

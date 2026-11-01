@@ -6,16 +6,20 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   House,
-  Wrench,
   Languages,
+  BookOpen,
+  GraduationCap,
+  Network,
   PanelLeftClose,
   PanelLeftOpen,
-  Network,
   Search,
   Settings,
+  Shield,
+  Sparkles,
+  Stethoscope,
+  Terminal,
 } from "lucide-react";
 import { useSettings } from "./settings";
-import { AccountsNotice } from '@/features/accounts/AccountsNotice';
 import { Button, Spinner } from "@/components/ui";
 import vibeHubMark from "@/assets/vibehub-mark.svg";
 export function AppShell() {
@@ -55,8 +59,13 @@ export function AppShell() {
   }, [location.pathname]);
   const items = [
     { to: "/", icon: House, label: t("ux:workspace") },
-    { to: "/connections", icon: Network, label: t("ux:apiNotebook") },
-    { to: "/tools", icon: Wrench, label: t("workbench:moreTools") },
+    { to: "/connections/api", icon: Network, label: t("ux:apiNotebook") },
+    { to: "/connections/proxy", icon: Shield, label: t("nav:proxy") },
+    { to: "/offers", icon: Sparkles, label: t("nav:offers") },
+    { to: "/terminal", icon: Terminal, label: t("nav:terminal") },
+    { to: "/doctor", icon: Stethoscope, label: t("nav:doctor") },
+    { to: "/learning", icon: GraduationCap, label: t("nav:learning") },
+    { to: "/guides", icon: BookOpen, label: t("ux:guides") },
   ];
   const link = (item: (typeof items)[number]) => (
     <Tooltip key={item.to} text={item.label}><NavLink
@@ -64,7 +73,7 @@ export function AppShell() {
       to={item.to}
       end={item.to === "/"}
       aria-label={item.label}
-      className={({isActive}) => 'vh-nav-link' + ((isActive || (item.to === '/tools' && /^\/(offers|learning|guides|accounts|doctor|terminal)(\/|$)/.test(location.pathname))) ? ' is-active' : '')}
+      className={({isActive}) => 'vh-nav-link' + ((isActive || (item.to === '/learning' && location.pathname.startsWith('/learning/')) || (item.to === '/guides' && location.pathname.startsWith('/guides/'))) ? ' is-active' : '')}
     >
       <item.icon aria-hidden="true" size={20} />
       <span className="vh-nav-label">{item.label}</span>
@@ -84,36 +93,20 @@ export function AppShell() {
       </a>
       <aside className={"vh-sidebar " + (collapsed ? "collapsed" : "")}>
         <div className="vh-sidebar-brand">
-          <img
-            src={vibeHubMark}
-            alt=""
-            aria-hidden="true"
-            width={32}
-            height={32}
-          />
+          <button type="button" className="vh-sidebar-logo" aria-label={t(collapsed ? "nav:expand" : "common:appName")} title={collapsed ? t("nav:expand") : undefined} aria-expanded={!collapsed} onClick={() => { if (collapsed) { sidebarChosen.current = true; setCollapsed(false); } else navigate('/'); }}>
+            <img src={vibeHubMark} alt="" aria-hidden="true" width={32} height={32} />
+            {collapsed && <PanelLeftOpen className="vh-sidebar-logo-expand" aria-hidden="true" size={18} />}
+          </button>
           {!collapsed && (
             <div className="vh-brand-copy"><span dir={settings.language === 'fa' ? 'rtl' : 'ltr'}>{t('common:appName')}</span><small>{t('workbench:brandCaption')}</small></div>
           )}
+          {!collapsed && <Button variant="ghost" className="vh-sidebar-toggle" aria-expanded="true" aria-label={t("nav:collapse")} title={t("nav:collapse")} onClick={() => { sidebarChosen.current = true; setCollapsed(true); }}><PanelLeftClose aria-hidden="true" size={18} /></Button>}
         </div>
         <nav aria-label={t("ux:mainNav")} className="flex-1 space-y-1">
           {items.map(link)}
         </nav>
         <div className="mt-6 space-y-1 border-t border-border pt-4">
           {link({ to: "/settings", icon: Settings, label: t("ux:settings") })}
-          <Button
-            variant="ghost"
-            className="w-full vh-sidebar-toggle"
-            aria-expanded={!collapsed}
-            aria-label={t(collapsed ? "nav:expand" : "nav:collapse")}
-            onClick={() => { sidebarChosen.current = true; setCollapsed(!collapsed); }}
-          >
-            {collapsed ? (
-              <PanelLeftOpen aria-hidden="true" size={18} />
-            ) : (
-              <PanelLeftClose aria-hidden="true" size={18} />
-            )}
-            <span className="vh-nav-label">{t("nav:collapse")}</span>
-          </Button>
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
@@ -172,7 +165,6 @@ export function AppShell() {
             <Suspense fallback={<Spinner />}>
 
         <FeedActivity />
-        <AccountsNotice />
         <Outlet />
             </Suspense>
           </div>

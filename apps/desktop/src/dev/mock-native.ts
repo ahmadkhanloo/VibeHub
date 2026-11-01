@@ -91,26 +91,20 @@ export function installMockNative({ scenario, language, onboardingDone }: { scen
                     ...(state.scenario === "antigravity" ? [{id:"antigravity",installed:true,path:"C:/Fixtures/Antigravity.exe",via:"fixture"}] : []),
                   ];
             case "detect_editors":
-              if (state.scenario === "antigravity") return [{id:"antigravity",name:"Antigravity",installed:true,path:"C:/Fixtures/Antigravity.exe",via:"standard-path"}];
-              return state.scenario === "empty"
-                ? []
-                : [
-                    {
-                      id: "vscode",
-                      name: "Visual Studio Code",
-                      installed: true,
-                      path: "C:/Fixtures/Code.exe",
-                      via: "standard-path",
-                    },
-                  ];
+              return state.scenario === "antigravity"
+                ? [{id:"antigravity-ide",name:"Antigravity IDE",installed:true,path:"C:/Fixtures/Antigravity IDE.exe",version:"2.5.5",via:"standard-path"}]
+                : [];
             case "rtl_setup":
               return { ok: true, shortcut: "C:/Fixtures/RTL.lnk" };
             case "rtl_components":
               return [
-                { id: "zcode", available: state.scenario !== "missing" },
-                { id: "qoder", available: true },
-                { id: "antigravity", available: true },
+                { id: "zcode", available: state.scenario !== "missing", configured: true },
+                { id: "qoder", available: true, configured: true },
+                { id: "deepseek-harness", available: true, configured: true },
+                { id: "antigravity", available: true, configured: true },
               ];
+            case "focus_editor":
+              return { ok: true, id: args.editorId, rtl: false, detail: "Editor window activated" };
             case "launch_states":
               return Object.fromEntries(args.appIds.map((id: string) => [id, state.launchStates[id] ?? { phase: "idle" }]));
             case "launch_state":

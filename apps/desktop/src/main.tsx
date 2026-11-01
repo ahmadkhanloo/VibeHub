@@ -13,13 +13,13 @@ import "@/styles/workbench.css";
 import i18n from "@/i18n";
 import { SettingsProvider } from "@/app/settings";
 import { ToolProvider } from "@/app/tool-context";
+import { WindowTitlebar } from "@/app/WindowTitlebar";
 const SearchPage = lazy(async () => ({
   default: (await import("@/features/explore/Search")).SearchPage,
 }));
 const GuidesPage = lazy(async () => ({
   default: (await import("@/features/guides/Guides")).GuidesPage,
 }));
-import { ConnectionsPage } from "@/features/proxy/Connections";
 import { AppShell } from "@/app/shell";
 const HomePage = lazy(async () => ({
   default: (await import("@/features/home/Home")).HomePage,
@@ -29,6 +29,9 @@ const DiscoverPage = lazy(async () => ({
 }));
 const AppDetailsPage = lazy(async () => ({
   default: (await import("@/features/explore/AppDetails")).AppDetailsPage,
+}));
+const EditorDetailsPage = lazy(async () => ({
+  default: (await import("@/features/explore/EditorDetails")).EditorDetailsPage,
 }));
 const ProxyPage = lazy(async () => ({
   default: (await import("@/features/proxy/Proxy")).ProxyPage,
@@ -43,8 +46,7 @@ const SettingsPage = lazy(async () => ({
   default: (await import("@/features/settings/Settings")).SettingsPage,
 }));
 
-const ToolsPage = lazy(async () => ({default: (await import('@/features/tools/Tools')).ToolsPage}));
-const AccountsHub = lazy(async () => ({default: (await import('@/features/accounts/AccountsHub')).AccountsHub}));
+const TerminalPage = lazy(async () => ({default: (await import('@/features/terminal/Terminal')).TerminalPage}));
 const OffersPage = lazy(async () => ({default: (await import('@/features/offers/Offers')).OffersPage}));
 const ExtensionsPage = lazy(async () => ({default: (await import('@/features/guides/Extensions')).ExtensionsPage}));
 const CodeReviewPage = lazy(async () => ({default: (await import('@/features/learning/CodeReview')).CodeReviewPage}));
@@ -65,20 +67,20 @@ function Gate() {
         }
       >
         <Route path="/" element={<HomePage />} />
-        <Route path="/tools" element={<ToolsPage />} />
+        <Route path="/tools" element={<Navigate to="/" replace />} />
         <Route path="/discover" element={<DiscoverPage />} />
         <Route path="/app/:appId" element={<AppDetailsPage />} />
+        <Route path="/app/antigravity-ide" element={<Navigate to="/editor/antigravity-ide" replace />} />
+        <Route path="/editor/:editorId" element={<EditorDetailsPage />} />
         <Route path="/my-apps" element={<Navigate to="/" replace />} />
         <Route path="/search" element={<SearchPage />} />
-        <Route path="/connections" element={<ConnectionsPage />}>
-          <Route index element={<Navigate to="api" replace />} />
-          <Route path="api" element={<ModelsPage />} />
-          <Route path="proxy" element={<ProxyPage />} />
-        </Route>
+        <Route path="/connections" element={<Navigate to="/connections/api" replace />} />
+        <Route path="/connections/api" element={<ModelsPage />} />
+        <Route path="/connections/proxy" element={<ProxyPage />} />
         <Route path="/proxy" element={<Navigate to="/connections/proxy" replace />} />
         <Route
           path="/terminal"
-          element={<Navigate to="/settings?section=terminal" replace />}
+          element={<TerminalPage />}
         />
         <Route
           path="/long-running"
@@ -86,7 +88,7 @@ function Gate() {
         />
         <Route path="/guides" element={<GuidesPage />} />
         <Route path="/guides/extensions" element={<ExtensionsPage />} />
-        <Route path="/accounts" element={<AccountsHub />} />
+        <Route path="/accounts" element={<Navigate to="/" replace />} />
         <Route path="/guides/:appId" element={<GuidesPage />} />
         <Route path="/offers" element={<OffersPage />} />
         <Route path="/learning" element={<LongRunningPage />} />
@@ -112,17 +114,22 @@ async function bootstrap() {
   createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <SettingsProvider>
-      <Router>
-        <Suspense
-          fallback={
-            <div className="p-6" role="status">
-              {i18n.t('common:appName')}…
-            </div>
-          }
-        >
-          <Gate />
-        </Suspense>
-      </Router>
+      <div className="vh-app-frame">
+        <WindowTitlebar />
+        <div className="vh-app-content">
+          <Router>
+            <Suspense
+              fallback={
+                <div className="p-6" role="status">
+                  {i18n.t('common:appName')}…
+                </div>
+              }
+            >
+              <Gate />
+            </Suspense>
+          </Router>
+        </div>
+      </div>
     </SettingsProvider>
   </StrictMode>,
 );

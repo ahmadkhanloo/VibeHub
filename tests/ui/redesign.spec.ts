@@ -12,10 +12,8 @@ test("search includes model services and targets selected provider without savin
   await expect(page).toHaveURL(/search\?q=NVIDIA/);
   await page.getByRole("link", { name: /NVIDIA API Catalog/ }).click();
   await expect(page).toHaveURL(/connections\/api\?provider=nvidia-build/);
-  await expect(page.getByRole("dialog")).toBeVisible();
-  await expect(page.getByRole("dialog").getByRole("combobox")).toHaveValue(
-    "nvidia",
-  );
+  await expect(page.getByTestId('provider-nvidia-build')).toHaveClass(/border-primary/);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   expect(
     await page.evaluate(() =>
       (window as any).__mock.calls.filter(
@@ -24,20 +22,14 @@ test("search includes model services and targets selected provider without savin
     ),
   ).toHaveLength(0);
 });
-test("catalog tabs use URL for back and forward", async ({ page }) => {
+test("add-app lists only uninstalled tools without catalog filters or tabs", async ({ page }) => {
   await mockNative(page);
   await page.goto("/discover");
-  await page.getByRole("tab", { name: "IDEs", exact: true }).click();
-  await page.getByRole("tab", { name: "CLI agents", exact: true }).click();
-  await page.goBack();
-  await expect(
-    page.getByRole("tab", { name: "IDEs", exact: true }),
-  ).toHaveAttribute("aria-selected", "true");
-  await expect(page.getByRole("link", { name: /Qoder/ })).toBeVisible();
-  await page.goForward();
-  await expect(
-    page.getByRole("tab", { name: "CLI agents", exact: true }),
-  ).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator('.vh-catalog-tile')).toHaveCount(8);
+  await expect(page.getByRole('link', { name: /Qoder/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /ZCode/ })).toHaveCount(0);
+  await expect(page.getByRole('tab')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /Filters/i })).toHaveCount(0);
 });
 test("daily launch uses RTL once, saves success and remembers explicit normal choice", async ({
   page,
@@ -45,7 +37,7 @@ test("daily launch uses RTL once, saves success and remembers explicit normal ch
   await mockNative(page);
   await page.goto("/");
   const run = page.getByRole("button", {
-    name: "Run with RTL ZCode",
+    name: "Run RTL ZCode",
     exact: true,
   });
   await expect(run).toBeEnabled();
@@ -60,8 +52,6 @@ test("daily launch uses RTL once, saves success and remembers explicit normal ch
   ).toHaveLength(1);
   await expect(page.getByRole("button", { name: "Go to app ZCode", exact: true })).toBeEnabled();
   await page.reload();
-  await page.getByRole("button", { name: "Launch mode for ZCode", exact: true }).click();
-  await page.getByRole("combobox", { name: "Launch mode for ZCode", exact: true }).selectOption("normal");
   await page.getByRole("button", { name: "Run ZCode", exact: true }).click();
   await expect
     .poll(() =>
@@ -82,7 +72,7 @@ for (const scenario of ["stateError"])
     await mockNative(page, scenario);
     await page.goto("/");
     await expect(
-      page.getByRole("button", { name: "Run with RTL ZCode", exact: true }),
+      page.getByRole("button", { name: "Run RTL ZCode", exact: true }),
     ).toBeDisabled();
   });
 test("missing preferred RTL never silently launches normally", async ({
@@ -90,11 +80,8 @@ test("missing preferred RTL never silently launches normally", async ({
 }) => {
   await mockNative(page, "missing");
   await page.goto("/");
-  await page.getByRole("button", { name: "Launch mode for ZCode", exact: true }).click();
-  await page.getByRole("combobox", { name: "Launch mode for ZCode", exact: true }).selectOption("rtl");
-  await expect(
-    page.getByRole("button", { name: "Run with RTL ZCode", exact: true }),
-  ).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Run RTL ZCode", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Set up RTL for ZCode", exact: true })).toBeVisible();
   expect(
     await page.evaluate(() =>
       (window as any).__mock.calls.filter((c: any) => c.cmd === "launch_app"),
@@ -105,7 +92,7 @@ test("failed launch does not overwrite preferred mode", async ({ page }) => {
   await mockNative(page, "launchFailed");
   await page.goto("/");
   await page
-    .getByRole("button", { name: "Run with RTL ZCode", exact: true })
+    .getByRole("button", { name: "Run RTL ZCode", exact: true })
     .click();
   await expect(page.getByRole("alert")).toBeVisible();
   expect(
@@ -267,7 +254,7 @@ test("all restored themes keep normal text readable in light and dark modes", as
   await mockNative(page);
   await page.goto("/");
   await expect(
-    page.getByRole("button", { name: "Run with RTL ZCode" }),
+    page.getByRole("button", { name: "Run RTL ZCode" }),
   ).toBeEnabled();
   const failures = await page.evaluate(() => {
     const linear = (x: number) => {
@@ -363,11 +350,11 @@ test("validated catalog refresh updates an already mounted result list", async (
 }) => {
   await mockNative(page);
   await page.goto("/discover");
-  await expect(page.getByRole("link", { name: /ZCode/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Qoder/ })).toBeVisible();
   await page.evaluate(async () => {
     const data = await import("/src/lib/catalog.ts");
     const apps = data.apps.map((app: any) =>
-      app.id === "zcode" ? { ...app, name: "ZCode refreshed" } : app,
+      app.id === "qoder" ? { ...app, name: "Qoder refreshed" } : app,
     );
     const guides: any = {};
     for (const app of apps)
@@ -380,7 +367,7 @@ test("validated catalog refresh updates an already mounted result list", async (
     );
   });
   await expect(
-    page.getByRole("link", { name: /ZCode refreshed/ }),
+    page.getByRole("link", { name: /Qoder refreshed/ }),
   ).toBeVisible();
 });
 test("required proxy failure never reports launch success or persists choice", async ({
@@ -389,7 +376,7 @@ test("required proxy failure never reports launch success or persists choice", a
   await mockNative(page, "required");
   await page.goto("/");
   await page
-    .getByRole("button", { name: "Run with RTL ZCode", exact: true })
+    .getByRole("button", { name: "Run RTL ZCode", exact: true })
     .click();
   await expect(page.getByRole("alert")).toBeVisible();
   expect(
@@ -468,12 +455,12 @@ test("keyboard tabs follow RTL order and dialog Tab stays inside", async ({
   page,
 }) => {
   await mockNative(page, "ready", "fa");
-  await page.goto("/discover");
-  const all = page.getByRole("tab", { name: "همه", exact: true });
-  await all.focus();
+  await page.goto("/app/zcode");
+  const launch = page.getByRole("tab", { name: "اجرا", exact: true });
+  await launch.focus();
   await page.keyboard.press("ArrowLeft");
   await expect(
-    page.getByRole("tab", { name: "محیط‌های توسعه", exact: true }),
+    page.getByRole("tab", { name: "اتصال‌ها", exact: true }),
   ).toHaveAttribute("aria-selected", "true");
   await page.goto("/models");
   await page.getByRole("button", { name: "افزودن اتصال", exact: true }).click();
@@ -504,7 +491,7 @@ test("dark high DPI window preserves content and reduced motion", async ({
     document.documentElement.dataset.mode = "dark";
   });
   await expect(
-    page.getByRole("button", { name: "اجرای راست‌چین ZCode", exact: true }),
+    page.getByRole("button", { name: "اجرای RTL ZCode", exact: true }),
   ).toBeVisible();
   expect(
     await page.evaluate(

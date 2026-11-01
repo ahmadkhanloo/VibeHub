@@ -3,6 +3,7 @@
   "appearance": {
     "title": "ظاهر",
     "language": "زبان",
+      "followSystem": "پیروی از حالت روشن یا تاریک سیستم",
     "mode": "حالت",
     "modeSystem": "همراه سیستم",
     "modeLight": "روشن",
