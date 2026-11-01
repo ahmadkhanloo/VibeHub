@@ -7,7 +7,6 @@ import { useTranslation } from "react-i18next";
 import {
   House,
   Languages,
-  BookOpen,
   GraduationCap,
   Network,
   PanelLeftClose,
@@ -65,20 +64,20 @@ export function AppShell() {
     { to: "/terminal", icon: Terminal, label: t("nav:terminal") },
     { to: "/doctor", icon: Stethoscope, label: t("nav:doctor") },
     { to: "/learning", icon: GraduationCap, label: t("nav:learning") },
-    { to: "/guides", icon: BookOpen, label: t("ux:guides") },
   ];
-  const link = (item: (typeof items)[number]) => (
-    <Tooltip key={item.to} text={item.label}><NavLink
+  const link = (item: (typeof items)[number]) => {
+    const content = <NavLink
       key={item.to}
       to={item.to}
       end={item.to === "/"}
       aria-label={item.label}
-      className={({isActive}) => 'vh-nav-link' + ((isActive || (item.to === '/learning' && location.pathname.startsWith('/learning/')) || (item.to === '/guides' && location.pathname.startsWith('/guides/'))) ? ' is-active' : '')}
+      className={({isActive}) => 'vh-nav-link' + ((isActive || (item.to === '/learning' && (location.pathname.startsWith('/learning/') || location.pathname.startsWith('/guides')))) ? ' is-active' : '')}
     >
       <item.icon aria-hidden="true" size={20} />
       <span className="vh-nav-label">{item.label}</span>
-    </NavLink></Tooltip>
-  );
+    </NavLink>;
+    return collapsed ? <Tooltip key={item.to} text={item.label}>{content}</Tooltip> : content;
+  };
   return (
     <div className="flex h-full overflow-hidden">
       <a

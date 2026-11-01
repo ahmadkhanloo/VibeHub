@@ -154,6 +154,8 @@ export interface DoctorCheck {
 }
 
 export interface TerminalSetupState {
+  hasPersianTerminal?: boolean;
+  persianTerminalPath?: string;
   hasOhMyPosh: boolean;
   ohMyPoshVersion?: string;
   hasNerdFont: boolean;

@@ -5,7 +5,7 @@ test('main sidebar links directly to the tools and learning areas', async ({ pag
   await mockNative(page);
   await page.goto('/');
   const sidebar = page.getByRole('navigation', { name: 'Main navigation' });
-  for (const label of ['Apps', 'API notebook', 'Proxy', 'Offers and news', 'Install terminal tools', 'Diagnostics', 'Learn', 'Guides']) {
+  for (const label of ['Apps', 'API notebook', 'Proxy', 'Offers and news', 'Install terminal tools', 'Diagnostics', 'Learn']) {
     await expect(sidebar.getByRole('link', { name: label })).toBeVisible();
   }
   await expect(page.getByRole('link', { name: 'Settings' })).toBeVisible();

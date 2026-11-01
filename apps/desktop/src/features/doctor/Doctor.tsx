@@ -2,7 +2,7 @@ import { Disclosure } from '@/components/Disclosure';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ClipboardCopy, Play } from 'lucide-react';
+import { ClipboardCopy, Play, LoaderCircle, Circle, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Badge, Button, Card, ErrorNotice, PageHeader } from '@/components/ui';
 import { ipc } from '@/services/ipc';
 import type { DoctorCheck } from '@core';
@@ -16,12 +16,20 @@ function sanitizeReportText(value: string) {
 }
 
 type Check = DoctorCheck & { detailKey?: string; detailValues?: Record<string, string | number> };
+const groupIds = ['native', 'apps', 'rtlAdapters', 'proxyConfig', 'modelConnections'] as const;
+type GroupId = typeof groupIds[number];
+type Group = { phase: 'ready' | 'running' | 'done'; checks: Check[] };
+const freshGroups = (phase: Group['phase']): Record<GroupId, Group> => ({
+  native: { phase, checks: [] }, apps: { phase, checks: [] }, rtlAdapters: { phase, checks: [] },
+  proxyConfig: { phase, checks: [] }, modelConnections: { phase, checks: [] },
+});
 const appNames: Record<string, string> = { zcode: 'ZCode', qoder: 'Qoder', 'deepseek-harness': 'DeepSeek Harness', opencode: 'OpenCode', mimocode: 'MiMo Code', freebuff: 'Freebuff' };
 
 export function DoctorPage() {
-  const { t, i18n } = useTranslation(['doctor', 'common', 'nav', 'journeyUx']);
+  const { t, i18n } = useTranslation(['doctor', 'common', 'nav', 'journeyUx', 'ux']);
   const [searchParams] = useSearchParams();
-  const [checks, setChecks] = useState<Check[] | null>(null);
+  const [groups, setGroups] = useState(() => freshGroups('ready'));
+  const checks = groupIds.flatMap(id => groups[id].checks);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [copyStatus, setCopyStatus] = useState<'success' | 'error' | null>(null);
@@ -32,35 +40,35 @@ export function DoctorPage() {
     if (busy.current) return;
     busy.current = true;
     setRunning(true); setError(null); setCopyStatus(null);
+    setGroups(freshGroups('running'));
+    const finish = (id: GroupId, results: Check[]) => setGroups(previous => ({ ...previous, [id]: { phase: 'done', checks: results } }));
+    const failed = (id: GroupId, reason: unknown): Check[] => [{ id: id === 'native' ? 'crash' : id, label: { fa: t(`doctor:groups.${id}`), en: t(`doctor:groups.${id}`) }, status: 'fail', detail: sanitizeReportText(String(reason)) }];
+    const detectedApps = ipc.detectApps();
+    // Start all independent reads together; publish each group as soon as its dependencies settle.
     try {
-      const [native, detectedApps, components, profiles, proxyConfig, connections] = await Promise.allSettled([
-        ipc.doctorRun(), ipc.detectApps(), ipc.rtlComponents(), ipc.proxyProfiles(), ipc.proxyConfig(), ipc.providerConnections(),
+      await Promise.allSettled([
+        ipc.doctorRun().then(result => finish('native', result.length ? result : [{ id: 'native', label: { fa: t('doctor:groups.native'), en: t('doctor:groups.native') }, status: 'unknown' }]), reason => { finish('native', failed('native', reason)); setError(reason); }),
+        detectedApps.then(items => {
+          const installed = items.filter(item => item.installed);
+          const results: Check[] = [{ id: 'apps', label: { fa: '', en: '' }, status: 'pass', detailKey: 'appsCount', detailValues: { installed: installed.length, total: items.length } }];
+          for (const item of installed) results.push({ id: `app-${item.id}`, label: { fa: appNames[item.id] ?? item.id, en: appNames[item.id] ?? item.id }, status: 'pass', ...(item.version ? { detail: `v${item.version}` } : { detailKey: 'pathFound' }) });
+          const focusId = searchParams.get('tool');
+          if (focusId && searchParams.get('kind') === 'app') {
+            const found = installed.some(item => item.id === focusId), name = appNames[focusId] ?? focusId;
+            results.push({ id: 'focusedTool', label: { fa: `برنامهٔ انتخاب‌شده: ${name}`, en: `Selected tool: ${name}` }, status: found ? 'pass' : 'fail', detailKey: found ? 'pathFound' : 'pathMissing' });
+          }
+          finish('apps', results);
+        }).catch(reason => finish('apps', failed('apps', reason))),
+        Promise.all([ipc.rtlComponents(), detectedApps]).then(([components, items]) => {
+          const ready = components.filter(item => item.available && items.some(app => app.installed && app.id === item.id));
+          finish('rtlAdapters', [{ id: 'rtlAdapters', label: { fa: '', en: '' }, status: 'pass', detailKey: 'rtlCount', detailValues: { count: ready.length } }]);
+        }).catch(reason => finish('rtlAdapters', failed('rtlAdapters', reason))),
+        Promise.all([ipc.proxyProfiles(), ipc.proxyConfig()]).then(([profiles, config]) => {
+          const selected = profiles.find(profile => profile.id === config.globalProfileId);
+          finish('proxyConfig', [{ id: 'proxyConfig', label: { fa: '', en: '' }, status: selected ? 'pass' : 'unknown', detailKey: selected ? 'proxyConfigured' : 'proxyMissing', detailValues: selected ? { name: selected.name } : undefined }]);
+        }).catch(reason => finish('proxyConfig', failed('proxyConfig', reason))),
+        ipc.providerConnections().then(connections => finish('modelConnections', [{ id: 'modelConnections', label: { fa: '', en: '' }, status: 'pass', detailKey: 'modelsCount', detailValues: { count: connections.length } }])).catch(reason => finish('modelConnections', failed('modelConnections', reason))),
       ]);
-      const results: Check[] = native.status === 'fulfilled' ? [...native.value] : [{ id: 'crash', label: { fa: 'بررسی پیش‌نیازها', en: 'Prerequisite checks' }, status: 'fail', detail: sanitizeReportText(String(native.reason)) }];
-      if (native.status === 'rejected') setError(native.reason);
-      if (detectedApps.status === 'fulfilled') {
-        const installed = detectedApps.value.filter((item) => item.installed);
-        results.push({ id: 'apps', label: { fa: 'برنامه‌های کدنویسی', en: 'Coding apps' }, status: 'pass', detailKey: 'appsCount', detailValues: { installed: installed.length, total: detectedApps.value.length } });
-        for (const item of installed) results.push({ id: `app-${item.id}`, label: { fa: appNames[item.id] ?? item.id, en: appNames[item.id] ?? item.id }, status: 'pass', ...(item.version ? { detail: `v${item.version}` } : { detailKey: 'pathFound' }) });
-      } else results.push({ id: 'apps', label: { fa: 'شناسایی برنامه‌ها', en: 'App detection' }, status: 'fail', detailKey: 'appsFailed' });
-      const focusId = searchParams.get('tool');
-      const focusKind = searchParams.get('kind');
-      if (focusId && focusKind === 'app') {
-        const detected = detectedApps.status === 'fulfilled' ? detectedApps.value.find(item => item.id === focusId && item.installed) : undefined;
-        const name = appNames[focusId] ?? focusId;
-        results.push({ id: 'focusedTool', label: { fa: `برنامهٔ انتخاب‌شده: ${name}`, en: `Selected tool: ${name}` }, status: detected ? 'pass' : 'fail', detailKey: detected ? 'pathFound' : 'pathMissing' });
-      }
-      if (components.status === 'fulfilled' && detectedApps.status === 'fulfilled') {
-        const installedIds = detectedApps.value.filter((item) => item.installed).map((item) => item.id);
-        const ready = components.value.filter((item) => item.available && installedIds.includes(item.id));
-        results.push({ id: 'rtlAdapters', label: { fa: 'آداپترهای راست‌چین', en: 'RTL adapters' }, status: 'pass', detailKey: 'rtlCount', detailValues: { count: ready.length } });
-      } else results.push({ id: 'rtlAdapters', label: { fa: 'آداپترهای راست‌چین', en: 'RTL adapters' }, status: components.status === 'rejected' ? 'fail' : 'unknown', detailKey: components.status === 'rejected' ? 'rtlFailed' : 'rtlUnknown' });
-      if (profiles.status === 'fulfilled' && proxyConfig.status === 'fulfilled') {
-        const selected = profiles.value.find((profile) => profile.id === proxyConfig.value.globalProfileId);
-        results.push({ id: 'proxyConfig', label: { fa: 'تنظیم پروکسی', en: 'Proxy setup' }, status: selected ? 'pass' : 'unknown', detailKey: selected ? 'proxyConfigured' : 'proxyMissing', detailValues: selected ? { name: selected.name } : undefined });
-      } else results.push({ id: 'proxyConfig', label: { fa: 'خواندن تنظیم پروکسی', en: 'Proxy setup' }, status: 'fail' });
-      results.push({ id: 'modelConnections', label: { fa: 'اتصال‌های مدل', en: 'Model connections' }, status: connections.status === 'fulfilled' ? 'pass' : 'fail', ...(connections.status === 'fulfilled' ? { detailKey: 'modelsCount', detailValues: { count: connections.value.length } } : {}) });
-      setChecks(results);
     } catch (e) { setError(e); }
     finally { busy.current = false; setRunning(false); }
   };
@@ -69,7 +77,7 @@ export function DoctorPage() {
   const labelFor = (check: Check) => check.id === 'focusedTool' ? check.label[language] : t(`doctor:checks.${check.id}`, { defaultValue: check.label[language] ?? check.id });
   const relatedLink = (id: string) => id === 'focusedTool' && searchParams.get('kind') === 'app' ? `/app/${encodeURIComponent(searchParams.get('tool') ?? '')}` : id.startsWith('app-') ? `/app/${id.slice(4)}` : id === 'proxyConfig' || id === 'proxy' ? '/proxy' : id === 'modelConnections' ? '/models' : id === 'apps' || id === 'rtlAdapters' ? '/discover' : id === 'editors' ? '/' : '/settings';
   const copyReport = async () => {
-    if (!checks) return;
+    if (!checks.length || running) return;
     try {
       const text = checks.map((check) => `${check.status.toUpperCase()} ${labelFor(check)} — ${detailFor(check)}`).join('\n');
       await navigator.clipboard.writeText(`VibeHub Doctor ${new Date().toISOString()}\n${sanitizeReportText(text)}`);
@@ -78,19 +86,33 @@ export function DoctorPage() {
   };
 
   return <div className="space-y-6">
-    <PageHeader title={t('doctor:title')} actions={<div className="flex flex-wrap gap-2"><Button variant="primary" loading={running} onClick={() => void run()}><Play size={14} aria-hidden="true" />{t('doctor:runChecks')}</Button><Button disabled={!checks || running} onClick={() => void copyReport()}><ClipboardCopy size={14} aria-hidden="true" />{t('doctor:copyReport')}</Button></div>} />
+    <PageHeader title={t('doctor:title')} actions={<div className="flex flex-wrap gap-2"><Button variant="primary" loading={running} onClick={() => void run()}><Play size={14} aria-hidden="true" />{t('doctor:runChecks')}</Button><Button disabled={!checks.length || running} onClick={() => void copyReport()}><ClipboardCopy size={14} aria-hidden="true" />{t('doctor:copyReport')}</Button></div>} />
     <Disclosure title={t('ux:help')}><p>{t('doctor:purpose')}</p><p className="text-sm leading-7 text-muted">{t('doctor:networkNote')}</p></Disclosure>
     {error != null && <ErrorNotice error={error} onRetry={() => void run()} />}
     {copyStatus && <p role={copyStatus === 'error' ? 'alert' : 'status'} className="text-sm">{t(copyStatus === 'success' ? 'journeyUx:doctor.copySuccess' : 'journeyUx:doctor.copyFailure')}</p>}
-    {!checks ? <p role="status" className="text-sm text-muted">{running ? t('doctor:running') : t('journeyUx:doctor.notRun')}</p> : <>
-      <p role="status" className="text-sm text-muted">{t('journeyUx:doctor.summary', { count: checks.length })}</p>
-      <Card><ul className="divide-y divide-border">{checks.map((check) => <li key={check.id} className="space-y-3 py-4 first:pt-0 last:pb-0">
-        <div className="flex flex-wrap items-center gap-3"><Badge tone={tone[check.status]}>{t(`common:${check.status === 'pass' ? 'pass' : check.status === 'fail' ? 'fail' : check.status === 'unknown' ? 'unknown' : 'skipStatus'}`)}</Badge><h2 className="font-bold">{labelFor(check)}</h2></div>
-        <Disclosure title={t('ux:details')} defaultOpen={check.status !== 'pass'}>        {detailFor(check) && <p dir="auto" className="break-words text-sm leading-7 text-muted">{detailFor(check)}</p>}
-        <p className="text-sm leading-7 text-muted">{t(check.id === 'focusedTool' ? 'doctor:nextActions.focusedTool' : check.status === 'pass' ? 'doctor:nextActions.pass' : check.status === 'fail' ? `doctor:nextActions.${check.id}` : 'doctor:nextActions.review', { defaultValue: t('doctor:nextActions.default') })}</p>
-        </Disclosure>
-        {check.status !== 'pass' && <Link to={relatedLink(check.id)} className="inline-block text-sm text-primary hover:underline">{t('journeyUx:doctor.openSetting')}</Link>}
-      </li>)}</ul><p className="mt-5 border-t border-border pt-4 text-xs text-muted">{t('doctor:noSecrets')}</p></Card>
-    </>}
+    <p role="status" className="text-sm text-muted">{running ? t('doctor:progress', { done: groupIds.filter(id => groups[id].phase === 'done').length, total: groupIds.length }) : checks.length ? t('journeyUx:doctor.summary', { count: checks.length }) : t('journeyUx:doctor.notRun')}</p>
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {groupIds.map(id => {
+        const group = groups[id];
+        const status = group.phase !== 'done' ? group.phase : group.checks.some(check => check.status === 'fail') ? 'fail' : group.checks.some(check => check.status !== 'pass') ? 'unknown' : 'pass';
+        const Icon = status === 'running' ? LoaderCircle : status === 'ready' ? Circle : status === 'pass' ? CheckCircle2 : AlertCircle;
+        return <Card key={id} data-check-group={id} className="min-w-0 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-bold">{t(`doctor:groups.${id}`)}</h2>
+            <span className="inline-flex items-center gap-2 text-sm" role="status"><Icon size={16} aria-hidden="true" className={status === 'running' ? 'animate-spin text-primary' : status === 'pass' ? 'text-success' : status === 'fail' ? 'text-danger' : 'text-muted'} />{status === 'ready' ? t('doctor:ready') : status === 'running' ? t('doctor:running') : t(`common:${status}`)}</span>
+          </div>
+          <p className="text-sm leading-7 text-muted">{t(`doctor:groupHints.${id}`)}</p>
+          <ul className="divide-y divide-border">{group.checks.map(check => <li key={check.id} className="space-y-3 py-3">
+            <div className="flex flex-wrap items-center gap-2"><Badge tone={tone[check.status]}>{t(`common:${check.status === 'skipped' ? 'skipStatus' : check.status}`)}</Badge><h3 className="text-sm font-bold">{labelFor(check)}</h3></div>
+            {detailFor(check) && <p dir="auto" className="break-words text-sm leading-7 text-muted">{detailFor(check)}</p>}
+            {check.status !== 'pass' && <>
+              <p className="text-sm leading-7 text-muted">{t(check.id === 'focusedTool' ? 'doctor:nextActions.focusedTool' : check.status === 'fail' ? `doctor:nextActions.${check.id}` : 'doctor:nextActions.review', { defaultValue: t('doctor:nextActions.default') })}</p>
+              <Link to={relatedLink(check.id)} className="inline-flex min-h-11 items-center text-sm text-primary hover:underline">{t('journeyUx:doctor.openSetting')}</Link>
+            </>}
+          </li>)}</ul>
+        </Card>;
+      })}
+    </div>
+    <p className="text-xs text-muted">{t('doctor:noSecrets')}</p>
   </div>;
 }

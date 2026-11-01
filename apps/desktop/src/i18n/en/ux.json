@@ -173,21 +173,5 @@
   "rtlRepairFor": "Repair RTL for {{name}}",
   "rtlSetupDownload": "Get the full VibeHub installer",
   "runRtlCompact": "Run RTL",
-  "rtlReady": "RTL ready",
-  "versions": {
-    "title": "App versions and updates",
-    "note": "Installed versions come from local detection. Latest versions for OpenCode and Freebuff are checked via npm; visit the official website for other apps.",
-    "installed": "Installed version",
-    "unknown": "Unknown",
-    "official": "Official website",
-    "check": "Check latest",
-    "latest": "Latest version",
-    "failed": "Check failed",
-    "notChecked": "Not checked yet",
-    "unsupported": "Automatic version source unavailable",
-    "newer": "Newer version available",
-    "current": "Matches latest npm release",
-    "ahead": "Installed version is newer",
-    "incomparable": "Cannot compare versions"
-  }
+  "rtlReady": "RTL ready"
 }

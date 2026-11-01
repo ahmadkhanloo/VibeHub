@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle2, Download, Package, Undo2, XCircle } from 'lucide-react';
+import { CheckCircle2, Download, ExternalLink, Package, Undo2, XCircle } from 'lucide-react';
 import { Button, Card, ErrorNotice, Modal, PageHeader, SectionTitle } from '@/components/ui';
 import { ipc } from '@/services/ipc';
 import type { TerminalSetupState } from '@core';
+import { openUrl } from '@tauri-apps/plugin-opener';
 
 const PROMPT_PREVIEW = `  3.14.7  main ≡ ?2  C:/Projects/VibeHub  0ms
 ❯ _`;
-type Action = 'omp' | 'nerd' | 'vazir' | 'apply' | 'undo';
+type Action = 'persian' | 'omp' | 'nerd' | 'vazir' | 'apply' | 'undo';
 
 export function TerminalPage() {
   const { t } = useTranslation(['terminal', 'common', 'journeyUx']);
@@ -31,7 +32,8 @@ export function TerminalPage() {
     if (actionLock.current) return;
     actionLock.current = true; setBusy(action); setCompleted(false); setError(null);
     try {
-      const result = action === 'omp' ? await ipc.terminalInstallOhMyPosh()
+      const result = action === 'persian' ? await ipc.terminalInstallPersian()
+        : action === 'omp' ? await ipc.terminalInstallOhMyPosh()
         : action === 'nerd' ? await ipc.terminalInstallFont('nerd')
         : action === 'vazir' ? await ipc.terminalInstallFont('vazirmatn')
         : action === 'apply' ? await ipc.terminalApplyTheme() : await ipc.terminalUndo();
@@ -57,6 +59,7 @@ export function TerminalPage() {
     <Card className="space-y-3">
       <SectionTitle>{t('terminal:steps.detect')}</SectionTitle>
       {detecting ? <p role="status" className="text-sm text-muted">{t('common:loading')}</p> : state ? <>
+        <Row ok={!!state.hasPersianTerminal} label={t('terminal:persian.title')} value={state.persianTerminalPath} />
         <Row ok={state.hasOhMyPosh} label={t('terminal:detected.ohmyposh')} value={state.ohMyPoshVersion} />
         <Row ok={state.hasNerdFont} label={t('terminal:detected.nerdFont')} value={state.nerdFontName} />
         <Row ok={!!state.profilePath} label={t('terminal:detected.profile')} value={state.profilePath} />
@@ -64,6 +67,15 @@ export function TerminalPage() {
         <p className="text-xs text-muted">{t('terminal:errors.ideMayNotApply')}</p>
       </> : <p className="text-sm text-muted">{t('journeyUx:terminal.detectionFailed')}</p>}
       <Button size="sm" loading={detecting} disabled={!!busy} onClick={() => void detect()}>{t('journeyUx:terminal.retry')}</Button>
+    </Card>
+    <Card className="space-y-3">
+      <SectionTitle>{t('terminal:persian.title')}</SectionTitle>
+      <p className="text-sm leading-7 text-muted">{t('terminal:persian.description')}</p>
+      <div className="flex flex-wrap gap-3"><Button variant="primary" disabled={blocked || state?.hasPersianTerminal} onClick={() => setConfirmation('persian')}><Download size={16} aria-hidden="true" />{t('terminal:persian.install')}</Button><Button variant="ghost" onClick={() => void openUrl('https://github.com/mirbehnam/RtlTerminal/releases/tag/v1.1.4').catch(setError)}><ExternalLink size={16} aria-hidden="true" />{t('terminal:persian.source')}</Button></div>
+      <p className="text-xs leading-6 text-muted">{t('terminal:persian.requirements')}</p>
+      <p className="text-sm leading-7 text-muted">{t('terminal:persian.verify')}</p>
+      <pre dir="ltr" className="overflow-auto whitespace-pre-wrap rounded-lg border border-border bg-bg p-4 font-sans text-base leading-8">سلام، فارسی را پیوسته می‌نویسم.</pre>
+      <p className="text-xs leading-6 text-muted">{t('terminal:persian.undo')}</p>
     </Card>
     <Card className="space-y-3">
       <SectionTitle>{t('terminal:steps.preview')}</SectionTitle>
@@ -89,7 +101,7 @@ export function TerminalPage() {
     <Card className="space-y-3"><SectionTitle>{t('terminal:steps.verify')}</SectionTitle><p className="text-sm leading-7 text-muted">{t('terminal:verifyHint')}</p></Card>
     {!!log.length && <details className="rounded-lg border border-border p-4"><summary className="cursor-pointer text-sm font-medium">{t('journeyUx:terminal.details')}</summary><pre dir="ltr" className="ltr-tech mt-3 whitespace-pre-wrap break-all text-xs text-muted">{log.join('\n')}</pre></details>}
     <Modal open={confirmation !== null} title={t(confirmation === 'apply' ? 'journeyUx:terminal.confirmApplyTitle' : confirmation === 'undo' ? 'journeyUx:terminal.confirmRestoreTitle' : 'journeyUx:terminal.confirmInstallTitle')} busy={!!busy} onClose={() => { setConfirmation(null); setError(null); }}>
-      <p className="text-sm leading-7">{t(confirmation === 'apply' ? 'journeyUx:terminal.confirmApply' : confirmation === 'undo' ? 'journeyUx:terminal.confirmRestore' : 'journeyUx:terminal.confirmInstall')}</p>
+      <p className="text-sm leading-7">{t(confirmation === 'persian' ? 'terminal:persian.confirm' : confirmation === 'apply' ? 'journeyUx:terminal.confirmApply' : confirmation === 'undo' ? 'journeyUx:terminal.confirmRestore' : 'journeyUx:terminal.confirmInstall')}</p>
       {error != null && <ErrorNotice error={error} />}
       <div className="flex justify-end gap-3"><Button data-autofocus disabled={!!busy} onClick={() => { setConfirmation(null); setError(null); }}>{t('common:cancel')}</Button><Button variant="primary" loading={!!busy} onClick={() => { if (confirmation) void run(confirmation); }}>{t('common:confirm')}</Button></div>
     </Modal>
