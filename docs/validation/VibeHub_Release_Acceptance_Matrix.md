@@ -32,7 +32,7 @@ Each row carries its own build and source. The local fixture rows still apply to
 
 ## Historical gate record (not current status)
 
-**Owner exception:** `release.yml` permits a stable tag to publish while Gate 18 rows remain non-PASS only for `v0.2.0` and `v0.2.1`, both published under explicit owner authorization. The exception is scoped to those two tags in code and is not a precedent; any other stable tag is blocked until every Gate 18 row is PASS.
+**Owner exceptions:** `v0.2.0` and `v0.2.1` were published historically under explicit owner authorization. On 2026-11-01, the owner explicitly requested stable `v0.2.2`; Gate 18 remains unverified. The workflow records that exception in its run summary; no Gate 18 row is changed to PASS, and the public release body points readers to this matrix. This is a one-off exception; any other new stable tag remains blocked until every Gate 18 row is PASS.
 
 | Gate / scenario | Status | CI link | GitHub Release URL | Artifact / SHA-256 | Screenshot | Log / notes |
 |---|---|---|---|---|---|---|

@@ -166,6 +166,8 @@ test('release publishing is tag-only, least-privilege, and signs updater artifac
   assert.match(workflow, /prerelease: \$\{\{ contains\(github\.ref_name, '-'\) \}\}/);
   assert.match(workflow, /RELEASE_IS_PRERELEASE/);
   assert.match(workflow, /--prerelease/);
+  assert.match(workflow, /\$tag -in @\('v0\.2\.0', 'v0\.2\.1', 'v0\.2\.2'\)/);
+  assert.match(workflow, /Owner-authorized \$tag release exception; Gate 18 remains unverified/);
   assert.match(workflow, /Stable release blocked until Gate 18 is PASS for every scenario/);
   assert.match(workflow, /Publish Setup as VibeHub-Setup\.exe/);
   assert.match(workflow, /The user-facing Windows Setup must be named VibeHub-Setup\.exe/);
@@ -262,6 +264,7 @@ test('acceptance matrix records real evidence fields and keeps unrun checks non-
     /^\| Gate 18[^|]*\| PASS\b/mi,
     'Gate 18 must stay non-PASS until clean-machine evidence exists',
   );
+  assert.match(matrix, /v0\.2\.2[\s\S]*Gate 18 remains unverified|Gate 18 remains unverified[\s\S]*v0\.2\.2/);
   const gate19PassRows = matrix
     .split(/\r?\n/)
     .filter((line) => /^\| Gate 19[^|]*\| PASS\b/i.test(line));
