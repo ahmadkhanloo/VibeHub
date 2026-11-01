@@ -469,12 +469,13 @@ jobs:
             }
           }
 
-          $releaseInfo = $null
+          $latestReleaseTag = $null
           if ($env:RELEASE_IS_PRERELEASE -ne 'true') {
-            $releaseInfo = gh release view $tag --json isLatest,isPrerelease --repo $repository | ConvertFrom-Json
+            $latestReleaseTag = [string](gh api "repos/$repository/releases/latest" --jq .tag_name)
             if ($LASTEXITCODE -ne 0) { throw 'Could not determine whether this Release is the latest stable Release' }
+            if ([string]::IsNullOrWhiteSpace($latestReleaseTag)) { throw 'GitHub returned no latest stable Release tag' }
           }
-          if ($env:RELEASE_IS_PRERELEASE -eq 'false' -and $releaseInfo.isLatest) {
+          if ($env:RELEASE_IS_PRERELEASE -eq 'false' -and $latestReleaseTag -ceq $tag) {
             $latestUrl = "https://github.com/$repository/releases/latest/download/latest.json"
             $matched = $false
             for ($attempt = 1; $attempt -le 6; $attempt++) {
@@ -492,7 +493,7 @@ jobs:
           } elseif ($env:RELEASE_IS_PRERELEASE -eq 'true') {
             "Skipping releases/latest check: $tag is a prerelease." | Add-Content $env:GITHUB_STEP_SUMMARY
           } else {
-            "Skipping releases/latest check: an existing newer stable Release is latest." | Add-Content $env:GITHUB_STEP_SUMMARY
+            "Skipping releases/latest check: $tag is not the latest stable Release ($latestReleaseTag)." | Add-Content $env:GITHUB_STEP_SUMMARY
           }
 
           "Public tagged manifest, updater archive, signature, and latest-release manifest verified for $tag." | Add-Content $env:GITHUB_STEP_SUMMARY
