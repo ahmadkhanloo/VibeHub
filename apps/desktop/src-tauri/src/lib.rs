@@ -21,7 +21,7 @@ async fn codex_accounts(app: tauri::AppHandle, action: String, payload: Value) -
 
 #[tauri::command]
 async fn app_path(app: tauri::AppHandle, app_id: String, path: String) -> Result<()> {
-    if !["qoder", "zcode", "deepseek-harness", "antigravity"].contains(&app_id.as_str()) { return Err("Unsupported app path".into()); }
+    if !APP_IDS.contains(&app_id.as_str()) { return Err("Unsupported app path".into()); }
     system::run(app, json!({"operation":"app-path", "appId":app_id, "path":path})).await?;
     Ok(())
 }
@@ -382,7 +382,7 @@ async fn launch_app(app: tauri::AppHandle, req: Value) -> Result<Value> {
         if !folder.is_absolute() || !folder.is_dir() || path.contains(['"', '\n', '\r', '\0']) {
             return Err("Project folder does not exist or has an invalid path".into());
         }
-        if id == "chatgpt" { return Err("This application does not support project folders".into()); }
+        if ["chatgpt", "claude-desktop"].contains(&id.as_str()) { return Err("This application does not support project folders".into()); }
     }
     if req["focus"].as_bool() == Some(true) {
         return system::blocking(move || system::powershell(&app, json!({"operation":"focus-app", "appId":id}))).await;

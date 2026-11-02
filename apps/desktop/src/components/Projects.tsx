@@ -15,7 +15,7 @@ export function Projects({ appId }: { appId?: string }) {
   const [choice, setChoice] = useState<{ id: string; mode: LaunchMode } | null>(null);
   const [target, setTarget] = useState(appId ?? '');
   const [error, setError] = useState<unknown>(null);
-  const installed = ctx.apps.filter(app => app.installed && app.id !== 'chatgpt');
+  const installed = ctx.apps.filter(app => app.installed && !['chatgpt', 'claude-desktop'].includes(app.id));
   const selected = appId ?? (installed.some(app => app.id === target) ? target : installed[0]?.id ?? '');
   const state = ctx.states[selected];
   const supportsRtl = catalog.apps.some(app => app.id === selected && app.capabilities.rtl === 'verified') || selected === 'antigravity';
@@ -25,7 +25,7 @@ export function Projects({ appId }: { appId?: string }) {
     setError(null);
     if (await ctx.launch(selected, 'app', mode, path)) update(current => ({ recentProjects: [path, ...current.recentProjects.filter(item => item !== path)].slice(0, 6) }));
   };
-  if (appId === 'chatgpt') return null;
+  if (appId && ['chatgpt', 'claude-desktop'].includes(appId)) return null;
   return <section className="vh-card space-y-4" aria-label={t('projects')}>
     <h2 className="font-bold">{t('projects')}</h2>
     {!settings.recentProjects.length && <p className="text-sm text-muted">{t(installed.length ? 'projectEmptyHelp' : 'projectNoTarget')}</p>}

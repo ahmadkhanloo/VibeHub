@@ -1,6 +1,30 @@
 {
-  "title": "PowerShell appearance",
-  "subtitle": "A readable, modern PowerShell terminal for CLI agents — fully optional and fully reversible.",
+  "title": "Terminal & Persian text",
+  "subtitle": "Check Persian text support separately from optional PowerShell prompt customization.",
+  "overview": "Component status",
+  "customize": "Customize PowerShell",
+  "nextAction": {
+    "label": "Next step",
+    "loading": "Checking components…",
+    "unknown": "Component check failed. Check again.",
+    "installHost": "Install RtlTerminal for Persian text, then verify joined letters in the sample.",
+    "installOmp": "Install Oh My Posh to customize the prompt.",
+    "installFont": "Install a Nerd Font to display prompt icons.",
+    "applyTheme": "Review the preview and optionally apply the theme.",
+    "ready": "Detected components are installed; verify Persian rendering separately."
+  },
+  "optional": "Optional",
+  "copySample": "Copy Persian sample",
+  "copied": "Copied",
+  "status": {
+    "installed": "Installed",
+    "missing": "Not installed",
+    "notInstalled": "Not installed",
+    "unknown": "Unknown",
+    "ompInstalled": "Oh My Posh installed",
+    "fontInstalled": "Nerd Font installed"
+  },
+  "requirements": { "ohmyposh": "Install Oh My Posh before applying the prompt theme." },
   "steps": {
     "detect": "1) Detect",
     "preview": "2) Preview",
@@ -26,6 +50,9 @@
   "installVazir": "Install Vazirmatn font",
   "persian": {
     "title": "Connected Persian letters in PowerShell",
+    "host": "RtlTerminal host",
+    "installed": "RtlTerminal installed",
+    "installedNeedsCheck": "Installed; check Persian rendering",
     "description": "Run PowerShell inside RtlTerminal for connected Persian letters. This separate terminal host provides text shaping; a font or UTF-8 alone is insufficient. Right alignment is not required.",
     "install": "Install RtlTerminal for PowerShell",
     "source": "Official release and manual download",
@@ -39,8 +66,8 @@
   "applyWhat": "What happens: your $PROFILE is backed up and a marked idempotent block is added; no duplicate lines are created.",
   "applyFont": "Set the selected Windows Terminal profile font",
   "applyFontNote": "Only the selected profile, with a backup and reversible.",
-  "undo": "Fully undo VibeHub changes",
-  "undoNote": "Only the VibeHub-owned block is removed; your other customizations stay untouched.",
+  "undo": "Restore prompt settings",
+  "undoNote": "Only VibeHub prompt settings are removed; fonts and RtlTerminal remain installed.",
   "themeApplied": "Theme applied",
   "themeNotApplied": "Theme not applied",
   "backupAt": "Backup at",

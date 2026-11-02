@@ -30,10 +30,10 @@ Follows the DeepSeek service; BYOK unknown until tested.
 
 ## Intermediate: web login and free model allowances
 
-Open **DeepSeek 网页登录（免费模型）** in VibeHub's plugins and skills page for installation, login, model selection, removal and troubleshooting of unofficial `dsh-deepseek-web-login`. [Plugin source](https://github.com/cv-superding/dsh-deepseek-web-login)
+Read **DeepSeek 网页登录（免费模型）** in [Learning](/learning/dsh-deepseek-web-login). The [shared skill guide](/learning/skill-basics) covers common compatibility and removal steps. [Plugin source](https://github.com/cv-superding/dsh-deepseek-web-login)
 
 This uses a Web account allowance, not unlimited free official API access. Documentation checked November 1, 2026; installation and authenticated use remain untested.
 
-## Set up RTL from VibeHub
+## Shared RTL setup
 
-After installing the app, return to VibeHub or choose Check again. Choose Set up RTL on its tile to create a Start Menu shortcut and select RTL for the next launch. Setup uses bundled files and does not start or close the app. [Full setup and recovery instructions](https://github.com/ahmadkhanloo/VibeHub/blob/main/docs/tutorials/rtl-setup.en.md).
+See the [Persian text and RTL guide](/learning/rtl-setup) for common installation, launch and recovery steps. This app's verification status remains in the RTL section above.

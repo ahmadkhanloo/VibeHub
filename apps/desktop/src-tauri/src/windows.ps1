@@ -70,14 +70,14 @@ namespace VibeHub {
 }
 '@
     }
-    $folders = @{zcode='ZCode'; qoder='Qoder'; 'deepseek-harness'='DeepSeekHarness'; antigravity='Antigravity'}
-    $names = @{zcode='ZCode'; qoder='Qoder'; 'deepseek-harness'='DeepSeek Harness'; antigravity='Antigravity'}
+    $folders = @{zcode='ZCode'; qoder='Qoder'; 'deepseek-harness'='DeepSeekHarness'; antigravity='Antigravity'; opencode='OpenCode'}
+    $names = @{zcode='ZCode'; qoder='Qoder'; 'deepseek-harness'='DeepSeek Harness'; antigravity='Antigravity'; opencode='OpenCode'}
     if (-not $folders.ContainsKey($appId)) { throw 'RTL is unavailable for this app.' }
     $adapter = Join-Path $resourceRoot ('apps\' + $folders[$appId])
     $required = @((Join-Path $resourceRoot 'apps\rtl-paths.ps1'), (Join-Path $resourceRoot 'apps\rtl-direction.mjs'))
     $required += @('start.ps1','launch.vbs','injector.mjs','rtl.ico') | ForEach-Object { Join-Path $adapter $_ }
-    if ($appId -in @('qoder','antigravity')) { $required += Join-Path $adapter 'style.mjs' }
-    if ($appId -in @('qoder','deepseek-harness')) {
+    if ($appId -in @('qoder','antigravity','opencode')) { $required += Join-Path $adapter 'style.mjs' }
+    if ($appId -in @('qoder','zcode','deepseek-harness','antigravity','opencode')) {
         $required += @('Vazirmatn-Regular.woff2','Vazirmatn-Bold.woff2') | ForEach-Object { Join-Path $adapter ('assets\' + $_) }
     }
     foreach ($file in $required) { if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { throw 'RTL files are missing. Install the full VibeHub package first.' } }
@@ -145,12 +145,16 @@ function Find-RegisteredAppPath([string]$id) {
         'zcode' { '^ZCode(?:\s+.*)?$' }
         'qoder' { '^Qoder(?:\s+.*)?$' }
         'deepseek-harness' { '^DeepSeek Harness(?:\s+.*)?$' }
+        'opencode' { '^OpenCode(?:\s+.*)?$' }
+        'claude-desktop' { '^Claude(?: Desktop)?(?:\s+.*)?$' }
         default { return $null }
     }
     $exeNames = switch ($id) {
         'zcode' { @('ZCode.exe') }
         'qoder' { @('Qoder IDE.exe', 'Qoder.exe') }
         'deepseek-harness' { @('DeepSeek Harness.exe') }
+        'opencode' { @('OpenCode.exe') }
+        'claude-desktop' { @('Claude.exe') }
     }
     $registrations = @(Read-UninstallEntries | Where-Object { $_.DisplayName -match $pattern })
     foreach ($entry in $registrations) {
@@ -285,13 +289,31 @@ function Find-App([string]$id) {
         }
         'zcode' { $candidates = @("$env:ProgramFiles\ZCode\ZCode.exe", "${env:ProgramFiles(x86)}\ZCode\ZCode.exe", "$env:LOCALAPPDATA\Programs\ZCode\ZCode.exe") }
         'deepseek-harness' { $candidates = @("$env:LOCALAPPDATA\Programs\DeepSeek Harness\DeepSeek Harness.exe") }
+        'opencode' { $candidates = @("$env:LOCALAPPDATA\Programs\ai.opencode.desktop\OpenCode.exe") }
+        'claude-desktop' {
+            $candidates = @("$env:LOCALAPPDATA\Programs\Claude\Claude.exe", "$env:LOCALAPPDATA\Claude\Claude.exe")
+            foreach ($package in @(Get-AppxPackage -Name 'Claude' -ErrorAction SilentlyContinue)) {
+                $candidates += Join-Path $package.InstallLocation 'app\Claude.exe'
+                $candidates += Join-Path $package.InstallLocation 'Claude.exe'
+                try {
+                    $manifest = Get-AppxPackageManifest -Package $package -ErrorAction Stop
+                    foreach ($application in @($manifest.Package.Applications.Application)) {
+                        if ([IO.Path]::GetFileName([string]$application.Executable) -ieq 'Claude.exe') {
+                            $candidates += Join-Path $package.InstallLocation ([string]$application.Executable)
+                        }
+                    }
+                } catch {}
+            }
+        }
         default {
             # Native file checks avoid module discovery for missing CLI commands.
-            foreach ($directory in ($env:PATH -split ';')) {
+            $paths = @($env:PATH, [Environment]::GetEnvironmentVariable('Path','User'), [Environment]::GetEnvironmentVariable('Path','Machine')) -join ';'
+            foreach ($directory in ($paths -split ';' | Select-Object -Unique)) {
                 if (-not $directory) { continue }
                 foreach ($extension in ($env:PATHEXT -split ';')) {
                     if (-not $extension) { continue }
-                    try { $candidate = [IO.Path]::Combine([Environment]::ExpandEnvironmentVariables($directory.Trim('"')), "$id$extension") } catch { continue }
+                    $commandName = if ($id -eq 'claude-code') { 'claude' } else { $id }
+                    try { $candidate = [IO.Path]::Combine([Environment]::ExpandEnvironmentVariables($directory.Trim('"')), "$commandName$extension") } catch { continue }
                     if ([IO.File]::Exists($candidate)) { return $candidate }
                 }
             }
@@ -303,7 +325,7 @@ function Find-App([string]$id) {
 }
 
 function Detect-Apps {
-    @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','antigravity','chatgpt') | ForEach-Object {
+    @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','antigravity','chatgpt','claude-desktop','claude-code') | ForEach-Object {
         $path = Find-App $_
         $result = @{ id = $_; installed = [bool]$path; via = 'standard-path-or-PATH' }
         if ($path) { $result.path = $path; $version = (Get-Item -LiteralPath $path).VersionInfo.ProductVersion; if ($version) { $result.version = $version } }
@@ -328,16 +350,16 @@ function Detect-Editors {
 }
 
 function Get-RtlComponents([string]$resourceRoot) {
-    $names = @{zcode='ZCode';qoder='Qoder';'deepseek-harness'='DeepSeekHarness';antigravity='Antigravity'}
-    $labels = @{zcode='ZCode';qoder='Qoder';'deepseek-harness'='DeepSeek Harness';antigravity='Antigravity'}
+    $names = @{zcode='ZCode';qoder='Qoder';'deepseek-harness'='DeepSeekHarness';antigravity='Antigravity';opencode='OpenCode'}
+    $labels = @{zcode='ZCode';qoder='Qoder';'deepseek-harness'='DeepSeek Harness';antigravity='Antigravity';opencode='OpenCode'}
     $runtime = (Test-Path -LiteralPath (Join-Path $resourceRoot 'runtime\node.exe') -PathType Leaf) -or
         (Test-Path -LiteralPath (Join-Path $resourceRoot 'apps\desktop\src-tauri\windows\payload\node.exe') -PathType Leaf)
-    foreach ($id in @('zcode','qoder','deepseek-harness','antigravity')) {
+    foreach ($id in @('zcode','qoder','deepseek-harness','antigravity','opencode')) {
         $adapter = Join-Path $resourceRoot ('apps\' + $names[$id])
         $required = @((Join-Path $resourceRoot 'apps\rtl-paths.ps1'), (Join-Path $resourceRoot 'apps\rtl-direction.mjs'))
         $required += @('start.ps1','launch.vbs','injector.mjs','rtl.ico') | ForEach-Object { Join-Path $adapter $_ }
-        if ($id -in @('qoder','antigravity')) { $required += Join-Path $adapter 'style.mjs' }
-        if ($id -in @('qoder','deepseek-harness')) { $required += @('Vazirmatn-Regular.woff2','Vazirmatn-Bold.woff2') | ForEach-Object { Join-Path $adapter ('assets\' + $_) } }
+        if ($id -in @('qoder','antigravity','opencode')) { $required += Join-Path $adapter 'style.mjs' }
+        if ($id -in @('qoder','zcode','deepseek-harness','antigravity','opencode')) { $required += @('Vazirmatn-Regular.woff2','Vazirmatn-Bold.woff2') | ForEach-Object { Join-Path $adapter ('assets\' + $_) } }
         $available = $runtime -and ($required | ForEach-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Where-Object { -not $_ } | Measure-Object).Count -eq 0 -and [bool](Find-App $id)
         $shortcut = Join-Path ([Environment]::GetFolderPath('Programs')) ('VibeHub\' + $labels[$id] + ' RTL.lnk')
         $configured = $false
@@ -365,6 +387,7 @@ function Get-LaunchState($state, [string]$appId = '') {
                 'qoder' { 'Qoder.exe'; 'Qoder IDE.exe' }
                 'deepseek-harness' { 'DeepSeek Harness.exe' }
                 'antigravity' { 'Antigravity.exe' }
+                'opencode' { 'OpenCode.exe' }
             })
             if (-not $names.Count) { throw 'Cannot verify the application for this RTL session.' }
             $nameFilter = ($names | ForEach-Object { "Name='$_'" }) -join ' OR '
@@ -615,7 +638,7 @@ try {
             } finally { if (Test-Path -LiteralPath $download) { Remove-Item -LiteralPath $download } }
         }
         'app-path' {
-            $names = @{qoder=@('Qoder.exe','Qoder IDE.exe','QoderAI.exe');zcode=@('ZCode.exe');'deepseek-harness'=@('DeepSeek Harness.exe','DeepSeek.exe');antigravity=@('Antigravity.exe')}
+            $names = @{qoder=@('Qoder.exe','Qoder IDE.exe','QoderAI.exe');zcode=@('ZCode.exe');'deepseek-harness'=@('DeepSeek Harness.exe','DeepSeek.exe');antigravity=@('Antigravity.exe');opencode=@('OpenCode.exe');chatgpt=@('ChatGPT.exe','Codex.exe');'claude-desktop'=@('Claude.exe');'claude-code'=@('claude.exe','claude.cmd','claude.bat');mimocode=@('mimocode.exe','mimocode.cmd','mimocode.bat');freebuff=@('freebuff.exe','freebuff.cmd','freebuff.bat')}
             $id = [string]$request.appId
             $path = [string]$request.path
             if (-not $names.ContainsKey($id) -or -not [IO.Path]::IsPathRooted($path) -or -not (Test-Path -LiteralPath $path -PathType Leaf) -or [IO.Path]::GetFileName($path) -notin $names[$id]) { throw 'Select the executable belonging to this application.' }
@@ -624,7 +647,7 @@ try {
         }
         'focus-app' {
             $id = [string]$request.appId
-            if ($id -notin @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','antigravity','chatgpt')) { throw 'Unknown app' }
+            if ($id -notin @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','antigravity','chatgpt','claude-desktop','claude-code')) { throw 'Unknown app' }
             $exe = Find-App $id
             $target = Get-Process -ErrorAction SilentlyContinue | Where-Object { try { $_.Path -ieq $exe -and $_.MainWindowHandle -ne 0 } catch { $false } } | Select-Object -First 1
             if (-not $exe -or -not $target) { throw 'No application window was found.' }
@@ -647,25 +670,29 @@ try {
         }
         'rtl-setup' {
             $id = [string]$request.appId
-            if ($id -notin @('zcode','qoder','deepseek-harness','antigravity')) { throw 'RTL is unavailable for this app.' }
+            if ($id -notin @('zcode','qoder','deepseek-harness','antigravity','opencode')) { throw 'RTL is unavailable for this app.' }
             if (-not (Find-App $id)) { throw 'Install the application first, then check again in VibeHub.' }
             Install-HubRtlShortcut $root $id ([Environment]::GetFolderPath('Programs'))
         }
         'launch' {
             $id = [string]$request.req.appId
-            if ($id -notin @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','antigravity','chatgpt')) { throw 'Unknown app' }
+            if ($id -notin @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','antigravity','chatgpt','claude-desktop','claude-code')) { throw 'Unknown app' }
             $exe = Find-App $id
             if (-not $exe -and -not $request.req.rtl) { throw 'App is not installed in a recognized location.' }
             $cwd = if ($request.req.cwd) { [string]$request.req.cwd } else { [Environment]::GetFolderPath('UserProfile') }
             if (-not (Test-Path -LiteralPath $cwd -PathType Container)) { throw 'Working directory does not exist.' }
+            if ($id -in @('mimocode','freebuff','claude-code')) {
+                $env:PATH = (@($env:PATH, [Environment]::GetEnvironmentVariable('Path','User'), [Environment]::GetEnvironmentVariable('Path','Machine')) -join ';')
+            }
             $env:VIBEHUB_PROJECT = if ($request.req.cwd) { $cwd } else { '' }
             if ($request.proxyUrl) { $env:HTTP_PROXY=$request.proxyUrl; $env:HTTPS_PROXY=$request.proxyUrl; $env:ALL_PROXY=$request.proxyUrl; $env:NO_PROXY='localhost,127.0.0.1,::1' }
             elseif ($request.direct) { foreach ($name in @('HTTP_PROXY','HTTPS_PROXY','ALL_PROXY','NO_PROXY')) { [Environment]::SetEnvironmentVariable($name,$null,'Process') } }
             if ($request.req.rtl) {
-                $folder = switch ($id) { 'zcode' {'ZCode'} 'qoder' {'Qoder'} 'deepseek-harness' {'DeepSeekHarness'} 'antigravity' {'Antigravity'} default {throw 'RTL is unavailable for this app'} }
-                $port = switch ($id) { 'zcode' {9222} 'qoder' {9225} 'deepseek-harness' {9228} 'antigravity' {9231} }
+                $folder = switch ($id) { 'zcode' {'ZCode'} 'qoder' {'Qoder'} 'deepseek-harness' {'DeepSeekHarness'} 'antigravity' {'Antigravity'} 'opencode' {'OpenCode'} default {throw 'RTL is unavailable for this app'} }
+                $port = switch ($id) { 'zcode' {9222} 'qoder' {9225} 'deepseek-harness' {9228} 'antigravity' {9231} 'opencode' {9234} }
                 $script = Join-Path $root "apps\$folder\start.ps1"
                 if ($id -eq 'antigravity') { $env:ANTIGRAVITY_RTL_EXE = $exe }
+                if ($id -eq 'opencode') { $env:OPENCODE_RTL_EXE = $exe }
                 $alreadyRtl = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
                 Invoke-HubRtlLauncher $script
                 if ($alreadyRtl -and $request.req.cwd) { Start-Process -FilePath $exe -ArgumentList ('"' + ($cwd.TrimEnd('\') + '\.') + '"') -WorkingDirectory $cwd | Out-Null }
@@ -674,7 +701,13 @@ try {
                 $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$($owner.OwningProcess)"
                 if ($proc.Name -ine 'node.exe' -or $proc.CommandLine -notmatch [regex]::Escape($injector)) { throw 'RTL injector ownership verification failed' }
                 @{ok=$true; rtl=$true; port=$port; injectorPid=$proc.ProcessId; injectorPath=$injector; since=[DateTime]::UtcNow.ToString('o'); detail='RTL launcher and owned injector are running'}
-            } elseif ($id -in @('opencode','mimocode','freebuff')) {
+            } elseif ($id -eq 'claude-desktop' -and ($package = @(Get-AppxPackage -Name 'Claude' -ErrorAction SilentlyContinue | Where-Object { $exe.StartsWith($_.InstallLocation + '\', [StringComparison]::OrdinalIgnoreCase) } | Select-Object -First 1)).Count) {
+                $manifest = Get-AppxPackageManifest -Package $package[0] -ErrorAction Stop
+                $application = @($manifest.Package.Applications.Application | Where-Object { [IO.Path]::GetFileName([string]$_.Executable) -ieq 'Claude.exe' } | Select-Object -First 1)
+                if (-not $application.Count) { throw 'Claude Desktop package application was not found.' }
+                Start-Process -FilePath explorer.exe -ArgumentList ('shell:AppsFolder\' + $package[0].PackageFamilyName + '!' + $application[0].Id) | Out-Null
+                @{ok=$true;rtl=$false;detail='Requested Claude Desktop activation; its process status is not verified.'}
+            } elseif ($id -in @('mimocode','freebuff','claude-code')) {
                 # Visible shell is the requested product UI. No user text is parsed as code.
                 $quotedExe = $exe.Replace("'", "''")
                 $code = "& '$quotedExe'"

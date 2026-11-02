@@ -1,4 +1,5 @@
-import type { LearningTutorial } from './schemas.ts';
+import { parseLearningFeed, type LearningArticle, type LearningCategory, type LearningTutorial } from './schemas.ts';
+export { parseLearningFeed };
 import { normalizeSearch } from './ux.ts';
 
 export const LEARNING_TOPICS = ['ui', 'documents', 'testing', 'models', 'integrations', 'extensions'] as const;
@@ -24,4 +25,16 @@ export function groupTutorials(entries: LearningTutorial[], filter: {
     normalizeSearch([item.name, item.id, item.kind, item.summary[filter.lang], item.compatibility[filter.lang], item.install[filter.lang], item.use[filter.lang]].join(' ')).includes(needle)
   ).sort((a, b) => (a.order ?? 100) - (b.order ?? 100));
   return LEARNING_TOPICS.map(topic => ({ topic, items: items.filter(item => tutorialTopic(item) === topic) })).filter(group => group.items.length);
+}
+
+export function groupArticles(entries: LearningArticle[], categories: LearningCategory[], filter: {
+  category: string | 'all'; query: string; lang: 'fa' | 'en';
+}) {
+  const needle = normalizeSearch(filter.query);
+  const matching = entries.filter(item =>
+    (filter.category === 'all' || item.category === filter.category) &&
+    normalizeSearch([item.title[filter.lang], item.summary[filter.lang], item.id].join(' ')).includes(needle)
+  ).sort((a, b) => a.order - b.order || a.title[filter.lang].localeCompare(b.title[filter.lang]));
+  return categories.map(category => ({ category, items: matching.filter(item => item.category === category.id) }))
+    .filter(group => group.items.length);
 }

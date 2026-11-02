@@ -4,13 +4,20 @@
 // Code blocks (pre/code) are excluded on purpose so they stay LTR.
 
 import { createServer } from 'node:net';
+import { readFileSync } from 'node:fs';
 import { buildAutoHeadingDirectionScript, DIRECTION_ALIGNMENT_CSS } from '../rtl-direction.mjs';
+
+const fontFaces = [['Vazirmatn-Regular.woff2', 400], ['Vazirmatn-Bold.woff2', 700]].map(([file, weight]) => {
+  const data = readFileSync(new URL(`./assets/${file}`, import.meta.url)).toString('base64');
+  return `@font-face{font-family:'Vazirmatn';font-style:normal;font-weight:${weight};src:url(data:font/woff2;base64,${data}) format('woff2');unicode-range:U+0600-06FF,U+FB80-FBFF,U+FE70-FEFF,U+200C}`;
+}).join('\n');
 
 const PORT = Number(process.env.ZCODE_RTL_PORT) || 9222; // Chromium DevTools port ZCode is started with
 const LOCK_PORT = PORT + 1; // ensures only one injector instance runs
 const POLL_MS = 2000;   // safety-net sweep; new windows are injected in real time (see watchBrowser)
 
 const CSS = `
+${fontFaces}
 ${DIRECTION_ALIGNMENT_CSS}
 :is(p,li,h1,h2,h3,h4,h5,h6,blockquote,td,th,dd,dt,figcaption,summary),
 textarea,
@@ -18,7 +25,9 @@ textarea,
 [class*="whitespace-pre-wrap"]:not(pre):not(code) {
   unicode-bidi: plaintext;
   text-align: start;
+  font-family: 'Vazirmatn',Tahoma,'Segoe UI',sans-serif;
 }
+:is(pre,code,kbd,samp,.monaco-editor,[class*="terminal"]) { font-family:revert!important; direction:ltr!important; unicode-bidi:isolate!important }
 `;
 
 const INJECT_SOURCE = `(() => {

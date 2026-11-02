@@ -2,7 +2,7 @@ import { AppPath } from '@/components/AppPath';
 import { Projects } from '@/components/Projects';
 import { AppSummary } from '@/components/AppSummary';
 import { AppConnection } from '@/components/AppConnection';
-import { GuidesPage } from '@/features/guides/Guides';
+import { LearningPage } from '@/features/learning/Learning';
 import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -35,7 +35,7 @@ export function AppDetailsPage() {
   const tabs = ['launch', 'connections', 'guide', 'about'];
   const selectedTab = tabs.includes(params.get('tab') ?? '') ? params.get('tab')! : installed ? 'launch' : 'about';
   const lang = i18n.language.startsWith('fa') ? 'fa' : 'en';
-  const supportsRtl = app.capabilities.rtl === 'verified' || appId === 'antigravity';
+  const supportsRtl = app.capabilities.rtl === 'verified' || ['antigravity', 'opencode'].includes(appId);
   const ready = supportsRtl && ctx.components.some(c => c.id === appId && c.available && c.configured);
   const source = async (url: string) => { try { await openUrl(url); setError(null); } catch (cause) { setError(cause); } };
   const compatible = catalog.providers.filter(p => p.supportedApps[appId] && !['unknown', 'unsupported'].includes(p.supportedApps[appId]!));
@@ -71,12 +71,12 @@ export function AppDetailsPage() {
       <Badge tone={installed ? 'success' : 'muted'}>{ctx.loading ? t('ux:checking') : t(installed ? 'ux:installed' : 'ux:notInstalled')}</Badge>
       {installed?.version && <bdi className="text-muted">{installed.version}</bdi>}
       <Button variant="ghost" loading={ctx.loading} onClick={() => void ctx.refresh()} aria-label={t('apps:refreshInstalled')} title={t('apps:refreshInstalled')}><RefreshCw size={16} aria-hidden="true" /></Button>
+      <AppPath key={appId + '-quick-path'} appId={appId} />
       <Button variant="ghost" onClick={() => void source(app.websiteUrl)}>{t('ux:external')}</Button>
     </div>
     <Tabs panelId="app-panel" label={app.name} value={selectedTab} onChange={value => setParams({ tab: value })} items={[{ value: 'launch', label: t('ux:launchTab') }, { value: 'connections', label: t('ux:connections') }, { value: 'guide', label: t('ux:guideTab') }, { value: 'about', label: t('ux:aboutTab') }]} />
     <div id="app-panel" role="tabpanel" aria-labelledby={'app-panel-tab-' + selectedTab}>
       <section hidden={selectedTab !== 'launch'} className="space-y-4">
-        <AppPath key={appId + "-path"} appId={appId} />
         <Projects key={appId} appId={appId} />
         <div className="space-y-3 text-sm">
           <VerificationBadge status={app.capabilities.rtl} />
@@ -96,7 +96,7 @@ export function AppDetailsPage() {
           </Disclosure>
         </div>
       </section>
-      {selectedTab === 'guide' && <GuidesPage embedded />}
+        {selectedTab === 'guide' && <LearningPage embeddedArticleId={appId} />}
       <section hidden={selectedTab !== 'about'} className="vh-card">{access}</section>
     </div>
     <Link className="vh-button vh-button-ghost" to={'/doctor?tool=' + encodeURIComponent(appId) + '&kind=app'}>{t('ux:doctor')}</Link>

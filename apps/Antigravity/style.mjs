@@ -6,13 +6,13 @@ export const STYLE_ID = 'vibehub-antigravity-rtl-v1';
 export const CSS_TEXT = `
 :is(${PROSE}) :is(p,li,h1,h2,h3,h4,h5,h6,blockquote),
 :is(${PROSE}) .whitespace-pre-wrap,
-${INPUT}, ${INPUT} p { unicode-bidi:plaintext!important; text-align:start!important }
+${INPUT}, ${INPUT} p { unicode-bidi:plaintext!important; text-align:start!important; font-family:'Vazirmatn',Tahoma,'Segoe UI',sans-serif!important }
 :is(${PROSE}) :is(pre,code,kbd,samp,[role="terminal"],.monaco-editor),
-${INPUT} code { direction:ltr!important; unicode-bidi:isolate!important; text-align:left!important }
+${INPUT} code { direction:ltr!important; unicode-bidi:isolate!important; text-align:left!important; font-family:revert!important }
 :is(${PROSE}) :is(td,th) { text-align:center!important }
 `;
 
-export const INJECT_JS = `(() => {
+export function injectSource(fontFaces = '') { return `(() => {
   const boot = () => {
   if (!window.__APP_CONFIG__ || window.__APP_CONFIG__.productName !== 'antigravity') return;
   const KEY = '__vibehubAntigravityRtl';
@@ -39,7 +39,7 @@ export const INJECT_JS = `(() => {
     if (!document.documentElement) return;
     const style = document.createElement('style');
     style.id = ${JSON.stringify(STYLE_ID)};
-    style.textContent = ${JSON.stringify(CSS_TEXT)};
+    style.textContent = ${JSON.stringify(CSS_TEXT)} + ${JSON.stringify(fontFaces)};
     (document.head || document.documentElement).appendChild(style);
     visit(document.documentElement);
     const observer = new MutationObserver(records => {
@@ -61,4 +61,5 @@ export const INJECT_JS = `(() => {
   // New-document CDP scripts run before Antigravity sets __APP_CONFIG__.
   document.readyState === 'loading'
     ? document.addEventListener('DOMContentLoaded', boot, {once:true}) : boot();
-})();`;
+})();`; }
+export const INJECT_JS = injectSource();

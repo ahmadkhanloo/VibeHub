@@ -84,7 +84,7 @@ export function classifyOffers(offers: Offer[], now = new Date()): OfferView[] {
     .map((offer) => {
       let state: OfferView['state'] = 'active';
       if (offer.startAt && new Date(offer.startAt) > now) state = 'upcoming';
-      if (offer.endAt && new Date(offer.endAt) < now) state = 'expired';
+      if (offer.endAt && new Date(offer.endAt) <= now) state = 'expired';
       return { ...offer, state };
     })
     .sort((a, b) => (b.verifiedAt > a.verifiedAt ? 1 : -1));

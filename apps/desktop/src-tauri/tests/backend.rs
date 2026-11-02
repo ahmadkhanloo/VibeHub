@@ -648,8 +648,8 @@ fn feed_downloads_the_catalog_and_bilingual_guides_from_a_real_http_server() {
     let index: serde_json::Value = serde_json::from_slice(&std::fs::read(root.join("offers/index.json")).unwrap()).unwrap();
     let app_count = index["apps"].as_array().unwrap().len();
     let provider_count = index["providers"].as_array().unwrap().len();
-    // Index, app manifests + bilingual guides, two shared review guides, learning.
-    let request_count = 4 + app_count * 3 + provider_count + index["offers"].as_array().unwrap().len();
+    // Index, app manifests + bilingual guides, two shared review guides, learning, optional new indexes.
+    let request_count = 6 + app_count * 3 + provider_count + index["offers"].as_array().unwrap().len();
     let server = std::thread::spawn(move || {
         use std::io::{Read, Write};
         let start = std::time::Instant::now();
@@ -671,6 +671,11 @@ fn feed_downloads_the_catalog_and_bilingual_guides_from_a_real_http_server() {
                 .nth(1)
                 .unwrap()
                 .trim_start_matches('/');
+            if path == "learning/index.json" || path == "news/index.json" {
+                write!(stream, "HTTP/1.1 404 Not Found\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{{}}").unwrap();
+                requests += 1;
+                continue;
+            }
             let file = if path == "index.json" {
                 root.join("offers/index.json")
             } else if let Some(guide) = path.strip_prefix("guides/") {
@@ -704,6 +709,8 @@ fn feed_downloads_the_catalog_and_bilingual_guides_from_a_real_http_server() {
             .join("../../../content/learning/extensions.json")).unwrap(),
     ).unwrap();
     assert_eq!(result["learning"], learning);
+    assert!(result.get("learningArticles").is_none());
+    assert!(result.get("news").is_none());
     assert!(
         result["guides"]["qoder/fa"]
             .as_str()

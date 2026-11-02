@@ -7,6 +7,7 @@ import {
   Route,
   Routes,
   useLocation,
+  useParams,
 } from "react-router-dom";
 import "@/styles/main.css";
 import "@/styles/workbench.css";
@@ -16,9 +17,6 @@ import { ToolProvider } from "@/app/tool-context";
 import { WindowTitlebar } from "@/app/WindowTitlebar";
 const SearchPage = lazy(async () => ({
   default: (await import("@/features/explore/Search")).SearchPage,
-}));
-const GuidesPage = lazy(async () => ({
-  default: (await import("@/features/guides/Guides")).GuidesPage,
 }));
 import { AppShell } from "@/app/shell";
 const HomePage = lazy(async () => ({
@@ -48,13 +46,11 @@ const SettingsPage = lazy(async () => ({
 
 const TerminalPage = lazy(async () => ({default: (await import('@/features/terminal/Terminal')).TerminalPage}));
 const OffersPage = lazy(async () => ({default: (await import('@/features/offers/Offers')).OffersPage}));
-const ExtensionsPage = lazy(async () => ({default: (await import('@/features/guides/Extensions')).ExtensionsPage}));
-const CodeReviewPage = lazy(async () => ({default: (await import('@/features/learning/CodeReview')).CodeReviewPage}));
 const LearningPage = lazy(async () => ({default: (await import('@/features/learning/Learning')).LearningPage}));
-const LongRunningPage = lazy(async () => ({default: (await import('@/features/learning/LongRunning')).LongRunningPage}));
 const Onboarding = lazy(async () => ({default: (await import('@/features/onboarding/Onboarding')).Onboarding}));
 
 function LegacyModels() { const { search } = useLocation(); return <Navigate to={"/connections/api" + search} replace />; }
+function LegacyGuide() { const { appId } = useParams(); return <Navigate to={`/learning/${appId ?? ''}`} replace />; }
 
 function Gate() {
   return (
@@ -87,14 +83,13 @@ function Gate() {
           path="/long-running"
           element={<Navigate to="/learning/long-running" replace />}
         />
-        <Route path="/guides" element={<GuidesPage />} />
-        <Route path="/guides/extensions" element={<ExtensionsPage />} />
+        <Route path="/guides" element={<Navigate to="/learning?category=applications" replace />} />
+        <Route path="/guides/extensions" element={<Navigate to="/learning?category=skills" replace />} />
         <Route path="/accounts" element={<Navigate to="/" replace />} />
-        <Route path="/guides/:appId" element={<GuidesPage />} />
+        <Route path="/guides/:appId" element={<LegacyGuide />} />
         <Route path="/offers" element={<OffersPage />} />
         <Route path="/learning" element={<LearningPage />} />
-        <Route path="/learning/long-running" element={<LongRunningPage />} />
-        <Route path="/learning/code-review" element={<CodeReviewPage />} />
+        <Route path="/learning/:articleId" element={<LearningPage />} />
         <Route path="/models" element={<LegacyModels />} />
         <Route path="/doctor" element={<DoctorPage />} />
         <Route path="/settings" element={<SettingsPage />} />

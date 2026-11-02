@@ -1,7 +1,7 @@
 use serde_json::Value;
 
 pub type Result<T> = std::result::Result<T, String>;
-pub const APP_IDS: [&str; 8] = [
+pub const APP_IDS: [&str; 10] = [
     "zcode",
     "qoder",
     "deepseek-harness",
@@ -10,6 +10,8 @@ pub const APP_IDS: [&str; 8] = [
     "freebuff",
     "antigravity",
     "chatgpt",
+    "claude-desktop",
+    "claude-code",
 ];
 pub const EDITOR_IDS: [&str; 10] = [
     "vscode",

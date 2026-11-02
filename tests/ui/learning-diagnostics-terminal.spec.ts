@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { mockNative } from './mock';
 
-test('one learning destination keeps legacy guides active and only collapsed icons have tooltips', async ({ page }) => {
+test('one compact learning destination keeps legacy guide links active and only collapsed icons have tooltips', async ({ page }) => {
   await mockNative(page);
   await page.goto('/guides/qoder');
   const nav = page.getByRole('navigation', { name: 'Main navigation' });
@@ -14,8 +14,10 @@ test('one learning destination keeps legacy guides active and only collapsed ico
   await learn.hover();
   await expect(page.getByRole('tooltip')).toHaveText('Learn');
   await page.goto('/learning');
-  await expect(page.getByRole('heading', { name: 'Common workflow', exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'App-specific guides', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Learn', exact: true })).toBeVisible();
+  await expect(page.getByRole('searchbox', { name: 'Search learning guides' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'App guides', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Qoder/ }).first()).toBeVisible();
 });
 
 test('diagnostic groups are visible before running and settle independently including failures and reruns', async ({ page }) => {
@@ -81,7 +83,8 @@ test('Persian shaping host installation requires confirmation, exposes failures 
   await expect(dialog.getByText('Error: Fixture download failed', { exact: true })).toBeVisible();
   await dialog.getByRole('button', { name: 'Confirm', exact: true }).click();
   await expect(dialog).not.toBeVisible();
-  await expect(install).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'RtlTerminal installed', exact: true })).toBeDisabled();
+  await expect(page.getByText('Installed; check Persian rendering', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('سلام، فارسی را پیوسته می‌نویسم.', { exact: true })).toBeVisible();
 });
 
@@ -94,13 +97,29 @@ for (const language of ['fa', 'en']) {
         ? { hasOhMyPosh: false, hasNerdFont: false, themeApplied: false, hasPersianTerminal: false }
         : original(cmd, args);
     });
-    for (const width of [320, 1280]) {
+    for (const width of [390, 1280, 1440]) {
       await page.setViewportSize({ width, height: 900 });
-      for (const route of ['/learning', '/doctor', '/terminal']) {
+      for (const route of ['/learning', '/offers', '/doctor', '/terminal']) {
         await page.goto(route);
         await expect(page.locator('main h1')).toBeVisible();
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
         await page.screenshot({ path: `output/playwright/consolidated-${route.slice(1)}-${language}-${width}.png`, fullPage: true });
+      }
+    }
+    await page.evaluate(() => {
+      const key = 'vibehub.settings.v1';
+      const settings = JSON.parse(localStorage.getItem(key) ?? '{}');
+      settings.themeMode = 'dark';
+      localStorage.setItem(key, JSON.stringify(settings));
+    });
+    for (const width of [390, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      for (const route of ['/learning', '/offers', '/terminal']) {
+        await page.goto(route);
+        await expect(page.locator('main h1')).toBeVisible();
+        await expect(page.locator('html')).toHaveAttribute('data-mode', 'dark');
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        await page.screenshot({ path: `output/playwright/dark-${route.slice(1)}-${language}-${width}.png`, fullPage: true });
       }
     }
   });

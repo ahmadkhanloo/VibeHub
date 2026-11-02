@@ -16,11 +16,11 @@ Install the Windows app from the [official website](https://antigravity.google/)
 The selected profile is requested on the next launch. Close an existing app yourself first. Routing all app traffic through the proxy is not verified.
 
 ## Plugins and skills
-Open Plugins and skills in Guides for installation steps and compatibility information.
+See the [shared skill guide](/learning/skill-basics) for compatibility, installation and removal; check each plugin source for app-specific limits.
 
 ## Experimental RTL
 Normal mode is the default. Choose RTL for the chat adapter; live rendering in the installed app remains unverified. This adapter targets the standalone app, not Antigravity IDE.
 
-## Set up RTL from VibeHub
+## Shared RTL setup
 
-After installing the app, return to VibeHub or choose Check again. Choose Set up RTL on its tile to create a Start Menu shortcut and select RTL for the next launch. Setup uses bundled files and does not start or close the app. [Full setup and recovery instructions](https://github.com/ahmadkhanloo/VibeHub/blob/main/docs/tutorials/rtl-setup.en.md).
+See the [Persian text and RTL guide](/learning/rtl-setup) for common installation, launch and recovery steps. Live rendering in Antigravity remains unverified.

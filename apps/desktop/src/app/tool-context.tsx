@@ -221,7 +221,7 @@ export function ToolProvider({ children }: { children: ReactNode }) {
     if (inFlight.current.has(key)) return;
     const rtlAvailable =
       components.some((c) => c.id === id && c.available && c.configured) &&
-      (id === "antigravity" || catalog.apps.some(
+      (["antigravity", "opencode"].includes(id) || catalog.apps.some(
         (a) => a.id === id && a.capabilities.rtl === "verified",
       ));
     const managed = kind === "app" || id === "antigravity";

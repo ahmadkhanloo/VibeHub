@@ -25,7 +25,7 @@ test("search includes model services and targets selected provider without savin
 test("add-app lists only uninstalled tools without catalog filters or tabs", async ({ page }) => {
   await mockNative(page);
   await page.goto("/discover");
-  await expect(page.locator('.vh-catalog-tile')).toHaveCount(8);
+  await expect(page.locator('.vh-catalog-tile')).toHaveCount(9);
   await expect(page.getByRole('link', { name: /Qoder/ })).toBeVisible();
   await expect(page.getByRole('link', { name: /ZCode/ })).toHaveCount(0);
   await expect(page.getByRole('tab')).toHaveCount(0);

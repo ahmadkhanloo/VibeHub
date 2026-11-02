@@ -31,6 +31,7 @@ try {
     ZCode = @('rtl.ico', 'rtl-shortcut.ico', 'start.ps1', 'launch.vbs', 'injector.mjs')
     Qoder = @('rtl.ico', 'rtl-shortcut.ico', 'start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs', 'doctor.mjs', 'LICENSE')
     Antigravity = @('rtl.ico', 'rtl-shortcut.ico', 'start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs')
+    OpenCode = @('rtl.ico', 'start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs')
     DeepSeekHarness = @('rtl.ico', 'rtl-shortcut.ico', 'start.ps1', 'launch.vbs', 'injector.mjs')
   }
   foreach ($id in $files.Keys) {
@@ -40,7 +41,7 @@ try {
     foreach ($file in $files[$id]) {
       Copy-Item -LiteralPath (Join-Path $root "apps\$id\$file") -Destination $destination
     }
-    if ($id -in @('Qoder', 'DeepSeekHarness')) {
+    if ($id -in @('Qoder', 'ZCode', 'DeepSeekHarness', 'Antigravity', 'OpenCode')) {
       Copy-Item -LiteralPath (Join-Path $root "apps\$id\assets") -Destination $destination -Recurse
     }
   }

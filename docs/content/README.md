@@ -8,7 +8,8 @@ The app downloads validated catalog, guide, learning, and offer data from the re
 - `content/providers/<id>.json`: provider name, official site, API key link, logo key, free access summary, supported-app status and bilingual setup notes.
 - `content/offers/<offer-id>.json` and `content/offers/index.json`: curated offer records and the list included in the feed.
 - `scripts/collect-offers.mjs`: allowlisted official pages and narrow parsers for automatically checked offers. A new source needs an explicit parser; an unrecognized page is kept as stale/reported data instead of being published as verified.
-- `content/learning/`: structured lessons. See [the learning content guide](../../content/learning/README.md).
+- `content/learning/index.json` and its Markdown files: bilingual lesson index, categories, summaries and full articles. See [the learning content guide](../../content/learning/README.md).
+- `content/news/index.json`: standalone bilingual news records, separate from offer records and their expiry fields.
 - `docs/tutorials/<app-id>/{fa,en}.md`: app-specific guides.
 - `apps/desktop/src/assets/providers/`: bundled provider favicons and their `sources.json` provenance. A missing or unknown logo uses the initials fallback. Adding a new bundled logo requires a client build.
 
@@ -16,7 +17,7 @@ Keep stable IDs, bilingual text, official HTTPS sources, and real review dates. 
 
 ## Publish a suggestion, offer, or news item
 
-1. Copy an existing JSON record with the same shape, choose a unique ASCII ID, add both Persian and English text, and update `content/offers/index.json` if it is a curated record. Keep `sourceUrl`, `publishedAt`, `verifiedAt`, status, eligibility, and any start/end dates accurate.
+1. For an offer, copy an offer JSON record, choose a unique ASCII ID, add both Persian and English text, and update `content/offers/index.json`. Keep `sourceUrl`, review dates, status, eligibility, and start/end dates accurate. For news, add a separate record to the `news` array in `content/news/index.json`; include bilingual title, summary and Markdown body, `publishedAt`, `checkedAt`, `sourceUrl`, and an optional `appId`. Do not give general news an offer expiry.
 2. Run `pnpm.cmd content:validate` and `node --test tests/content-site.test.mjs` locally.
 3. Commit to `main`, or merge a reviewed pull request into `main`. The workflow watches `content/**`, validates the data and builds the static site. It also checks known official offer sources hourly.
 4. In GitHub Actions, confirm the **Publish VibeHub content feed** run completed successfully and the **Deploy to GitHub Pages** job succeeded. A commit alone does not publish the new feed.

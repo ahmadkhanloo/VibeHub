@@ -15,7 +15,8 @@ export function notificationEvents(offers: Offer[], now: Date, quiet: { enabled:
   const events: { key: string; offer: Offer; kind: 'change' | 'claim' | 'expiry' }[] = [];
   for (const offer of offers) {
     if (offer.status !== 'verified' || offer.sourceState === 'stale' || offer.sourceState === 'unavailable' || (offer.startAt && +new Date(offer.startAt) > +now) || (offer.endAt && +new Date(offer.endAt) <= +now)) continue;
-    if (+now - +new Date(offer.checkedAt ?? offer.verifiedAt) > 48 * 3600000) continue;
+    const sourceAge = +now - +new Date(offer.checkedAt ?? offer.verifiedAt);
+    if (!Number.isFinite(sourceAge) || sourceAge < 0 || sourceAge > 48 * 3600000) continue;
     const revision = offer.revision ?? JSON.stringify([offer.summary, offer.endAt, offer.benefit]);
     const window = claimWindow(offer, now);
     events.push({ key: `${offer.offerId}:change:${revision}`, offer, kind: 'change' });

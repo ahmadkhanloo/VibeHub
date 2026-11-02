@@ -49,7 +49,7 @@ export function HomePage() {
               : tool.id === 'antigravity-ide' && <p className="vh-app-description">{t('workbench:ideProvider')}<span aria-hidden="true"> · </span>{t('workbench:ideFreeAccess')}</p>}
             <AppSummary appId={tool.id} />
             {tool.version && <span className="vh-app-version"><bdi>{tool.version}</bdi></span>}
-            <LaunchControls id={tool.id} name={name} kind={tool.kind} compact supportsRtl={tool.kind === 'app' && (tool.id === 'antigravity' || tool.app?.capabilities.rtl === 'verified')} />
+            <LaunchControls id={tool.id} name={name} kind={tool.kind} compact supportsRtl={tool.kind === 'app' && (['antigravity', 'opencode'].includes(tool.id) || tool.app?.capabilities.rtl === 'verified')} />
           </article>;
         })}
       </div>
