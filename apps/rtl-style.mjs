@@ -46,17 +46,34 @@ export function buildScopedTextCss({ prose = [], composers = [], guards = [], fa
   return rules.join('\n');
 }
 
-export function buildIdempotentStyleSource({ styleId, css, observerKey, autoHeadingSelector, shadowHostSelectors = [] } = {}) {
+export function buildIdempotentStyleSource({
+  styleId,
+  css,
+  observerKey,
+  autoHeadingSelector,
+  autoDirectionSelector,
+  shadowHostSelectors = [],
+} = {}) {
   if (typeof styleId !== 'string' || !styleId.trim()) throw new TypeError('styleId is required');
   if (typeof observerKey !== 'string' || !observerKey.trim()) throw new TypeError('observerKey is required');
 
   const shadowSelectors = selectors(shadowHostSelectors);
+  const directionSelectors = [...new Set([
+    ...selectors(autoHeadingSelector),
+    ...selectors(autoDirectionSelector),
+  ])];
   return `(() => {
   const STYLE_ID = ${JSON.stringify(styleId)};
   const CSS_TEXT = ${JSON.stringify(String(css ?? ''))};
   const OBSERVER_KEY = ${JSON.stringify(observerKey)};
   const SHADOW_HOST_SELECTORS = ${JSON.stringify(shadowSelectors)};
-  const AUTO_HEADING_SELECTOR = ${JSON.stringify(autoHeadingSelector || '')};
+  const AUTO_DIRECTION_SELECTOR = ${JSON.stringify(directionSelectors.join(','))};
+  const INSTALLER_SIGNATURE = JSON.stringify({
+    styleId: STYLE_ID,
+    css: CSS_TEXT,
+    shadowHostSelectors: SHADOW_HOST_SELECTORS,
+    autoDirectionSelector: AUTO_DIRECTION_SELECTOR,
+  });
 
   const findStyle = (root) => {
     if (!root || typeof root.querySelectorAll !== 'function') return null;
@@ -76,13 +93,13 @@ export function buildIdempotentStyleSource({ styleId, css, observerKey, autoHead
       style.textContent = CSS_TEXT;
     }
   };
-  const markAutoHeadings = (root) => {
-    if (!AUTO_HEADING_SELECTOR || !root || typeof root.querySelectorAll !== 'function') return;
+  const markAutoDirections = (root) => {
+    if (!AUTO_DIRECTION_SELECTOR || !root || typeof root.querySelectorAll !== 'function') return;
     const mark = (element) => {
       if (!element.hasAttribute('dir')) element.setAttribute('dir', 'auto');
     };
-    if (root.nodeType === 1 && root.matches(AUTO_HEADING_SELECTOR)) mark(root);
-    for (const element of root.querySelectorAll(AUTO_HEADING_SELECTOR)) mark(element);
+    if (root.nodeType === 1 && root.matches(AUTO_DIRECTION_SELECTOR)) mark(root);
+    for (const element of root.querySelectorAll(AUTO_DIRECTION_SELECTOR)) mark(element);
   };
   const matchingHosts = (root) => {
     if (!root || typeof root.querySelectorAll !== 'function' || !SHADOW_HOST_SELECTORS.length) return [];
@@ -100,29 +117,35 @@ export function buildIdempotentStyleSource({ styleId, css, observerKey, autoHead
       if (!shadowRoot || visited.has(shadowRoot)) continue;
       visited.add(shadowRoot);
       installStyle(shadowRoot);
-      markAutoHeadings(shadowRoot);
+      markAutoDirections(shadowRoot);
       installShadowRoots(shadowRoot, visited);
     }
   };
   const installDocument = () => {
     installStyle(document);
-    markAutoHeadings(document);
+    markAutoDirections(document);
     installShadowRoots(document);
   };
 
   installDocument();
+  const previousObserver = window[OBSERVER_KEY];
+  if (previousObserver && previousObserver.__vibehubInstallerSignature !== INSTALLER_SIGNATURE) {
+    if (typeof previousObserver.disconnect === 'function') previousObserver.disconnect();
+    delete window[OBSERVER_KEY];
+  }
   if (!window[OBSERVER_KEY]) {
     const observer = new MutationObserver((records) => {
       installStyle(document);
       for (const record of records) {
         for (const node of record.addedNodes) {
           if (node.nodeType !== 1) continue;
-          markAutoHeadings(node);
+          markAutoDirections(node);
           installShadowRoots(node);
         }
       }
     });
     observer.observe(document, { childList: true, subtree: true });
+    observer.__vibehubInstallerSignature = INSTALLER_SIGNATURE;
     window[OBSERVER_KEY] = observer;
   }
 })();`;

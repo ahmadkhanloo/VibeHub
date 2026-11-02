@@ -236,6 +236,70 @@ function Find-DesktopProduct([string]$id, [switch]$All) {
     return $null
 }
 
+function Resolve-OpenAIProduct([string]$packageName, [string]$executablePath) {
+    if ([string]::IsNullOrWhiteSpace($packageName) -or [string]::IsNullOrWhiteSpace($executablePath)) { return 'unknown' }
+    try { $path = [IO.Path]::GetFullPath($executablePath) } catch { return 'unknown' }
+    $codexPath = '(?i)\\WindowsApps\\OpenAI\.Codex_\d+(?:\.\d+){2,3}_x64__2p2nqsd0c76g0\\app\\ChatGPT\.exe$'
+    $chatGptPath = '(?i)\\WindowsApps\\OpenAI\.ChatGPT_\d+(?:\.\d+){2,3}_x64__2p2nqsd0c76g0\\app\\ChatGPT\.exe$'
+    if ($packageName -ieq 'OpenAI.Codex' -and $path -match $codexPath) { return 'codex' }
+    if ($packageName -ieq 'OpenAI.ChatGPT' -and $path -match $chatGptPath) { return 'chatgpt' }
+    return 'unknown'
+}
+
+function Get-OpenAIProductForPath([string]$executablePath) {
+    if ([string]::IsNullOrWhiteSpace($executablePath)) { return 'unknown' }
+    foreach ($packageName in @('OpenAI.Codex','OpenAI.ChatGPT')) {
+        foreach ($package in @(Get-AppxPackage -Name $packageName -ErrorAction SilentlyContinue)) {
+            $candidate = Join-Path $package.InstallLocation 'app\ChatGPT.exe'
+            if ($executablePath -ieq $candidate) {
+                return Resolve-OpenAIProduct $package.Name $candidate
+            }
+        }
+    }
+    return 'unknown'
+}
+
+function Get-CodexRtlAvailability([string]$resourceRoot, [string]$packageName, [string]$executablePath, [bool]$cdpLaunchVerified = $false) {
+    $resolvedProduct = Resolve-OpenAIProduct $packageName $executablePath
+    $adapter = Join-Path $resourceRoot 'apps\CodexDesktop'
+    $required = @(
+        (Join-Path $resourceRoot 'apps\rtl-paths.ps1'),
+        (Join-Path $resourceRoot 'apps\rtl-direction.mjs'),
+        (Join-Path $adapter 'start.ps1'),
+        (Join-Path $adapter 'launch.vbs'),
+        (Join-Path $adapter 'injector.mjs'),
+        (Join-Path $adapter 'style.mjs'),
+        (Join-Path $adapter 'cdp-targets.mjs'),
+        (Join-Path $adapter 'rtl.ico'),
+        (Join-Path $adapter 'assets\Vazirmatn-Regular.woff2'),
+        (Join-Path $adapter 'assets\Vazirmatn-Bold.woff2')
+    )
+    $runtime = (Test-Path -LiteralPath (Join-Path $resourceRoot 'runtime\node.exe') -PathType Leaf) -or
+        (Test-Path -LiteralPath (Join-Path $resourceRoot 'apps\desktop\src-tauri\windows\payload\node.exe') -PathType Leaf)
+    $filesPresent = @($required | Where-Object { -not (Test-Path -LiteralPath $_ -PathType Leaf) }).Count -eq 0
+    $available = $resolvedProduct -eq 'codex' -and $cdpLaunchVerified -and
+        (Test-Path -LiteralPath $executablePath -PathType Leaf) -and $runtime -and $filesPresent
+    $reason = if ($resolvedProduct -eq 'chatgpt') {
+        'RTL is unavailable for ordinary ChatGPT; only Codex Desktop is eligible.'
+    } elseif ($resolvedProduct -ne 'codex') {
+        'The OpenAI executable is not tied to a verified OpenAI desktop package.'
+    } elseif (-not $cdpLaunchVerified) {
+        'Codex Desktop RTL is unavailable because a supported CDP startup path has not been verified for the installed package.'
+    } elseif (-not $runtime -or -not $filesPresent) {
+        'Codex Desktop RTL files or the bundled runtime are missing.'
+    } else { '' }
+    @{id='chatgpt';available=[bool]$available;configured=$false;setupSupported=($resolvedProduct -eq 'codex' -and $cdpLaunchVerified);product=$resolvedProduct;reason=$reason}
+}
+
+function CodexRtlStatus([string]$resourceRoot, [string]$executablePath = (Find-App 'chatgpt')) {
+    $package = @(Get-AppxPackage -Name 'OpenAI.Codex' -ErrorAction SilentlyContinue |
+        Where-Object { $executablePath -ieq (Join-Path $_.InstallLocation 'app\ChatGPT.exe') } |
+        Select-Object -First 1)
+    $packageName = if ($package.Count) { [string]$package[0].Name } else { '' }
+    # Keep this false until the AppX launch route and account-preserving CDP profile are verified on the installed app.
+    Get-CodexRtlAvailability $resourceRoot $packageName $executablePath $false
+}
+
 function Codex-DesktopState {
     $paths = @(Find-DesktopProduct 'chatgpt' -All)
     $processes = @(Get-Process -Name ChatGPT,Codex -ErrorAction SilentlyContinue)
@@ -267,6 +331,9 @@ function Invoke-HubRtlLauncher([string]$launcherPath) {
 }
 
 function Find-App([string]$id) {
+    # Desktop/CLI are separate catalog products. Until an official Windows executable
+    # and its renderer are identified, never resolve this ID through a command shim.
+    if ($id -eq 'freebuff-desktop') { return $null }
     if (Get-Command Get-RtlSavedPath -ErrorAction SilentlyContinue) { $saved = Get-RtlSavedPath $id; if ($saved) { return $saved } }
     if ($id -eq 'antigravity-ide') { $editor = Detect-Editors | Where-Object { $_.id -eq $id } | Select-Object -First 1; if ($editor) { return [string]$editor.path }; return $null }
     if ($id -in @('antigravity','chatgpt')) { return Find-DesktopProduct $id }
@@ -325,9 +392,10 @@ function Find-App([string]$id) {
 }
 
 function Detect-Apps {
-    @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','antigravity','chatgpt','claude-desktop','claude-code') | ForEach-Object {
+    @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','freebuff-desktop','antigravity','chatgpt','claude-desktop','claude-code') | ForEach-Object {
         $path = Find-App $_
-        $result = @{ id = $_; installed = [bool]$path; via = 'standard-path-or-PATH' }
+        $via = if ($_ -eq 'freebuff-desktop') { 'official-product-unverified' } else { 'standard-path-or-PATH' }
+        $result = @{ id = $_; installed = [bool]$path; via = $via }
         if ($path) { $result.path = $path; $version = (Get-Item -LiteralPath $path).VersionInfo.ProductVersion; if ($version) { $result.version = $version } }
         $result
     }
@@ -371,33 +439,85 @@ function Get-RtlComponents([string]$resourceRoot) {
                 $configured = $target -ieq $expected -and (Test-Path -LiteralPath $target -PathType Leaf)
             } catch { $configured = $false }
         }
-        @{id=$id;available=$available;configured=$configured}
+        @{id=$id;available=$available;configured=$configured;setupSupported=$true}
     }
+    @{id='freebuff-desktop';available=$false;configured=$false;setupSupported=$false;reason='RTL is unavailable because the official executable and renderer have not been verified.'}
+    CodexRtlStatus $resourceRoot
+}
+
+function Get-RtlSessionBinding([string]$appId) {
+    $binding = switch ($appId) {
+        'zcode' { @{folder='ZCode';defaultPort=9222;portVariable='ZCODE_RTL_PORT';processNames=@('ZCode.exe')} }
+        'qoder' { @{folder='Qoder';defaultPort=9225;portVariable='QODER_RTL_PORT';processNames=@('Qoder.exe','Qoder IDE.exe')} }
+        'deepseek-harness' { @{folder='DeepSeekHarness';defaultPort=9228;portVariable='DEEPSEEK_HARNESS_RTL_PORT';processNames=@('DeepSeek Harness.exe','DeepSeek.exe')} }
+        'antigravity' { @{folder='Antigravity';defaultPort=9231;portVariable='ANTIGRAVITY_RTL_PORT';processNames=@('Antigravity.exe')} }
+        'opencode' { @{folder='OpenCode';defaultPort=9234;portVariable='OPENCODE_RTL_PORT';processNames=@('OpenCode.exe')} }
+        default { return $null }
+    }
+    $port = [int]$binding.defaultPort
+    $override = [Environment]::GetEnvironmentVariable([string]$binding.portVariable)
+    if ($override) {
+        $parsed = 0
+        if (-not [int]::TryParse($override, [ref]$parsed) -or $parsed -lt 1024 -or $parsed -gt 65534) { throw "Invalid $($binding.portVariable) RTL port." }
+        $port = $parsed
+    }
+    $adapter = Join-Path $root ('apps\' + $binding.folder)
+    @{id=$appId;folder=$binding.folder;port=$port;lockPort=($port + 1);processNames=$binding.processNames;injectorPath=[IO.Path]::GetFullPath((Join-Path $adapter 'injector.mjs'))}
+}
+
+function Stop-ManagedRtlInjector([string]$appId, $state) {
+    if (-not $state -or $state.rtl -ne $true) { return $false }
+    $binding = Get-RtlSessionBinding $appId
+    if (-not $binding) { throw 'Cannot stop an injector for an unsupported app.' }
+    if ($state.id -and [string]$state.id -cne $appId) { throw 'RTL state belongs to another app. Refusing stop.' }
+    $statePort = 0
+    if (-not [int]::TryParse([string]$state.port, [ref]$statePort) -or $statePort -ne $binding.port) { throw 'RTL state port does not match this app. Refusing stop.' }
+    $expectedPath = [IO.Path]::GetFullPath([string]$binding.injectorPath)
+    try { $statePath = [IO.Path]::GetFullPath([string]$state.injectorPath) } catch { throw 'RTL injector path is invalid. Refusing stop.' }
+    if ($statePath -ine $expectedPath) { throw 'RTL state path does not match this app injector. Refusing stop.' }
+    $injectorPid = 0
+    if (-not [int]::TryParse([string]$state.injectorPid, [ref]$injectorPid) -or $injectorPid -le 0) { throw 'RTL injector PID is invalid. Refusing stop.' }
+    $connections = @(Get-NetTCPConnection -LocalPort $binding.lockPort -State Listen -ErrorAction SilentlyContinue)
+    $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$injectorPid" -ErrorAction SilentlyContinue
+    if (-not $proc) {
+        if ($connections.Count) { throw 'The injector lock port is owned by another process. Refusing stop.' }
+        return $false
+    }
+    if ($proc.Name -ine 'node.exe' -or $proc.ProcessId -and [int]$proc.ProcessId -ne $injectorPid -or $proc.CommandLine -notmatch [regex]::Escape($expectedPath)) {
+        throw 'PID no longer belongs to this app injector. Refusing stop.'
+    }
+    if (-not $connections.Count -or @($connections | Where-Object { [int]$_.OwningProcess -ne $injectorPid }).Count) {
+        throw 'The injector no longer owns its lock port. Refusing stop.'
+    }
+    Stop-Process -Id $injectorPid -Force -ErrorAction Stop
+    $true
 }
 
 function Get-LaunchState($state, [string]$appId = '') {
     if ($state.phase -eq 'failed') { return $state }
     if ($state.rtl) {
-        $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$([int]$state.injectorPid)" -ErrorAction SilentlyContinue
-        $alive = $proc -and $proc.Name -ieq 'node.exe' -and $proc.CommandLine -match [regex]::Escape([string]$state.injectorPath)
-        if ($alive) {
-            if (-not $appId) { $appId = [string]$state.id }
-            $names = @(switch ($appId) {
-                'zcode' { 'ZCode.exe' }
-                'qoder' { 'Qoder.exe'; 'Qoder IDE.exe' }
-                'deepseek-harness' { 'DeepSeek Harness.exe' }
-                'antigravity' { 'Antigravity.exe' }
-                'opencode' { 'OpenCode.exe' }
-            })
-            if (-not $names.Count) { throw 'Cannot verify the application for this RTL session.' }
-            $nameFilter = ($names | ForEach-Object { "Name='$_'" }) -join ' OR '
-            $sessionId = [Diagnostics.Process]::GetCurrentProcess().SessionId
-            # Injectors reconnect after a window exits and can outlive the application.
-            # Their existence alone must not permanently block launching it again.
-            $application = Get-CimInstance Win32_Process -Filter "($nameFilter) AND SessionId=$sessionId" -ErrorAction Stop |
-                Where-Object { $_.CommandLine -notmatch '--type=' } | Select-Object -First 1
-            $alive = [bool]$application
-        }
+        if (-not $appId) { $appId = [string]$state.id }
+        try {
+            $binding = Get-RtlSessionBinding $appId
+            if (-not $binding -or ($state.id -and [string]$state.id -cne $appId)) { throw 'RTL state identity mismatch.' }
+            $statePort = 0
+            if (-not [int]::TryParse([string]$state.port, [ref]$statePort) -or $statePort -ne $binding.port) { throw 'RTL state port mismatch.' }
+            if ([IO.Path]::GetFullPath([string]$state.injectorPath) -ine $binding.injectorPath) { throw 'RTL state injector path mismatch.' }
+            $injectorPid = [int]$state.injectorPid
+            $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$injectorPid" -ErrorAction SilentlyContinue
+            $connections = @(Get-NetTCPConnection -LocalPort $binding.lockPort -State Listen -ErrorAction SilentlyContinue)
+            $ownsLock = $connections.Count -gt 0 -and @($connections | Where-Object { [int]$_.OwningProcess -eq $injectorPid }).Count -eq $connections.Count
+            $alive = $proc -and $proc.Name -ieq 'node.exe' -and $proc.CommandLine -match [regex]::Escape($binding.injectorPath) -and $ownsLock
+            if ($alive) {
+                $names = @($binding.processNames)
+                $nameFilter = ($names | ForEach-Object { "Name='$_'" }) -join ' OR '
+                $sessionId = [Diagnostics.Process]::GetCurrentProcess().SessionId
+                # The injector reconnects across app window lifetimes; it alone does not mean the app is open.
+                $application = Get-CimInstance Win32_Process -Filter "($nameFilter) AND SessionId=$sessionId" -ErrorAction Stop |
+                    Where-Object { $_.CommandLine -notmatch '--type=' } | Select-Object -First 1
+                $alive = [bool]$application
+            }
+        } catch { $alive = $false }
     } else { $alive = $state.pid -and [bool](Get-Process -Id ([int]$state.pid) -ErrorAction SilentlyContinue) }
     if ($alive) { return @{phase='running';rtl=[bool]$state.rtl;since=$state.since;port=$state.port} }
     if ($appId) {
@@ -647,7 +767,7 @@ try {
         }
         'focus-app' {
             $id = [string]$request.appId
-            if ($id -notin @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','antigravity','chatgpt','claude-desktop','claude-code')) { throw 'Unknown app' }
+            if ($id -notin @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','freebuff-desktop','antigravity','chatgpt','claude-desktop','claude-code')) { throw 'Unknown app' }
             $exe = Find-App $id
             $target = Get-Process -ErrorAction SilentlyContinue | Where-Object { try { $_.Path -ieq $exe -and $_.MainWindowHandle -ne 0 } catch { $false } } | Select-Object -First 1
             if (-not $exe -or -not $target) { throw 'No application window was found.' }
@@ -670,17 +790,36 @@ try {
         }
         'rtl-setup' {
             $id = [string]$request.appId
+            if ($id -eq 'freebuff-desktop') { throw 'RTL is unavailable because the official executable and renderer have not been verified.' }
+            if ($id -eq 'chatgpt') {
+                $exe = Find-App 'chatgpt'
+                $product = Get-OpenAIProductForPath $exe
+                if ($product -eq 'codex') { throw [string](CodexRtlStatus $root $exe).reason }
+                if ($product -eq 'chatgpt') { throw 'RTL is unavailable for ordinary ChatGPT; only Codex Desktop is eligible.' }
+                throw 'RTL is unavailable because the OpenAI executable could not be verified as Codex Desktop; ordinary ChatGPT is unsupported.'
+            }
             if ($id -notin @('zcode','qoder','deepseek-harness','antigravity','opencode')) { throw 'RTL is unavailable for this app.' }
             if (-not (Find-App $id)) { throw 'Install the application first, then check again in VibeHub.' }
             Install-HubRtlShortcut $root $id ([Environment]::GetFolderPath('Programs'))
         }
         'launch' {
             $id = [string]$request.req.appId
-            if ($id -notin @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','antigravity','chatgpt','claude-desktop','claude-code')) { throw 'Unknown app' }
+            if ($id -notin @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','freebuff-desktop','antigravity','chatgpt','claude-desktop','claude-code')) { throw 'Unknown app' }
+            if ($id -eq 'freebuff-desktop') { throw 'Freebuff Desktop is unavailable because its official executable path has not been verified.' }
+            if ($id -eq 'chatgpt' -and $request.req.rtl) {
+                $exe = Find-App 'chatgpt'
+                $product = Get-OpenAIProductForPath $exe
+                if ($product -eq 'codex') { throw [string](CodexRtlStatus $root $exe).reason }
+                if ($product -eq 'chatgpt') { throw 'RTL is unavailable for ordinary ChatGPT; only Codex Desktop is eligible.' }
+                throw 'RTL is unavailable because the OpenAI executable could not be verified as Codex Desktop; ordinary ChatGPT is unsupported.'
+            }
             $exe = Find-App $id
             if (-not $exe -and -not $request.req.rtl) { throw 'App is not installed in a recognized location.' }
             $cwd = if ($request.req.cwd) { [string]$request.req.cwd } else { [Environment]::GetFolderPath('UserProfile') }
             if (-not (Test-Path -LiteralPath $cwd -PathType Container)) { throw 'Working directory does not exist.' }
+            if (-not $request.req.rtl -and $request.previousState -and $request.previousState.rtl) {
+                $null = Stop-ManagedRtlInjector -appId $id -state $request.previousState
+            }
             if ($id -in @('mimocode','freebuff','claude-code')) {
                 $env:PATH = (@($env:PATH, [Environment]::GetEnvironmentVariable('Path','User'), [Environment]::GetEnvironmentVariable('Path','Machine')) -join ';')
             }
@@ -688,8 +827,10 @@ try {
             if ($request.proxyUrl) { $env:HTTP_PROXY=$request.proxyUrl; $env:HTTPS_PROXY=$request.proxyUrl; $env:ALL_PROXY=$request.proxyUrl; $env:NO_PROXY='localhost,127.0.0.1,::1' }
             elseif ($request.direct) { foreach ($name in @('HTTP_PROXY','HTTPS_PROXY','ALL_PROXY','NO_PROXY')) { [Environment]::SetEnvironmentVariable($name,$null,'Process') } }
             if ($request.req.rtl) {
-                $folder = switch ($id) { 'zcode' {'ZCode'} 'qoder' {'Qoder'} 'deepseek-harness' {'DeepSeekHarness'} 'antigravity' {'Antigravity'} 'opencode' {'OpenCode'} default {throw 'RTL is unavailable for this app'} }
-                $port = switch ($id) { 'zcode' {9222} 'qoder' {9225} 'deepseek-harness' {9228} 'antigravity' {9231} 'opencode' {9234} }
+                $binding = Get-RtlSessionBinding $id
+                if (-not $binding) { throw 'RTL is unavailable for this app.' }
+                $folder = $binding.folder
+                $port = $binding.port
                 $script = Join-Path $root "apps\$folder\start.ps1"
                 if ($id -eq 'antigravity') { $env:ANTIGRAVITY_RTL_EXE = $exe }
                 if ($id -eq 'opencode') { $env:OPENCODE_RTL_EXE = $exe }
@@ -697,10 +838,10 @@ try {
                 Invoke-HubRtlLauncher $script
                 if ($alreadyRtl -and $request.req.cwd) { Start-Process -FilePath $exe -ArgumentList ('"' + ($cwd.TrimEnd('\') + '\.') + '"') -WorkingDirectory $cwd | Out-Null }
                 $injector = Join-Path $root "apps\$folder\injector.mjs"
-                $owner = Get-NetTCPConnection -LocalPort ($port+1) -State Listen -ErrorAction Stop | Select-Object -First 1
+                $owner = Get-NetTCPConnection -LocalPort $binding.lockPort -State Listen -ErrorAction Stop | Select-Object -First 1
                 $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$($owner.OwningProcess)"
-                if ($proc.Name -ine 'node.exe' -or $proc.CommandLine -notmatch [regex]::Escape($injector)) { throw 'RTL injector ownership verification failed' }
-                @{ok=$true; rtl=$true; port=$port; injectorPid=$proc.ProcessId; injectorPath=$injector; since=[DateTime]::UtcNow.ToString('o'); detail='RTL launcher and owned injector are running'}
+                if ($proc.Name -ine 'node.exe' -or $proc.CommandLine -notmatch [regex]::Escape($binding.injectorPath)) { throw 'RTL injector ownership verification failed' }
+                @{ok=$true;id=$id;rtl=$true;port=$port;injectorPid=$proc.ProcessId;injectorPath=$binding.injectorPath;since=[DateTime]::UtcNow.ToString('o');detail='RTL launcher and owned injector are running'}
             } elseif ($id -eq 'claude-desktop' -and ($package = @(Get-AppxPackage -Name 'Claude' -ErrorAction SilentlyContinue | Where-Object { $exe.StartsWith($_.InstallLocation + '\', [StringComparison]::OrdinalIgnoreCase) } | Select-Object -First 1)).Count) {
                 $manifest = Get-AppxPackageManifest -Package $package[0] -ErrorAction Stop
                 $application = @($manifest.Package.Applications.Application | Where-Object { [IO.Path]::GetFileName([string]$_.Executable) -ieq 'Claude.exe' } | Select-Object -First 1)
@@ -742,13 +883,8 @@ try {
         }
         'stop-rtl' {
             $state = $request.state
-            if (-not $state.rtl) { $false; break }
-            $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$([int]$state.injectorPid)" -ErrorAction SilentlyContinue
-            if ($proc) {
-                if ($proc.Name -ine 'node.exe' -or $proc.CommandLine -notmatch [regex]::Escape([string]$state.injectorPath)) { throw 'PID no longer belongs to the managed injector. Refusing stop.' }
-                Stop-Process -Id $proc.ProcessId -ErrorAction Stop
-            }
-            $true
+            $id = if ($request.appId) { [string]$request.appId } else { [string]$state.id }
+            Stop-ManagedRtlInjector -appId $id -state $state
         }
         'doctor' {
             foreach ($name in @('node','winget')) {

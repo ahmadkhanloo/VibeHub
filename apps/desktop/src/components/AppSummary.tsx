@@ -1,5 +1,5 @@
 import { Network } from 'lucide-react';
-import { preferredLaunchMode } from '@core';
+import { preferredLaunchMode, rtlAdapterConfigured } from '@core';
 import { useCatalog } from '@/lib/catalog';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -29,7 +29,8 @@ export function AppSummary({ appId }: { appId: string }) {
         ? profile.name
         : t(`proxy:mode.${proxyState}`);
   const state = ctx.states[appId];
-  const rtl = state?.phase === 'running' ? state.rtl : preferredLaunchMode(settings.launchModeByApp[appId], catalog.apps.some(app => app.id === appId && app.capabilities.rtl === 'verified'), ctx.components.some(item => item.id === appId && item.available && item.configured)) === 'rtl';
+  const adapterReady = rtlAdapterConfigured(appId, ctx.components);
+  const rtl = state?.phase === 'running' ? state.rtl : adapterReady && preferredLaunchMode(settings.launchModeByApp[appId], catalog.apps.some(app => app.id === appId && app.capabilities.rtl === 'verified'), adapterReady) === 'rtl';
   const apiConnection = settings.apiConnectionByApp[appId]
     ? ctx.connections?.find(item => item.id === settings.apiConnectionByApp[appId])
     : undefined;

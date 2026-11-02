@@ -15,6 +15,7 @@ import { LaunchControls } from '@/components/LaunchControls';
 import { Disclosure } from '@/components/Disclosure';
 import { Badge, Button, EmptyState, ErrorNotice, PageHeader, VerificationBadge, Tabs } from '@/components/ui';
 import { ToolProxy } from '@/features/proxy/ToolProxy';
+import { rtlAdapterConfigured, rtlAdapterSetupSupported } from '@core';
 
 export function AppDetailsPage() {
   const { appId = '' } = useParams();
@@ -35,8 +36,8 @@ export function AppDetailsPage() {
   const tabs = ['launch', 'connections', 'guide', 'about'];
   const selectedTab = tabs.includes(params.get('tab') ?? '') ? params.get('tab')! : installed ? 'launch' : 'about';
   const lang = i18n.language.startsWith('fa') ? 'fa' : 'en';
-  const supportsRtl = app.capabilities.rtl === 'verified' || ['antigravity', 'opencode'].includes(appId);
-  const ready = supportsRtl && ctx.components.some(c => c.id === appId && c.available && c.configured);
+  const ready = rtlAdapterConfigured(appId, ctx.components);
+  const setupSupported = rtlAdapterSetupSupported(appId, ctx.components);
   const source = async (url: string) => { try { await openUrl(url); setError(null); } catch (cause) { setError(cause); } };
   const compatible = catalog.providers.filter(p => p.supportedApps[appId] && !['unknown', 'unsupported'].includes(p.supportedApps[appId]!));
   const truth = (value: boolean | null) => t(value === true ? 'ux:yes' : value === false ? 'ux:no' : 'ux:unknown');
@@ -62,7 +63,7 @@ export function AppDetailsPage() {
     <Link className="vh-link" to="/discover">{t('ux:backDiscover')}</Link>
     <div className="vh-details-heading">
       <AppLogo appId={appId} name={app.name} size={48} />
-      <PageHeader title={app.name} actions={installed ? <LaunchControls compact id={appId} name={app.name} supportsRtl={supportsRtl} showRtlRepair /> : <Button variant="primary" onClick={() => void source(app.installMethods?.find(method => method.method === 'official-installer')?.idOrUrl ?? app.websiteUrl)}><ExternalLink size={16} aria-hidden="true" />{t('apps:officialDownload')}</Button>} />
+      <PageHeader title={app.name} actions={installed ? <LaunchControls compact id={appId} name={app.name} showRtlRepair /> : <Button variant="primary" onClick={() => void source(app.installMethods?.find(method => method.method === 'official-installer')?.idOrUrl ?? app.websiteUrl)}><ExternalLink size={16} aria-hidden="true" />{t('apps:officialDownload')}</Button>} />
     </div>
     <AppSummary key={appId} appId={appId} />
     {error != null && <ErrorNotice error={error} />}
@@ -81,7 +82,7 @@ export function AppDetailsPage() {
         <div className="space-y-3 text-sm">
           <VerificationBadge status={app.capabilities.rtl} />
           {appId === 'antigravity' && <Badge tone="warning">{t('ux:rtlExperimental')}</Badge>}
-          <p className="text-muted">{t(supportsRtl ? ready ? 'apps:rtlBundled' : 'ux:rtlMissing' : 'apps:rtlUnavailable')}</p>
+          <p className="text-muted">{t(setupSupported ? ready ? 'apps:rtlBundled' : 'ux:rtlMissing' : 'apps:rtlUnavailable')}</p>
           <p className="text-muted">{t('ux:launchNote')}</p>
           {!installed && <p className="text-muted">{t('ux:installNote')}</p>}
         </div>

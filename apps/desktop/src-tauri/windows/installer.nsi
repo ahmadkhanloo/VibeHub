@@ -97,6 +97,7 @@ Var ModeZCode
 Var ModeQoder
 Var ModeAntigravity
 Var ModeDeepSeek
+Var ModeOpenCode
 Var ModeCountLabel
 
 Name "${PRODUCTNAME}"
@@ -601,20 +602,20 @@ LangString VibeHubModePrompt ${LANG_ENGLISH} "Choose a setup. Then select RTL to
 LangString VibeHubModePrompt ${LANG_FARSI} "روش نصب را انتخاب کن و ابزارهای RTL را پایین تیک بزن."
 LangString VibeHubModeFull ${LANG_ENGLISH} "Full install"
 LangString VibeHubModeFull ${LANG_FARSI} "نصب کامل"
-LangString VibeHubModeFullDetail ${LANG_ENGLISH} "VibeHub + all 4 RTL tools (recommended)"
-LangString VibeHubModeFullDetail ${LANG_FARSI} "VibeHub و هر ۴ ابزار RTL (پیشنهادی)"
+LangString VibeHubModeFullDetail ${LANG_ENGLISH} "VibeHub + all 5 RTL tools (recommended)"
+LangString VibeHubModeFullDetail ${LANG_FARSI} "VibeHub و هر ۵ ابزار RTL (پیشنهادی)"
 LangString VibeHubModeRtl ${LANG_ENGLISH} "RTL tools only"
 LangString VibeHubModeRtl ${LANG_FARSI} "فقط ابزارهای RTL"
-LangString VibeHubModeRtlDetail ${LANG_ENGLISH} "Choose 1–4 tools; no VibeHub app"
-LangString VibeHubModeRtlDetail ${LANG_FARSI} "۱ تا ۴ ابزار؛ بدون نصب خود VibeHub"
-LangString VibeHubRtlSectionTitle ${LANG_ENGLISH} "Choose RTL tools (4 available)"
-LangString VibeHubRtlSectionTitle ${LANG_FARSI} "انتخاب ابزارهای RTL (۴ مورد)"
-LangString VibeHubFullCount ${LANG_ENGLISH} "All 4 RTL tools are included in Full install."
-LangString VibeHubFullCount ${LANG_FARSI} "در نصب کامل هر ۴ ابزار RTL نصب می‌شوند."
+LangString VibeHubModeRtlDetail ${LANG_ENGLISH} "Choose 1–5 tools; no VibeHub app"
+LangString VibeHubModeRtlDetail ${LANG_FARSI} "۱ تا ۵ ابزار؛ بدون نصب خود VibeHub"
+LangString VibeHubRtlSectionTitle ${LANG_ENGLISH} "Choose RTL tools (5 available)"
+LangString VibeHubRtlSectionTitle ${LANG_FARSI} "انتخاب ابزارهای RTL (۵ مورد)"
+LangString VibeHubFullCount ${LANG_ENGLISH} "All 5 RTL tools are included in Full install."
+LangString VibeHubFullCount ${LANG_FARSI} "در نصب کامل هر ۵ ابزار RTL نصب می‌شوند."
 LangString VibeHubCountSelected ${LANG_ENGLISH} "Selected:"
 LangString VibeHubCountSelected ${LANG_FARSI} "انتخاب:"
-LangString VibeHubCountTotal ${LANG_ENGLISH} "of 4"
-LangString VibeHubCountTotal ${LANG_FARSI} "از ۴"
+LangString VibeHubCountTotal ${LANG_ENGLISH} "of 5"
+LangString VibeHubCountTotal ${LANG_FARSI} "از ۵"
 LangString VibeHubZCode ${LANG_ENGLISH} "ZCode RTL"
 LangString VibeHubZCode ${LANG_FARSI} "RTL زِدکد"
 LangString VibeHubQoder ${LANG_ENGLISH} "Qoder RTL"
@@ -623,6 +624,8 @@ LangString VibeHubDeepSeek ${LANG_ENGLISH} "DeepSeek Harness RTL"
 LangString VibeHubDeepSeek ${LANG_FARSI} "RTL دیپ‌سیک هارنس"
 LangString VibeHubAntigravity ${LANG_ENGLISH} "Antigravity chat RTL (experimental)"
 LangString VibeHubAntigravity ${LANG_FARSI} "RTL چت Antigravity (آزمایشی)"
+LangString VibeHubOpenCode ${LANG_ENGLISH} "OpenCode RTL"
+LangString VibeHubOpenCode ${LANG_FARSI} "RTL اوپن‌کد"
 LangString VibeHubNoRtl ${LANG_ENGLISH} "Select at least one RTL launcher."
 LangString VibeHubNoRtl ${LANG_FARSI} "حداقل یک میانبر RTL را انتخاب کنید."
 LangString VibeHubLegacyNotice ${LANG_ENGLISH} "AgentRTL found. Previous RTL choices are selected below."
@@ -662,7 +665,7 @@ Function .onInit
     StrCpy $InstallMode "full"
   ${EndIf}
   ${If} $SelectedComponents == ""
-    StrCpy $SelectedComponents "zcode,qoder,deepseek-harness,antigravity"
+    StrCpy $SelectedComponents "zcode,qoder,deepseek-harness,antigravity,opencode"
   ${EndIf}
   ${If} $UpdateMode = 1
     StrCpy $InstallMode "full"
@@ -951,6 +954,7 @@ Section /o "RTL runtime" SEC_RUNTIME
   SetOutPath "$INSTDIR\apps"
   File "${VIBEHUB_PAYLOAD_DIR}\rtl-paths.ps1"
   File "${VIBEHUB_PAYLOAD_DIR}\rtl-direction.mjs"
+  File "${VIBEHUB_PAYLOAD_DIR}\rtl-style.mjs"
   File "${VIBEHUB_PAYLOAD_DIR}\migrate-agentrtl-paths.ps1"
   SetOutPath "$INSTDIR\licenses"
   File "${VIBEHUB_PAYLOAD_DIR}\NODE-LICENSE.md"
@@ -980,6 +984,11 @@ Section /o "DeepSeek Harness RTL" SEC_DEEPSEEK
   File /r "${VIBEHUB_PAYLOAD_DIR}\DeepSeekHarness\*"
 SectionEnd
 
+Section /o "OpenCode RTL" SEC_OPENCODE
+  SetOutPath "$INSTDIR\apps\OpenCode"
+  File /r "${VIBEHUB_PAYLOAD_DIR}\OpenCode\*"
+SectionEnd
+
 Section "-VibeHub installation state" SEC_INSTALL_STATE
   ${If} $InstallMode == "rtl"
     SetOutPath "$INSTDIR"
@@ -994,7 +1003,7 @@ Section "-VibeHub installation state" SEC_INSTALL_STATE
     WriteRegDWORD HKCU "${UNINSTKEY}" "NoRepair" "1"
     Call CreateRtlShortcuts
   ${Else}
-    StrCpy $SelectedComponents "zcode,qoder,deepseek-harness,antigravity"
+    StrCpy $SelectedComponents "zcode,qoder,deepseek-harness,antigravity,opencode"
     Call RemoveBrokenFullRtlShortcuts
   ${EndIf}
   ${If} $LegacyAgentRTL != ""
@@ -1013,6 +1022,7 @@ Function InitSelection
   SectionSetFlags ${SEC_QODER} 0
   SectionSetFlags ${SEC_DEEPSEEK} 0
   SectionSetFlags ${SEC_ANTIGRAVITY} 0
+  SectionSetFlags ${SEC_OPENCODE} 0
   ${If} $InstallMode == "full"
   ${OrIf} $UpdateMode = 1
     SectionSetFlags ${SEC_INSTALL} ${SF_SELECTED}
@@ -1033,6 +1043,14 @@ Function InitSelection
     ${StrLoc} $R1 $SelectedComponents "antigravity" ">"
     ${If} $R1 != "-1"
       SectionSetFlags ${SEC_ANTIGRAVITY} ${SF_SELECTED}
+    ${EndIf}
+    ${StrLoc} $R1 $SelectedComponents "opencode" ">"
+    ${If} $R1 != "-1"
+      SectionSetFlags ${SEC_OPENCODE} ${SF_SELECTED}
+    ${EndIf}
+    ${StrLoc} $R1 $SelectedComponents "opencode" ">"
+    ${If} $R1 != "-1"
+      SectionSetFlags ${SEC_OPENCODE} ${SF_SELECTED}
     ${EndIf}
   ${EndIf}
 FunctionEnd
@@ -1070,7 +1088,7 @@ Function PageSetupChoice
   Pop $ModeFullDetail
   ${NSD_CreateLabel} 54% 44u 39% 18u "$(VibeHubModeRtlDetail)"
   Pop $ModeRtlDetail
-  ${NSD_CreateGroupBox} 0 66u 100% 108u "$(VibeHubRtlSectionTitle)"
+  ${NSD_CreateGroupBox} 0 66u 100% 124u "$(VibeHubRtlSectionTitle)"
   Pop $0
   ${NSD_CreateCheckBox} 12u 81u 92% 15u "$(VibeHubZCode)"
   Pop $ModeZCode
@@ -1080,7 +1098,9 @@ Function PageSetupChoice
   Pop $ModeDeepSeek
   ${NSD_CreateCheckBox} 12u 129u 92% 15u "$(VibeHubAntigravity)"
   Pop $ModeAntigravity
-  ${NSD_CreateLabel} 12u 149u 92% 18u ""
+  ${NSD_CreateCheckBox} 12u 145u 92% 15u "$(VibeHubOpenCode)"
+  Pop $ModeOpenCode
+  ${NSD_CreateLabel} 12u 165u 92% 18u ""
   Pop $ModeCountLabel
   ${If} $InstallMode == "rtl"
     ${NSD_Check} $ModeRtlRadio
@@ -1100,12 +1120,17 @@ Function PageSetupChoice
     ${If} $R1 != "-1"
       ${NSD_Check} $ModeAntigravity
     ${EndIf}
+    ${StrLoc} $R1 $SelectedComponents "opencode" ">"
+    ${If} $R1 != "-1"
+      ${NSD_Check} $ModeOpenCode
+    ${EndIf}
   ${Else}
     ${NSD_Check} $ModeFullRadio
     ${NSD_Check} $ModeZCode
     ${NSD_Check} $ModeQoder
     ${NSD_Check} $ModeDeepSeek
     ${NSD_Check} $ModeAntigravity
+    ${NSD_Check} $ModeOpenCode
   ${EndIf}
   ${NSD_OnClick} $ModeFullRadio UpdateModeControls
   ${NSD_OnClick} $ModeRtlRadio UpdateModeControls
@@ -1115,6 +1140,7 @@ Function PageSetupChoice
   ${NSD_OnClick} $ModeQoder UpdateModeCount
   ${NSD_OnClick} $ModeDeepSeek UpdateModeCount
   ${NSD_OnClick} $ModeAntigravity UpdateModeCount
+  ${NSD_OnClick} $ModeOpenCode UpdateModeCount
   Call UpdateModeControls
   nsDialogs::Show
 FunctionEnd
@@ -1143,10 +1169,12 @@ Function UpdateModeControls
     ${NSD_Check} $ModeQoder
     ${NSD_Check} $ModeDeepSeek
     ${NSD_Check} $ModeAntigravity
+    ${NSD_Check} $ModeOpenCode
     EnableWindow $ModeZCode 0
     EnableWindow $ModeQoder 0
     EnableWindow $ModeDeepSeek 0
     EnableWindow $ModeAntigravity 0
+    EnableWindow $ModeOpenCode 0
   ${Else}
     ${If} $LegacyAgentRTL != ""
     ${AndIf} $PreviousInstallMode == ""
@@ -1158,6 +1186,7 @@ Function UpdateModeControls
     EnableWindow $ModeQoder 1
     EnableWindow $ModeDeepSeek 1
     EnableWindow $ModeAntigravity 1
+    EnableWindow $ModeOpenCode 1
   ${EndIf}
   Call UpdateModeCount
 FunctionEnd
@@ -1174,6 +1203,8 @@ Function UpdateModeCount
     IntOp $R0 $R0 + $2
     ${NSD_GetState} $ModeAntigravity $3
     IntOp $R0 $R0 + $3
+    ${NSD_GetState} $ModeOpenCode $4
+    IntOp $R0 $R0 + $4
     StrCpy $R3 "$(VibeHubCountSelected) $R0 $(VibeHubCountTotal)"
   ${EndIf}
   ${NSD_SetText} $ModeCountLabel $R3
@@ -1184,6 +1215,7 @@ Function SeedLegacySelection
   ${NSD_Uncheck} $ModeZCode
   ${NSD_Uncheck} $ModeQoder
   ${NSD_Uncheck} $ModeDeepSeek
+  ${NSD_Uncheck} $ModeOpenCode
   ${If} $LegacyComponents == ""
     ${NSD_Check} $ModeZCode
     ${NSD_Check} $ModeQoder
@@ -1208,7 +1240,7 @@ Function LeaveSetupChoice
   ${NSD_GetState} $ModeFullRadio $0
   ${If} $0 = ${BST_CHECKED}
     StrCpy $InstallMode "full"
-    StrCpy $SelectedComponents "zcode,qoder,deepseek-harness,antigravity"
+    StrCpy $SelectedComponents "zcode,qoder,deepseek-harness,antigravity,opencode"
     Call InitSelection
     Return
   ${EndIf}
@@ -1216,10 +1248,12 @@ Function LeaveSetupChoice
   ${NSD_GetState} $ModeQoder $1
   ${NSD_GetState} $ModeDeepSeek $2
   ${NSD_GetState} $ModeAntigravity $3
+  ${NSD_GetState} $ModeOpenCode $4
   ${If} $0 != ${BST_CHECKED}
   ${AndIf} $1 != ${BST_CHECKED}
   ${AndIf} $2 != ${BST_CHECKED}
   ${AndIf} $3 != ${BST_CHECKED}
+  ${AndIf} $4 != ${BST_CHECKED}
     MessageBox MB_ICONSTOP "$(VibeHubNoRtl)"
     Abort
   ${EndIf}
@@ -1261,6 +1295,16 @@ Function LeaveSetupChoice
   ${Else}
     SectionSetFlags ${SEC_ANTIGRAVITY} 0
   ${EndIf}
+  ${If} $4 = ${BST_CHECKED}
+    ${If} $SelectedComponents != ""
+      StrCpy $SelectedComponents "$SelectedComponents,opencode"
+    ${Else}
+      StrCpy $SelectedComponents "opencode"
+    ${EndIf}
+    SectionSetFlags ${SEC_OPENCODE} ${SF_SELECTED}
+  ${Else}
+    SectionSetFlags ${SEC_OPENCODE} 0
+  ${EndIf}
   SectionSetFlags ${SEC_INSTALL} 0
   SectionSetFlags ${SEC_RUNTIME} ${SF_SELECTED}
 FunctionEnd
@@ -1287,6 +1331,8 @@ Function RemoveBrokenFullRtlShortcuts
   !insertmacro RemoveBrokenFullRtlShortcut "$DESKTOP\DeepSeek Harness RTL.lnk" "DeepSeekHarness"
   !insertmacro RemoveBrokenFullRtlShortcut "$SMPROGRAMS\$AppStartMenuFolder\Antigravity RTL.lnk" "Antigravity"
   !insertmacro RemoveBrokenFullRtlShortcut "$DESKTOP\Antigravity RTL.lnk" "Antigravity"
+  !insertmacro RemoveBrokenFullRtlShortcut "$SMPROGRAMS\$AppStartMenuFolder\OpenCode RTL.lnk" "OpenCode"
+  !insertmacro RemoveBrokenFullRtlShortcut "$DESKTOP\OpenCode RTL.lnk" "OpenCode"
 FunctionEnd
 
 ; Never replace a shortcut owned by another application.
@@ -1313,6 +1359,7 @@ Function CreateRtlShortcuts
   SectionGetFlags ${SEC_QODER} $R2
   SectionGetFlags ${SEC_DEEPSEEK} $R3
   SectionGetFlags ${SEC_ANTIGRAVITY} $R5
+  SectionGetFlags ${SEC_OPENCODE} $R6
   ${If} $R1 & ${SF_SELECTED}
     !insertmacro CreateOwnedRtlShortcut "$R4\ZCode RTL.lnk" "$R0\ZCode\launch.vbs" "$R0\ZCode\rtl-shortcut.ico"
     !insertmacro CreateOwnedRtlShortcut "$DESKTOP\ZCode RTL.lnk" "$R0\ZCode\launch.vbs" "$R0\ZCode\rtl-shortcut.ico"
@@ -1328,6 +1375,10 @@ Function CreateRtlShortcuts
   ${If} $R5 & ${SF_SELECTED}
     !insertmacro CreateOwnedRtlShortcut "$R4\Antigravity RTL.lnk" "$R0\Antigravity\launch.vbs" "$R0\Antigravity\rtl-shortcut.ico"
     !insertmacro CreateOwnedRtlShortcut "$DESKTOP\Antigravity RTL.lnk" "$R0\Antigravity\launch.vbs" "$R0\Antigravity\rtl-shortcut.ico"
+  ${EndIf}
+  ${If} $R6 & ${SF_SELECTED}
+    !insertmacro CreateOwnedRtlShortcut "$R4\OpenCode RTL.lnk" "$R0\OpenCode\launch.vbs" "$R0\OpenCode\rtl.ico"
+    !insertmacro CreateOwnedRtlShortcut "$DESKTOP\OpenCode RTL.lnk" "$R0\OpenCode\launch.vbs" "$R0\OpenCode\rtl.ico"
   ${EndIf}
 FunctionEnd
 
@@ -1403,12 +1454,18 @@ Section Uninstall
   Delete "$INSTDIR\apps\ZCode\rtl.ico"
   Delete "$INSTDIR\apps\ZCode\rtl-shortcut.ico"
   Delete "$INSTDIR\apps\ZCode\injector.mjs"
+  Delete "$INSTDIR\apps\ZCode\style.mjs"
+  Delete "$INSTDIR\apps\ZCode\cdp-targets.mjs"
+  Delete "$INSTDIR\apps\ZCode\assets\OFL.txt"
+  Delete "$INSTDIR\apps\ZCode\assets\Vazirmatn-Bold.woff2"
+  Delete "$INSTDIR\apps\ZCode\assets\Vazirmatn-Regular.woff2"
   Delete "$INSTDIR\apps\Qoder\start.ps1"
   Delete "$INSTDIR\apps\Qoder\launch.vbs"
   Delete "$INSTDIR\apps\Qoder\rtl.ico"
   Delete "$INSTDIR\apps\Qoder\rtl-shortcut.ico"
   Delete "$INSTDIR\apps\Qoder\injector.mjs"
   Delete "$INSTDIR\apps\Qoder\style.mjs"
+  Delete "$INSTDIR\apps\Qoder\cdp-targets.mjs"
   Delete "$INSTDIR\apps\Qoder\doctor.mjs"
   Delete "$INSTDIR\apps\Qoder\LICENSE"
   Delete "$INSTDIR\apps\Qoder\assets\OFL.txt"
@@ -1420,27 +1477,47 @@ Section Uninstall
   Delete "$INSTDIR\apps\Antigravity\rtl-shortcut.ico"
   Delete "$INSTDIR\apps\Antigravity\injector.mjs"
   Delete "$INSTDIR\apps\Antigravity\style.mjs"
+  Delete "$INSTDIR\apps\Antigravity\cdp-targets.mjs"
+  Delete "$INSTDIR\apps\Antigravity\assets\OFL.txt"
+  Delete "$INSTDIR\apps\Antigravity\assets\Vazirmatn-Bold.woff2"
+  Delete "$INSTDIR\apps\Antigravity\assets\Vazirmatn-Regular.woff2"
   Delete "$INSTDIR\apps\DeepSeekHarness\start.ps1"
   Delete "$INSTDIR\apps\DeepSeekHarness\launch.vbs"
   Delete "$INSTDIR\apps\DeepSeekHarness\rtl.ico"
   Delete "$INSTDIR\apps\DeepSeekHarness\rtl-shortcut.ico"
   Delete "$INSTDIR\apps\DeepSeekHarness\injector.mjs"
+  Delete "$INSTDIR\apps\DeepSeekHarness\style.mjs"
+  Delete "$INSTDIR\apps\DeepSeekHarness\cdp-targets.mjs"
   Delete "$INSTDIR\apps\DeepSeekHarness\assets\OFL.txt"
   Delete "$INSTDIR\apps\DeepSeekHarness\assets\Vazirmatn-Bold.woff2"
   Delete "$INSTDIR\apps\DeepSeekHarness\assets\Vazirmatn-Regular.woff2"
+  Delete "$INSTDIR\apps\OpenCode\start.ps1"
+  Delete "$INSTDIR\apps\OpenCode\launch.vbs"
+  Delete "$INSTDIR\apps\OpenCode\rtl.ico"
+  Delete "$INSTDIR\apps\OpenCode\injector.mjs"
+  Delete "$INSTDIR\apps\OpenCode\style.mjs"
+  Delete "$INSTDIR\apps\OpenCode\cdp-targets.mjs"
+  Delete "$INSTDIR\apps\OpenCode\assets\OFL.txt"
+  Delete "$INSTDIR\apps\OpenCode\assets\Vazirmatn-Bold.woff2"
+  Delete "$INSTDIR\apps\OpenCode\assets\Vazirmatn-Regular.woff2"
   Delete "$INSTDIR\apps\rtl-paths.ps1"
   Delete "$INSTDIR\apps\rtl-direction.mjs"
+  Delete "$INSTDIR\apps\rtl-style.mjs"
   Delete "$INSTDIR\cleanup.ps1"
   Delete "$INSTDIR\LICENSE"
   Delete "$INSTDIR\THIRD_PARTY_LICENSES.md"
   Delete "$INSTDIR\runtime\node.exe"
   Delete "$INSTDIR\licenses\NODE-LICENSE.md"
   RMDir "$INSTDIR\apps\ZCode"
+  RMDir "$INSTDIR\apps\ZCode\assets"
   RMDir "$INSTDIR\apps\Qoder\assets"
   RMDir "$INSTDIR\apps\Qoder"
   RMDir "$INSTDIR\apps\DeepSeekHarness\assets"
   RMDir "$INSTDIR\apps\DeepSeekHarness"
+  RMDir "$INSTDIR\apps\Antigravity\assets"
   RMDir "$INSTDIR\apps\Antigravity"
+  RMDir "$INSTDIR\apps\OpenCode\assets"
+  RMDir "$INSTDIR\apps\OpenCode"
   RMDir "$INSTDIR\apps"
   RMDir "$INSTDIR\runtime"
   RMDir "$INSTDIR\licenses"
@@ -1478,6 +1555,8 @@ Section Uninstall
     !insertmacro RemoveBrokenFullRtlShortcut "$DESKTOP\DeepSeek Harness RTL.lnk" "DeepSeekHarness"
     !insertmacro RemoveBrokenFullRtlShortcut "$R4\Antigravity RTL.lnk" "Antigravity"
     !insertmacro RemoveBrokenFullRtlShortcut "$DESKTOP\Antigravity RTL.lnk" "Antigravity"
+    !insertmacro RemoveBrokenFullRtlShortcut "$R4\OpenCode RTL.lnk" "OpenCode"
+    !insertmacro RemoveBrokenFullRtlShortcut "$DESKTOP\OpenCode RTL.lnk" "OpenCode"
   ${EndIf}
   !insertmacro IsShortcutTarget "$R4\ZCode RTL.lnk" "$R0\ZCode\launch.vbs"
   Pop $0
@@ -1518,6 +1597,16 @@ Section Uninstall
   Pop $0
   ${If} $0 = 1
     Delete "$DESKTOP\Antigravity RTL.lnk"
+  ${EndIf}
+  !insertmacro IsShortcutTarget "$R4\OpenCode RTL.lnk" "$R0\OpenCode\launch.vbs"
+  Pop $0
+  ${If} $0 = 1
+    Delete "$R4\OpenCode RTL.lnk"
+  ${EndIf}
+  !insertmacro IsShortcutTarget "$DESKTOP\OpenCode RTL.lnk" "$R0\OpenCode\launch.vbs"
+  Pop $0
+  ${If} $0 = 1
+    Delete "$DESKTOP\OpenCode RTL.lnk"
   ${EndIf}
   RMDir "$R4"
 

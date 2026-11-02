@@ -28,25 +28,25 @@ try {
   Copy-Item -LiteralPath (Join-Path (Split-Path -Parent $nodeSource) 'LICENSE') -Destination (Join-Path $payload 'NODE-LICENSE.md') -Force
 
   $files = @{
-    ZCode = @('rtl.ico', 'rtl-shortcut.ico', 'start.ps1', 'launch.vbs', 'injector.mjs')
-    Qoder = @('rtl.ico', 'rtl-shortcut.ico', 'start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs', 'doctor.mjs', 'LICENSE')
-    Antigravity = @('rtl.ico', 'rtl-shortcut.ico', 'start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs')
-    OpenCode = @('rtl.ico', 'start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs')
-    DeepSeekHarness = @('rtl.ico', 'rtl-shortcut.ico', 'start.ps1', 'launch.vbs', 'injector.mjs')
+    ZCode = @('rtl.ico', 'rtl-shortcut.ico', 'start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs', 'cdp-targets.mjs', 'assets/OFL.txt', 'assets/Vazirmatn-Regular.woff2', 'assets/Vazirmatn-Bold.woff2')
+    Qoder = @('rtl.ico', 'rtl-shortcut.ico', 'start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs', 'cdp-targets.mjs', 'doctor.mjs', 'LICENSE', 'assets/OFL.txt', 'assets/Vazirmatn-Regular.woff2', 'assets/Vazirmatn-Bold.woff2')
+    Antigravity = @('rtl.ico', 'rtl-shortcut.ico', 'start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs', 'cdp-targets.mjs', 'assets/OFL.txt', 'assets/Vazirmatn-Regular.woff2', 'assets/Vazirmatn-Bold.woff2')
+    OpenCode = @('rtl.ico', 'start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs', 'cdp-targets.mjs', 'assets/OFL.txt', 'assets/Vazirmatn-Regular.woff2', 'assets/Vazirmatn-Bold.woff2')
+    DeepSeekHarness = @('rtl.ico', 'rtl-shortcut.ico', 'start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs', 'cdp-targets.mjs', 'assets/OFL.txt', 'assets/Vazirmatn-Regular.woff2', 'assets/Vazirmatn-Bold.woff2')
   }
   foreach ($id in $files.Keys) {
     $destination = Join-Path $payload $id
     if (Test-Path -LiteralPath $destination) { Remove-Item -LiteralPath $destination -Recurse -Force }
     [IO.Directory]::CreateDirectory($destination) | Out-Null
     foreach ($file in $files[$id]) {
-      Copy-Item -LiteralPath (Join-Path $root "apps\$id\$file") -Destination $destination
-    }
-    if ($id -in @('Qoder', 'ZCode', 'DeepSeekHarness', 'Antigravity', 'OpenCode')) {
-      Copy-Item -LiteralPath (Join-Path $root "apps\$id\assets") -Destination $destination -Recurse
+      $target = Join-Path $destination $file
+      [IO.Directory]::CreateDirectory((Split-Path -Parent $target)) | Out-Null
+      Copy-Item -LiteralPath (Join-Path $root "apps\$id\$file") -Destination $target -Force
     }
   }
   Copy-Item -LiteralPath (Join-Path $root 'apps\rtl-paths.ps1') -Destination (Join-Path $payload 'rtl-paths.ps1') -Force
   Copy-Item -LiteralPath (Join-Path $root 'apps\rtl-direction.mjs') -Destination (Join-Path $payload 'rtl-direction.mjs') -Force
+  Copy-Item -LiteralPath (Join-Path $root 'apps\rtl-style.mjs') -Destination (Join-Path $payload 'rtl-style.mjs') -Force
   Copy-Item -LiteralPath (Join-Path $root 'apps\migrate-agentrtl-paths.ps1') -Destination (Join-Path $payload 'migrate-agentrtl-paths.ps1') -Force
   Copy-Item -LiteralPath (Join-Path $root 'cleanup.ps1') -Destination (Join-Path $payload 'cleanup.ps1') -Force
   Copy-Item -LiteralPath (Join-Path $root 'LICENSE') -Destination (Join-Path $payload 'LICENSE') -Force
