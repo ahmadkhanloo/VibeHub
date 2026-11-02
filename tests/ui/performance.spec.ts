@@ -39,6 +39,8 @@ test('slow process checks do not block inventory or navigation and never overlap
   await expect(page).toHaveURL(/settings/);
   await page.clock.pauseAt(new Date(Date.now() + 1000));
   await page.evaluate(() => (window as any).__releaseState());
+  await page.getByRole('link', { name: 'Apps', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Go to app ZCode', exact: true })).toBeEnabled();
   await page.clock.runFor(100);
   await page.clock.fastForward(15000);
   await expect.poll(() => page.evaluate(() => (window as any).__mock.calls.filter((c: any) => c.cmd === 'launch_states').length)).toBe(2);
