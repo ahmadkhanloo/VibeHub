@@ -25,7 +25,7 @@ test('failed app discovery remains unknown and offers retry', async ({ page }) =
 test('standalone tutorials stay available alongside external documentation', async ({ page }) => {
   await mockNative(page);
   await page.goto('/guides/extensions');
-  await expect(page).toHaveURL(/guides\/extensions$/);
+  await expect(page).toHaveURL(/learning\?category=skills$/);
   await expect(page.locator('h1')).toBeVisible();
   await page.goto('/settings?section=data');
   await page.getByRole('button', { name: 'Open documentation', exact: true }).click();

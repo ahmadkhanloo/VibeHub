@@ -7,8 +7,8 @@ test('installed versions stay on app cards without the removed update panel', as
     const host = window as any, original = host.__TAURI_INTERNALS__.invoke;
     host.__TAURI_INTERNALS__.invoke = async (command: string, args: any = {}) => {
       if (command === 'detect_apps') return [
-        { id: 'opencode', installed: true, version: '1.0.0', via: 'fixture' },
-        { id: 'qoder', installed: true, via: 'fixture' },
+        { id: 'opencode', installed: true, path: 'C:/Fixture/OpenCode.exe', version: '1.0.0', via: 'fixture' },
+        { id: 'qoder', installed: true, path: 'C:/Fixture/Qoder.exe', via: 'fixture' },
       ];
       return original(command, args);
     };

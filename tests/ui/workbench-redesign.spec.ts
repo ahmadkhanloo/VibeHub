@@ -5,7 +5,7 @@ test('main sidebar links directly to the tools and learning areas', async ({ pag
   await mockNative(page);
   await page.goto('/');
   const sidebar = page.getByRole('navigation', { name: 'Main navigation' });
-  for (const label of ['Apps', 'API notebook', 'Proxy', 'Offers and news', 'Install terminal tools', 'Diagnostics', 'Learn']) {
+  for (const label of ['Apps', 'API notebook', 'Proxy', 'News and offers', 'Terminal & Persian text', 'Diagnostics', 'Learn']) {
     await expect(sidebar.getByRole('link', { name: label })).toBeVisible();
   }
   await expect(page.getByRole('link', { name: 'Settings' })).toBeVisible();
@@ -60,10 +60,11 @@ test('apps page omits the intro and recent projects, and add-app view only lists
   await expect(page.getByRole('heading', { name: 'Qoder', exact: true })).toBeVisible();
 });
 
-test('installed app shows separate normal and RTL actions and offers setup when the adapter is absent', async ({ page }) => {
+test('installed app keeps normal launch available and hides unsupported RTL setup', async ({ page }) => {
   await mockNative(page, 'missing');
   await page.goto('/');
   const zcode = page.locator('[data-testid="app-tile-zcode"]');
   await expect(zcode.getByRole('button', { name: 'Run ZCode' })).toBeVisible();
-  await expect(zcode.getByRole('button', { name: 'Set up RTL for ZCode' })).toBeVisible();
+  await expect(zcode.getByRole('button', { name: 'Set up RTL for ZCode' })).toHaveCount(0);
+  await expect(zcode.getByRole('link', { name: 'Prepare ZCode' })).toBeVisible();
 });

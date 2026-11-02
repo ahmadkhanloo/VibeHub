@@ -52,7 +52,7 @@ export function LearningPage({ embeddedArticleId }: { embeddedArticleId?: string
     const body = article.body[lang] || article.body[lang === 'fa' ? 'en' : 'fa'];
     return <div ref={readerRef} className={embeddedArticleId ? 'space-y-4' : 'mx-auto max-w-4xl space-y-5'}>
       {!embeddedArticleId && back}
-      <PageHeader title={article.title[lang]} description={article.summary[lang]} />
+      {embeddedArticleId ? <header><h2 className="text-xl font-bold">{article.title[lang]}</h2><p className="text-sm text-muted">{article.summary[lang]}</p></header> : <PageHeader title={article.title[lang]} description={article.summary[lang]} />}
       {fromApp && <p className="text-sm text-muted">{fromApp.name}</p>}
       {error != null && <ErrorNotice error={error} />}
       <article lang={lang === 'fa' ? 'fa-IR' : 'en-US'} dir={lang === 'fa' ? 'rtl' : 'ltr'} className="vh-article-reader rounded-xl border border-border bg-surface p-5 sm:p-7">

@@ -118,7 +118,7 @@ export function applyRemoteCatalog(catalog: Catalog, guides: Record<string, stri
   if (nextNews !== undefined) news = nextNews;
   revision++; listeners.forEach(listener=>listener());
   window.dispatchEvent(new Event('vibehub:catalog-updated'));
-  try { localStorage.setItem('vibehub.content.v1', JSON.stringify({ catalog, guides, learning, learningArticles: learningArticles === undefined ? undefined : { schemaVersion: 1, categories, articles }, news: newsItems === undefined ? undefined : { schemaVersion: 1, news } })); } catch { /* Current in-memory content remains usable. */ }
+  try { localStorage.setItem('vibehub.content.v1', JSON.stringify({ catalog, guides, learning, learningArticles: { schemaVersion: 1, categories, articles }, news: { schemaVersion: 1, news } })); } catch { /* Current in-memory content remains usable. */ }
 }
 
 try {

@@ -30,25 +30,16 @@ test('first run opens apps and automatically scans without an onboarding wizard'
   await expect(page.getByRole('heading', { name: 'ZCode', exact: true })).toBeVisible();
 });
 
-test('guide search has a real empty state and does not invent a review date', async ({ page }) => {
+test('legacy guides open the current reader and learning search has an empty state', async ({ page }) => {
   await fixture(page, 'ready');
   await page.goto('/guides/qoder');
-  await expect(page.getByText('Guide review date has not been recorded.', { exact: false })).toBeVisible();
-  await page.getByRole('searchbox', { name: 'Search guides' }).fill('unfindable-journey-fixture');
-  await expect(page.getByRole('heading', { name: 'No sections match your search.' })).toBeVisible();
-  await expect(page.getByText('Loading…', { exact: true })).toHaveCount(0);
-  await page.getByRole('searchbox', { name: 'Search guides' }).fill('');
-  await expect(page.getByRole('heading', { name: '0. Learning path and product choice — beginner', exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: /Working with coding assistants/ })).toHaveCount(0);
-});
-
-test('a missing preferred guide announces and renders the available language', async ({ page }) => {
-  await fixture(page, 'ready');
-  await page.route('**/qoder/en.md?*', route => route.fulfill({ contentType: 'application/javascript', body: 'export default "";' }));
-  await page.goto('/guides/qoder');
-  await page.getByRole('searchbox', { name: 'Search guides' }).fill('RTL');
-  await expect(page.getByRole('status')).toContainText('Showing Persian instead.');
-  await expect(page.locator('[lang="fa-IR"][dir="rtl"]')).toContainText('میانبر');
+  await expect(page).toHaveURL(/learning\/qoder$/);
+  await expect(page.getByRole('heading', { name: 'Qoder', exact: true })).toBeVisible();
+  await expect(page.getByText('Original source', { exact: true })).toBeVisible();
+  await page.goto('/learning');
+  await page.getByRole('searchbox').last().fill('unfindable-journey-fixture');
+  await expect(page.locator('.vh-learning-results')).toHaveCount(0);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 });
 
 test('native prerequisite failure does not discard independent diagnostic results', async ({ page }) => {
@@ -69,6 +60,7 @@ test('offers survive corrupt read-state storage and never ask for notification p
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/offers');
   await expect(page).toHaveURL(/offers/);
+  await page.locator('.vh-news-settings summary').click();
   const notifications = page.getByRole('switch', { name: 'System notifications (optional)', exact: true });
   await expect(notifications).toBeVisible();
   await expect(notifications).not.toBeChecked();

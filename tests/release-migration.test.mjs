@@ -48,7 +48,7 @@ test('public product metadata points at the VibeHub repository', async () => {
   ]);
 
   for (const text of [readme, readmeFa]) {
-    assert.match(text, /^# VibeHub/m);
+    assert.match(text, /^# (?:VibeHub|وایب‌هاب)/m);
     assert.match(text, /github\.com\/ahmadkhanloo\/VibeHub/);
     assert.doesNotMatch(text, /github\.com\/ahmadkhanloo\/AgentRTL/);
   }
