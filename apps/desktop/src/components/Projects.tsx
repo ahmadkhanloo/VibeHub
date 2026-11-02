@@ -1,4 +1,4 @@
-import { preferredLaunchMode, type LaunchMode } from '@core';
+import { preferredLaunchMode, rtlAdapterAvailable, rtlAdapterConfigured, type LaunchMode } from '@core';
 import { useCatalog } from '@/lib/catalog';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -15,17 +15,19 @@ export function Projects({ appId }: { appId?: string }) {
   const [choice, setChoice] = useState<{ id: string; mode: LaunchMode } | null>(null);
   const [target, setTarget] = useState(appId ?? '');
   const [error, setError] = useState<unknown>(null);
-  const installed = ctx.apps.filter(app => app.installed && app.id !== 'chatgpt');
+  const installed = ctx.apps.filter(app => app.installed && !['chatgpt', 'claude-desktop'].includes(app.id));
   const selected = appId ?? (installed.some(app => app.id === target) ? target : installed[0]?.id ?? '');
   const state = ctx.states[selected];
-  const supportsRtl = catalog.apps.some(app => app.id === selected && app.capabilities.rtl === 'verified') || selected === 'antigravity';
-  const mode = state?.phase === 'running' ? state.rtl ? 'rtl' : 'normal' : choice?.id === selected ? choice.mode : preferredLaunchMode(settings.launchModeByApp[selected], supportsRtl && selected !== 'antigravity', ctx.components.some(item => item.id === selected && item.available));
-  const blocked = !installed.some(app => app.id === selected) || !state || state.phase === 'starting' || !!ctx.busy['app:' + selected] || (mode === 'rtl' && !ctx.components.some(item => item.id === selected && item.available));
+  const supportsRtl = rtlAdapterAvailable(selected, ctx.components);
+  const rtlReady = rtlAdapterConfigured(selected, ctx.components);
+  const verified = catalog.apps.some(app => app.id === selected && app.capabilities.rtl === 'verified');
+  const mode = state?.phase === 'running' ? state.rtl ? 'rtl' : 'normal' : choice?.id === selected ? choice.mode : preferredLaunchMode(settings.launchModeByApp[selected], verified, rtlReady);
+  const blocked = !installed.some(app => app.id === selected) || !state || state.phase === 'starting' || !!ctx.busy['app:' + selected] || (mode === 'rtl' && !rtlReady);
   const launch = async (path: string) => {
     setError(null);
     if (await ctx.launch(selected, 'app', mode, path)) update(current => ({ recentProjects: [path, ...current.recentProjects.filter(item => item !== path)].slice(0, 6) }));
   };
-  if (appId === 'chatgpt') return null;
+  if (appId && ['chatgpt', 'claude-desktop'].includes(appId)) return null;
   return <section className="vh-card space-y-4" aria-label={t('projects')}>
     <h2 className="font-bold">{t('projects')}</h2>
     {!settings.recentProjects.length && <p className="text-sm text-muted">{t(installed.length ? 'projectEmptyHelp' : 'projectNoTarget')}</p>}

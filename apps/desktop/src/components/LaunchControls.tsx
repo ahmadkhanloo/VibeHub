@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertCircle, Play } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { launchBlocked, launchFailureKind, type LaunchMode } from '@core';
+import { launchBlocked, launchFailureKind, rtlAdapterAvailable, rtlAdapterConfigured, rtlAdapterSetupSupported, type LaunchMode } from '@core';
 import { useToolContext } from '@/app/tool-context';
 import { ipc } from '@/services/ipc';
 import { Button, ErrorNotice } from './ui';
@@ -13,14 +13,12 @@ export function LaunchControls({
   id,
   name,
   kind = 'app',
-  supportsRtl = false,
   compact = false,
   showRtlRepair = false,
 }: {
   id: string;
   name: string;
   kind?: 'app' | 'editor';
-  supportsRtl?: boolean;
   compact?: boolean;
   showRtlRepair?: boolean;
 }) {
@@ -34,9 +32,9 @@ export function LaunchControls({
   const failureKind = launchFailureKind(failure);
   const busy = ctx.busy[key] ?? false;
   const managed = kind === 'app' || id === 'antigravity';
-  const rtlComponent = ctx.components.find(component => component.id === id);
-  const rtlAvailable = supportsRtl && rtlComponent?.available === true;
-  const rtlReady = rtlAvailable && rtlComponent.configured === true;
+  const rtlAvailable = kind === 'app' && rtlAdapterAvailable(id, ctx.components);
+  const rtlReady = kind === 'app' && rtlAdapterConfigured(id, ctx.components);
+  const rtlSetupSupported = kind === 'app' && rtlAdapterSetupSupported(id, ctx.components);
   const normalBlocked = managed ? launchBlocked('normal', state, false, busy) : busy;
   const rtlBlocked = managed ? launchBlocked('rtl', state, rtlReady, busy) : busy;
 
@@ -51,8 +49,8 @@ export function LaunchControls({
       <Button variant="primary" disabled={state?.phase === 'running' ? busy || focusing : normalBlocked} loading={busy || focusing} aria-label={(state?.phase === 'running' ? t('focusApp') : t('run')) + ' ' + name} onClick={() => state?.phase === 'running' ? focus() : run('normal')}>
         <Play aria-hidden="true" size={15} />{state?.phase === 'running' ? t('focusApp') : t('run')}
       </Button>
-      {supportsRtl && rtlReady && <Button disabled={rtlBlocked} loading={busy && state?.phase === 'running' && state.rtl} aria-label={t('runRtlCompact') + ' ' + name} onClick={() => run('rtl')}><Play aria-hidden="true" size={15} />{t('runRtlCompact')}</Button>}
-      {supportsRtl && (!rtlReady || showRtlRepair) && <RtlSetup key={id} id={id} name={name} available={rtlAvailable} configured={rtlReady} onReady={() => void ctx.refresh()} />}
+      {rtlReady && <Button disabled={rtlBlocked} loading={busy && state?.phase === 'running' && state.rtl} aria-label={t('runRtlCompact') + ' ' + name} onClick={() => run('rtl')}><Play aria-hidden="true" size={15} />{t('runRtlCompact')}</Button>}
+      {rtlSetupSupported && (!rtlReady || showRtlRepair) && <RtlSetup key={id} id={id} name={name} available={rtlAvailable} configured={rtlReady} onReady={() => void ctx.refresh()} />}
     </div>
     {state === undefined && !busy && <p className="text-xs text-muted" role="status">{t('stateUnknown')} <button className="ms-2 underline" aria-label={t('recheckFor', { name })} onClick={() => void ctx.checkState(id)}>{t('retry')}</button></p>}
     {ctx.messages[key] && <p role="status" className="text-xs text-success">{t('requestAccepted')}</p>}

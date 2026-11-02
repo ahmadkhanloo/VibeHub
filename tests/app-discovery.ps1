@@ -1,0 +1,43 @@
+$ErrorActionPreference = 'Stop'
+$repo = Split-Path -Parent $PSScriptRoot
+$adapter = Join-Path $repo 'apps\desktop\src-tauri\src\windows.ps1'
+$temp = Join-Path ([IO.Path]::GetTempPath()) ('vibehub-apps-' + [guid]::NewGuid().ToString('N'))
+$oldLocal = $env:LOCALAPPDATA
+try {
+  $env:LOCALAPPDATA = $temp
+  function Invoke-Adapter($request) {
+    $request.resourceRoot = $repo
+    $raw = ($request | ConvertTo-Json -Compress -Depth 8) | powershell.exe -NoProfile -ExecutionPolicy Bypass -File $adapter
+    $value = (($raw | Where-Object { $_ -like 'VIBEHUB_JSON:*' }) -replace '^VIBEHUB_JSON:','') | ConvertFrom-Json
+    if ($value -isnot [array] -and $value.error) { throw $value.error }; return $value
+  }
+  $custom = Join-Path $temp 'custom folder\mimocode.cmd'
+  New-Item -ItemType Directory -Force (Split-Path $custom) | Out-Null
+  Set-Content -LiteralPath $custom -Value '@echo off'
+  Invoke-Adapter @{operation='app-path';appId='mimocode';path=$custom} | Out-Null
+  $apps = @(Invoke-Adapter @{operation='detect'})
+  if ((@($apps | Where-Object id -eq 'mimocode')[0]).path -ne $custom) { throw 'Saved CLI path not detected' }
+  $invalid = Join-Path $temp 'custom folder\other.cmd'
+  Set-Content -LiteralPath $invalid -Value '@echo off'
+  $rejected = $false
+  try { Invoke-Adapter @{operation='app-path';appId='mimocode';path=$invalid} | Out-Null } catch { $rejected = $true }
+  if (-not $rejected) { throw 'Wrong executable name was accepted' }
+  $apps = @(Invoke-Adapter @{operation='detect'})
+  if ((@($apps | Where-Object id -eq 'mimocode')[0]).path -ne $custom) { throw 'Rejected path changed saved setting' }
+  $claude = Join-Path $temp 'Programs\Claude\Claude.exe'
+  New-Item -ItemType Directory -Force (Split-Path $claude) | Out-Null
+  New-Item -ItemType File $claude | Out-Null
+  $apps = @(Invoke-Adapter @{operation='detect'})
+  if ((@($apps | Where-Object id -eq 'claude-desktop')[0]).path -ne $claude) { throw 'Claude Desktop not detected' }
+  $manual = Join-Path $temp 'another folder\Claude.exe'
+  New-Item -ItemType Directory -Force (Split-Path $manual) | Out-Null
+  New-Item -ItemType File $manual | Out-Null
+  Invoke-Adapter @{operation='app-path';appId='claude-desktop';path=$manual} | Out-Null
+  $apps = @(Invoke-Adapter @{operation='detect'})
+  if ((@($apps | Where-Object id -eq 'claude-desktop')[0]).path -ne $manual) { throw 'Saved path did not take precedence' }
+  Remove-Item -LiteralPath $manual
+  $apps = @(Invoke-Adapter @{operation='detect'})
+  if ((@($apps | Where-Object id -eq 'claude-desktop')[0]).path -ne $claude) { throw 'Missing saved path did not fall back' }
+  Write-Host 'App path and Claude detection passed'
+} finally { $env:LOCALAPPDATA = $oldLocal; Remove-Item -LiteralPath $temp -Recurse -Force -ErrorAction SilentlyContinue }
+

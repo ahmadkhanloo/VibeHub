@@ -10,6 +10,23 @@ export const DIRECTION_ALIGNMENT_CSS = `
 :is(td,th) :is(h1,h2,h3,h4,h5,h6):dir(ltr){text-align:center!important}
 `;
 
+/** Build message-alignment rules under app-observed content roots only. */
+export function buildScopedDirectionAlignmentCss(contentRoots) {
+  const roots = [...new Set((Array.isArray(contentRoots) ? contentRoots : [contentRoots])
+    .map((selector) => String(selector || '').trim())
+    .filter(Boolean))];
+  if (!roots.length) return '';
+  const scoped = (selector) => roots.map((root) => `${root} ${selector}`).join(',');
+  return `
+${scoped(':is(h1,h2,h3,h4,h5,h6):dir(rtl)')}{text-align:right!important}
+${scoped(':is(h1,h2,h3,h4,h5,h6):dir(ltr)')}{text-align:left!important}
+${scoped(':is(td,th)')}{text-align:center!important}
+${scoped(':is(td,th) :is(p,li,h1,h2,h3,h4,h5,h6,blockquote,div,span,a,b,strong,em)')}{text-align:center!important}
+${scoped(':is(td,th) :is(h1,h2,h3,h4,h5,h6):dir(rtl)')}{text-align:center!important}
+${scoped(':is(td,th) :is(h1,h2,h3,h4,h5,h6):dir(ltr)')}{text-align:center!important}
+`;
+}
+
 export function buildAutoHeadingDirectionScript(observerKey) {
   return `(() => {
   const KEY = ${JSON.stringify(observerKey)};

@@ -19,6 +19,10 @@ test('the Pages artifact contains the validated feed and bilingual guides withou
     assert.match(qoderGuide, /Qoder/);
     const learning = JSON.parse(await readFile(join(destination, 'feed', 'learning', 'extensions.json'), 'utf8'));
     assert.ok(learning.some(item => item.id === 'frontend-design'));
+    const articles = JSON.parse(await readFile(join(destination, 'feed', 'learning', 'index.json'), 'utf8'));
+    assert.ok(articles.articles.some(item => item.id === 'qoder' && item.body.fa.includes('Qoder')));
+    const news = JSON.parse(await readFile(join(destination, 'feed', 'news', 'index.json'), 'utf8'));
+    assert.deepEqual(news, { schemaVersion: 1, news: [] });
     await assert.rejects(readFile(join(destination, 'src', 'main.tsx')));
   } finally {
     await rm(tempRoot, { recursive: true, force: true });

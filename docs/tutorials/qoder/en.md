@@ -35,21 +35,13 @@ Start with **Ask every time**. Request: “Read hello.txt and explain it without
 
 Open the model picker near the composer and explicitly select a model. Read its **current rate and Free badge before sending**. A listed model is not necessarily free. Avoid Auto for this exercise so that your intended model is explicit. [IDE selector](https://docs.qoder.com/user-guide/chat/model-tier-selector) · [Qoder selector](https://docs.qoder.com/qoder/model-selector)
 
-Status on November 1, 2026:
-
-- **Qwen3.8-Flash:** Daily free allowance for International individual accounts, including Free accounts with zero Credits. Extended; no end date announced.
-- **DeepSeek-Flash:** Published deadline: November 1, 00:00 Singapore / October 31, 19:30 Tehran. It has passed; do not assume an extension.
-- **Efficient:** Free access depends on account eligibility; do not assume every Free account qualifies.
-
-For Qwen3.8-Flash, select it without claiming anything. The allowance is limited; continued use after exhaustion can consume Credits. Some features call other models with separate charges. [Qwen terms](https://docs.qoder.com/events/flashoffer) · [DeepSeek terms](https://docs.qoder.com/events/deepseek-flash-free)
+Offer conditions, quotas and deadlines change; check [News and offers](/offers) for current status. After choosing a model, recheck the rate for your account. Features that call another model may incur separate charges. [Qwen terms](https://docs.qoder.com/events/flashoffer) · [DeepSeek terms](https://docs.qoder.com/events/deepseek-flash-free)
 
 Checkpoint: verify the chosen model and current rate, send one short request and inspect Usage. Stop if the free rate or allowance is unavailable.
 
 ## 5. Daily Credits versus a free model — beginner
 
-Gift Credits are a spendable balance; an eligible free model call does not consume Credits within its allowance. In **Qoder desktop**, open Usage → gift icon and manually claim 100 Credits. Eligible International individual accounts qualify; Teams and Enterprise do not.
-
-The window starts daily at 10:00 Singapore / **05:30 Tehran**. Each claimed batch expires after 30 days. On the website, avatar → Settings → Usage shows Add-on Credits. Terms can change. [Official offer](https://docs.qoder.com/events/100credits)
+Gift Credits are a spendable balance; an eligible free model call does not consume Credits within its allowance. Check [Qoder's current offer](/offers) and Usage for eligibility, claim times and expiry. [Official source](https://docs.qoder.com/events/100credits)
 
 ## 6. Make and verify one small change — practical
 
@@ -67,7 +59,7 @@ BYOK follows the provider account's pricing and allowances; it does not guarante
 
 ## 8. VibeHub, RTL and troubleshooting — intermediate
 
-After installation, rescan in VibeHub. Install RTL prepares a shortcut; see the [RTL guide](https://github.com/ahmadkhanloo/VibeHub/blob/main/docs/tutorials/rtl-setup.en.md).
+After installation, rescan in VibeHub. See the [shared RTL guide](/learning/rtl-setup) for common steps.
 
 - **Missing model:** check product version, account and available models.
 - **Credits deducted:** inspect Usage, allowance, actual model, Auto and features with separate model calls.

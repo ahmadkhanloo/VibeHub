@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { mockNative } from './mock';
-import { INJECT_JS, STYLE_ID } from '../../apps/Antigravity/style.mjs';
+import { INJECT_JS, STYLE_ID, OBSERVER_KEY } from '../../apps/Antigravity/style.mjs';
 
 test('standalone chat RTL stays scoped, supports streaming and cleans up without duplicate observers', async ({ page }) => {
   await mockNative(page);
@@ -42,7 +42,8 @@ test('standalone chat RTL stays scoped, supports streaming and cleans up without
   await expect(page.locator('#stream')).toHaveAttribute('dir', 'auto');
   await page.locator('#stream').evaluate(el => { el.textContent = 'English now'; });
   await expect(page.locator('#stream')).toHaveCSS('direction', 'ltr');
-  await page.evaluate(() => (window as any).__vibehubAntigravityRtl());
+  await page.evaluate(key => (window as any)[key].disconnect(), OBSERVER_KEY);
+  await page.locator(`#${STYLE_ID}`).evaluate(el => el.remove());
   expect(await page.locator('[data-vh-ag-dir]').count()).toBe(0);
   expect(await page.locator(`#${STYLE_ID}`).count()).toBe(0);
 });

@@ -25,7 +25,7 @@ test("search includes model services and targets selected provider without savin
 test("add-app lists only uninstalled tools without catalog filters or tabs", async ({ page }) => {
   await mockNative(page);
   await page.goto("/discover");
-  await expect(page.locator('.vh-catalog-tile')).toHaveCount(8);
+  await expect(page.locator('.vh-catalog-tile')).toHaveCount(10);
   await expect(page.getByRole('link', { name: /Qoder/ })).toBeVisible();
   await expect(page.getByRole('link', { name: /ZCode/ })).toHaveCount(0);
   await expect(page.getByRole('tab')).toHaveCount(0);
@@ -81,7 +81,7 @@ test("missing preferred RTL never silently launches normally", async ({
   await mockNative(page, "missing");
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Run RTL ZCode", exact: true })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Set up RTL for ZCode", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Prepare ZCode", exact: true })).toBeVisible();
   expect(
     await page.evaluate(() =>
       (window as any).__mock.calls.filter((c: any) => c.cmd === "launch_app"),

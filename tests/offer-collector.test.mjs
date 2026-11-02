@@ -29,6 +29,8 @@ test('notifications have stable dedup keys and suppress stale, future, expired a
   assert.equal(events[1].kind, 'claim');
   assert.equal(notificationEvents([offer()], new Date(+now + 60000), quiet)[0].key, events[0].key);
   for (const change of [{ sourceState: 'stale' }, { endAt: '2026-10-26T00:00:00Z' }, { startAt: '2026-10-28T00:00:00Z' }, { checkedAt: '2026-10-20T00:00:00Z' }]) assert.equal(notificationEvents([{ ...offer(), ...change }], now, quiet).length, 0);
+  assert.equal(notificationEvents([{ ...offer(), checkedAt: '2026-10-27T04:00:00Z' }], now, quiet).length, 0);
+  assert.equal(notificationEvents([{ ...offer(), endAt: now.toISOString() }], now, quiet).length, 0);
   const local = new Date(2026, 9, 27, 23, 30);
   assert.equal(notificationEvents([offer()], local, { enabled: true, from: '22:00', to: '08:00' }).length, 0);
 });

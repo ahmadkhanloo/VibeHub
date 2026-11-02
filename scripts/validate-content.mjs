@@ -10,6 +10,9 @@ import {
   offerSchema,
   feedIndexSchema,
   parseLearningTutorials,
+  parseLearningIndex,
+  parseLearningFeed,
+  parseNewsFeed,
   assertNoExecutablePayload,
 } from '../packages/core/src/schemas.ts';
 
@@ -90,8 +93,42 @@ for (const appId of appIds) {
 
 try {
   const tutorials = parseLearningTutorials(await readJson('content/learning/extensions.json'));
-  console.log(`OK learning tutorials (${tutorials.length})`);
+  console.log(`OK legacy learning tutorials (${tutorials.length})`);
 } catch (e) { fail('learning tutorials', e); }
+
+try {
+  const index = parseLearningIndex(await readJson('content/learning/index.json'));
+  const articles = [];
+  for (const article of index.articles) {
+    const sourceDir = article.contentPath ?? `docs/tutorials/${article.id}`;
+    const readLanguage = async (lang) => {
+      const candidates = [
+        join(root, sourceDir, `${lang}.md`),
+        join(root, `${sourceDir}.${lang}.md`),
+      ];
+      for (const path of candidates) {
+        try {
+          const text = await readFile(path, 'utf8');
+          assertNoExecutablePayload(text);
+          return text.trim();
+        } catch (error) {
+          if (error?.code !== 'ENOENT') throw error;
+        }
+      }
+      throw new Error(`Missing ${lang} Markdown for ${article.id}`);
+    };
+    const [fa, en] = await Promise.all([readLanguage('fa'), readLanguage('en')]);
+    const { contentPath: _contentPath, ...metadata } = article;
+    articles.push({ ...metadata, body: { fa, en } });
+  }
+  const feed = parseLearningFeed({ schemaVersion: index.schemaVersion, categories: index.categories, articles });
+  console.log(`OK learning article feed (${feed.articles.length} articles, ${feed.categories.length} categories)`);
+} catch (e) { fail('learning article feed', e); }
+
+try {
+  const news = parseNewsFeed(await readJson('content/news/index.json'));
+  console.log(`OK news feed (${news.length} items)`);
+} catch (e) { fail('news feed', e); }
 
 if (failures) {
   console.error(`\n${failures} content validation failure(s)`);

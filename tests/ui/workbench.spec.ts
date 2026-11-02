@@ -5,7 +5,7 @@ test('the sidebar links directly to each destination and legacy routes remain us
   await mockNative(page);
   await page.goto('/');
   const sidebar = page.getByRole('navigation', { name: 'Main navigation' });
-  for (const [label, route] of [['API notebook','/connections/api'],['Proxy','/connections/proxy'],['Offers and news','/offers'],['Install terminal tools','/terminal'],['Diagnostics','/doctor'],['Learn','/learning']]) {
+  for (const [label, route] of [['API notebook','/connections/api'],['Proxy','/connections/proxy'],['News and offers','/offers'],['Terminal & Persian text','/terminal'],['Diagnostics','/doctor'],['Learn','/learning']]) {
     await expect(sidebar.getByRole('link', { name: label, exact: true })).toHaveAttribute('href', route);
   }
   await expect(sidebar.getByRole('link', { name: /More tools/i })).toHaveCount(0);
@@ -56,7 +56,7 @@ test('terminal changes require confirmation and retain the restore action', asyn
   await apply.click();
   await page.getByRole('dialog').getByRole('button', { name: 'Confirm', exact: true }).click();
   await expect(page.getByRole('dialog')).not.toBeVisible();
-  await page.getByRole('button', { name: 'Fully undo VibeHub changes', exact: true }).click();
+  await page.getByRole('button', { name: 'Restore prompt settings', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Confirm', exact: true }).click();
   await expect(apply).toBeEnabled();
   expect(await page.evaluate(() => (window as any).__mock.calls.filter((c: any) => ['terminal_apply_theme', 'terminal_undo'].includes(c.cmd)).map((c: any) => c.cmd))).toEqual(['terminal_apply_theme', 'terminal_undo']);

@@ -21,8 +21,7 @@ import {
   type RtlComponentStatus,
 } from "@/services/ipc";
 import { useSettings } from "./settings";
-import { useCatalog } from "@/lib/catalog";
-import { launchBlocked, launchFailureKind } from "@core";
+import { launchBlocked, launchFailureKind, rtlAdapterConfigured } from "@core";
 interface ToolContext {
   apps: DetectedApp[];
   editors: DetectedEditor[];
@@ -74,7 +73,6 @@ export function ToolProvider({ children }: { children: ReactNode }) {
     polling = useRef(false),
     connectionFlight = useRef<Promise<void> | null>(null);
   const { settings, update } = useSettings();
-  const catalog = useCatalog();
   const acceptStates = useCallback((next: Record<string, LaunchState>) => {
     setStates(old => Object.entries(next).every(([id, value]) => JSON.stringify(old[id]) === JSON.stringify(value)) ? old : { ...old, ...next });
     setFailures(old => {
@@ -219,11 +217,7 @@ export function ToolProvider({ children }: { children: ReactNode }) {
   ) => {
     const key = kind + ":" + id;
     if (inFlight.current.has(key)) return;
-    const rtlAvailable =
-      components.some((c) => c.id === id && c.available && c.configured) &&
-      (id === "antigravity" || catalog.apps.some(
-        (a) => a.id === id && a.capabilities.rtl === "verified",
-      ));
+    const rtlAvailable = kind === 'app' && rtlAdapterConfigured(id, components);
     const managed = kind === "app" || id === "antigravity";
     if (managed && mode === 'rtl' && !rtlAvailable)
       return;

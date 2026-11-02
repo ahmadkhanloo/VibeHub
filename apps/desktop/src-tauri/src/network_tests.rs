@@ -428,9 +428,11 @@ fn feed_downloads_learning_and_only_treats_404_as_an_older_feed() {
     for (status, body) in [(200, "[]"), (404, "{}"), (500, "{}"), (200, "broken json")] {
         let server = listener();
         let port = server.local_addr().unwrap().port();
+        // Non-404 errors and malformed legacy JSON stop before the new optional endpoints.
+        let request_count = if status == 500 || body == "broken json" { 4 } else { 6 };
         let handle = thread::spawn(move || {
-            // Empty catalog plus two optional code-review guides and learning.
-            for _ in 0..4 {
+            // Empty catalog plus optional legacy learning, articles and news.
+            for _ in 0..request_count {
                 let (mut stream, _) = server.accept().unwrap();
                 let text = request(&mut stream);
                 let path = text.split_whitespace().nth(1).unwrap();
@@ -438,6 +440,7 @@ fn feed_downloads_learning_and_only_treats_404_as_an_older_feed() {
                     "/feed/index.json" => response(&mut stream, 200,
                         r#"{"schemaVersion":1,"generatedAt":"2026-11-01","apps":[],"providers":[],"offers":[]}"#, ""),
                     "/feed/learning/extensions.json" => response(&mut stream, status, body, ""),
+                    "/feed/learning/index.json" | "/feed/news/index.json" => response(&mut stream, 404, "{}", ""),
                     "/feed/guides/code-review/fa.md" | "/feed/guides/code-review/en.md" => response(&mut stream, 404, "{}", ""),
                     _ => panic!("Unexpected feed request: {path}"),
                 }
@@ -454,4 +457,33 @@ fn feed_downloads_learning_and_only_treats_404_as_an_older_feed() {
             _ => assert!(result.is_err()),
         }
     }
+}
+
+#[test]
+fn feed_downloads_optional_dynamic_learning_and_news_without_a_client_update() {
+    let server = listener();
+    let port = server.local_addr().unwrap().port();
+    let handle = thread::spawn(move || {
+        for _ in 0..6 {
+            let (mut stream, _) = server.accept().unwrap();
+            let path = request(&mut stream).split_whitespace().nth(1).unwrap().to_owned();
+            match path.as_str() {
+                "/feed/index.json" => response(&mut stream, 200,
+                    r#"{"schemaVersion":1,"generatedAt":"2026-11-02","apps":[],"providers":[],"offers":[]}"#, ""),
+                "/feed/guides/code-review/fa.md" | "/feed/guides/code-review/en.md" | "/feed/learning/extensions.json" => response(&mut stream, 404, "{}", ""),
+                "/feed/learning/index.json" => response(&mut stream, 200,
+                    r#"{"schemaVersion":1,"categories":[],"articles":[]}"#, ""),
+                "/feed/news/index.json" => response(&mut stream, 200,
+                    r#"{"schemaVersion":1,"news":[]}"#, ""),
+                _ => panic!("Unexpected feed request: {path}"),
+            }
+        }
+    });
+    let result = tauri::async_runtime::block_on(feed_sync(
+        Some(json!({"id":"direct","name":"Direct","mode":"direct"})),
+        format!("http://127.0.0.1:{port}/feed"),
+    )).unwrap();
+    handle.join().unwrap();
+    assert_eq!(result["learningArticles"]["categories"], json!([]));
+    assert_eq!(result["news"]["news"], json!([]));
 }

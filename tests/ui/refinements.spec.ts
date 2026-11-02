@@ -3,6 +3,7 @@ import { mockNative } from './mock';
 
 test('global search keeps Ctrl+K and appearance uses the preview gallery and independent system control', async ({ page }) => {
   await mockNative(page); await page.goto('/settings');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await page.keyboard.press('Control+k');
   await expect(page.getByRole('searchbox').first()).toBeFocused();
   await expect(page.locator('.vh-theme-preview')).toHaveCount(8);

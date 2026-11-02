@@ -522,11 +522,22 @@ pub async fn feed_sync(profile: Option<Value>, base: String) -> Result<Value> {
         }
         Some(bounded_json(response, 2 * 1024 * 1024).await?)
     };
+    let learning_articles = optional_feed_json(&client, format!("{root}learning/index.json")).await?;
+    let news = optional_feed_json(&client, format!("{root}news/index.json")).await?;
     // The UI applies the shared strict Zod schemas before accepting this data.
     // Downloads never provide executable commands or package mappings.
     let mut result = json!({"ok":true,"updated":true,"detail":"Downloaded feed; shared schema validation required before use","generatedAt":index["generatedAt"],"catalog":catalog,"guides":guides});
     if let Some(learning) = learning { result["learning"] = learning; }
+    if let Some(learning_articles) = learning_articles { result["learningArticles"] = learning_articles; }
+    if let Some(news) = news { result["news"] = news; }
     Ok(result)
+}
+
+async fn optional_feed_json(client: &reqwest::Client, url: String) -> Result<Option<Value>> {
+    let response = client.get(url).send().await.map_err(|_| "Optional feed unavailable")?;
+    if response.status() == reqwest::StatusCode::NOT_FOUND { return Ok(None); }
+    if !response.status().is_success() { return Err("Optional feed returned an HTTP error".into()); }
+    bounded_json(response, 2 * 1024 * 1024).await.map(Some)
 }
 
 #[cfg(test)]

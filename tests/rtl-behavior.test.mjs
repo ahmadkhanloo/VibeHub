@@ -37,3 +37,18 @@ test('launch controls and shared context apply the shared fail-closed policy', a
   assert.match(context, /ipc\.launchState/);
   assert.match(context, /launchBlocked/);
 });
+
+
+test('Antigravity bundles Vazirmatn for chat content', async () => {
+  const { CSS_TEXT } = await import('../apps/Antigravity/style.mjs');
+  assert.match(CSS_TEXT, /font-family:\s*'Vazirmatn'/);
+  await readFile(new URL('../apps/Antigravity/assets/Vazirmatn-Regular.woff2', import.meta.url));
+  await readFile(new URL('../apps/Antigravity/assets/Vazirmatn-Bold.woff2', import.meta.url));
+});
+
+test('ZCode supplies local Persian font files', async () => {
+  assert.match(zcode, /Vazirmatn-Regular\.woff2/);
+  assert.match(zcode, /font-family:\s*'Vazirmatn'/);
+  await readFile(new URL('../apps/ZCode/assets/Vazirmatn-Regular.woff2', import.meta.url));
+  await readFile(new URL('../apps/ZCode/assets/Vazirmatn-Bold.woff2', import.meta.url));
+});

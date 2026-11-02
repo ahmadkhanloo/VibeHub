@@ -59,6 +59,13 @@ test('main navigation calls the manual API store a notebook', async ({ page }) =
 
 test('missing bundled RTL offers the full installer without claiming setup succeeded', async ({ page }) => {
   await mockNative(page, 'missing');
+  await page.addInitScript(() => {
+    const host = window as any, original = host.__TAURI_INTERNALS__.invoke;
+    host.__TAURI_INTERNALS__.invoke = async (cmd: string, args: any) => {
+      const result = await original(cmd, args);
+      return cmd === 'rtl_components' ? result.map((item: any) => ({...item, setupSupported: item.id === 'zcode'})) : result;
+    };
+  });
   await page.goto('/');
   await page.getByTestId('app-tile-zcode').getByRole('button', { name: 'Set up RTL for ZCode', exact: true }).click();
   const dialog = page.getByRole('dialog');

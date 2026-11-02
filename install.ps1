@@ -11,6 +11,8 @@ $definitions = @{
   zcode = @{ Name = 'ZCode RTL'; Dir = 'ZCode'; Exe = $zcodeExe }
   qoder = @{ Name = 'Qoder RTL'; Dir = 'Qoder'; Exe = $null }
   deepseek = @{ Name = 'DeepSeek Harness RTL'; Dir = 'DeepSeekHarness'; Exe = "$env:LOCALAPPDATA\Programs\DeepSeek Harness\DeepSeek Harness.exe" }
+  antigravity = @{ Name = 'Antigravity RTL'; Dir = 'Antigravity'; Exe = "$env:LOCALAPPDATA\Programs\antigravity\Antigravity.exe" }
+  opencode = @{ Name = 'OpenCode RTL'; Dir = 'OpenCode'; Exe = "$env:LOCALAPPDATA\Programs\ai.opencode.desktop\OpenCode.exe" }
 }
 $desktop = [Environment]::GetFolderPath('Desktop')
 $shell = New-Object -ComObject WScript.Shell
@@ -45,9 +47,9 @@ if ($Uninstall) {
 }
 
 $requested = @($Apps -split '[,\s]+' | ForEach-Object { $_.Trim().ToLowerInvariant() } | Where-Object { $_ } | ForEach-Object { if ($_ -eq 'deepseek-harness') { 'deepseek' } else { $_ } } | Select-Object -Unique)
-if (-not $requested.Count) { throw 'Choose at least one app with -Apps zcode,qoder,deepseek.' }
+if (-not $requested.Count) { throw 'Choose at least one app with -Apps zcode,qoder,deepseek,antigravity,opencode.' }
 foreach ($name in $requested) {
-  if (-not $definitions.ContainsKey($name)) { throw "Unknown app '$name'. Choose zcode, qoder, or deepseek." }
+  if (-not $definitions.ContainsKey($name)) { throw "Unknown app '$name'. Choose zcode, qoder, deepseek, antigravity, or opencode." }
 }
 
 try {
@@ -62,9 +64,10 @@ $powershell = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powersh
 foreach ($name in $requested) {
   $app = $definitions[$name]
   $folder = Join-Path $PSScriptRoot ("apps\" + $app.Dir)
-  foreach ($file in 'launch.vbs', 'start.ps1', 'injector.mjs') {
+  foreach ($file in 'launch.vbs', 'start.ps1', 'injector.mjs', 'style.mjs', 'cdp-targets.mjs', 'assets\OFL.txt', 'assets\Vazirmatn-Regular.woff2', 'assets\Vazirmatn-Bold.woff2') {
     if (-not (Test-Path -LiteralPath (Join-Path $folder $file))) { throw "Missing $file for $name in $folder." }
   }
+  if (-not (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'apps\rtl-style.mjs'))) { throw 'Missing apps\rtl-style.mjs shared style helper.' }
   if ($name -eq 'qoder') {
     $discovery = @(& $powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $folder 'start.ps1') -Discover 2>&1)
     # Prefer the base64 handoff: raw path text is corrupted to '?' whenever the

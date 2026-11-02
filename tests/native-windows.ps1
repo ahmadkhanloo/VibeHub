@@ -64,7 +64,7 @@ try {
     $initial = "# original فارسی`r`n"
     [IO.File]::WriteAllText($profileFile, $initial, [Text.UTF8Encoding]::new($true))
     $detected = @(Run-Adapter @{operation='detect'})
-    Assert ($detected.Count -eq 8) 'Detection must return all eight app records'
+    Assert ($detected.Count -eq 11) 'Detection must return all eleven app records'
     Assert (@($detected | Where-Object { $_.installed -isnot [bool] }).Count -eq 0) 'Detection installed flags must be booleans'
     $editors = @(Run-Adapter @{operation='detect-editors'})
     Assert ($editors.Count -eq 0) 'General IDE discovery must stay retired'
@@ -121,9 +121,9 @@ try {
     Assert ($batch.alive.phase -eq 'running') 'Batch status must check a live PID'
     Assert ($batch.absent.phase -eq 'idle') 'Batch status must preserve idle entries'
     Assert ($batch.failed.phase -eq 'failed' -and $batch.failed.error -eq 'fixture error') 'Batch status must preserve launch errors'
-    [IO.File]::WriteAllText((Join-Path $sandbox 'opencode.cmd'), "@echo off`r`n", [Text.UTF8Encoding]::new($false))
-    $cli = @(Run-Adapter @{operation='detect'} | Where-Object { $_.id -eq 'opencode' })
-    Assert ($cli.Count -eq 1 -and $cli[0].installed -and $cli[0].path -eq (Join-Path $sandbox 'opencode.cmd')) 'Fast PATH detection must find CMD shims'
+    [IO.File]::WriteAllText((Join-Path $sandbox 'mimocode.cmd'), "@echo off`r`n", [Text.UTF8Encoding]::new($false))
+    $cli = @(Run-Adapter @{operation='detect'} | Where-Object { $_.id -eq 'mimocode' })
+    Assert ($cli.Count -eq 1 -and $cli[0].installed -and $cli[0].path -eq (Join-Path $sandbox 'mimocode.cmd')) 'Fast PATH detection must find CMD shims'
     $state = Run-Adapter @{operation='terminal-detect'}
     Assert ($state.profilePath -eq $profileFile) "Test profile must be isolated. Received: $($state | ConvertTo-Json -Compress)"
     $applied = Run-Adapter @{operation='terminal-apply'}

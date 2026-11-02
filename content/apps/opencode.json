@@ -3,11 +3,15 @@
   "id": "opencode",
   "name": "OpenCode",
   "summary": {
-    "fa": "دستیار کدنویسی متن‌باز در خط فرمان با دسترسی به برخی مدل‌های رایگان از راه سرویس‌های مدل.",
-    "en": "Open-source CLI coding agent with selected free models via providers"
+    "fa": "دستیار کدنویسی متن‌باز؛ وایب‌هاب نسخهٔ دسکتاپ را شناسایی و اجرا می‌کند.",
+    "en": "Open-source coding assistant; VibeHub detects and launches the desktop app."
   },
-  "kind": "cli_agent",
-  "platforms": ["windows", "linux", "macos"],
+  "kind": "desktop_agent",
+  "platforms": [
+    "windows",
+    "linux",
+    "macos"
+  ],
   "websiteUrl": "https://opencode.ai/",
   "docsUrl": "https://dev.opencode.ai/v2/docs",
   "isOpenSource": true,
@@ -26,7 +30,7 @@
     "launch": "reported",
     "rtl": "unknown",
     "proxy": "unknown",
-    "terminal": "reported",
+    "terminal": "unknown",
     "byok": "reported"
   },
   "installMethods": [
@@ -34,8 +38,8 @@
       "method": "guide",
       "idOrUrl": "https://dev.opencode.ai/v2/docs",
       "note": {
-        "fa": "نصب طبق مستندات رسمی؛ OpenCode 1 و 2 فرمان opencode را اشغال میکنند و نباید کنار هم نصب شوند.",
-        "en": "Install per the official docs; OpenCode 1 and 2 share the `opencode` command and must not be installed side by side."
+        "fa": "نسخهٔ دسکتاپ را طبق مستندات رسمی نصب کنید.",
+        "en": "Install the desktop app using the official instructions."
       }
     }
   ],

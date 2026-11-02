@@ -1,0 +1,433 @@
+{
+  "schemaVersion": 1,
+  "categories": [
+    {
+      "id": "start",
+      "title": {
+        "fa": "شروع",
+        "en": "Getting started"
+      }
+    },
+    {
+      "id": "git",
+      "title": {
+        "fa": "گیت و مدیریت تغییرات",
+        "en": "Git and change management"
+      }
+    },
+    {
+      "id": "applications",
+      "title": {
+        "fa": "راهنمای برنامه‌ها",
+        "en": "App guides"
+      }
+    },
+    {
+      "id": "skills",
+      "title": {
+        "fa": "اسکیل‌ها و افزونه‌ها",
+        "en": "Skills and plugins"
+      }
+    },
+    {
+      "id": "workflows",
+      "title": {
+        "fa": "روش‌های کار",
+        "en": "Workflows"
+      }
+    },
+    {
+      "id": "ui",
+      "title": {
+        "fa": "رابط کاربری",
+        "en": "Interface design"
+      }
+    },
+    {
+      "id": "documents",
+      "title": {
+        "fa": "ساخت و ویرایش اسناد",
+        "en": "Documents"
+      }
+    },
+    {
+      "id": "testing",
+      "title": {
+        "fa": "آزمون و کنترل کیفیت",
+        "en": "Testing and quality"
+      }
+    },
+    {
+      "id": "models",
+      "title": {
+        "fa": "مدل‌ها و دسترسی حساب",
+        "en": "Models and accounts"
+      }
+    },
+    {
+      "id": "integrations",
+      "title": {
+        "fa": "اتصال ابزارها",
+        "en": "Tool integrations"
+      }
+    }
+  ],
+  "articles": [
+    {
+      "id": "getting-started",
+      "category": "start",
+      "kind": "guide",
+      "order": 10,
+      "title": {
+        "fa": "شروع با VibeHub",
+        "en": "Getting started with VibeHub"
+      },
+      "summary": {
+        "fa": "نصب، شناسایی برنامه، اتصال و بررسی نخستین کار را در چند گام انجام دهید.",
+        "en": "Install and detect an app, connect it, and verify your first task."
+      },
+      "sourceUrl": "https://github.com/ahmadkhanloo/VibeHub",
+      "checkedAt": "2026-11-02",
+      "contentPath": "docs/tutorials/getting-started"
+    },
+    {
+      "id": "skill-basics",
+      "category": "skills",
+      "kind": "guide",
+      "order": 10,
+      "title": {
+        "fa": "نصب و مدیریت اسکیل‌ها",
+        "en": "Install and manage skills"
+      },
+      "summary": {
+        "fa": "سازگاری میزبان، نصب، دسترسی‌ها و حذف ایمن اسکیل‌ها و افزونه‌ها در یک راهنمای مشترک.",
+        "en": "A shared guide to host compatibility, installation, access, and safely removing skills and plugins."
+      },
+      "sourceUrl": "https://learn.chatgpt.com/docs/build-skills",
+      "checkedAt": "2026-10-27",
+      "contentPath": "docs/tutorials/skill-basics"
+    },
+    {
+      "id": "rtl-setup",
+      "category": "start",
+      "kind": "guide",
+      "order": 30,
+      "title": {
+        "fa": "فارسی‌نویسی و راه‌اندازی RTL",
+        "en": "Persian text and RTL setup"
+      },
+      "summary": {
+        "fa": "روش مشترک آماده‌سازی و بررسی فارسی در برنامه‌های پشتیبانی‌شده.",
+        "en": "Shared setup and verification for Persian text in supported apps."
+      },
+      "sourceUrl": "https://github.com/ahmadkhanloo/VibeHub",
+      "checkedAt": "2026-10-29",
+      "contentPath": "docs/tutorials/rtl-setup"
+    },
+    {
+      "id": "code-review",
+      "category": "workflows",
+      "kind": "workflow",
+      "order": 10,
+      "title": {
+        "fa": "بازبینی کد با ایجنت",
+        "en": "Review code with an agent"
+      },
+      "summary": {
+        "fa": "مراحل بازبینی تغییر، آزمون و انتشار با کمک دستیار کدنویسی.",
+        "en": "Review code changes, tests, and releases with an AI coding agent."
+      },
+      "sourceUrl": "https://claude.dev/blog/solving-code-review-at-anthropic/",
+      "checkedAt": "2026-11-01",
+      "contentPath": "docs/tutorials/code-review"
+    },
+    {
+      "id": "long-running",
+      "category": "workflows",
+      "kind": "workflow",
+      "order": 20,
+      "title": {
+        "fa": "واگذاری کارهای طولانی به ایجنت",
+        "en": "Long-running agent tasks"
+      },
+      "summary": {
+        "fa": "یک الگوی چهارمرحله‌ای برای کارهای چندبخشی و قابل‌تحویل میان نشست‌ها.",
+        "en": "A four-step pattern for multi-part tasks that span sessions."
+      },
+      "sourceUrl": "https://github.com/anthropics/cwc-long-running-agents",
+      "checkedAt": "2026-11-01",
+      "contentPath": "docs/tutorials/long-running"
+    },
+    {
+      "id": "dsh-deepseek-web-login",
+      "category": "models",
+      "kind": "guide",
+      "order": 10,
+      "title": {
+        "fa": "DeepSeek 网页登录（免费模型） — ورود وب دیپ‌سیک",
+        "en": "DeepSeek 网页登录（免费模型）"
+      },
+      "summary": {
+        "fa": "آموزش تکمیلی: اتصال حساب وب DeepSeek به DeepSeek Harness با افزونهٔ غیررسمی dsh-deepseek-web-login. سهمیهٔ وب، API رایگان نامحدود نیست. بررسی مستندات انجام شده؛ نصب و ورود محلی آزموده نشده است.",
+        "en": "Intermediate: connect a DeepSeek Web account to DeepSeek Harness using unofficial dsh-deepseek-web-login. Web allowance does not mean unlimited free API. Documentation checked; local installation/login untested."
+      },
+      "sourceUrl": "https://github.com/cv-superding/dsh-deepseek-web-login",
+      "checkedAt": "2026-11-01",
+      "relatedIds": [
+        "skill-basics"
+      ],
+      "contentPath": "content/learning/articles/dsh-deepseek-web-login"
+    },
+    {
+      "id": "frontend-design",
+      "category": "ui",
+      "kind": "skill",
+      "order": 10,
+      "title": {
+        "fa": "frontend-design",
+        "en": "frontend-design"
+      },
+      "summary": {
+        "fa": "طراحی رابط وب با جهت بصری مشخص.",
+        "en": "Design a web interface with a clear visual direction."
+      },
+      "sourceUrl": "https://github.com/anthropics/skills/tree/main/skills/frontend-design",
+      "checkedAt": "2026-10-27",
+      "relatedIds": [
+        "skill-basics"
+      ],
+      "contentPath": "content/learning/articles/frontend-design"
+    },
+    {
+      "id": "webapp-testing",
+      "category": "testing",
+      "kind": "skill",
+      "order": 10,
+      "title": {
+        "fa": "webapp-testing",
+        "en": "webapp-testing"
+      },
+      "summary": {
+        "fa": "آزمون اپ وب محلی با Playwright.",
+        "en": "Test a local web app with Playwright."
+      },
+      "sourceUrl": "https://github.com/anthropics/skills/tree/main/skills/webapp-testing",
+      "checkedAt": "2026-10-27",
+      "relatedIds": [
+        "skill-basics"
+      ],
+      "contentPath": "content/learning/articles/webapp-testing"
+    },
+    {
+      "id": "pdf",
+      "category": "documents",
+      "kind": "skill",
+      "order": 10,
+      "title": {
+        "fa": "pdf",
+        "en": "pdf"
+      },
+      "summary": {
+        "fa": "خواندن، ساخت و بررسی فایل PDF.",
+        "en": "Read, generate and inspect PDF files."
+      },
+      "sourceUrl": "https://github.com/anthropics/skills/tree/main/skills/pdf",
+      "checkedAt": "2026-10-27",
+      "relatedIds": [
+        "skill-basics"
+      ],
+      "contentPath": "content/learning/articles/pdf"
+    },
+    {
+      "id": "docx",
+      "category": "documents",
+      "kind": "skill",
+      "order": 20,
+      "title": {
+        "fa": "docx",
+        "en": "docx"
+      },
+      "summary": {
+        "fa": "ساخت و ویرایش سند Word.",
+        "en": "Create and edit Word documents."
+      },
+      "sourceUrl": "https://github.com/anthropics/skills/tree/main/skills/docx",
+      "checkedAt": "2026-10-27",
+      "relatedIds": [
+        "skill-basics"
+      ],
+      "contentPath": "content/learning/articles/docx"
+    },
+    {
+      "id": "xlsx",
+      "category": "documents",
+      "kind": "skill",
+      "order": 30,
+      "title": {
+        "fa": "xlsx",
+        "en": "xlsx"
+      },
+      "summary": {
+        "fa": "کار با صفحه‌گسترده و فرمول‌ها.",
+        "en": "Work with spreadsheets and formulas."
+      },
+      "sourceUrl": "https://github.com/anthropics/skills/tree/main/skills/xlsx",
+      "checkedAt": "2026-10-27",
+      "relatedIds": [
+        "skill-basics"
+      ],
+      "contentPath": "content/learning/articles/xlsx"
+    },
+    {
+      "id": "pptx",
+      "category": "documents",
+      "kind": "skill",
+      "order": 40,
+      "title": {
+        "fa": "pptx",
+        "en": "pptx"
+      },
+      "summary": {
+        "fa": "ساخت و ویرایش ارائه PowerPoint.",
+        "en": "Create and edit PowerPoint presentations."
+      },
+      "sourceUrl": "https://github.com/anthropics/skills/tree/main/skills/pptx",
+      "checkedAt": "2026-10-27",
+      "relatedIds": [
+        "skill-basics"
+      ],
+      "contentPath": "content/learning/articles/pptx"
+    },
+    {
+      "id": "skill-creator",
+      "category": "skills",
+      "kind": "skill",
+      "order": 10,
+      "title": {
+        "fa": "skill-creator",
+        "en": "skill-creator"
+      },
+      "summary": {
+        "fa": "ساخت و بهبود اسکیل قابل استفاده مجدد.",
+        "en": "Create and improve a reusable skill."
+      },
+      "sourceUrl": "https://github.com/anthropics/skills/tree/main/skills/skill-creator",
+      "checkedAt": "2026-10-27",
+      "relatedIds": [
+        "skill-basics"
+      ],
+      "contentPath": "content/learning/articles/skill-creator"
+    },
+    {
+      "id": "github",
+      "category": "integrations",
+      "kind": "guide",
+      "order": 10,
+      "title": {
+        "fa": "GitHub",
+        "en": "GitHub"
+      },
+      "summary": {
+        "fa": "کار با مخزن، ایشو و درخواست ادغام.",
+        "en": "Work with repositories, issues and pull requests."
+      },
+      "sourceUrl": "https://github.com/github/github-mcp-server",
+      "checkedAt": "2026-10-27",
+      "relatedIds": [
+        "skill-basics"
+      ],
+      "contentPath": "content/learning/articles/github"
+    },
+    {
+      "id": "figma",
+      "category": "integrations",
+      "kind": "guide",
+      "order": 20,
+      "title": {
+        "fa": "Figma",
+        "en": "Figma"
+      },
+      "summary": {
+        "fa": "استفاده از اطلاعات طراحی و گردش کارهای Figma.",
+        "en": "Use design context and supported Figma workflows."
+      },
+      "sourceUrl": "https://github.com/openai/plugins/tree/main/plugins/figma",
+      "checkedAt": "2026-10-27",
+      "relatedIds": [
+        "skill-basics"
+      ],
+      "contentPath": "content/learning/articles/figma"
+    },
+    {
+      "id": "openai-developers",
+      "category": "integrations",
+      "kind": "guide",
+      "order": 30,
+      "title": {
+        "fa": "OpenAI Developers",
+        "en": "OpenAI Developers"
+      },
+      "summary": {
+        "fa": "استفاده از مستندات جاری OpenAI و راهنمای API.",
+        "en": "Use current OpenAI documentation and API guidance."
+      },
+      "sourceUrl": "https://developers.openai.com/learn/developers-codex-plugin",
+      "checkedAt": "2026-10-27",
+      "relatedIds": [
+        "skill-basics"
+      ],
+      "contentPath": "content/learning/articles/openai-developers"
+    },
+    {
+      "id": "git-first-commit",
+      "category": "git",
+      "kind": "guide",
+      "order": 10,
+      "title": {
+        "fa": "۱. اولین تغییرت را با Git ثبت کن",
+        "en": "1. Record your first change with Git"
+      },
+      "summary": {
+        "fa": "از اینجا شروع کن؛ در یک پوشهٔ تمرینی، تغییرها را ببین و اولین کامیتت را بساز.",
+        "en": "Start here: inspect changes and create your first commit in a practice folder."
+      },
+      "sourceUrl": "https://git-scm.com/book/fa/v2",
+      "checkedAt": "2026-11-02",
+      "contentPath": "content/learning/articles/git-first-commit"
+    },
+    {
+      "id": "git-agent-github",
+      "category": "git",
+      "kind": "guide",
+      "order": 20,
+      "title": {
+        "fa": "۲. تغییرات ایجنت و GitHub را مدیریت کن",
+        "en": "2. Manage agent changes and GitHub"
+      },
+      "summary": {
+        "fa": "تغییرات دستیار را بازبینی کن، روی شاخه کار کن و نتیجه را به GitHub بفرست.",
+        "en": "Review assistant changes, work on a branch, and send the result to GitHub."
+      },
+      "sourceUrl": "https://git-scm.com/book/fa/v2",
+      "checkedAt": "2026-11-02",
+      "contentPath": "content/learning/articles/git-agent-github"
+    },
+    {
+      "id": "git-practice-resources",
+      "category": "git",
+      "kind": "guide",
+      "order": 30,
+      "title": {
+        "fa": "۳. تمرین کن و منبع مناسب را پیدا کن",
+        "en": "3. Practice and find the right resource"
+      },
+      "summary": {
+        "fa": "تمرین فارسی گیت، تمرین با Git واقعی و منابعی برای مرور یا رفع مشکل.",
+        "en": "Persian Git practice, real Git exercises, and references for troubleshooting."
+      },
+      "sourceUrl": "https://git-scm.com/book/fa/v2",
+      "checkedAt": "2026-11-02",
+      "contentPath": "content/learning/articles/git-practice-resources"
+    }
+  ]
+}

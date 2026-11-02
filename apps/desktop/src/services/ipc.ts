@@ -11,7 +11,7 @@ import type {
 } from '@core';
 import { invoke } from '@tauri-apps/api/core';
 import { loadCatalog, type Catalog } from '@catalog';
-import { assertNoExecutablePayload, parseLearningTutorials } from '@core';
+import { assertNoExecutablePayload, parseLearningFeed, parseLearningTutorials, parseNewsFeed } from '@core';
 import { applyRemoteCatalog, validateRemoteGuides } from '@/lib/catalog';
 
 export interface LaunchOutcome {
@@ -100,6 +100,8 @@ export interface FeedSyncResult {
   catalog?: Catalog;
   guides?: Record<string, string>;
   learning?: unknown;
+  learningArticles?: unknown;
+  news?: unknown;
 }
 
 const feedFlights = new Map<string, Promise<FeedSyncResult>>();
@@ -188,7 +190,9 @@ export const ipc = {
     const catalog = loadCatalog(result.catalog);
     const guides = validateRemoteGuides(result.guides, catalog);
     const learning = result.learning === undefined ? undefined : parseLearningTutorials(result.learning);
-    applyRemoteCatalog(catalog, guides, learning);
+    const learningArticles = result.learningArticles === undefined ? undefined : parseLearningFeed(result.learningArticles);
+    const news = result.news === undefined ? undefined : parseNewsFeed(result.news);
+    applyRemoteCatalog(catalog, guides, learning, learningArticles, news);
     try { const stamps = JSON.parse(localStorage.getItem('vibehub.feed.success.v1') ?? '{}'); stamps[feedBaseUrl] = Date.now(); localStorage.setItem('vibehub.feed.success.v1', JSON.stringify(stamps)); localStorage.removeItem('vibehub.feed.failure.v1'); } catch { /* Valid in-memory catalog remains available. */ }
     window.dispatchEvent(new Event('vibehub:feed-synced'));
     return { ...result, catalog };

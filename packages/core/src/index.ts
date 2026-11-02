@@ -166,13 +166,13 @@ export interface TerminalSetupState {
 }
 
 export const CAPABILITY_KEYS: Capability[] = ['install', 'launch', 'rtl', 'proxy', 'terminal', 'byok'];
-export const APP_IDS = ['zcode', 'qoder', 'deepseek-harness', 'opencode', 'mimocode', 'freebuff'] as const;
+export const APP_IDS = ['zcode', 'qoder', 'deepseek-harness', 'opencode', 'mimocode', 'freebuff', 'freebuff-desktop', 'antigravity', 'chatgpt', 'claude-desktop', 'claude-code'] as const;
 export type AppId = (typeof APP_IDS)[number];
 
 export { appManifestSchema, providerManifestSchema, offerSchema, feedIndexSchema, assertNoExecutablePayload } from './schemas.ts';
-export { parseLearningTutorials, type LearningTutorial } from './schemas.ts';
-export { LEARNING_TOPICS, tutorialTopic, groupTutorials, type LearningTopic } from './learning.ts';
+export { parseLearningTutorials, parseLearningIndex, parseLearningFeed, parseNewsFeed, type LearningTutorial, type LearningIndexArticle, type LearningArticle, type LearningCategory } from './schemas.ts';
+export { LEARNING_TOPICS, tutorialTopic, groupTutorials, groupArticles, type LearningTopic } from './learning.ts';
 
-export { preferredLaunchMode, launchBlocked, normalizeSearch, type LaunchMode } from './ux.ts';
+export { preferredLaunchMode, launchBlocked, normalizeSearch, rtlAdapterAvailable, rtlAdapterConfigured, rtlAdapterSetupSupported, type LaunchMode, type RtlAdapterState } from './ux.ts';
 
 export { claimWindow, notificationEvents } from './offer-events.ts';

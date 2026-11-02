@@ -68,9 +68,10 @@ function Get-RtlExecutable([string]$Id, [string]$AdapterDir) {
     'qoder' { @('Qoder.exe', 'Qoder IDE.exe') }
     'deepseek-harness' { @('DeepSeek Harness.exe') }
     'antigravity' { @('Antigravity.exe') }
+    'opencode' { @('OpenCode.exe') }
     default { return $null }
   }
-  $envName = switch ($Id) { 'zcode' {'ZCODE_RTL_EXE'} 'qoder' {'QODER_RTL_EXE'} 'deepseek-harness' {'DEEPSEEK_HARNESS_RTL_EXE'} 'antigravity' {'ANTIGRAVITY_RTL_EXE'} }
+  $envName = switch ($Id) { 'zcode' {'ZCODE_RTL_EXE'} 'qoder' {'QODER_RTL_EXE'} 'deepseek-harness' {'DEEPSEEK_HARNESS_RTL_EXE'} 'antigravity' {'ANTIGRAVITY_RTL_EXE'} 'opencode' {'OPENCODE_RTL_EXE'} }
   $override = [Environment]::GetEnvironmentVariable($envName)
   if ($override) {
     if (Test-Path -LiteralPath $override -PathType Leaf) { return $override }
@@ -90,6 +91,7 @@ function Get-RtlExecutable([string]$Id, [string]$AdapterDir) {
     'qoder' { @("$env:LOCALAPPDATA\Programs\Qoder IDE", "$env:LOCALAPPDATA\Programs\Qoder") }
     'deepseek-harness' { @("$env:LOCALAPPDATA\Programs\DeepSeek Harness") }
     'antigravity' { @("$env:LOCALAPPDATA\Programs\antigravity") }
+    'opencode' { @("$env:LOCALAPPDATA\Programs\ai.opencode.desktop") }
   }
   foreach ($base in $bases) {
     if ($Id -eq 'qoder') {

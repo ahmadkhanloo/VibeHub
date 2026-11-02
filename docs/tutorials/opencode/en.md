@@ -1,33 +1,10 @@
-# OpenCode — English guide
+# OpenCode Desktop
 
-![Educational workflow schematic](../../../apps/desktop/public/tutorials/opencode.svg)
+## Install and launch
+Install the desktop app from the [official website](https://opencode.ai/). Refresh its status in VibeHub; if it is not detected, choose the app executable and select OpenCode.exe. Launch the app and open your project folder inside it.
 
-## Introduction
-OpenCode is an open-source CLI coding agent. Model costs are separate from the tool; with free providers (OpenRouter free models or local Ollama) it is usable at no cost.
+## Connect a model
+Configure the provider and API key in OpenCode using its documentation. Saving or selecting an API in VibeHub alone does not connect the application. Pricing and quotas depend on the provider and model.
 
-## Free access
-- The tool is free and open source; models come from providers. Fully free path = OpenRouter free tier or Ollama.
-- No mandatory account for the tool itself (provider accounts are separate).
-
-## Install
-1. Install per the [official docs](https://dev.opencode.ai/v2/docs).
-2. **Conflict warning:** OpenCode 1 and 2 both install the `opencode` command; do not install both side by side. VibeHub detects the installed version and asks for an explicit decision on conflict — it never auto-overwrites.
-
-## First run
-From **My Apps** → **Open in Terminal** with your selected proxy profile. VibeHub launches the CLI directly (no RTL claims).
-
-## Proxy & Iran access
-Not tested. CLIs usually honor `HTTP_PROXY/HTTPS_PROXY`; VibeHub injects these from your proxy profile at launch and reports each tool's test result separately.
-
-## RTL
-Unknown — the RTL action stays disabled for this tool until a real test passes.
-
-## Terminal
-For a readable experience see VibeHub's **Terminal Setup** (mak-devline theme + JetBrainsMono Nerd Font); optional and fully reversible.
-
-## Troubleshooting
-- Command not found: reopen your shell/PATH or set the install path manually in settings.
-- v1/v2 conflict: uninstall the unwanted one with its own official tool, then reinstall.
-
-## Model options
-OpenRouter (free models only), local Ollama, or an OpenAI-compatible endpoint — store and test keys in **Models & APIs**.
+## Network and troubleshooting
+Refresh after a new installation. For a custom installation, choose the executable manually. Proxy routing and RTL behavior in the desktop app have not been separately verified.

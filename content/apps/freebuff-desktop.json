@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "freebuff-desktop",
+  "name": "Freebuff Desktop",
+  "summary": {
+    "fa": "نسخهٔ دسکتاپ Freebuff برای اجرای عامل‌های محلی در macOS، Windows و Linux. آداپتور RTL وایب‌هاب تا بررسی فایل اجرایی و renderer رسمی در دسترس نیست.",
+    "en": "Freebuff's desktop client for running local agents on macOS, Windows and Linux. VibeHub RTL stays unavailable until its official executable and renderer are inspected."
+  },
+  "kind": "desktop_agent",
+  "platforms": ["windows", "linux", "macos"],
+  "websiteUrl": "https://freebuff.com/desktop",
+  "isOpenSource": null,
+  "freeAccess": "ad_supported",
+  "freeAccessDetails": {
+    "fa": "صفحهٔ رسمی محصول دسترسی را رایگان و با پشتیبانی تبلیغات معرفی می‌کند. مدل‌ها، سهمیه و شرایط با وضعیت حساب و محصول تغییر می‌کنند.",
+    "en": "The official product page describes access as free and funded by ads. Models, quotas and terms depend on the account and product."
+  },
+  "requiresSignup": true,
+  "requiresPaymentCard": false,
+  "sourceOfFreeAccess": "https://freebuff.com/desktop",
+  "lastVerified": "2026-11-02",
+  "capabilities": {
+    "install": "reported",
+    "launch": "reported",
+    "rtl": "unsupported",
+    "proxy": "unknown",
+    "terminal": "unknown",
+    "byok": "unknown"
+  },
+  "installMethods": [
+    {
+      "method": "official-installer",
+      "idOrUrl": "https://freebuff.com/desktop",
+      "note": {
+        "fa": "از صفحهٔ رسمی نسخهٔ متناسب با سیستم‌عامل و معماری را بگیرید. امضای نصب‌کننده توسط وایب‌هاب تأیید نشده است. آداپتور RTL در این انتشار موجود نیست.",
+        "en": "Choose the official build for your OS and architecture. VibeHub has not verified the installer signature. The RTL adapter is unavailable in this release."
+      }
+    }
+  ]
+}
