@@ -87,8 +87,26 @@
         "en": "Install and detect an app, connect it, and verify your first task."
       },
       "sourceUrl": "https://github.com/ahmadkhanloo/VibeHub",
-      "checkedAt": "2026-11-02",
+      "checkedAt": "2026-11-03",
       "contentPath": "docs/tutorials/getting-started"
+    },
+    {
+      "id": "first-project",
+      "category": "start",
+      "kind": "guide",
+      "order": 20,
+      "title": {
+        "fa": "اولین پروژه با دستیار",
+        "en": "First project with an assistant"
+      },
+      "summary": {
+        "fa": "یک پوشهٔ تمرینی بساز، خواسته‌ات را دقیق بگو و اولین صفحهٔ واقعی‌ات را در مرورگر ببین.",
+        "en": "Create a practice folder, describe what you want, and see your first real page in a browser."
+      },
+      "sourceUrl": "https://github.com/ahmadkhanloo/VibeHub",
+      "checkedAt": "2026-11-03",
+      "contentPath": "content/learning/articles/first-project",
+      "relatedIds": ["getting-started", "git-first-commit", "rtl-setup"]
     },
     {
       "id": "skill-basics",
@@ -140,6 +158,24 @@
       "sourceUrl": "https://claude.dev/blog/solving-code-review-at-anthropic/",
       "checkedAt": "2026-11-01",
       "contentPath": "docs/tutorials/code-review"
+    },
+    {
+      "id": "debugging-with-agent",
+      "category": "workflows",
+      "kind": "workflow",
+      "order": 15,
+      "title": {
+        "fa": "دیباگ با کمک دستیار",
+        "en": "Debugging with an assistant"
+      },
+      "summary": {
+        "fa": "متن کامل خطا را بده، حدس‌ها را آزمایش کن و رفع را خودت تأیید کن.",
+        "en": "Hand over the full error text, test the guesses, and verify the fix yourself."
+      },
+      "sourceUrl": "https://github.com/ahmadkhanloo/VibeHub",
+      "checkedAt": "2026-11-03",
+      "contentPath": "content/learning/articles/debugging-with-agent",
+      "relatedIds": ["first-project", "code-review", "long-running"]
     },
     {
       "id": "long-running",
@@ -328,11 +364,11 @@
         "en": "GitHub"
       },
       "summary": {
-        "fa": "کار با مخزن، ایشو و درخواست ادغام.",
-        "en": "Work with repositories, issues and pull requests."
+        "fa": "مخزن محلی را به گیت‌هاب وصل کن، کار دستیار را کامیت و push کن و با پلاگین GitHub آشنا شو.",
+        "en": "Connect your local repository to GitHub, commit and push the assistant's work, and meet the GitHub plugin."
       },
       "sourceUrl": "https://github.com/github/github-mcp-server",
-      "checkedAt": "2026-10-27",
+      "checkedAt": "2026-11-03",
       "relatedIds": [
         "skill-basics"
       ],
