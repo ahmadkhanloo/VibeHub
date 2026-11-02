@@ -37,7 +37,7 @@ test('legacy guides open the current reader and learning search has an empty sta
   await expect(page.getByRole('heading', { name: 'Qoder', exact: true })).toBeVisible();
   await expect(page.getByText('Original source', { exact: true })).toBeVisible();
   await page.goto('/learning');
-  await page.getByRole('searchbox').last().fill('unfindable-journey-fixture');
+  await page.getByRole('searchbox', { name: 'Search learning guides', exact: true }).fill('unfindable-journey-fixture');
   await expect(page.locator('.vh-learning-results')).toHaveCount(0);
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 });
