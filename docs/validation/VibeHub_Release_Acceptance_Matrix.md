@@ -5,6 +5,10 @@
 **Build:** VibeHub `0.2.1` stable release. The installed upgrade check started from public `0.2.0-beta.4`.
 **Release state:** Stable. `v0.2.0` and `v0.2.1` are published, non-prerelease Releases. Their updater manifests and checksum files were repaired in place on 2026-10-31; no archive was rebuilt or re-signed. See the [updater manifest remediation report](20261031_updater_manifest_remediation.md).
 
+## Owner authorization for 0.2.3 stable — 2026-11-02
+
+After publication of `v0.2.3-beta.1`, the owner explicitly requested the final release instead of beta. This authorizes the tag-specific `v0.2.3` stable publication with the existing limitations disclosed. Gate 18 remains unverified; no acceptance result is promoted to PASS and no future stable tag is authorized by this exception.
+
 ## Status meanings
 
 - `PASS` — the stated scenario ran in its recorded environment and its evidence is linked.

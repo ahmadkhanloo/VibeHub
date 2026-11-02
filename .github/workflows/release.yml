@@ -58,8 +58,9 @@ jobs:
             if ($gateRows.Count -eq 0) { throw 'Stable release blocked: the acceptance matrix has no Gate 18 rows.' }
             $pendingRows = @($gateRows | Where-Object { $_ -notmatch '^\| Gate 18\b.*\| PASS \|' })
             # Owner-authorized releases retain unverified Gate 18 results and disclose them.
-            # v0.2.2 is a one-off exception explicitly requested on 2026-11-01; it does not mark any gate PASS.
-            if ($pendingRows.Count -gt 0 -and $tag -in @('v0.2.0', 'v0.2.1', 'v0.2.2')) {
+            # v0.2.2 was explicitly requested on 2026-11-01; v0.2.3 stable was explicitly requested on 2026-11-02.
+            # These tag-specific owner exceptions do not mark any gate PASS or authorize future tags.
+            if ($pendingRows.Count -gt 0 -and $tag -in @('v0.2.0', 'v0.2.1', 'v0.2.2', 'v0.2.3')) {
               "Owner-authorized $tag release exception; Gate 18 remains unverified:`n$($pendingRows -join "`n")" | Add-Content $env:GITHUB_STEP_SUMMARY
             } elseif ($pendingRows.Count -gt 0) {
               throw "Stable release blocked until Gate 18 is PASS for every scenario:`n$($pendingRows -join "`n")"
