@@ -5,7 +5,7 @@ test('main sidebar links directly to the tools and learning areas', async ({ pag
   await mockNative(page);
   await page.goto('/');
   const sidebar = page.getByRole('navigation', { name: 'Main navigation' });
-  for (const label of ['Apps', 'API notebook', 'Proxy', 'News and offers', 'Terminal & Persian text', 'Diagnostics', 'Learn']) {
+  for (const label of ['Apps', 'AI connections', 'Proxy', 'News and offers', 'Terminal & Persian text', 'Diagnostics', 'Learn']) {
     await expect(sidebar.getByRole('link', { name: label })).toBeVisible();
   }
   await expect(page.getByRole('link', { name: 'Settings' })).toBeVisible();
@@ -29,7 +29,7 @@ test('collapsed sidebar exposes its expand control on logo hover and keyboard fo
   await expect(page.getByRole('button', { name: 'Collapse sidebar', exact: true })).toBeVisible();
 });
 
-test('API notebook uses compact local provider cards and keeps proxy as a separate destination', async ({ page }) => {
+test('AI connections uses compact local provider cards and keeps proxy as a separate destination', async ({ page }) => {
   await mockNative(page);
   await page.setViewportSize({ width: 1280, height: 860 });
   await page.goto('/connections/api');
