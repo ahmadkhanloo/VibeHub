@@ -14,6 +14,10 @@
   "empty": "No guides in this list",
   "emptyHint": "Choose another category or refresh content later.",
   "source": "Original source",
+  "markDone": "Mark lesson as done",
+  "markedDone": "Lesson done",
+  "markDoneAria": "Mark {{title}} as done",
+  "markNotDoneAria": "Unmark {{title}}",
   "sourceContextTitle": "What does this repository show?",
   "sourceContext": "This is an educational example specifically for Claude Code, not a ready-made system that works unchanged with every assistant. Useful patterns include criteria that fail until evidence is checked, a separate evaluator with fresh context, and progress notes for handing work to the next session. Its authors describe it as example ingredients from the Code with Claude event; adapt the ideas for other tools instead of copying the hooks blindly.",
   "steps": {

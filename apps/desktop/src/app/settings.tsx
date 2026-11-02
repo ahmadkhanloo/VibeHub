@@ -31,6 +31,7 @@ export interface AppSettings {
   density: "comfortable" | "compact";
   textSize: "sm" | "md" | "lg";
   onboardingDone: boolean;
+  workshopMode: boolean;
   nativeNotifications: boolean;
   quietHours: { enabled: boolean; from: string; to: string };
   autoUpdateCheck: boolean;
@@ -51,6 +52,7 @@ const DEFAULTS: AppSettings = {
   density: "compact",
   textSize: "md",
   onboardingDone: false,
+  workshopMode: false,
   nativeNotifications: false,
   quietHours: { enabled: false, from: "22:00", to: "08:00" },
   autoUpdateCheck: true,
@@ -95,6 +97,7 @@ function load(): AppSettings {
           ? parsed.quietHours
           : {}),
       },
+      workshopMode: parsed.workshopMode === true,
     } as AppSettings;
   } catch {
     return { ...DEFAULTS, language: detectDefaultLanguage() };
