@@ -93,14 +93,14 @@ export function TerminalPage() {
           <Button size="sm" variant="ghost" onClick={() => void openUrl('https://github.com/mirbehnam/RtlTerminal/releases/tag/v1.1.4').catch(setError)}><ExternalLink size={15} aria-hidden="true" />{t('terminal:persian.source')}</Button>
         </div>
         <p className="text-xs leading-6 text-muted">{t('terminal:persian.requirements')}</p>
-        <div className="vh-terminal-sample"><pre dir="ltr">{PERSIAN_SAMPLE}</pre><Button size="sm" variant="ghost" onClick={() => void copySample()}>{copied ? <Check size={15} aria-hidden="true" /> : <ClipboardCopy size={15} aria-hidden="true" />}{copied ? t('terminal:copied') : t('terminal:copySample')}</Button></div>
+        <div className="vh-terminal-sample"><pre tabIndex={0} dir="ltr">{PERSIAN_SAMPLE}</pre><Button size="sm" variant="ghost" onClick={() => void copySample()}>{copied ? <Check size={15} aria-hidden="true" /> : <ClipboardCopy size={15} aria-hidden="true" />}{copied ? t('terminal:copied') : t('terminal:copySample')}</Button></div>
         <p className="text-xs leading-6 text-muted">{t('terminal:persian.verify')} {t('terminal:persian.undo')}</p>
       </Card>
 
       <Card className="space-y-4">
         <div><h2 className="vh-terminal-heading">{t('terminal:customize')}</h2><p className="mt-1 text-sm leading-7 text-muted">{t('terminal:themeDesc')}</p></div>
         <div className="vh-terminal-preview-row">
-          <div className="vh-terminal-preview-block"><pre dir="ltr" className="ltr-tech vh-terminal-preview">{PROMPT_PREVIEW}</pre><p className="text-xs text-muted">{t('terminal:previewNote')}</p></div>
+          <div className="vh-terminal-preview-block"><pre tabIndex={0} dir="ltr" className="ltr-tech vh-terminal-preview">{PROMPT_PREVIEW}</pre><p className="text-xs text-muted">{t('terminal:previewNote')}</p></div>
           <div className="vh-terminal-actions">
             {state?.hasOhMyPosh ? <Badge tone="success">{t('terminal:status.ompInstalled')}</Badge> : <Button size="sm" disabled={blocked} loading={busy === 'omp'} onClick={() => setConfirmation('omp')}><Package size={15} aria-hidden="true" />{t('terminal:installOmp')}</Button>}
             {state && !state.hasOhMyPosh && <p className="vh-terminal-requirement">{t('terminal:requirements.ohmyposh')}</p>}
@@ -118,7 +118,7 @@ export function TerminalPage() {
       </Card>
     </div>
 
-    {!!log.length && <details className="vh-terminal-details rounded-xl border border-border p-4"><summary>{t('journeyUx:terminal.details')}</summary><pre dir="ltr" className="ltr-tech mt-3 whitespace-pre-wrap break-all text-xs text-muted">{log.join('\n')}</pre></details>}
+    {!!log.length && <details className="vh-terminal-details rounded-xl border border-border p-4"><summary>{t('journeyUx:terminal.details')}</summary><pre tabIndex={0} dir="ltr" className="ltr-tech mt-3 whitespace-pre-wrap break-all text-xs text-muted">{log.join('\n')}</pre></details>}
     <Modal open={confirmation !== null} title={t(confirmation === 'apply' ? 'journeyUx:terminal.confirmApplyTitle' : confirmation === 'undo' ? 'journeyUx:terminal.confirmRestoreTitle' : 'journeyUx:terminal.confirmInstallTitle')} busy={!!busy} onClose={() => { setConfirmation(null); setError(null); }}>
       <p className="text-sm leading-7">{t(confirmation === 'persian' ? 'terminal:persian.confirm' : confirmation === 'apply' ? 'journeyUx:terminal.confirmApply' : confirmation === 'undo' ? 'journeyUx:terminal.confirmRestore' : 'journeyUx:terminal.confirmInstall')}</p>
       {error != null && <ErrorNotice error={error} />}
