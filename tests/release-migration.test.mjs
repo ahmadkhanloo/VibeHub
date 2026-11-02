@@ -166,7 +166,7 @@ test('release publishing is tag-only, least-privilege, and signs updater artifac
   assert.match(workflow, /prerelease: \$\{\{ contains\(github\.ref_name, '-'\) \}\}/);
   assert.match(workflow, /RELEASE_IS_PRERELEASE/);
   assert.match(workflow, /--prerelease/);
-  assert.match(workflow, /\$tag -in @\('v0\.2\.0', 'v0\.2\.1', 'v0\.2\.2', 'v0\.2\.3'\)/);
+  assert.match(workflow, /\$tag -in @\('v0\.2\.0', 'v0\.2\.1', 'v0\.2\.2', 'v0\.2\.3', 'v0\.2\.4'\)/);
   assert.match(workflow, /Owner-authorized \$tag release exception; Gate 18 remains unverified/);
   assert.match(workflow, /Stable release blocked until Gate 18 is PASS for every scenario/);
   assert.match(workflow, /Publish Setup as VibeHub-Setup\.exe/);
