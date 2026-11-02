@@ -36,6 +36,9 @@ jobs:
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Install browser for UI acceptance
+        run: pnpm exec playwright install --with-deps chromium
+
       - name: Test
         run: pnpm test
 
@@ -44,9 +47,6 @@ jobs:
 
       - name: Build desktop frontend
         run: pnpm build
-
-      - name: Install browser for UI acceptance
-        run: pnpm exec playwright install --with-deps chromium
 
       - name: Test desktop interface in browser
         run: pnpm test:ui

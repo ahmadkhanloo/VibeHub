@@ -110,6 +110,9 @@ jobs:
         shell: pwsh
         run: ./scripts/prepare-windows-rtl-payload.ps1
 
+      - name: Install browser for RTL tests
+        run: pnpm exec playwright install chromium
+
       - name: Run release preflight
         run: |
           pnpm test
