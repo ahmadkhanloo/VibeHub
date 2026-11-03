@@ -1,0 +1,51 @@
+{
+  "title": "Two-day workshop path",
+  "subtitle": "A guided path for complete beginners: install, connect, build, and ship with an AI assistant.",
+  "progressCount": "{{completed}} of {{total}} steps done",
+  "progressHint": "Progress stays on this device only.",
+  "modeCta": "Workshop mode",
+  "modeOn": "On",
+  "markDone": "Mark {{title}} as done",
+  "markNotDone": "Unmark {{title}}",
+  "openConnections": "Open AI connections",
+  "openLesson": "Open the lesson",
+  "install": {
+    "title": "Install VibeHub",
+    "body": "Download the official installer and pick \"Full VibeHub\". The installer bundles its own runtime and changes nothing on your system.",
+    "action": "Open Settings"
+  },
+  "detect": {
+    "title": "Detect a coding app",
+    "body": "Install one coding app from its official source, then scan again. Free-tier apps with daily credit are enough to start.",
+    "action": "Scan again",
+    "found": "{{count}} installed app(s) detected"
+  },
+  "connect": {
+    "title": "Connect a free model",
+    "body": "Save one free-tier connection in the notebook and run its connection test. Selections are manual references; VibeHub never rewrites another tool's settings."
+  },
+  "firstProject": {
+    "title": "First project with an assistant",
+    "body": "Create a practice folder, describe what you want, and see your first real page in a browser."
+  },
+  "git": {
+    "title": "Record your first change with Git",
+    "body": "Inspect changes and make your first commit in the practice folder. Git keeps history locally; nothing uploads."
+  },
+  "debug": {
+    "title": "Debug with the assistant",
+    "body": "Hand over the full error text, test the guesses one at a time, and verify the fix yourself in the browser."
+  },
+  "review": {
+    "title": "Review the assistant's code",
+    "body": "Read the diff, run the checks, and accept only what you understand. You are the reviewer."
+  },
+  "final": {
+    "title": "Final project and next steps",
+    "body": "Ship a small project of your own with at least three commits, then pick practice resources to keep going."
+  },
+  "facilitator": {
+    "title": "Teaching a class?",
+    "body": "The facilitator plan holds the two-day schedule, checkpoints, failure scenarios, and machine-reset checklist. Lessons refresh from the content feed and also open offline."
+  }
+}

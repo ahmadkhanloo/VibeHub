@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { BookOpen, RefreshCw, Search } from 'lucide-react';
+import { BookOpen, CheckCircle2, Circle, RefreshCw, Search } from 'lucide-react';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { groupArticles } from '@core';
 import type { LearningArticle } from '@core';
 import { Badge, Button, EmptyState, ErrorNotice, Input, PageHeader } from '@/components/ui';
 import { MarkdownContent } from '@/components/MarkdownContent';
 import { useCatalog } from '@/lib/catalog';
+import { useLessonProgress } from '@/lib/progress';
 import { useSettings } from '@/app/settings';
 import { ipc } from '@/services/ipc';
 
@@ -28,6 +29,7 @@ export function LearningPage({ embeddedArticleId }: { embeddedArticleId?: string
   const lang = i18n.resolvedLanguage?.startsWith('fa') ? 'fa' : 'en';
   const { articles, categories, apps } = useCatalog();
   const { settings } = useSettings();
+  const { done, mark } = useLessonProgress();
   const [params, setParams] = useSearchParams();
   const [query, setQuery] = useState('');
   const [error, setError] = useState<unknown>(null);
@@ -60,6 +62,10 @@ export function LearningPage({ embeddedArticleId }: { embeddedArticleId?: string
         <footer className="mt-7 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-4 text-xs text-muted">
           <span>{t('reviewed')}: {reviewedDate(article.checkedAt, lang)}</span>
           <button type="button" className="text-primary hover:underline" onClick={() => void openUrl(article.sourceUrl).catch(setError)}>{t('source')}</button>
+          <button type="button" aria-pressed={!!done[article.id]} data-testid="lesson-done-toggle" className="inline-flex items-center gap-1.5 text-primary hover:underline" onClick={() => mark(article.id, !done[article.id])}>
+            {done[article.id] ? <CheckCircle2 size={15} aria-hidden="true" /> : <Circle size={15} aria-hidden="true" />}
+            {t(done[article.id] ? 'markedDone' : 'markDone')}
+          </button>
         </footer>
       </article>
       {!!article.relatedIds?.length && <section className="space-y-2" aria-label={t('related')}>
@@ -84,14 +90,19 @@ export function LearningPage({ embeddedArticleId }: { embeddedArticleId?: string
       </nav>
     </div>
     <p className="text-xs text-muted" role="status">{t('count', { count })}</p>
-    {groups.length ? <div className="vh-learning-results">
+      {groups.length ? <div className="vh-learning-results">
       {groups.map(group => <section key={group.category.id} className="vh-learning-group" aria-label={group.category.title[lang]}>
         {categoryId === 'all' && <h2>{group.category.title[lang]}</h2>}
-        <div>{group.items.map((item: LearningArticle) => <Link key={item.id} to={`/learning/${item.id}${categoryId !== 'all' ? `?category=${encodeURIComponent(categoryId)}` : ''}`} className="vh-learning-row">
-          <span><Badge tone="muted">{categoryName(item.category)}</Badge></span>
-          <span className="vh-learning-row-copy"><h3>{item.title[lang]}</h3><p>{item.summary[lang]}</p></span>
+        <div>{group.items.map((item: LearningArticle) => <div key={item.id} className="vh-learning-row" data-testid="learning-row" data-article={item.id}>
+          <button type="button" className="vh-learning-done" aria-pressed={!!done[item.id]} data-testid="lesson-done-toggle" aria-label={t(done[item.id] ? 'markNotDoneAria' : 'markDoneAria', { title: item.title[lang] })} onClick={() => mark(item.id, !done[item.id])}>
+            {done[item.id] ? <CheckCircle2 size={19} aria-hidden="true" /> : <Circle size={19} aria-hidden="true" />}
+          </button>
+          <Link to={`/learning/${item.id}${categoryId !== 'all' ? `?category=${encodeURIComponent(categoryId)}` : ''}`} className="vh-learning-row-copy">
+            <span><Badge tone="muted">{categoryName(item.category)}</Badge></span>
+            <h3>{item.title[lang]}</h3><p>{item.summary[lang]}</p>
+          </Link>
           <BookOpen size={17} aria-hidden="true" />
-        </Link>)}</div>
+        </div>)}</div>
       </section>)}
     </div> : <EmptyState title={t('empty')} sub={t('emptyHint')} />}
   </div>;

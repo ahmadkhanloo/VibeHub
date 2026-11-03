@@ -50,11 +50,11 @@ test('Antigravity exposes experimental RTL setup and keeps failed setup retryabl
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('vibehub.settings.v1')!).rtlSetupByApp?.antigravity)).not.toBe(true);
 });
 
-test('main navigation calls the manual API store a notebook', async ({ page }) => {
+test('main navigation names the manual API store AI connections', async ({ page }) => {
   await mockNative(page);
   await page.goto('/');
-  await page.getByRole('link', { name: 'API notebook', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'API notebook', exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'AI connections', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'AI connections', exact: true })).toBeVisible();
 });
 
 test('missing bundled RTL offers the full installer without claiming setup succeeded', async ({ page }) => {

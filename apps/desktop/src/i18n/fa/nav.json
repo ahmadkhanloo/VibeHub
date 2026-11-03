@@ -1,19 +1,13 @@
 {
   "home": "شروع",
-  "discover": "برنامه‌ها",
-  "myApps": "نصب‌شده‌ها",
-  "models": "دفترچه API",
+  "models": "اتصال هوش مصنوعی",
   "terminal": "ترمینال و فارسی‌نویسی",
   "learning": "یادگیری",
-  "longRunning": "آموزش",
-  "more": "بیشتر",
   "offers": "خبرها و آفرها",
   "doctor": "عیب‌یابی",
   "settings": "تنظیمات",
   "proxy": "پروکسی",
   "proxyHint": "وضعیت پروکسی",
-  "notifications": "اعلان‌ها",
   "collapse": "جمع کردن نوار کناری",
-  "expand": "باز کردن نوار کناری",
-  "catalogCount": "{{count}} ابزار در کاتالوگ"
+  "expand": "باز کردن نوار کناری"
 }

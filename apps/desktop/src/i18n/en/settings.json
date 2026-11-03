@@ -1,5 +1,9 @@
 {
   "title": "Settings",
+  "workshop": {
+    "title": "Workshop mode",
+    "description": "Narrows the sidebar to the beginner workshop path: workspace, workshop steps, lessons, and connections. Turn it off to bring the full tool surface back."
+  },
   "appearance": {
     "title": "Appearance",
     "language": "Language",

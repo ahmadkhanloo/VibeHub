@@ -1,19 +1,13 @@
 {
   "home": "Home",
-  "discover": "Apps",
-  "myApps": "Installed",
-  "models": "API notebook",
+  "models": "AI connections",
   "terminal": "Terminal & Persian text",
   "learning": "Learn",
-  "longRunning": "Learn",
-  "more": "More",
   "offers": "News and offers",
   "doctor": "Diagnostics",
   "settings": "Settings",
   "proxy": "Proxy",
   "proxyHint": "Proxy status",
-  "notifications": "Notifications",
   "collapse": "Collapse sidebar",
-  "expand": "Expand sidebar",
-  "catalogCount": "{{count}} tools in catalog"
+  "expand": "Expand sidebar"
 }

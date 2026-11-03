@@ -8,6 +8,7 @@ import {
   House,
   Languages,
   GraduationCap,
+  Hammer,
   Network,
   PanelLeftClose,
   PanelLeftOpen,
@@ -22,7 +23,7 @@ import { useSettings } from "./settings";
 import { Button, Spinner } from "@/components/ui";
 import vibeHubMark from "@/assets/vibehub-mark.svg";
 export function AppShell() {
-  const { t } = useTranslation(["ux", "nav", "common"]);
+  const { t } = useTranslation(["ux", "nav", "common", "workshop"]);
   const { settings, update } = useSettings();
   const navigate = useNavigate();
   const location = useLocation();
@@ -56,7 +57,15 @@ export function AppShell() {
     heading?.setAttribute("tabindex", "-1");
     heading?.focus({ preventScroll: true });
   }, [location.pathname]);
-  const items = [
+  // Workshop mode narrows the sidebar to the beginner path: the five primary
+  // destinations replace the full tool surface, and Settings stays in the
+  // footer so the mode can be turned off from the same place it was enabled.
+  const items = settings.workshopMode ? [
+    { to: "/", icon: House, label: t("nav:home") },
+    { to: "/workshop", icon: Hammer, label: t("workshop:title") },
+    { to: "/learning", icon: GraduationCap, label: t("nav:learning") },
+    { to: "/connections/api", icon: Network, label: t("nav:models") },
+  ] : [
     { to: "/", icon: House, label: t("ux:workspace") },
     { to: "/connections/api", icon: Network, label: t("ux:apiNotebook") },
     { to: "/connections/proxy", icon: Shield, label: t("nav:proxy") },

@@ -47,6 +47,7 @@ const SettingsPage = lazy(async () => ({
 const TerminalPage = lazy(async () => ({default: (await import('@/features/terminal/Terminal')).TerminalPage}));
 const OffersPage = lazy(async () => ({default: (await import('@/features/offers/Offers')).OffersPage}));
 const LearningPage = lazy(async () => ({default: (await import('@/features/learning/Learning')).LearningPage}));
+const WorkshopPage = lazy(async () => ({default: (await import('@/features/workshop/Workshop')).WorkshopPage}));
 const Onboarding = lazy(async () => ({default: (await import('@/features/onboarding/Onboarding')).Onboarding}));
 
 function LegacyModels() { const { search } = useLocation(); return <Navigate to={"/connections/api" + search} replace />; }
@@ -90,6 +91,7 @@ function Gate() {
         <Route path="/offers" element={<OffersPage />} />
         <Route path="/learning" element={<LearningPage />} />
         <Route path="/learning/:articleId" element={<LearningPage />} />
+        <Route path="/workshop" element={<WorkshopPage />} />
         <Route path="/models" element={<LegacyModels />} />
         <Route path="/doctor" element={<DoctorPage />} />
         <Route path="/settings" element={<SettingsPage />} />

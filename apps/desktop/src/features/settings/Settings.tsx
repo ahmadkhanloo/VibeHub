@@ -126,6 +126,10 @@ export function SettingsPage() {
           </button>)}
         </div></div>
       </div>
+      <div className="space-y-2 text-sm">
+        <Toggle checked={settings.workshopMode} onChange={enabled => update({ workshopMode: enabled })} label={t('settings:workshop.title')} />
+        <p className="text-sm leading-7 text-muted">{t('settings:workshop.description')}</p>
+      </div>
       <ThemeGallery />
     </section>
 
