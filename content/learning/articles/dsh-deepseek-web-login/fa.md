@@ -13,3 +13,10 @@ Settings → DeepSeek 网页登录 → 浏览器窗口登录 را باز کنی�
 ## راهنمای پایه
 
 سازگاری میزبان، پیش‌نیازها، حذف و رفع مشکل را در آموزش [نصب و مدیریت اسکیل‌ها](/learning/skill-basics) ببینید.
+
+
+## تصویر مراحل ورود و بررسی مصرف
+
+![پنل ورود وب افزونه در تنظیمات Harness؛ دکمهٔ آبی برای ورود با Edge است.](../../../../apps/desktop/public/tutorials/screenshots/dsh-login-settings.webp)
+
+![آمار مصرف افزونه؛ اعداد تصویر نمونه‌اند و سهمیهٔ حساب شما نیستند.](../../../../apps/desktop/public/tutorials/screenshots/dsh-login-usage.webp)

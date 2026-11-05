@@ -106,7 +106,11 @@
       "sourceUrl": "https://github.com/ahmadkhanloo/VibeHub",
       "checkedAt": "2026-11-03",
       "contentPath": "content/learning/articles/first-project",
-      "relatedIds": ["getting-started", "git-first-commit", "rtl-setup"]
+      "relatedIds": [
+        "getting-started",
+        "git-first-commit",
+        "rtl-setup"
+      ]
     },
     {
       "id": "skill-basics",
@@ -175,7 +179,11 @@
       "sourceUrl": "https://github.com/ahmadkhanloo/VibeHub",
       "checkedAt": "2026-11-03",
       "contentPath": "content/learning/articles/debugging-with-agent",
-      "relatedIds": ["first-project", "code-review", "long-running"]
+      "relatedIds": [
+        "first-project",
+        "code-review",
+        "long-running"
+      ]
     },
     {
       "id": "long-running",
@@ -464,6 +472,159 @@
       "sourceUrl": "https://git-scm.com/book/fa/v2",
       "checkedAt": "2026-11-02",
       "contentPath": "content/learning/articles/git-practice-resources"
+    },
+    {
+      "id": "claude-workflow",
+      "category": "applications",
+      "kind": "guide",
+      "order": 301,
+      "title": {
+        "fa": "Claude Code: کار عملی روی پروژه",
+        "en": "Claude Code: Work on a project"
+      },
+      "summary": {
+        "fa": "در پوشهٔ یک پروژهٔ آزمایشی `claude` را اجرا کنید. ابتدا بخواهید ساختار پروژه و فرمان تست را توضیح دهد. سپس یک خطای کوچک مشخص کنید، برنامهٔ اصلاح را بخواهید و پس از بررسی اجازهٔ تغییر بدهید.",
+        "en": "Run `claude` in a disposable project. Ask for its structure and test command. Describe one small bug, request a plan, review it, then allow edits."
+      },
+      "sourceUrl": "https://code.claude.com/docs/en/common-workflows",
+      "checkedAt": "2026-11-05",
+      "contentPath": "content/learning/articles/claude-workflow"
+    },
+    {
+      "id": "claude-permissions",
+      "category": "applications",
+      "kind": "guide",
+      "order": 302,
+      "title": {
+        "fa": "Claude Code: برنامه‌ریزی و مجوزها",
+        "en": "Claude Code: Planning and permissions"
+      },
+      "summary": {
+        "fa": "با `/permissions` مجوزها را بررسی کنید. برای شناخت پروژه و طراحی تغییر از حالت Plan استفاده کنید. پیش از تأیید یک فرمان، مسیر و اثر آن را بخوانید؛ مجوز گسترده را جایگزین بررسی درخواست نکنید.",
+        "en": "Inspect permissions with `/permissions`. Use Plan mode to explore and design a change. Read each command and its target before approving it."
+      },
+      "sourceUrl": "https://code.claude.com/docs/en/permissions",
+      "checkedAt": "2026-11-05",
+      "contentPath": "content/learning/articles/claude-permissions"
+    },
+    {
+      "id": "claude-memory",
+      "category": "applications",
+      "kind": "guide",
+      "order": 303,
+      "title": {
+        "fa": "Claude Code: دستورهای پروژه با CLAUDE.md",
+        "en": "Claude Code: Project instructions with CLAUDE.md"
+      },
+      "summary": {
+        "fa": "در ریشهٔ پروژه CLAUDE.md کوتاهی با فرمان تست، قواعد ضروری و مسیرهای مهم بنویسید. این متن زمینهٔ کاری مدل است؛ برای الزام قطعی اجرای تست به کنترل اجرایی نیاز دارید.",
+        "en": "Write a short CLAUDE.md at the project root with test commands, essential conventions and important paths. Instructions provide context; deterministic enforcement requires executable checks."
+      },
+      "sourceUrl": "https://code.claude.com/docs/en/memory",
+      "checkedAt": "2026-11-05",
+      "contentPath": "content/learning/articles/claude-memory"
+    },
+    {
+      "id": "claude-skills",
+      "category": "applications",
+      "kind": "guide",
+      "order": 304,
+      "title": {
+        "fa": "Claude Code: ساخت و استفاده از Skills",
+        "en": "Claude Code: Create and use skills"
+      },
+      "summary": {
+        "fa": "یک فایل `.claude/skills/review-checklist/SKILL.md` بسازید؛ در frontmatter نام و توضیح و در بدنه مراحل بازبینی را بنویسید. با `/review-checklist` آن را فراخوانی کنید و خروجی را با هدف اسکیل بسنجید.",
+        "en": "Create `.claude/skills/review-checklist/SKILL.md` with name and description frontmatter and review steps in the body. Invoke `/review-checklist` and inspect the result."
+      },
+      "sourceUrl": "https://code.claude.com/docs/en/skills",
+      "checkedAt": "2026-11-05",
+      "contentPath": "content/learning/articles/claude-skills"
+    },
+    {
+      "id": "claude-mcp",
+      "category": "applications",
+      "kind": "guide",
+      "order": 305,
+      "title": {
+        "fa": "Claude Code: اتصال ابزار با MCP",
+        "en": "Claude Code: Connect tools with MCP"
+      },
+      "summary": {
+        "fa": "سرور موردنیاز را از منبع معتبر انتخاب کنید و دستور نصب همان سرور را با مستندات Claude تطبیق دهید. با `/mcp` وضعیت اتصال و ابزارها را بررسی کنید. برای تمرین ابتدا درخواست فقط‌خواندنی بدهید.",
+        "en": "Choose a trusted server and check its installation instructions against Claude documentation. Inspect its status and tools with `/mcp`. Begin with a read-only request."
+      },
+      "sourceUrl": "https://code.claude.com/docs/en/mcp",
+      "checkedAt": "2026-11-05",
+      "contentPath": "content/learning/articles/claude-mcp"
+    },
+    {
+      "id": "claude-agents",
+      "category": "applications",
+      "kind": "guide",
+      "order": 306,
+      "title": {
+        "fa": "Claude Code: واگذاری کار به Subagents",
+        "en": "Claude Code: Delegate to subagents"
+      },
+      "summary": {
+        "fa": "ایجنت فقط‌خواندنی را با فایل Markdown بسازید، کار مشخصی به آن بدهید و گزارش را بررسی کنید.",
+        "en": "Create a read-only agent with a Markdown file, delegate a bounded task and verify its report."
+      },
+      "sourceUrl": "https://code.claude.com/docs/en/sub-agents",
+      "checkedAt": "2026-11-05",
+      "contentPath": "content/learning/articles/claude-agents"
+    },
+    {
+      "id": "claude-sessions",
+      "category": "applications",
+      "kind": "guide",
+      "order": 307,
+      "title": {
+        "fa": "Claude Code: ادامهٔ گفتگو و مدیریت زمینه",
+        "en": "Claude Code: Resume sessions and manage context"
+      },
+      "summary": {
+        "fa": "ادامهٔ گفتگو و مدیریت زمینه؛ تمرین مرحله‌ای بر پایهٔ مستندات رسمی.",
+        "en": "Resume sessions and manage context with a step-by-step exercise based on official documentation."
+      },
+      "sourceUrl": "https://code.claude.com/docs/en/common-workflows",
+      "checkedAt": "2026-11-05",
+      "contentPath": "content/learning/articles/claude-sessions"
+    },
+    {
+      "id": "claude-vscode",
+      "category": "applications",
+      "kind": "guide",
+      "order": 308,
+      "title": {
+        "fa": "Claude Code: ارجاع به کد و بررسی تغییر در VS Code",
+        "en": "Claude Code: Reference code and review edits in VS Code"
+      },
+      "summary": {
+        "fa": "ارجاع به کد و بررسی تغییر در VS Code؛ تمرین مرحله‌ای بر پایهٔ مستندات رسمی.",
+        "en": "Reference code and review edits in VS Code with a step-by-step exercise based on official documentation."
+      },
+      "sourceUrl": "https://code.claude.com/docs/en/vs-code",
+      "checkedAt": "2026-11-05",
+      "contentPath": "content/learning/articles/claude-vscode"
+    },
+    {
+      "id": "claude-plugins",
+      "category": "applications",
+      "kind": "guide",
+      "order": 309,
+      "title": {
+        "fa": "Claude Code: نصب و مدیریت افزونه‌ها",
+        "en": "Claude Code: Install and manage plugins"
+      },
+      "summary": {
+        "fa": "نصب و مدیریت افزونه‌ها؛ تمرین مرحله‌ای بر پایهٔ مستندات رسمی.",
+        "en": "Install and manage plugins with a step-by-step exercise based on official documentation."
+      },
+      "sourceUrl": "https://code.claude.com/docs/en/plugins",
+      "checkedAt": "2026-11-05",
+      "contentPath": "content/learning/articles/claude-plugins"
     }
   ]
 }

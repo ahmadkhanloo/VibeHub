@@ -1,13 +1,11 @@
 # DeepSeek Harness — راهنمای فارسی
 
-![نقشهٔ آموزشی مسیر کار (شماتیک)](../../../apps/desktop/public/tutorials/deepseek-harness.svg)
-
 ## معرفی
 DeepSeek Harness کلاینت دسکتاپ ایجنت DeepSeek است. VibeHub آن را تشخیص می‌دهد، اجرا و RTL می‌کند.
 
 ## دسترسی رایگان
 - طبق شرایط جاری DeepSeek؛ سهمیه‌ها را در منابع رسمی بررسی کنید.
-- متن‌باز نیست.
+- وضعیت کد و مجوز را در [مخزن رسمی Harness](https://github.com/deepseek-ai/deepseek-harness) بررسی کنید؛ شرایط دسترسی به مدل از مجوز نرم‌افزار جداست.
 
 ## نصب
 از منبع رسمی نصب کنید (پوشهٔ استاندارد `Programs\DeepSeek Harness`). VibeHub همین مسیر را جست‌وجو می‌کند.
@@ -37,3 +35,18 @@ DeepSeek Harness کلاینت دسکتاپ ایجنت DeepSeek است. VibeHub �
 ## راه‌اندازی مشترک RTL
 
 مراحل نصب، اجرا و رفع خطای مشترک برنامه‌های پشتیبانی‌شده در [راهنمای فارسی‌نویسی و RTL](/learning/rtl-setup) آمده است. وضعیت تأیید همین برنامه در بخش RTL بالا آمده است.
+
+
+## تمرین تصویری: تنظیم مدل در Harness
+
+در Settings → Models کارت DeepSeek را باز کنید. کلید API را فقط در فیلد تنظیمات وارد و ذخیره کنید؛ خالی‌بودن فیلد در تصویر به معنی نداشتن کلید ذخیره‌شده نیست. طبق راهنمای رسمی، کلید ذخیره‌شده به رابط برگردانده نمی‌شود.
+
+![صفحهٔ Models در راهنمای رسمی Harness؛ کارت DeepSeek و دکمهٔ Add model provider در پایین قرار دارند.](../../../apps/desktop/public/tutorials/screenshots/dsh-models.webp)
+
+برای سرویس دیگر، Add model provider را باز کنید. اگر سرویس در فهرست آماده نیست، Custom model API را انتخاب و Provider ID، نشانی، پروتکل API، کلید و مدل را طبق مستندات همان سرویس تکمیل کنید. OpenAI Chat Completions، OpenAI Responses و Anthropic Messages را با هم اشتباه نگیرید.
+
+![فرم رسمی Custom model API در Harness؛ انتخاب API protocol باید با پروتکل واقعی سرویس یکسان باشد.](../../../apps/desktop/public/tutorials/screenshots/dsh-custom-provider.webp)
+
+پس از ذخیره، مدل را در گفتگو انتخاب کنید و در یک پروژهٔ آزمایشی درخواست فقط‌خواندنی بدهید. نمایش تنظیمات یا تشخیص کلید، موفقیت اتصال و مجوز استفاده از مدل را ثابت نمی‌کند. این تصاویر از راهنمای رسمی رابط وب Harness هستند؛ چیدمان نسخهٔ دسکتاپ نصب‌شدهٔ شما ممکن است متفاوت باشد.
+
+[راهنمای رسمی تنظیم مدل](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/user/guide/providers.md)

@@ -17,6 +17,10 @@ test('the Pages artifact contains the validated feed and bilingual guides withou
     assert.match(reviewGuide, /بازبینی کد/);
     assert.equal(index.schemaVersion, 1);
     assert.match(qoderGuide, /Qoder/);
+    const image = qoderGuide.match(/!\[[^\]]+\]\(([^)]+\.webp)\)/)?.[1];
+    assert.ok(image, 'Qoder guide references a published screenshot');
+    const screenshot = await readFile(join(destination, 'feed', 'guides', 'qoder', image));
+    assert.equal(screenshot.toString('ascii', 8, 12), 'WEBP');
     const learning = JSON.parse(await readFile(join(destination, 'feed', 'learning', 'extensions.json'), 'utf8'));
     assert.ok(learning.some(item => item.id === 'frontend-design'));
     const articles = JSON.parse(await readFile(join(destination, 'feed', 'learning', 'index.json'), 'utf8'));

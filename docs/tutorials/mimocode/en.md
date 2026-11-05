@@ -1,9 +1,11 @@
 # MiMo Code — English guide
 
-![Educational workflow schematic](../../../apps/desktop/public/tutorials/mimocode.svg)
-
 ## Introduction
 MiMo Code is Xiaomi's CLI coding agent; the code is MIT-licensed while hosted-service terms and use restrictions are separate.
+
+
+![Official MiMo Code example on macOS: the prompt is centered with keyboard hints below it.](../../../apps/desktop/public/tutorials/screenshots/mimocode-workspace.webp)
+
 
 ## Free access
 - Open-source code (MIT); the hosted model/service has its own terms.

@@ -1,7 +1,5 @@
 # Freebuff — English guide
 
-![Educational workflow schematic](../../../apps/desktop/public/tutorials/freebuff.svg)
-
 ## Introduction
 Freebuff (correct spelling; not the unrelated FreeBuf security-news site) is a coding agent with Apache-2.0 code and ad-supported free model access in official clients.
 
@@ -24,3 +22,11 @@ Not tested. **Note:** using a proxy to circumvent geographic/quota limits violat
 
 ## Model options
 Per the official service; BYOK unknown until tested.
+
+## Illustrated terminal exercise
+
+Copy the installation command from the official CLI page and run it in your terminal. Then open a disposable project folder and run `freebuff`.
+
+![The npm install command and project launch instruction on the official Freebuff CLI page.](../../../apps/desktop/public/tutorials/screenshots/freebuff-cli-install.webp)
+
+Ask Freebuff to explain hello.txt without editing it. Check the session folder and selected model. If the command is missing, open a new terminal and check your npm install path. The screenshot shows the installation step on the official website.

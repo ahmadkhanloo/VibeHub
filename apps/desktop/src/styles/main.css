@@ -135,7 +135,9 @@ h1[tabindex='-1']:focus-visible{outline:none;}
 .vh-app-identity h2{min-width:0;font-size:16px;font-weight:700;overflow-wrap:anywhere;}
 a.vh-app-identity:hover h2{color:var(--primary);}
 .vh-app-status{font-size:12px;line-height:20px;color:var(--muted);}
-.vh-app-logo{display:grid;place-items:center;flex-shrink:0;overflow:hidden;border-radius:8px;padding:4px;background:#fff;color:#1b1f24;}
+.vh-app-logo{position:relative;display:grid;place-items:center;flex-shrink:0;overflow:hidden;border-radius:8px;padding:4px;background:#fff;color:#1b1f24;}
+.vh-app-logo-rtl{overflow:visible;}
+.vh-rtl-mark{position:absolute;right:-1px;bottom:-1px;z-index:1;border:1px solid #fff;border-radius:4px;background:#cf5d31;padding:0 2px;color:#fff;font:700 6px/8px Arial,sans-serif;letter-spacing:.1px;box-shadow:0 1px 3px #0005;}
 .vh-app-logo-dark{background:#171717;color:#fff;}
 .vh-app-summary{font-size:14px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .vh-catalog-tile{transition:border-color 150ms,background-color 150ms;}

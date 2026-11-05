@@ -19,3 +19,13 @@ Freebuff Desktop نسخهٔ رسمی دسکتاپ Freebuff است و از Freebu
 ## تفاوت با Freebuff CLI
 
 Freebuff CLI با فرمان رسمی `freebuff` در ترمینال اجرا می‌شود و کاتالوگ VibeHub آن را با شناسهٔ `freebuff` نگه می‌دارد. این راهنما مربوط به برنامهٔ دسکتاپ با شناسهٔ مستقل `freebuff-desktop` است؛ خروجی ترمینال CLI در محدودهٔ RTL این برنامه نیست.
+
+## نصب و اولین گفت‌وگو با تصویر
+
+پس از اجرای نصب‌کنندهٔ رسمی ویندوز صبر کنید تا نوار نصب کامل شود.
+
+![نوار پیشرفت نصب Freebuff Desktop در ویندوز.](../../../apps/desktop/public/tutorials/screenshots/freebuff-install-progress.webp)
+
+در تب Code گفت‌وگوی تازه باز کنید. با New project یک پوشهٔ آزمایشی انتخاب کنید و حالت Local را بررسی کنید. در کادر درخواست بنویسید «فقط README.md را توضیح بده» و پس از دریافت پاسخ آن را با فایل مقایسه کنید.
+
+![کادر درخواست Freebuff Desktop و کنترل‌های New project و Local بالای آن.](../../../apps/desktop/public/tutorials/screenshots/freebuff-new-chat.webp)

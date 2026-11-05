@@ -24,6 +24,8 @@ export async function buildContentSite(destination = join(projectRoot, 'dist-pag
   await cp(join(contentRoot, 'news'), join(feedRoot, 'news'), { recursive: true, force: true });
 
   await cp(join(projectRoot, 'docs/tutorials'), join(feedRoot, 'guides'), { recursive: true, force: true });
+  const screenshotsPath = 'apps/desktop/public/tutorials/screenshots';
+  await cp(join(projectRoot, screenshotsPath), join(outputRoot, screenshotsPath), { recursive: true, force: true });
 
   const offersSource = join(contentRoot, 'offers');
   const offersTarget = join(feedRoot, 'offers');

@@ -1,7 +1,5 @@
 # Claude Code + LiteLLM — from first run to model routing
 
-![Educational workflow schematic](../../../apps/desktop/public/tutorials/claude-code.svg)
-
 Documentation checked: **2026-11-01**. This is a setup guide, not a successful local installation or live routing test.
 
 ## 1. Understand the two tools
@@ -54,3 +52,20 @@ If authentication fails, check expired credentials and conflicting login setting
 ## Iran: connectivity and service eligibility
 
 Restricted services may require a connectivity workaround or proxy, but that does not make an account region eligible or guarantee service. This statement does not mean every catalog app is sanctioned. Iran is absent from Anthropic's observed region list; however, the [page](https://www.anthropic.com/legal/supported-regions) displays **November 12, 2026** as its effective date, later than this review. Check the policy effective on your usage date and the chosen upstream provider's rules. Neither LiteLLM nor a proxy removes those conditions. No Iran network test was performed.
+
+## Feature learning path
+- [Work on a project](/learning/claude-workflow)
+- [Planning and permissions](/learning/claude-permissions)
+- [Project instructions with CLAUDE.md](/learning/claude-memory)
+- [Create and use skills](/learning/claude-skills)
+- [Connect tools with MCP](/learning/claude-mcp)
+- [Delegate to subagents](/learning/claude-agents)
+- [Resume sessions and manage context](/learning/claude-sessions)
+- [Reference code and review edits in VS Code](/learning/claude-vscode)
+- [Install and manage plugins](/learning/claude-plugins)
+
+## Command approval
+
+Claude may ask permission before running tools. This official example shows npm test; approving once differs from allowing future matching commands. See the [permissions lesson](/learning/claude-permissions).
+
+![CLI permission prompt for npm test; inspect the command and approval choices before proceeding.](../../../apps/desktop/public/tutorials/screenshots/claude-permissions.webp)

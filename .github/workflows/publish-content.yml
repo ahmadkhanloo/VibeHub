@@ -6,6 +6,7 @@ on:
     paths:
       - "content/**"
       - "docs/tutorials/**"
+      - "apps/desktop/public/tutorials/screenshots/**"
       - "scripts/build-content-site.mjs"
       - "scripts/validate-content.mjs"
       - "scripts/collect-offers.mjs"

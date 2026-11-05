@@ -1,7 +1,5 @@
 # Set up RTL after installing a coding app
 
-![Educational workflow schematic](../../apps/desktop/public/tutorials/rtl.svg)
-
 [فارسی](rtl-setup.fa.md)
 
 ## Install and detect the app

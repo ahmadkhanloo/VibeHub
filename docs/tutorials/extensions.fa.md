@@ -1,7 +1,5 @@
 # راهنمای پلاگین و اسکیل
 
-![نقشهٔ آموزشی مسیر کار (شماتیک)](../../apps/desktop/public/tutorials/extensions.svg)
-
 ## frontend-design
 
 [Source](https://github.com/anthropics/skills/tree/main/skills/frontend-design)

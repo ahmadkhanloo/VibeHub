@@ -1,7 +1,5 @@
 # Antigravity
 
-![Educational workflow schematic](../../../apps/desktop/public/tutorials/antigravity.svg)
-
 ## Access from Iran and regional restrictions
 
 Iran is absent from the geographic list in [Antigravity's official FAQ](https://antigravity.google/docs/faq), checked November 1, 2026. Network restrictions may require a connectivity workaround or proxy; Google account eligibility and associated region also matter. Changing IP does not establish regional support. Connectivity and login from Iran remain untested.
@@ -24,3 +22,15 @@ Normal mode is the default. Choose RTL for the chat adapter; live rendering in t
 ## Shared RTL setup
 
 See the [Persian text and RTL guide](/learning/rtl-setup) for common installation, launch and recovery steps. Live rendering in Antigravity remains unverified.
+
+## Work in the standalone app
+
+Open a project and start an agent conversation. Inspect the artifacts the agent creates and use the review view to give feedback. [Official Antigravity 2.0 walkthrough](https://antigravity.google/blog/introducing-google-antigravity-2).
+
+![Agent conversation and review workspace in the standalone Antigravity 2.0 app.](../../../apps/desktop/public/tutorials/screenshots/antigravity-workspace.webp)
+
+## Open a folder in Antigravity IDE
+
+If you use the separate IDE, open your project folder and review the trust prompt before giving it access.
+
+![Folder trust prompt in Antigravity IDE on Windows.](../../../apps/desktop/public/tutorials/screenshots/antigravity-folder-trust.webp)

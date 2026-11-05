@@ -4,6 +4,12 @@
 
 [Install Claude Desktop from its official site](https://claude.com/download). Refresh VibeHub and, if necessary, select Claude.exe. Open Claude, sign in, choose the Code tab and a project folder, and enter your request. Review proposed edits and commands before approving them. Code availability depends on your account plan and Anthropic terms. [Desktop documentation](https://code.claude.com/docs/en/desktop).
 
+## Review local changes
+
+In the Code tab, open the diff to inspect modified files. Select Review code to have Claude add comments alongside the changes, then decide which suggestions to apply. [Anthropic’s desktop review walkthrough](https://claude.com/resources/articles/preview-review-and-merge-with-claude-code).
+
+![Claude Code Desktop reviewing local changes in the diff panel.](../../../apps/desktop/public/tutorials/screenshots/claude-desktop-review.webp)
+
 ## Other APIs and models
 
 Using another provider in the desktop Code tab depends on organizational configuration and Anthropic support. Selecting an API in VibeHub does not automatically connect it to Claude. Anthropic documents gateway and Vertex configuration for enterprise deployments; use the Claude Code CLI for Bedrock and Foundry. [Desktop documentation](https://code.claude.com/docs/en/desktop).
