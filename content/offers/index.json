@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "generatedAt": "2026-10-27T15:55:00.456Z",
-  "minClientVersion": "0.1.0",
+  "minClientVersion": "0.2.6",
   "apps": [
     "antigravity-ide",
     "chatgpt",
