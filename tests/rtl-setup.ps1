@@ -12,7 +12,7 @@ try {
     . ([scriptblock]::Create($helper.Extent.Text))
     $files = @('apps/rtl-paths.ps1','apps/rtl-direction.mjs','runtime/node.exe')
     foreach ($folder in @('ZCode','Qoder','DeepSeekHarness','Antigravity')) {
-        $files += @('start.ps1','launch.vbs','injector.mjs','rtl.ico','style.mjs','assets/Vazirmatn-Regular.woff2','assets/Vazirmatn-Bold.woff2') | ForEach-Object { "apps/$folder/$_" }
+        $files += @('start.ps1','launch.vbs','injector.mjs','rtl.ico','rtl-shortcut.ico','style.mjs','assets/Vazirmatn-Regular.woff2','assets/Vazirmatn-Bold.woff2') | ForEach-Object { "apps/$folder/$_" }
     }
     foreach ($file in $files) { $path = Join-Path $root $file; $null = [IO.Directory]::CreateDirectory((Split-Path $path)); [IO.File]::WriteAllText($path, 'fixture') }
     $shell = New-Object -ComObject WScript.Shell
