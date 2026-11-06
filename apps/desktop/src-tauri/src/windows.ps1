@@ -70,14 +70,15 @@ namespace VibeHub {
 }
 '@
     }
-    $folders = @{zcode='ZCode'; qoder='Qoder'; 'deepseek-harness'='DeepSeekHarness'; antigravity='Antigravity'; opencode='OpenCode'}
-    $names = @{zcode='ZCode'; qoder='Qoder'; 'deepseek-harness'='DeepSeek Harness'; antigravity='Antigravity'; opencode='OpenCode'}
+    $folders = @{zcode='ZCode'; qoder='Qoder'; 'deepseek-harness'='DeepSeekHarness'; antigravity='Antigravity'; opencode='OpenCode'; 'claude-desktop'='Claude'}
+    $names = @{zcode='ZCode'; qoder='Qoder'; 'deepseek-harness'='DeepSeek Harness'; antigravity='Antigravity'; opencode='OpenCode'; 'claude-desktop'='Claude Desktop'}
     if (-not $folders.ContainsKey($appId)) { throw 'RTL is unavailable for this app.' }
     $adapter = Join-Path $resourceRoot ('apps\' + $folders[$appId])
     $required = @((Join-Path $resourceRoot 'apps\rtl-paths.ps1'), (Join-Path $resourceRoot 'apps\rtl-direction.mjs'))
-    $required += @('start.ps1','launch.vbs','injector.mjs','rtl.ico') | ForEach-Object { Join-Path $adapter $_ }
-    if ($appId -in @('qoder','antigravity','opencode')) { $required += Join-Path $adapter 'style.mjs' }
-    if ($appId -in @('qoder','zcode','deepseek-harness','antigravity','opencode')) {
+    $required += @('start.ps1','launch.vbs','injector.mjs','rtl.ico','rtl-shortcut.ico') | ForEach-Object { Join-Path $adapter $_ }
+    if ($appId -in @('qoder','antigravity','opencode','claude-desktop')) { $required += Join-Path $adapter 'style.mjs' }
+    if ($appId -eq 'claude-desktop') { $required += Join-Path $adapter 'compatibility.json' }
+    if ($appId -in @('qoder','zcode','deepseek-harness','antigravity','opencode','claude-desktop')) {
         $required += @('Vazirmatn-Regular.woff2','Vazirmatn-Bold.woff2') | ForEach-Object { Join-Path $adapter ('assets\' + $_) }
     }
     foreach ($file in $required) { if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { throw 'RTL files are missing. Install the full VibeHub package first.' } }
@@ -87,7 +88,11 @@ namespace VibeHub {
     $destination = Join-Path $directory ($names[$appId] + ' RTL.lnk')
     $target = Join-Path $adapter 'launch.vbs'
     if ((Test-Path -LiteralPath $destination) -and [VibeHub.RtlShortcuts]::Target($destination) -ine $target) { throw 'An unrelated shortcut already uses this name. Keep it or rename it before retrying.' }
-    [VibeHub.RtlShortcuts]::Save($destination, $target, $adapter, (Join-Path $adapter 'rtl.ico'))
+    [VibeHub.RtlShortcuts]::Save($destination, $target, $adapter, (Join-Path $adapter 'rtl-shortcut.ico'))
+    $desktopShortcut = Join-Path ([Environment]::GetFolderPath('Desktop')) ($names[$appId] + ' RTL.lnk')
+    if ((Test-Path -LiteralPath $desktopShortcut -PathType Leaf) -and [VibeHub.RtlShortcuts]::Target($desktopShortcut) -ieq $target) {
+        [VibeHub.RtlShortcuts]::Save($desktopShortcut, $target, $adapter, (Join-Path $adapter 'rtl-shortcut.ico'))
+    }
     @{ok=$true;shortcut=$destination}
 }
 
@@ -146,6 +151,7 @@ function Find-RegisteredAppPath([string]$id) {
         'qoder' { '^Qoder(?:\s+.*)?$' }
         'deepseek-harness' { '^DeepSeek Harness(?:\s+.*)?$' }
         'opencode' { '^OpenCode(?:\s+.*)?$' }
+        'antigravity-ide' { '^Antigravity IDE(?:\s+.*)?$' }
         'claude-desktop' { '^Claude(?: Desktop)?(?:\s+.*)?$' }
         default { return $null }
     }
@@ -154,6 +160,7 @@ function Find-RegisteredAppPath([string]$id) {
         'qoder' { @('Qoder IDE.exe', 'Qoder.exe') }
         'deepseek-harness' { @('DeepSeek Harness.exe') }
         'opencode' { @('OpenCode.exe') }
+        'antigravity-ide' { @('Antigravity IDE.exe') }
         'claude-desktop' { @('Claude.exe') }
     }
     $registrations = @(Read-UninstallEntries | Where-Object { $_.DisplayName -match $pattern })
@@ -301,13 +308,24 @@ function CodexRtlStatus([string]$resourceRoot, [string]$executablePath = (Find-A
 }
 
 function Codex-DesktopState {
-    $paths = @(Find-DesktopProduct 'chatgpt' -All)
+    $packages = @(Get-AppxPackage -Name 'OpenAI.Codex' -ErrorAction Stop | Where-Object {
+        (Resolve-OpenAIProduct $_.Name (Join-Path $_.InstallLocation 'app\ChatGPT.exe')) -eq 'codex'
+    })
+    $package = $packages | Select-Object -First 1
+    $exe = if ($package) { Join-Path $package.InstallLocation 'app\ChatGPT.exe' }
     $processes = @(Get-Process -Name ChatGPT,Codex -ErrorAction SilentlyContinue)
-    $known = @($processes | Where-Object { try { $_.Path -in $paths } catch { $false } })
-    $unknown = @($processes | Where-Object { try { $_.MainWindowHandle -ne 0 -and $_.Path -notin $paths } catch { $true } })
-    $runningPaths = @($known | ForEach-Object { $_.Path } | Select-Object -Unique)
-    $selected = if ($runningPaths.Count) { $runningPaths[0] } elseif ($paths.Count) { $paths[0] } else { $null }
-    @{installed=($paths.Count -gt 0);running=($known.Count -gt 0 -or $unknown.Count -gt 0);ambiguous=($runningPaths.Count -gt 1 -or $unknown.Count -gt 0);launchPath=$selected}
+    $known = @($processes | Where-Object { $exe -and $_.Path -ieq $exe })
+    $unknown = @($processes | Where-Object {
+        (-not $_.Path -and $_.MainWindowHandle -ne 0) -or
+        ($_.Path -ine $exe -and $_.Path -match '\\WindowsApps\\OpenAI\.Codex_')
+    })
+    @{
+        installed=($packages.Count -gt 0)
+        running=($known.Count -gt 0 -or $unknown.Count -gt 0)
+        ambiguous=($packages.Count -gt 1 -or $unknown.Count -gt 0)
+        launchPath=$exe
+        packageFamily=$package.PackageFamilyName
+    }
 }
 
 function Invoke-HubRtlLauncher([string]$launcherPath) {
@@ -330,13 +348,43 @@ function Invoke-HubRtlLauncher([string]$launcherPath) {
     }
 }
 
+function Test-AntigravityIdePath([string]$path) {
+    if (-not $path -or [IO.Path]::GetFileName($path) -ine 'Antigravity IDE.exe' -or -not (Test-Path -LiteralPath $path -PathType Leaf)) { return $false }
+    # Some releases accidentally shipped the standalone App under the IDE filename.
+    $productFile = Join-Path (Split-Path -Parent $path) 'resources\app\product.json'
+    try {
+        $product = [IO.File]::ReadAllText($productFile) | ConvertFrom-Json
+        return $product.applicationName -eq 'antigravity-ide' -and $product.nameShort -eq 'Antigravity IDE'
+    } catch { return $false }
+}
+
+function Test-ClaudeCliPath([string]$path) {
+    if (-not $path -or [IO.Path]::GetFileName($path) -notin @('claude.exe','claude.cmd','claude.bat') -or -not (Test-Path -LiteralPath $path -PathType Leaf)) { return $false }
+    # Claude Desktop also uses Claude.exe (Windows filenames are case insensitive).
+    return (Get-Item -LiteralPath $path).VersionInfo.ProductName -notmatch '^Claude(?: Desktop)?$'
+}
+
 function Find-App([string]$id) {
     # Desktop/CLI are separate catalog products. Until an official Windows executable
     # and its renderer are identified, never resolve this ID through a command shim.
     if ($id -eq 'freebuff-desktop') { return $null }
-    if (Get-Command Get-RtlSavedPath -ErrorAction SilentlyContinue) { $saved = Get-RtlSavedPath $id; if ($saved) { return $saved } }
-    if ($id -eq 'antigravity-ide') { $editor = Detect-Editors | Where-Object { $_.id -eq $id } | Select-Object -First 1; if ($editor) { return [string]$editor.path }; return $null }
+    if (Get-Command Get-RtlSavedPath -ErrorAction SilentlyContinue) {
+        $saved = Get-RtlSavedPath $id
+        if ($saved -and ($id -ne 'antigravity-ide' -or (Test-AntigravityIdePath $saved)) -and ($id -ne 'claude-code' -or (Test-ClaudeCliPath $saved))) { return $saved }
+    }
+    if ($id -eq 'antigravity-ide') {
+        $candidates = @("$env:LOCALAPPDATA\Programs\Antigravity IDE\Antigravity IDE.exe", "$env:ProgramFiles\Antigravity IDE\Antigravity IDE.exe", (Find-RegisteredAppPath $id))
+        return $candidates | Where-Object { Test-AntigravityIdePath $_ } | Select-Object -First 1
+    }
+    if ($id -eq 'claude-code') {
+        $candidates = @("$env:USERPROFILE\.local\bin\claude.exe", "$env:APPDATA\npm\claude.cmd", (Find-App 'claude'))
+        return $candidates | Where-Object { Test-ClaudeCliPath $_ } | Select-Object -First 1
+    }
     if ($id -in @('antigravity','chatgpt')) { return Find-DesktopProduct $id }
+    if ($id -eq 'claude-desktop' -and (Get-Command Get-RtlExecutable -ErrorAction SilentlyContinue)) {
+        $resolved = Get-RtlExecutable $id (Join-Path $root 'apps\Claude')
+        if ($resolved) { return $resolved }
+    }
     if ($id -in @('qoder','zcode','deepseek-harness') -and (Get-Command Get-RtlExecutable -ErrorAction SilentlyContinue)) {
         $folder = switch ($id) { 'qoder' {'Qoder'} 'zcode' {'ZCode'} 'deepseek-harness' {'DeepSeekHarness'} }
         $resolved = Get-RtlExecutable $id (Join-Path $root "apps\$folder")
@@ -379,7 +427,7 @@ function Find-App([string]$id) {
                 if (-not $directory) { continue }
                 foreach ($extension in ($env:PATHEXT -split ';')) {
                     if (-not $extension) { continue }
-                    $commandName = if ($id -eq 'claude-code') { 'claude' } else { $id }
+                    $commandName = $id
                     try { $candidate = [IO.Path]::Combine([Environment]::ExpandEnvironmentVariables($directory.Trim('"')), "$commandName$extension") } catch { continue }
                     if ([IO.File]::Exists($candidate)) { return $candidate }
                 }
@@ -392,7 +440,7 @@ function Find-App([string]$id) {
 }
 
 function Detect-Apps {
-    @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','freebuff-desktop','antigravity','chatgpt','claude-desktop','claude-code') | ForEach-Object {
+    @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','freebuff-desktop','antigravity-ide','chatgpt','claude-code') | ForEach-Object {
         $path = Find-App $_
         $via = if ($_ -eq 'freebuff-desktop') { 'official-product-unverified' } else { 'standard-path-or-PATH' }
         $result = @{ id = $_; installed = [bool]$path; via = $via }
@@ -401,31 +449,17 @@ function Detect-Apps {
     }
 }
 
-function Detect-Editors {
-    $candidates = @(
-        "$env:LOCALAPPDATA\Programs\Antigravity IDE\Antigravity IDE.exe",
-        "$env:ProgramFiles\Antigravity IDE\Antigravity IDE.exe",
-        "${env:ProgramFiles(x86)}\Antigravity IDE\Antigravity IDE.exe"
-    )
-    $path = $candidates | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
-    if ($path) {
-        $file = Get-Item -LiteralPath $path
-        $version = $file.VersionInfo.ProductVersion
-        $result = @{ id='antigravity-ide'; name='Antigravity IDE'; installed=$true; path=$path; via='standard-path' }
-        if ($version) { $result.version = $version }
-        $result
-    }
-}
+function Detect-Editors { @() }
 
 function Get-RtlComponents([string]$resourceRoot) {
-    $names = @{zcode='ZCode';qoder='Qoder';'deepseek-harness'='DeepSeekHarness';antigravity='Antigravity';opencode='OpenCode'}
-    $labels = @{zcode='ZCode';qoder='Qoder';'deepseek-harness'='DeepSeek Harness';antigravity='Antigravity';opencode='OpenCode'}
+    $names = @{zcode='ZCode';qoder='Qoder';'deepseek-harness'='DeepSeekHarness';antigravity='Antigravity';opencode='OpenCode';'claude-desktop'='Claude'}
+    $labels = @{zcode='ZCode';qoder='Qoder';'deepseek-harness'='DeepSeek Harness';antigravity='Antigravity';opencode='OpenCode';'claude-desktop'='Claude Desktop'}
     $runtime = (Test-Path -LiteralPath (Join-Path $resourceRoot 'runtime\node.exe') -PathType Leaf) -or
         (Test-Path -LiteralPath (Join-Path $resourceRoot 'apps\desktop\src-tauri\windows\payload\node.exe') -PathType Leaf)
     foreach ($id in @('zcode','qoder','deepseek-harness','antigravity','opencode')) {
         $adapter = Join-Path $resourceRoot ('apps\' + $names[$id])
         $required = @((Join-Path $resourceRoot 'apps\rtl-paths.ps1'), (Join-Path $resourceRoot 'apps\rtl-direction.mjs'))
-        $required += @('start.ps1','launch.vbs','injector.mjs','rtl.ico') | ForEach-Object { Join-Path $adapter $_ }
+        $required += @('start.ps1','launch.vbs','injector.mjs','rtl.ico','rtl-shortcut.ico') | ForEach-Object { Join-Path $adapter $_ }
         if ($id -in @('qoder','antigravity','opencode')) { $required += Join-Path $adapter 'style.mjs' }
         if ($id -in @('qoder','zcode','deepseek-harness','antigravity','opencode')) { $required += @('Vazirmatn-Regular.woff2','Vazirmatn-Bold.woff2') | ForEach-Object { Join-Path $adapter ('assets\' + $_) } }
         $available = $runtime -and ($required | ForEach-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Where-Object { -not $_ } | Measure-Object).Count -eq 0 -and [bool](Find-App $id)
@@ -441,6 +475,49 @@ function Get-RtlComponents([string]$resourceRoot) {
         }
         @{id=$id;available=$available;configured=$configured;setupSupported=$true}
     }
+    $claudeExe = Find-App 'claude-desktop'
+    $claudeVersion = if ($claudeExe) { [string](Get-Item -LiteralPath $claudeExe).VersionInfo.ProductVersion } else { '' }
+    $claudeSignature = if ($claudeExe) { Get-AuthenticodeSignature -FilePath $claudeExe } else { $null }
+    $claudePublisherVerified = $claudeSignature -and $claudeSignature.Status -eq 'Valid' -and $claudeSignature.SignerCertificate.Subject -match 'Anthropic'
+    $claudeAdapter = Join-Path $resourceRoot 'apps\Claude'
+    $compatibilityPath = Join-Path $claudeAdapter 'compatibility.json'
+    $compatibility = $null
+    if (Test-Path -LiteralPath $compatibilityPath -PathType Leaf) {
+        try { $compatibility = Get-Content -LiteralPath $compatibilityPath -Raw | ConvertFrom-Json } catch {}
+    }
+    $claudeRequired = @('start.ps1','launch.vbs','injector.mjs','style.mjs','cdp-targets.mjs','compatibility.json','rtl.ico','rtl-shortcut.ico','assets\OFL.txt','assets\Vazirmatn-Regular.woff2','assets\Vazirmatn-Bold.woff2') |
+        ForEach-Object { Join-Path $claudeAdapter $_ }
+    $claudeRuntimeFiles = @((Join-Path $resourceRoot 'apps\rtl-paths.ps1'),(Join-Path $resourceRoot 'apps\rtl-direction.mjs'))
+    $claudeRuntime = $runtime -and @($claudeRuntimeFiles | Where-Object { -not (Test-Path -LiteralPath $_ -PathType Leaf) }).Count -eq 0
+    $claudeFilesPresent = @($claudeRequired | Where-Object { -not (Test-Path -LiteralPath $_ -PathType Leaf) }).Count -eq 0
+    $testedVersion = if ($compatibility) { [string]$compatibility.testedVersion } else { '' }
+    $versionMatches = $testedVersion -and $claudeVersion -and $claudeVersion -eq $testedVersion
+    $claudeVerified = $compatibility -and $compatibility.adapterVerified -eq $true
+    $claudeAvailable = [bool]($claudeExe -and $claudePublisherVerified -and $claudeRuntime -and $claudeFilesPresent -and $versionMatches -and $claudeVerified)
+    $claudeReason = if (-not $claudeExe) {
+        'Install Claude Desktop from claude.com/download before checking RTL compatibility.'
+    } elseif (-not $claudeRuntime -or -not $claudeFilesPresent) {
+        'Claude Desktop RTL files or the bundled runtime are missing. Repair the VibeHub installation.'
+    } elseif (-not $claudePublisherVerified) {
+        'Claude Desktop RTL requires a valid Anthropic-signed Claude.exe.'
+    } elseif (-not $testedVersion) {
+        if ($compatibility.reason) { [string]$compatibility.reason } else { 'Claude Desktop RTL has not been verified against a live chat renderer.' }
+    } elseif (-not $versionMatches) {
+        "Claude Desktop RTL is verified for version '$testedVersion'; installed version is '$claudeVersion'."
+    } elseif (-not $claudeVerified) {
+        [string]$compatibility.reason
+    } else { '' }
+    $claudeShortcut = Join-Path ([Environment]::GetFolderPath('Programs')) 'VibeHub\Claude Desktop RTL.lnk'
+    $claudeConfigured = $false
+    if ($claudeAvailable -and (Test-Path -LiteralPath $claudeShortcut -PathType Leaf)) {
+        try {
+            $shell = New-Object -ComObject WScript.Shell
+            $target = $shell.CreateShortcut($claudeShortcut).TargetPath
+            $expected = Join-Path $claudeAdapter 'launch.vbs'
+            $claudeConfigured = $target -ieq $expected -and (Test-Path -LiteralPath $target -PathType Leaf)
+        } catch { $claudeConfigured = $false }
+    }
+    @{id='claude-desktop';available=$claudeAvailable;configured=$claudeConfigured;setupSupported=$claudeAvailable;testedVersion=$testedVersion;installedVersion=$claudeVersion;reason=$claudeReason}
     @{id='freebuff-desktop';available=$false;configured=$false;setupSupported=$false;reason='RTL is unavailable because the official executable and renderer have not been verified.'}
     CodexRtlStatus $resourceRoot
 }
@@ -452,6 +529,7 @@ function Get-RtlSessionBinding([string]$appId) {
         'deepseek-harness' { @{folder='DeepSeekHarness';defaultPort=9228;portVariable='DEEPSEEK_HARNESS_RTL_PORT';processNames=@('DeepSeek Harness.exe','DeepSeek.exe')} }
         'antigravity' { @{folder='Antigravity';defaultPort=9231;portVariable='ANTIGRAVITY_RTL_PORT';processNames=@('Antigravity.exe')} }
         'opencode' { @{folder='OpenCode';defaultPort=9234;portVariable='OPENCODE_RTL_PORT';processNames=@('OpenCode.exe')} }
+        'claude-desktop' { @{folder='Claude';defaultPort=9237;portVariable='CLAUDE_RTL_PORT';processNames=@('Claude.exe')} }
         default { return $null }
     }
     $port = [int]$binding.defaultPort
@@ -539,12 +617,67 @@ function Find-PersianTerminal {
     return $null
 }
 
+function Set-ClaudeConnectionEnvironment($options) {
+                    if ($options.claudeBaseUrl) {
+                        foreach ($name in @('ANTHROPIC_API_KEY','ANTHROPIC_AUTH_TOKEN','CLAUDE_CODE_OAUTH_TOKEN','ANTHROPIC_BASE_URL','ANTHROPIC_MODEL','ANTHROPIC_DEFAULT_OPUS_MODEL','ANTHROPIC_DEFAULT_SONNET_MODEL','ANTHROPIC_DEFAULT_HAIKU_MODEL','CLAUDE_CODE_SUBAGENT_MODEL')) { [Environment]::SetEnvironmentVariable($name,$null,'Process') }
+                        $env:ANTHROPIC_BASE_URL = [string]$options.claudeBaseUrl
+                        [Environment]::SetEnvironmentVariable([string]$options.claudeAuth,[string]$options.claudeKey,'Process')
+                        $env:ANTHROPIC_MODEL = [string]$options.claudeModel
+                        $env:ANTHROPIC_DEFAULT_OPUS_MODEL = $env:ANTHROPIC_MODEL
+                        $env:ANTHROPIC_DEFAULT_SONNET_MODEL = $env:ANTHROPIC_MODEL
+                        $env:ANTHROPIC_DEFAULT_HAIKU_MODEL = $env:ANTHROPIC_MODEL
+                        $env:CLAUDE_CODE_SUBAGENT_MODEL = $env:ANTHROPIC_MODEL
+                        # Radeon rejects budget-based thinking; scope this to the selected child connection.
+                        if (([uri]$options.claudeBaseUrl).Host -eq 'developer.amd.com.cn' -and ([uri]$options.claudeBaseUrl).AbsolutePath.TrimEnd('/') -eq '/radeon/api') {
+                            $env:MAX_THINKING_TOKENS = '0'
+                        }
+                    }
+}
+
+function Get-ClaudeCliCommand([string]$exe, [string]$resourceRoot, [string]$model = '') {
+    $command = "& '" + $exe.Replace("'", "''") + "'"
+    if ([IO.Path]::GetExtension($exe) -in @('.cmd','.bat')) {
+        $cliScript = Join-Path (Split-Path -Parent $exe) 'node_modules\@anthropic-ai\claude-code\cli.js'
+        if (Test-Path -LiteralPath $cliScript -PathType Leaf) {
+            $node = Get-RtlNodePath (Join-Path $resourceRoot 'apps\Claude')
+            $command = "function global:claude { & '" + $node.Replace("'", "''") + "' '" + $cliScript.Replace("'", "''") + "' @args }; claude"
+        }
+    }
+    if ($model) { $command += " --model '" + $model.Replace("'", "''") + "'" }
+    return $command
+}
+
+function Open-ClaudePersianTerminal($options) {
+    $exe = Find-App 'claude-code'
+    if (-not $exe) { throw 'Install Claude Code CLI first, then refresh VibeHub.' }
+    $cwd = if ($options.cwd) { [string]$options.cwd } else { [Environment]::GetFolderPath('UserProfile') }
+    if (-not [IO.Path]::IsPathRooted($cwd) -or -not (Test-Path -LiteralPath $cwd -PathType Container) -or $cwd.IndexOfAny([char[]]@('"',"`n","`r",[char]0)) -ge 0) { throw 'Select an existing project directory.' }
+    $terminal = Find-PersianTerminal
+    $version = if ($terminal) { [string](Get-Item -LiteralPath $terminal).VersionInfo.ProductVersion } else { '' }
+    $quickInput = $version -match '^\d+\.\d+\.\d+(?:\.\d+)?' -and [version]$Matches[0] -ge [version]'1.1.6'
+    $result = @{ok=$true;installed=[bool]$terminal;opened=$false;claudeStarted=$false;proxyRoutingVerified=$false;quickInputAvailable=[bool]$quickInput;version=$version;command=(Get-ClaudeCliCommand $exe $root);cwd=$cwd}
+    if (-not $options.open) { return $result }
+    if (-not $terminal) { throw 'Install RtlTerminal 1.1.6 or newer from the Terminal page first.' }
+    if ($options.proxyUrl) {
+        if ([string]$options.proxyUrl -notmatch '^https?://') { throw 'Claude Code requires an HTTP or HTTPS proxy; SOCKS is not supported.' }
+        foreach ($name in @('HTTP_PROXY','HTTPS_PROXY','ALL_PROXY')) { [Environment]::SetEnvironmentVariable($name,[string]$options.proxyUrl,'Process') }
+        $env:NO_PROXY='localhost,127.0.0.1,::1'
+    } elseif ($options.direct) {
+        foreach ($name in @('HTTP_PROXY','HTTPS_PROXY','ALL_PROXY','NO_PROXY')) { [Environment]::SetEnvironmentVariable($name,$null,'Process') }
+    }
+    # Upstream accepts only a directory, not an arbitrary startup command.
+    $process = Start-Process -FilePath $terminal -ArgumentList ('"' + $cwd.TrimEnd('\') + '\."') -WorkingDirectory $cwd -WindowStyle Normal -PassThru
+    $result.opened=$true
+    $result.pid=$process.Id
+    return $result
+}
+
 function Install-PersianTerminal {
     if (Find-PersianTerminal) { return @{ok=$true;detail='RtlTerminal is already installed.'} }
     if (-not [Environment]::Is64BitOperatingSystem -or [Environment]::OSVersion.Version.Build -lt 19041) { throw 'RtlTerminal requires 64-bit Windows 10 build 19041 or newer.' }
     # Pinned upstream release asset digest; do not execute a mutable latest download.
-    $url = 'https://github.com/mirbehnam/RtlTerminal/releases/download/v1.1.4/RtlTerminal-Setup-1.1.4-x64.exe'
-    $expected = 'B9F60B9761FB7410994FCB33293111E012C1D79256E5BCFAB0B4D62D16B4A096'
+    $url = 'https://github.com/mirbehnam/RtlTerminal/releases/download/v1.1.6/RtlTerminal-Setup-1.1.6-x64.exe'
+    $expected = 'BF5B21D82CD4F74B60760472E41BED69257AE1C708D804E6FB254A2655104661'
     $download = Join-Path ([IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString('N') + '.exe')
     try {
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -616,7 +749,7 @@ try {
         'codex-desktop' { Codex-DesktopState }
         'codex-desktop-close' {
             $state = Codex-DesktopState
-            if ($state.ambiguous -or -not $state.launchPath) { throw 'Close other or unrecognized Codex desktop installations before switching.' }
+            if ($state.ambiguous -or -not $request.path -or $state.launchPath -ine $request.path) { throw 'Codex desktop installation changed.' }
             $exe = $state.launchPath
             $processes = @(Get-Process -Name ChatGPT,Codex -ErrorAction SilentlyContinue | Where-Object { try { $_.Path -ieq $exe } catch { $false } })
             foreach ($proc in $processes) { if ($proc.MainWindowHandle -ne 0) { [void]$proc.CloseMainWindow() } }
@@ -630,10 +763,21 @@ try {
             @{ok=$true}
         }
         'codex-desktop-open' {
-            $paths = @(Find-DesktopProduct 'chatgpt' -All)
-            $exe = if ($request.path -and $request.path -in $paths) { [string]$request.path } else { Find-DesktopProduct 'chatgpt' }
-            if (-not $exe) { throw 'Codex desktop executable could not be identified.' }
-            $null = Start-Process -FilePath $exe -PassThru
+            $state = Codex-DesktopState
+            if ($state.ambiguous -or -not $request.path -or $state.launchPath -ine $request.path) {
+                throw 'Codex desktop installation changed.'
+            }
+            $appIds = @(Get-StartApps | Where-Object { $_.AppID -like "$($state.packageFamily)!*" })
+            if ($appIds.Count -ne 1) { throw 'Codex desktop activation entry could not be identified.' }
+            Start-Process -FilePath explorer.exe -ArgumentList "shell:AppsFolder\$($appIds[0].AppID)"
+            $deadline = [DateTime]::UtcNow.AddSeconds(10)
+            do {
+                $running = @(Get-Process -Name ChatGPT,Codex -ErrorAction SilentlyContinue |
+                    Where-Object { $_.Path -ieq $state.launchPath })
+                if ($running.Count -gt 0) { break }
+                Start-Sleep -Milliseconds 100
+            } while ([DateTime]::UtcNow -lt $deadline)
+            if ($running.Count -eq 0) { throw 'Codex desktop did not start.' }
             @{ok=$true}
         }
         'pick-account-json' {
@@ -649,18 +793,41 @@ try {
             } finally { $picker.Dispose() }
         }
         'detect' { @(Detect-Apps) }
+        'claude-persian-terminal' { Open-ClaudePersianTerminal $request }
         'detect-editors' { ,@(Detect-Editors) }
-        'rtl-components' { @(Get-RtlComponents $root) }
+        'rtl-components' {
+            $components = @(Get-RtlComponents $root | Where-Object { $_.id -notin @('antigravity','claude-desktop') })
+            $programs = [Environment]::GetFolderPath('Programs')
+            foreach ($component in $components) {
+                if (-not $component.available) { continue }
+                $folder = switch ($component.id) {
+                    'zcode' {'ZCode'} 'qoder' {'Qoder'} 'deepseek-harness' {'DeepSeekHarness'}
+                    'antigravity' {'Antigravity'} 'opencode' {'OpenCode'} 'claude-desktop' {'Claude'}
+                    default { $null }
+                }
+                if (-not $folder) { continue }
+                $shortcutName = switch ($component.id) {
+                    'deepseek-harness' {'DeepSeek Harness RTL.lnk'} 'claude-desktop' {'Claude Desktop RTL.lnk'}
+                    default { "$($component.id) RTL.lnk" }
+                }
+                if ($component.id -eq 'zcode') { $shortcutName = 'ZCode RTL.lnk' }
+                if ($component.id -eq 'opencode') { $shortcutName = 'OpenCode RTL.lnk' }
+                if ($component.id -eq 'antigravity') { $shortcutName = 'Antigravity RTL.lnk' }
+                $shortcut = Join-Path (Join-Path $programs 'VibeHub') $shortcutName
+                if (Test-Path -LiteralPath $shortcut -PathType Leaf) {
+                    try { Install-HubRtlShortcut $root $component.id $programs | Out-Null } catch {}
+                }
+            }
+            $components
+        }
         'launch-editor' {
             $id = [string]$request.editorId
-            if ($id -notin @('vscode','vscode-insiders','antigravity','antigravity-ide','cursor','windsurf','zed','trae','kiro','vscodium')) { throw 'Unknown detected editor.' }
+            if ($id -notin @('vscode','vscode-insiders','cursor','windsurf','zed','trae','kiro','vscodium')) { throw 'Unknown detected editor.' }
             $editor = Detect-Editors | Where-Object { $_.id -eq $id } | Select-Object -First 1
             if (-not $editor) { throw 'This editor is no longer installed at a recognized path. Refresh the app list.' }
             $expectedExe = switch ($id) {
                 'vscode' { 'Code.exe' }
                 'vscode-insiders' { 'Code - Insiders.exe' }
-                'antigravity' { 'Antigravity.exe' }
-                'antigravity-ide' { 'Antigravity IDE.exe' }
                 'cursor' { 'Cursor.exe' }
                 'windsurf' { 'Windsurf.exe' }
                 'zed' { 'Zed.exe' }
@@ -669,26 +836,13 @@ try {
                 'vscodium' { 'VSCodium.exe' }
             }
             if ([IO.Path]::GetFileName([string]$editor.path) -ine $expectedExe) { throw 'Detected editor executable did not match its product.' }
-            if ($request.rtl) {
-                if ($id -ne 'antigravity') { throw 'RTL is unavailable for this editor.' }
-                if ($request.proxyUrl) { foreach ($name in @('HTTP_PROXY','HTTPS_PROXY','ALL_PROXY')) { [Environment]::SetEnvironmentVariable($name, [string]$request.proxyUrl, 'Process') }; $env:NO_PROXY='localhost,127.0.0.1,::1' }
-                elseif ($request.direct) { foreach ($name in @('HTTP_PROXY','HTTPS_PROXY','ALL_PROXY','NO_PROXY')) { [Environment]::SetEnvironmentVariable($name,$null,'Process') } }
-                $env:ANTIGRAVITY_RTL_EXE = [string]$editor.path
-                & (Join-Path $root 'apps\Antigravity\start.ps1') -Gui -ProxyUrl ([string]$request.proxyUrl)
-                $port = if ($env:ANTIGRAVITY_RTL_PORT) { [int]$env:ANTIGRAVITY_RTL_PORT } else { 9231 }
-                $injector = Join-Path $root 'apps\Antigravity\injector.mjs'
-                $owner = Get-NetTCPConnection -LocalPort ($port+1) -State Listen -ErrorAction Stop | Select-Object -First 1
-                $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$($owner.OwningProcess)"
-                if ($proc.Name -ine 'node.exe' -or $proc.CommandLine -notmatch [regex]::Escape($injector)) { throw 'RTL injector ownership verification failed.' }
-                @{ok=$true;id=$id;rtl=$true;port=$port;injectorPid=$proc.ProcessId;injectorPath=$injector;since=[DateTime]::UtcNow.ToString('o');detail='Standalone Antigravity RTL injector started; live rendering is experimental.'}
-                break
-            }
+            if ($request.rtl) { throw 'RTL is unavailable for this editor.' }
             $cwd = [Environment]::GetFolderPath('UserProfile')
             $startInfo = [Diagnostics.ProcessStartInfo]::new()
             $startInfo.FileName = [string]$editor.path
             $startInfo.WorkingDirectory = $cwd
             $startInfo.UseShellExecute = $false
-            if ($request.proxyUrl -and $id -in @('vscode','vscode-insiders','antigravity','antigravity-ide','cursor','windsurf','trae','kiro','vscodium')) {
+            if ($request.proxyUrl -and $id -in @('vscode','vscode-insiders','cursor','windsurf','trae','kiro','vscodium')) {
                 $chromiumProxy = ([string]$request.proxyUrl) -replace '^socks5h://','socks5://'
                 $startInfo.Arguments = "--proxy-server=$chromiumProxy"
             }
@@ -758,16 +912,18 @@ try {
             } finally { if (Test-Path -LiteralPath $download) { Remove-Item -LiteralPath $download } }
         }
         'app-path' {
-            $names = @{qoder=@('Qoder.exe','Qoder IDE.exe','QoderAI.exe');zcode=@('ZCode.exe');'deepseek-harness'=@('DeepSeek Harness.exe','DeepSeek.exe');antigravity=@('Antigravity.exe');opencode=@('OpenCode.exe');chatgpt=@('ChatGPT.exe','Codex.exe');'claude-desktop'=@('Claude.exe');'claude-code'=@('claude.exe','claude.cmd','claude.bat');mimocode=@('mimocode.exe','mimocode.cmd','mimocode.bat');freebuff=@('freebuff.exe','freebuff.cmd','freebuff.bat')}
+            $names = @{qoder=@('Qoder.exe','Qoder IDE.exe','QoderAI.exe');zcode=@('ZCode.exe');'deepseek-harness'=@('DeepSeek Harness.exe','DeepSeek.exe');'antigravity-ide'=@('Antigravity IDE.exe');opencode=@('OpenCode.exe');chatgpt=@('ChatGPT.exe','Codex.exe');'claude-code'=@('claude.exe','claude.cmd','claude.bat');mimocode=@('mimocode.exe','mimocode.cmd','mimocode.bat');freebuff=@('freebuff.exe','freebuff.cmd','freebuff.bat')}
             $id = [string]$request.appId
             $path = [string]$request.path
             if (-not $names.ContainsKey($id) -or -not [IO.Path]::IsPathRooted($path) -or -not (Test-Path -LiteralPath $path -PathType Leaf) -or [IO.Path]::GetFileName($path) -notin $names[$id]) { throw 'Select the executable belonging to this application.' }
+            if ($id -eq 'antigravity-ide' -and -not (Test-AntigravityIdePath $path)) { throw 'Choose the Antigravity IDE installation, with its resources/app/product.json; the standalone App is not this product.' }
+            if ($id -eq 'claude-code' -and -not (Test-ClaudeCliPath $path)) { throw 'Choose Claude Code CLI, not Claude Desktop.' }
             Save-RtlPath $id $path
             @{ok=$true}
         }
         'focus-app' {
             $id = [string]$request.appId
-            if ($id -notin @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','freebuff-desktop','antigravity','chatgpt','claude-desktop','claude-code')) { throw 'Unknown app' }
+            if ($id -notin @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','freebuff-desktop','antigravity-ide','chatgpt','claude-code')) { throw 'Unknown app' }
             $exe = Find-App $id
             $target = Get-Process -ErrorAction SilentlyContinue | Where-Object { try { $_.Path -ieq $exe -and $_.MainWindowHandle -ne 0 } catch { $false } } | Select-Object -First 1
             if (-not $exe -or -not $target) { throw 'No application window was found.' }
@@ -775,18 +931,6 @@ try {
             [HubWindow]::ShowWindowAsync($target.MainWindowHandle,9) | Out-Null
             if (-not [HubWindow]::SetForegroundWindow($target.MainWindowHandle)) { throw 'Windows did not activate the application window.' }
             @{ok=$true;rtl=$false;detail='Application window activated'}
-        }
-        'focus-editor' {
-            $id = [string]$request.editorId
-            if ($id -ne 'antigravity-ide') { throw 'Unknown supported editor.' }
-            $editor = Detect-Editors | Where-Object { $_.id -eq $id } | Select-Object -First 1
-            if (-not $editor) { throw 'Antigravity IDE is no longer installed at a recognized path. Refresh the app list.' }
-            $target = Get-Process -ErrorAction SilentlyContinue | Where-Object { try { $_.Path -ieq $editor.path -and $_.MainWindowHandle -ne 0 } catch { $false } } | Select-Object -First 1
-            if (-not $target) { throw 'No Antigravity IDE window was found.' }
-            Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class HubEditorWindow { [DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr h,int n); [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h); }'
-            [HubEditorWindow]::ShowWindowAsync($target.MainWindowHandle,9) | Out-Null
-            if (-not [HubEditorWindow]::SetForegroundWindow($target.MainWindowHandle)) { throw 'Windows did not activate Antigravity IDE.' }
-            @{ok=$true;rtl=$false;detail='Antigravity IDE window activated'}
         }
         'rtl-setup' {
             $id = [string]$request.appId
@@ -798,13 +942,25 @@ try {
                 if ($product -eq 'chatgpt') { throw 'RTL is unavailable for ordinary ChatGPT; only Codex Desktop is eligible.' }
                 throw 'RTL is unavailable because the OpenAI executable could not be verified as Codex Desktop; ordinary ChatGPT is unsupported.'
             }
-            if ($id -notin @('zcode','qoder','deepseek-harness','antigravity','opencode')) { throw 'RTL is unavailable for this app.' }
+            if ($id -eq 'claude-desktop') {
+                $status = Get-RtlComponents $root | Where-Object { $_.id -eq 'claude-desktop' } | Select-Object -First 1
+                if (-not $status.setupSupported) { throw [string]$status.reason }
+            }
+            if ($id -notin @('zcode','qoder','deepseek-harness','antigravity','opencode','claude-desktop')) { throw 'RTL is unavailable for this app.' }
             if (-not (Find-App $id)) { throw 'Install the application first, then check again in VibeHub.' }
             Install-HubRtlShortcut $root $id ([Environment]::GetFolderPath('Programs'))
         }
         'launch' {
             $id = [string]$request.req.appId
-            if ($id -notin @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','freebuff-desktop','antigravity','chatgpt','claude-desktop','claude-code')) { throw 'Unknown app' }
+            if ($id -notin @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','freebuff-desktop','antigravity-ide','chatgpt','claude-code')) { throw 'Unknown app' }
+            if ($id -eq 'antigravity-ide' -and $request.req.rtl) { throw 'RTL is not verified for this tool.' }
+            if ($id -eq 'claude-code' -and $request.req.rtl) {
+                $claudePlugin = Join-Path $root 'apps\ClaudeRtlPlugin'
+                if (-not (Test-Path -LiteralPath (Join-Path $claudePlugin 'hooks\register.tsx'))) { throw 'Claude Persian plugin is missing. Repair VibeHub.' }
+                $cliVersion = & (Find-App 'claude-code') --version 2>$null
+                if ([string]$cliVersion -notmatch '(\d+\.\d+\.\d+)' -or [version]$Matches[1] -lt [version]'2.1.294') { throw 'Persian rendering requires Claude Code 2.1.294 or newer. Update Claude Code first.' }
+            }
+            if ($id -eq 'claude-code' -and $request.proxyUrl -and [string]$request.proxyUrl -notmatch '^https?://') { throw 'Claude Code requires an HTTP or HTTPS proxy. Select the HTTP/Mixed port; SOCKS is not supported.' }
             if ($id -eq 'freebuff-desktop') { throw 'Freebuff Desktop is unavailable because its official executable path has not been verified.' }
             if ($id -eq 'chatgpt' -and $request.req.rtl) {
                 $exe = Find-App 'chatgpt'
@@ -826,7 +982,11 @@ try {
             $env:VIBEHUB_PROJECT = if ($request.req.cwd) { $cwd } else { '' }
             if ($request.proxyUrl) { $env:HTTP_PROXY=$request.proxyUrl; $env:HTTPS_PROXY=$request.proxyUrl; $env:ALL_PROXY=$request.proxyUrl; $env:NO_PROXY='localhost,127.0.0.1,::1' }
             elseif ($request.direct) { foreach ($name in @('HTTP_PROXY','HTTPS_PROXY','ALL_PROXY','NO_PROXY')) { [Environment]::SetEnvironmentVariable($name,$null,'Process') } }
-            if ($request.req.rtl) {
+            if ($request.req.rtl -and $id -ne 'claude-code') {
+                if ($id -eq 'claude-desktop') {
+                    $status = Get-RtlComponents $root | Where-Object { $_.id -eq 'claude-desktop' } | Select-Object -First 1
+                    if (-not $status.setupSupported) { throw [string]$status.reason }
+                }
                 $binding = Get-RtlSessionBinding $id
                 if (-not $binding) { throw 'RTL is unavailable for this app.' }
                 $folder = $binding.folder
@@ -834,6 +994,7 @@ try {
                 $script = Join-Path $root "apps\$folder\start.ps1"
                 if ($id -eq 'antigravity') { $env:ANTIGRAVITY_RTL_EXE = $exe }
                 if ($id -eq 'opencode') { $env:OPENCODE_RTL_EXE = $exe }
+                if ($id -eq 'claude-desktop') { $env:CLAUDE_RTL_EXE = $exe }
                 $alreadyRtl = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
                 Invoke-HubRtlLauncher $script
                 if ($alreadyRtl -and $request.req.cwd) { Start-Process -FilePath $exe -ArgumentList ('"' + ($cwd.TrimEnd('\') + '\.') + '"') -WorkingDirectory $cwd | Out-Null }
@@ -852,8 +1013,15 @@ try {
                 # Visible shell is the requested product UI. No user text is parsed as code.
                 $quotedExe = $exe.Replace("'", "''")
                 $code = "& '$quotedExe'"
+                if ($id -eq 'claude-code') { $code = Get-ClaudeCliCommand $exe $root ([string]$request.claudeModel) }
+                if ($id -eq 'claude-code') {
+                    Set-ClaudeConnectionEnvironment $request
+                    if ($request.req.rtl) { $code += " --plugin-dir '" + $claudePlugin.Replace("'", "''") + "'" }
+                }
                 $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($code))
-                $proc = Start-Process -FilePath powershell.exe -ArgumentList @('-NoLogo','-NoExit','-EncodedCommand',$encoded) -WorkingDirectory $cwd -PassThru
+                $shellArgs = @('-NoLogo','-NoExit','-EncodedCommand',$encoded)
+                if ($id -eq 'claude-code') { $shellArgs = @('-NoProfile') + $shellArgs }
+                $proc = Start-Process -FilePath powershell.exe -ArgumentList $shellArgs -WorkingDirectory $cwd -WindowStyle Normal -PassThru
                 $detail = if ($request.proxyUrl) { 'Opened CLI in a terminal with proxy settings requested; tool routing is not verified.' } else { 'Opened CLI in a terminal' }
                 @{ok=$true;rtl=$false;pid=$proc.Id;since=[DateTime]::UtcNow.ToString('o');proxyConfigured=[bool]$request.proxyUrl;proxyRoutingVerified=$false;detail=$detail}
             } else {

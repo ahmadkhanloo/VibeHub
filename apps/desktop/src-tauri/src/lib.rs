@@ -51,7 +51,7 @@ async fn focus_editor(app: tauri::AppHandle, editor_id: String) -> Result<Value>
 
 #[tauri::command]
 async fn rtl_setup(app: tauri::AppHandle, app_id: String) -> Result<Value> {
-    if !["qoder", "zcode", "deepseek-harness", "antigravity"].contains(&app_id.as_str()) {
+    if !["qoder", "zcode", "deepseek-harness", "opencode"].contains(&app_id.as_str()) {
         return Err("RTL is unavailable for this app".into());
     }
     system::run(app, json!({"operation":"rtl-setup", "appId":app_id})).await
@@ -63,9 +63,7 @@ async fn launch_editor(
     editor_id: String,
     rtl: Option<bool>,
 ) -> Result<Value> {
-    if !EDITOR_IDS.contains(&editor_id.as_str())
-        || (rtl == Some(true) && editor_id != "antigravity")
-    {
+    if !EDITOR_IDS.contains(&editor_id.as_str()) || rtl == Some(true) {
         return Err("Unsupported editor launch".into());
     }
     system::blocking(move || {
@@ -264,6 +262,21 @@ async fn terminal_detect(app: tauri::AppHandle) -> Result<Value> {
     system::run(app, json!({"operation":"terminal-detect"})).await
 }
 #[tauri::command]
+async fn claude_persian_terminal(app: tauri::AppHandle, cwd: Option<String>, open: bool) -> Result<Value> {
+    if let Some(path) = &cwd {
+        if !std::path::Path::new(path).is_absolute() || !std::path::Path::new(path).is_dir() || path.contains(['"', '\n', '\r', '\0']) {
+            return Err("Select an existing project directory".into());
+        }
+    }
+    system::blocking(move || {
+        let mut request = if open { launch_request(&app, "claude-code", None)? } else { json!({}) };
+        request["operation"] = json!("claude-persian-terminal");
+        request["cwd"] = json!(cwd);
+        request["open"] = json!(open);
+        system::powershell(&app, request)
+    }).await
+}
+#[tauri::command]
 async fn terminal_install_persian(app: tauri::AppHandle) -> Result<Value> {
     system::run(app, json!({"operation":"terminal-install-persian"})).await
 }
@@ -391,6 +404,18 @@ async fn launch_app(app: tauri::AppHandle, req: Value) -> Result<Value> {
         storage::run_launch(&launch_file(&app)?, &id, || {
             let mut request = launch_request(&app, &id, req["proxyProfileId"].as_str())?;
             request["operation"] = json!("launch");
+            if id == "claude-code" {
+                if let Some(connection_id) = req["connectionId"].as_str() {
+                    let connections = storage::provider_connections(&storage::provider_connection_file(&app)?)?;
+                    let connection = connections.as_array().ok_or("Invalid connections")?.iter()
+                        .find(|c| c["id"].as_str() == Some(connection_id)).ok_or("Selected connection no longer exists")?;
+                    request["claudeBaseUrl"] = connection["baseUrl"].clone();
+                    request["claudeModel"] = connection["modelId"].clone();
+                    request["claudeKey"] = json!(storage::vault_get(&format!("vibehub.provider-key.connection.{connection_id}"))?
+                        .ok_or("Save an API key for this connection first")?);
+                    request["claudeAuth"] = json!(if req["authHeader"] == "bearer" { "ANTHROPIC_AUTH_TOKEN" } else { "ANTHROPIC_API_KEY" });
+                }
+            }
             request["req"] = req;
             system::powershell(&app, request)
         })
@@ -522,6 +547,7 @@ pub fn run() {
             proxy_set_config,
             proxy_test,
             terminal_detect,
+            claude_persian_terminal,
             terminal_install_persian,
             terminal_install_ohmyposh,
             terminal_install_font,

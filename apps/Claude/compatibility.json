@@ -1,0 +1,5 @@
+{
+  "testedVersion": "",
+  "adapterVerified": false,
+  "reason": "Claude Desktop 2.42304.2 is installed and signed, but RTL remains disabled because the app is on its sign-in page; verify the live message composer and conversation rendering before enabling this version."
+}

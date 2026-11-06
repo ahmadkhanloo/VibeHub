@@ -185,7 +185,7 @@ fn cli_path() -> Option<PathBuf> {
             paths.push(package.join(format!("vendor/{arch}/codex/codex.exe")));
         }
     }
-    paths.into_iter().find(|p| p.is_file())
+    paths.into_iter().find(|p| p.is_file() && compatible(p))
 }
 fn compatible(binary: &Path) -> bool {
     let mut cmd = Command::new(binary);
@@ -283,9 +283,10 @@ fn read_encrypted_store(home: &Path) -> Result<Value> {
         return Err(err("credentialInvalid"));
     }
     let ciphertext = fs::read(path).map_err(|_| err("storage"))?;
-    let key = encryption_key(home, false)?;
-    let plaintext =
-        age::decrypt(&age::scrypt::Identity::new(key), &ciphertext).map_err(|_| err("vault"))?;
+    let mut identity = age::scrypt::Identity::new(encryption_key(home, false)?);
+    // The release Codex CLI can choose a higher work factor than our debug build.
+    identity.set_max_work_factor(20);
+    let plaintext = age::decrypt(&identity, &ciphertext).map_err(|_| err("vault"))?;
     let store: Value = serde_json::from_slice(&plaintext).map_err(|_| err("credentialInvalid"))?;
     if store["version"].as_u64().is_none_or(|v| v > 1) || !store["secrets"].is_object() {
         return Err(err("storageUnsupported"));
@@ -479,7 +480,7 @@ impl Broker {
         if !state["accounts"].is_array() || !state["settings"]["enabled"].is_boolean() {
             return Err(err("storage"));
         }
-        let binary = cli_path().filter(|p| compatible(p));
+        let binary = cli_path();
         Ok(Self {
             path,
             root,
@@ -628,6 +629,10 @@ impl Broker {
                     Err(err("loginFailed"))
                 }
             })();
+            // Preserve a completed login if reading it or saving the profile fails.
+            if success {
+                result.as_ref().map_err(Clone::clone)?;
+            }
             let cleanup = delete_vault(&login.home);
             fs::remove_dir(&login.home).ok(); // Codex may leave non-secret runtime files; never recursively delete them.
             result?;
@@ -695,7 +700,11 @@ impl Broker {
     }
     fn switch(&mut self, app: &tauri::AppHandle, id: &str, confirmed: bool) -> Result<()> {
         self.index(id)?;
-        if self.reconcile()? {
+        if self.binary.is_none() {
+            return Err(err("cliMissing"));
+        }
+        let active = self.state["activeId"].clone();
+        if self.reconcile()? && self.state["activeId"] != active {
             return Err(err("externalChanged"));
         }
         self.desktop = system::powershell(app, json!({"operation":"codex-desktop"}))?;
@@ -728,37 +737,55 @@ impl Broker {
         }
         let restarted = self.desktop["running"] == true;
         if restarted {
-            system::powershell(app, json!({"operation":"codex-desktop-close"}))?;
+            system::powershell(
+                app,
+                json!({"operation":"codex-desktop-close","path":self.desktop["launchPath"]}),
+            )
+            .map_err(|_| err("closeRequired"))?;
         }
-        // Compare again after closing: desktop shutdown may persist a freshly rotated token.
-        if fingerprint(&read_global(&self.global)?) != fingerprint(&before) {
-            self.reconcile()?;
-            if restarted {
-                let _ = system::powershell(
-                    app,
-                    json!({"operation":"codex-desktop-open","path":self.desktop["launchPath"]}),
-                );
+        let mut committed = Value::Null;
+        let result = (|| {
+            let desktop = system::powershell(app, json!({"operation":"codex-desktop"}))?;
+            if desktop["running"] == true || desktop["ambiguous"] == true {
+                return Err(err("closeRequired"));
             }
-            return Err(err("externalChanged"));
-        }
-        let mut committed = self.state.clone();
-        if self.state["activeId"] != id { committed["previousId"] = self.state["activeId"].clone(); }
-        committed["activeId"] = json!(id);
-        committed["pendingId"] = Value::Null;
-        committed["lastSwitch"] = json!(now());
-        committed["notice"] = json!("switched");
-        let result = replace_global(&self.global, &next, &before, || {
-            // Verify using Codex itself: its policy/config layers remain authoritative.
-            let mut rpc = self.rpc(&self.global, false)?;
-            let account = rpc.call("account/read", json!({"refreshToken":false}))?;
-            if account["account"]["type"] != "chatgpt"
-                || identity(&read_global(&self.global)?)?.0 != id
+            // Shutdown may persist a freshly rotated token.
+            let outgoing = read_global(&self.global)?;
+            let outgoing_id = identity(&outgoing).ok().map(|x| x.0);
+            if outgoing != before
+                && (outgoing_id.is_none() || outgoing_id != identity(&before).ok().map(|x| x.0))
             {
-                return Err(err("switchFailed"));
+                self.reconcile()?;
+                return Err(err("externalChanged"));
             }
-            committed["fingerprint"] = json!(fingerprint(&read_global(&self.global)?));
-            storage::write(&self.path, &committed).map_err(|_| err("storage"))
-        });
+            if let Some(outgoing_id) = outgoing_id.as_deref() {
+                if self.index(outgoing_id).is_err() {
+                    self.add(outgoing.clone(), "")?;
+                } else {
+                    write_vault(&self.home(outgoing_id)?, &outgoing)?;
+                }
+            }
+            committed = self.state.clone();
+            if let Some(outgoing_id) = outgoing_id.as_deref().filter(|outgoing_id| *outgoing_id != id) {
+                committed["previousId"] = json!(outgoing_id);
+            }
+            committed["activeId"] = json!(id);
+            committed["pendingId"] = Value::Null;
+            committed["lastSwitch"] = json!(now());
+            committed["notice"] = json!("switched");
+            let selected = if outgoing_id.as_deref() == Some(id) { &outgoing } else { &next };
+            replace_global(&self.global, selected, &outgoing, || {
+                // Verify using Codex itself: its policy/config layers remain authoritative.
+                let mut rpc = self.rpc(&self.global, false)?;
+                let account = rpc.call("account/read", json!({"refreshToken":false}))?;
+                let applied = read_global(&self.global)?;
+                if account["account"]["type"] != "chatgpt" || identity(&applied)?.0 != id {
+                    return Err(err("switchFailed"));
+                }
+                committed["fingerprint"] = json!(fingerprint(&applied));
+                storage::write(&self.path, &committed).map_err(|_| err("storage"))
+            })
+        })();
         if let Err(error) = result {
             if restarted {
                 let _ = system::powershell(
@@ -1111,7 +1138,7 @@ pub fn handle(app: &tauri::AppHandle, action: &str, payload: Value) -> Result<Va
             broker.binary = broker
                 .binary
                 .take()
-                .or_else(|| cli_path().filter(|p| compatible(p)));
+                .or_else(cli_path);
             broker.desktop = system::powershell(app, json!({"operation":"codex-desktop"}))?;
             if let Err(error) = broker
                 .read_initial_account()
@@ -1409,6 +1436,17 @@ mod tests {
         assert_eq!(read_global(&global.0).unwrap(), auth);
         broker.read_initial_account().unwrap();
         assert_eq!(broker.state["accounts"].as_array().unwrap().len(), 1);
+        let imported = synthetic_auth("imported");
+        let imported_id = broker
+            .add(parse_account_json(imported.to_string().as_bytes()).unwrap(), "")
+            .unwrap();
+        broker.reconcile().unwrap();
+        assert_eq!(broker.state["activeId"], id);
+        assert_eq!(read_global(&global.0).unwrap(), auth);
+        assert_eq!(read_vault(&broker.home(&imported_id).unwrap()).unwrap(), Some(imported));
+        assert!(parse_account_json(b"invalid-credential").is_err());
+        assert_eq!(read_global(&global.0).unwrap(), auth);
+        delete_vault(&broker.home(&imported_id).unwrap()).unwrap();
         delete_vault(&broker.home(&id).unwrap()).unwrap();
     }
     #[test]
@@ -1522,6 +1560,28 @@ mod tests {
             .unwrap();
         assert_eq!(result["account"]["type"], "chatgpt");
         assert_eq!(result["account"]["email"], "fixture@example.invalid");
+    }
+    #[test]
+    #[ignore = "Opt-in installed Codex CLI compatibility check with a synthetic key"]
+    fn reads_encrypted_profile_written_by_installed_cli() {
+        let binary = cli_path().expect("Codex CLI must be installed");
+        let root = Sandbox::new();
+        let mut child = Command::new(binary)
+            .args([
+                "-c", "cli_auth_credentials_store=\"keyring\"",
+                "--enable", "secret_auth_storage",
+                "login", "--with-api-key",
+            ])
+            .env("CODEX_HOME", &root.0)
+            .current_dir(&root.0)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .unwrap();
+        child.stdin.take().unwrap().write_all(b"synthetic-key-not-a-credential\n").unwrap();
+        assert!(child.wait().unwrap().success());
+        assert_eq!(read_vault(&root.0).unwrap().unwrap()["OPENAI_API_KEY"], "synthetic-key-not-a-credential");
     }
     fn account(id: &str, remaining: f64) -> Value {
         json!({"id":id,"error":null,"checkedAt":1000,"windows":[{"remaining":remaining,"resetsAt":2000}]})

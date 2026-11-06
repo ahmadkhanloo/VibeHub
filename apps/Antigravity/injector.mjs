@@ -1,6 +1,7 @@
 import { createServer } from 'node:net';
 import { readFileSync } from 'node:fs';
 import { injectSource } from './style.mjs';
+import { isAntigravityPageTarget } from './cdp-targets.mjs';
 
 const fontFaces = [400, 700].map(weight => {
   const name = weight === 400 ? 'Regular' : 'Bold';
@@ -17,12 +18,7 @@ const sessions = new Map();
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 export function isAppTarget(target) {
-  if (target.type !== 'page') return false;
-  try {
-    const url = new URL(target.url);
-    return url.protocol === 'https:' && ['127.0.0.1', 'localhost'].includes(url.hostname)
-      && url.pathname === '/';
-  } catch { return false; }
+  return isAntigravityPageTarget(target);
 }
 
 async function attach(target) {

@@ -1,7 +1,5 @@
 # Review code with an agent
 
-![Educational workflow schematic](../../../apps/desktop/public/tutorials/code-review.svg)
-
 ## From change to release
 
 Local checks → AI review → Security → Tests and build → Human approval → Staged release → Monitor and rollback
@@ -37,3 +35,12 @@ For Claude services, check account-region eligibility. Network restrictions from
 > Review the current changes against the request and surrounding code. Report real bugs, security risks and untested behavior with file, line and reason. Show test output and review limitations; omit cosmetic findings. Do not merge any change without my review.
 
 [Source: Claude Code team article](https://claude.dev/blog/solving-code-review-at-anthropic/)
+
+
+## Illustrated example: run a reviewer in Claude Code
+
+After defining the scope, ask the reviewer to read the changes and report reproducible issues. This image shows delegation and file reads, not a final report or passing tests.
+
+![The code-reviewer in an official Claude Code example; tool activity appears below the agent name and should be followed through to the final report.](../../../apps/desktop/public/tutorials/screenshots/claude-review-agent.webp)
+
+[Create a bounded reviewer](/learning/claude-agents) · [Official Claude Academy example](https://academy.claude.com/courses/claude-code-101/the-explore-plan-code-commit-workflow)

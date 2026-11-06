@@ -3,7 +3,7 @@
   "generatedAt": "2026-10-27T15:55:00.456Z",
   "minClientVersion": "0.1.0",
   "apps": [
-    "antigravity",
+    "antigravity-ide",
     "chatgpt",
     "deepseek-harness",
     "freebuff",
@@ -11,8 +11,7 @@
     "opencode",
     "qoder",
     "zcode",
-    "claude-code",
-    "claude-desktop"
+    "claude-code"
   ],
   "providers": [
     "nvidia-build",

@@ -66,6 +66,7 @@
   "deleteKey": "حذف کلید از خزانه",
   "keyStored": "کلید ذخیره شد",
   "noKeyStored": "کلیدی ذخیره نشده",
+  "claudeCustomEndpoint": "نشانی سفارشی Anthropic Messages",
   "customEndpoint": "نشانی سفارشی سازگار با OpenAI",
   "customNote": "هزینه و شرایط را خود سرویس تعیین می‌کند.",
   "agentIntegration": "اتصال به ابزارها فقط از مسیر تنظیمات خودشان انجام می‌شود؛ «آمادهٔ تنظیم» با «آزموده‌شده داخل ابزار» فرق دارد.",

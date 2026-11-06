@@ -56,24 +56,35 @@ test('Freebuff CLI and Desktop have separate validated catalog records and guide
   const cli = catalog.apps.find(app => app.id === 'freebuff');
   const desktop = catalog.apps.find(app => app.id === 'freebuff-desktop');
   const mimo = catalog.apps.find(app => app.id === 'mimocode');
-  const claudeCode = catalog.apps.find(app => app.id === 'claude-code');
   assert.equal(cli?.kind, 'cli_agent');
   assert.equal(desktop?.kind, 'desktop_agent');
   assert.equal(desktop?.capabilities.rtl, 'unsupported');
   assert.equal(mimo?.kind, 'cli_agent');
   assert.equal(mimo?.capabilities.rtl, 'unknown');
-  assert.equal(claudeCode?.kind, 'cli_agent');
-  assert.equal(claudeCode?.capabilities.rtl, 'unsupported');
+  assert.equal(catalog.apps.some(app => app.id === 'claude-code'), true);
   assert.deepEqual(filterApps(catalog, { query: 'Freebuff' }).map(app => app.id).sort(), ['freebuff', 'freebuff-desktop']);
   for (const lang of ['fa', 'en']) assert.ok((await read(`docs/tutorials/freebuff-desktop/${lang}.md`)).trim());
 });
 
 test('shared AppId covers the supported Windows catalog IDs', async () => {
   const source = await read('packages/core/src/index.ts');
-  for (const id of ['freebuff-desktop', 'chatgpt', 'claude-desktop', 'claude-code']) assert.match(source, new RegExp(`['"]${id}['"]`));
+  for (const id of ['freebuff-desktop', 'chatgpt', 'claude-code', 'antigravity-ide']) assert.match(source, new RegExp(`['"]${id}['"]`));
+  assert.doesNotMatch(source, /claude-desktop/);
 });
 
 test('shared AppId is the exact unique Windows host catalog allowlist', () => {
-  assert.deepEqual([...APP_IDS], ['zcode', 'qoder', 'deepseek-harness', 'opencode', 'mimocode', 'freebuff', 'freebuff-desktop', 'antigravity', 'chatgpt', 'claude-desktop', 'claude-code']);
+  assert.deepEqual([...APP_IDS], ['zcode', 'qoder', 'deepseek-harness', 'opencode', 'mimocode', 'freebuff', 'freebuff-desktop', 'antigravity-ide', 'chatgpt', 'claude-code']);
   assert.equal(new Set(APP_IDS).size, APP_IDS.length);
+});
+
+test('removed Claude Desktop and Antigravity App entries from old feeds stay out of the catalog', () => {
+  const legacyApp = id => ({
+    schemaVersion: 1, id, name: id, kind: 'cli_agent', platforms: ['windows'],
+    summary: { fa: 'legacy', en: 'legacy' }, websiteUrl: 'https://example.com/',
+    isOpenSource: false, freeAccess: 'unknown', freeAccessDetails: { fa: 'legacy', en: 'legacy' },
+    requiresSignup: true, requiresPaymentCard: null, sourceOfFreeAccess: 'https://example.com/',
+    lastVerified: '2026-11-02', capabilities: { install: 'reported', launch: 'reported', rtl: 'unsupported', proxy: 'unknown', terminal: 'unsupported', byok: 'unknown' },
+  });
+  const catalog = loadCatalog({ apps: [legacyApp('claude-desktop'), legacyApp('antigravity')], providers: [], offers: [] });
+  assert.deepEqual(catalog.apps, []);
 });

@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "antigravity-ide",
+  "name": "Antigravity IDE",
+  "summary": {
+    "fa": "ویرایشگر کد Antigravity IDE؛ با اپ مستقل Antigravity فرق دارد. راهنمای اتصال و API افزونه‌ها را بخوانید.",
+    "en": "Antigravity IDE code editor, separate from Antigravity App. Includes network setup and extension API guidance."
+  },
+  "kind": "desktop_ide",
+  "platforms": [
+    "windows"
+  ],
+  "websiteUrl": "https://antigravity.google/download",
+  "docsUrl": "https://antigravity.google/docs/getting-started/",
+  "isOpenSource": false,
+  "freeAccess": "unknown",
+  "freeAccessDetails": {
+    "fa": "استفاده از ایجنت بومی به حساب، منطقه و سهمیهٔ گوگل وابسته است. API افزونه‌ها شرایط جداگانه دارد.",
+    "en": "Native agent access depends on Google account eligibility, region and quota. Extension APIs have separate requirements."
+  },
+  "requiresSignup": true,
+  "requiresPaymentCard": null,
+  "sourceOfFreeAccess": "https://antigravity.google/docs/faq",
+  "lastVerified": "2026-11-04",
+  "capabilities": {
+    "install": "reported",
+    "launch": "reported",
+    "rtl": "unsupported",
+    "proxy": "reported",
+    "terminal": "reported",
+    "byok": "unknown"
+  },
+  "installMethods": [
+    {
+      "method": "guide",
+      "idOrUrl": "https://antigravity.google/download"
+    }
+  ]
+}

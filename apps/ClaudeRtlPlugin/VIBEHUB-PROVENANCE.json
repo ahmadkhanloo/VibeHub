@@ -1,0 +1,8 @@
+{
+  "repository": "https://github.com/MohammedSaud404/rtl-terminal",
+  "commit": "c0572309deeec3695c0d82e5eae0d54459422373",
+  "version": "1.0.7",
+  "license": "MIT",
+  "minimumClaudeVersion": "2.1.294",
+  "experimental": true
+}

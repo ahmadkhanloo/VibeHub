@@ -1,56 +1,100 @@
-# Claude Code + LiteLLM — from first run to model routing
+# Claude Code CLI
 
-![Educational workflow schematic](../../../apps/desktop/public/tutorials/claude-code.svg)
+## What this entry launches
+Claude Code runs in a terminal and works on a project. This entry is not Claude Desktop. Use an eligible Claude account or credentials for a compatible API. Connecting another model does not turn it into a Claude model; capabilities, quality and billing depend on that provider.
 
-Documentation checked: **2026-11-01**. This is a setup guide, not a successful local installation or live routing test.
+## Feature learning path
+- [Work on a project](/learning/claude-workflow)
+- [Planning and permissions](/learning/claude-permissions)
+- [Project instructions with CLAUDE.md](/learning/claude-memory)
+- [Create and use skills](/learning/claude-skills)
+- [Connect tools with MCP](/learning/claude-mcp)
+- [Delegate to subagents](/learning/claude-agents)
+- [Resume sessions and manage context](/learning/claude-sessions)
+- [Reference code and review edits in VS Code](/learning/claude-vscode)
+- [Install and manage plugins](/learning/claude-plugins)
 
-## 1. Understand the two tools
-
-Claude Code is the coding client in your terminal. LiteLLM is a separate model gateway: **Claude Code → LiteLLM → model provider**. It translates requests and manages routing. A network proxy instead helps transport traffic; it does not translate model APIs.
-
-Anthropic documents gateways but explicitly does **not support routing to non-Claude models**. LiteLLM documents that third-party path. Do not read this as guaranteed compatibility with every model: tool calls, streaming, context limits and reasoning behavior need testing. [Anthropic gateway documentation](https://code.claude.com/docs/en/llm-gateway), [LiteLLM alternate-model tutorial](https://docs.litellm.ai/docs/tutorials/claude_non_anthropic_models).
-
-## 2. Install the Windows client
-
-Open PowerShell. Review the current [official setup instructions](https://code.claude.com/docs/en/setup), then use its WinGet option:
-
-```powershell
-winget install Anthropic.ClaudeCode
-```
-
-Reopen the terminal and check:
+## Install and start
+Follow the [official Windows setup](https://code.claude.com/docs/en/setup). The official PowerShell installer is:
 
 ```powershell
-claude --version
+irm https://claude.ai/install.ps1 | iex
 ```
 
-Install Git for Windows if you want the Bash tool. Work in a disposable project first. For direct Claude access, follow the official authentication flow only if your account and region are eligible. The gateway route below uses gateway credentials instead.
+Open a new terminal and run `claude --version`. If choosing npm, use a supported Node version and `npm install -g @anthropic-ai/claude-code` as documented. Refresh VibeHub to detect the native `.local/bin` installation, npm wrapper or PATH command. For a custom location choose `claude.exe` or `claude.cmd`; the Claude Desktop executable is a different product. Select a project in the Launch tab to open a terminal there.
 
-## 3. Prepare LiteLLM separately
+For the normal account route, run `claude auth login` and complete browser sign-in. The API route below does not need a Claude account, but it needs valid provider credentials and model access.
 
-For beginners, ask the gateway operator for its URL, an allowed model alias and a limited virtual key. No provider key belongs in your repository. For self-hosting, follow the [LiteLLM alternate-model tutorial](https://docs.litellm.ai/docs/tutorials/claude_non_anthropic_models): install the proxy, configure a `model_list` mapping a stable alias such as `coding-model` to the provider's real model ID, and supply the provider key through the server environment. Configure authentication and restrict network exposure before connecting clients. Provider access and billing remain separate.
+## Iran and network setup
+Iran is absent from the [Claude access list](https://support.claude.com/en/articles/8461763-where-can-i-access-claude). A proxy changes routing, not account eligibility. Other API providers have their own availability and terms.
 
-## 4. Connect this PowerShell session
-
-Use a trusted HTTPS gateway; `http://localhost:4000` is only an example for your own local gateway. Replace the URL and alias. Read the virtual key without placing it in shell history:
+Claude Code accepts HTTP/HTTPS proxies, not direct SOCKS proxies. Find the **HTTP or Mixed** port in your local proxy application and select an HTTP profile in VibeHub. The example port 10808 was tested on one machine; it is not a universal default:
 
 ```powershell
-$env:ANTHROPIC_BASE_URL = 'https://gateway.example.com'
-$gatewayCredential = Read-Host 'Gateway virtual key' -AsSecureString
-$env:ANTHROPIC_AUTH_TOKEN = [System.Net.NetworkCredential]::new('', $gatewayCredential).Password
-Remove-Item Env:ANTHROPIC_API_KEY -ErrorAction SilentlyContinue
-$env:ANTHROPIC_MODEL = 'coding-model'
-claude
+$env:HTTP_PROXY = 'http://127.0.0.1:10808'
+$env:HTTPS_PROXY = $env:HTTP_PROXY
+$env:NO_PROXY = 'localhost,127.0.0.1,::1'
 ```
 
-These variables affect this session and its child processes. Close it to discard them. The base URL is the gateway root, not an OpenAI `/v1/chat/completions` endpoint. The alias must exist and be allowed for your key. [LiteLLM client setup](https://docs.litellm.ai/docs/proxy/client_setup/claude_code).
+Browser sign-in also requires working browser routing. VibeHub passes the selected settings to the next launched process; existing terminals do not adopt later changes. A successful proxy handshake is not a successful model request. [Network documentation](https://code.claude.com/docs/en/network-config)
 
-## 5. Verify before trusting it
+## Radeon without a Claude account
+Radeon provides Anthropic Messages compatibility. For Claude Code the base is `https://developer.amd.com.cn/radeon/api`, **without `/v1`**: the SDK appends `/v1/messages`. OpenAI-compatible clients instead use the `/api/v1` base. [Radeon Messages documentation](https://amd-aim.github.io/radeon-cloud-docs/api/messages/)
 
-Run `/status` and check the base URL and credential source. Ask it to explain a small file, then request a harmless edit and inspect the diff. Check gateway logs for the actual upstream model, usage and cost; a client model label alone is insufficient. [Connection verification](https://code.claude.com/docs/en/llm-gateway-connect).
+Set these in the same terminal that runs the CLI. The key is entered with a hidden prompt rather than written in a file or command history:
 
-If authentication fails, check expired credentials and conflicting login settings. If the model is missing, check the gateway alias and key permissions. If basic chat works but editing fails, test tool calling and streaming for that exact client/gateway/model combination. Do not persist a failing setup or paste keys into bug reports. VibeHub launch, live proxy routing and Persian terminal rendering are unverified; no app-specific RTL support is offered.
+```powershell
+$secureKey = Read-Host 'Radeon API key' -AsSecureString
+$env:ANTHROPIC_API_KEY = ([pscredential]::new('api', $secureKey)).GetNetworkCredential().Password
+$secureKey.Dispose()
+$env:ANTHROPIC_AUTH_TOKEN = $null
+$env:CLAUDE_CODE_OAUTH_TOKEN = $null
+$env:ANTHROPIC_BASE_URL = 'https://developer.amd.com.cn/radeon/api'
+$env:ANTHROPIC_DEFAULT_SONNET_MODEL = 'DeepSeek-V4.1-Flash'
+$env:ANTHROPIC_DEFAULT_HAIKU_MODEL = 'DeepSeek-V4.1-Flash'
+$env:CLAUDE_CODE_SUBAGENT_MODEL = 'DeepSeek-V4.1-Flash'
+$env:MAX_THINKING_TOKENS = '0'
+claude --model 'DeepSeek-V4.1-Flash'
+```
 
-## Iran: connectivity and service eligibility
+The key remains in this terminal's process environment and its children; close the terminal or run `$env:ANTHROPIC_API_KEY = $null` afterwards. MAX_THINKING_TOKENS=0 prevents budget-based thinking, which Radeon currently rejects. Fetch current model IDs from the service; availability can change. Radeon meters daily usage in points; Claude Code's estimated USD amount is not a Radeon bill.
 
-Restricted services may require a connectivity workaround or proxy, but that does not make an account region eligible or guarantee service. This statement does not mean every catalog app is sanctioned. Iran is absent from Anthropic's observed region list; however, the [page](https://www.anthropic.com/legal/supported-regions) displays **November 12, 2026** as its effective date, later than this review. Check the policy effective on your usage date and the chosen upstream provider's rules. Neither LiteLLM nor a proxy removes those conditions. No Iran network test was performed.
+For direct launch, save a connection in VibeHub and choose it in Claude's Launch panel. VibeHub reads its key from Windows Credential Manager and passes it only to the child process. The hidden-prompt example above is an alternative for manual CLI configuration.
+
+## Other APIs
+Use the provider's Anthropic-compatible endpoint and actual model ID. Some gateways require ANTHROPIC_AUTH_TOKEN for a Bearer header, others ANTHROPIC_API_KEY for x-api-key. Avoid configuring conflicting credentials. An OpenAI-compatible endpoint alone is insufficient. [Gateway setup](https://code.claude.com/docs/en/llm-gateway-connect)
+
+[Ollama](https://docs.ollama.com/integrations/claude-code) and [Hugging Face](https://huggingface.co/docs/inference-providers/integrations/claude-code) document their own integrations. Non-Claude model support must be checked with the provider and real tests; Anthropic does not guarantee it.
+
+## Tested setup and troubleshooting
+On 2026-11-04, native Claude Code **2.1.318**, the bundled rtl-terminal **1.0.7** and Radeon **DeepSeek-V4.1-Flash** passed a live streaming Persian response, an actual Read-tool round trip and continuation of the same conversation. This process/protocol test does not establish interactive Persian rendering. Qwen3.8-Flash-Next failed with `System message must be at the beginning` on this Claude version. The earlier success with 2.1.63 does not apply to the current plugin requirement. No request instructions were removed or reordered.
+
+- 401: check the key, required header and provider account.
+- Model error: use a current Radeon model ID rather than a Claude model name.
+- Thinking error: disable budget-based thinking.
+- Connection error: check the HTTP port, listener and runtime version.
+- Quota or 429: check provider usage and capacity.
+
+Start with a small test project and review tool permissions. A dedicated RTL adapter is not verified for this CLI.
+
+## Persian writing and RTL in Claude
+The current Launch panel starts Claude directly in the usual terminal with the bundled rtl-terminal plugin. It does not open RtlTerminal or require copying a command. Claude Code >=2.1.294 is required.
+
+The plugin lays out replies and previews the draft; it cannot redraw Claude's input box. Correct preview alone does not establish acceptable typing. Verify joined letters, ZWNJ, mixed English/numbers, cursor movement, deletion, multiline input, selection, resize and scroll in the actual window. Use `/rtl mode` to inspect the active mode and `/rtl on` to enable layout. Compare `auto`, `claude` and `terminal` only while diagnosing; do not assume one mode fixes shaping.
+
+Use `/copy` for a reply's original logical text. Mouse selection can copy visual order; test it separately. No verified RTL badge is granted. RtlTerminal is a fallback only after the usual terminal demonstrably fails; Quick Input is a separate editor and does not fix an existing CLI draft.
+
+## Direct launch with a selected connection
+
+Choose a model connection in Claude's Launch panel. Manage connections and test models opens the existing connection editor; secrets remain in Windows Credential Manager. Select the gateway's x-api-key or Bearer authentication mode. The endpoint must support Anthropic Messages: an OpenAI-compatible test alone does not establish Claude compatibility.
+
+Run in Persian loads the bundled rendering plugin for this session in the usual terminal, with no command copying. Requires Claude Code >=2.1.294. Run normally uses the same connection without the plugin. The selected connection also applies to subsequent shared card launches. Use existing Claude configuration preserves CLI configuration.
+
+Claude launches without PowerShell profiles or Oh My Posh initialization. Persian rendering remains experimental until cursor, editing and clipboard behavior pass live terminal acceptance.
+
+
+## Command approval
+
+Claude may ask permission before running tools. This official example shows npm test; approving once differs from allowing future matching commands. See the [permissions lesson](/learning/claude-permissions).
+
+![CLI permission prompt for npm test; inspect the command and approval choices before proceeding.](../../../apps/desktop/public/tutorials/screenshots/claude-permissions.webp)

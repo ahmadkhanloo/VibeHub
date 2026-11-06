@@ -39,6 +39,7 @@ Name: "qoder"; Description: "Qoder RTL"; Types: full custom
 Name: "deepseek"; Description: "DeepSeek Harness RTL"; Types: full custom
 Name: "antigravity"; Description: "Antigravity chat RTL"; Types: full custom
 Name: "opencode"; Description: "OpenCode RTL"; Types: full custom
+Name: "claude-desktop"; Description: "Claude Desktop RTL"; Types: full custom
 
 [Tasks]
 Name: "desktopicon_zcode"; Description: "Create a ZCode RTL desktop shortcut"; GroupDescription: "Desktop shortcuts:"; Components: zcode; Flags: checkedonce
@@ -46,6 +47,7 @@ Name: "desktopicon_qoder"; Description: "Create a Qoder RTL desktop shortcut"; G
 Name: "desktopicon_deepseek"; Description: "Create a DeepSeek Harness RTL desktop shortcut"; GroupDescription: "Desktop shortcuts:"; Components: deepseek; Flags: checkedonce
 Name: "desktopicon_antigravity"; Description: "Create an Antigravity RTL desktop shortcut"; GroupDescription: "Desktop shortcuts:"; Components: antigravity; Flags: checkedonce
 Name: "desktopicon_opencode"; Description: "Create an OpenCode RTL desktop shortcut"; GroupDescription: "Desktop shortcuts:"; Components: opencode; Flags: checkedonce
+Name: "desktopicon_claude"; Description: "Create a Claude Desktop RTL desktop shortcut"; GroupDescription: "Desktop shortcuts:"; Components: claude-desktop; Flags: checkedonce
 
 [Files]
 Source: "install.ps1"; DestDir: "{app}"; Flags: ignoreversion
@@ -60,18 +62,21 @@ Source: "apps\Qoder\*"; DestDir: "{app}\apps\Qoder"; Flags: ignoreversion recurs
 Source: "apps\DeepSeekHarness\*"; DestDir: "{app}\apps\DeepSeekHarness"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: deepseek
 Source: "apps\Antigravity\*"; DestDir: "{app}\apps\Antigravity"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: antigravity
 Source: "apps\OpenCode\*"; DestDir: "{app}\apps\OpenCode"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: opencode
+Source: "apps\Claude\*"; DestDir: "{app}\apps\Claude"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: claude-desktop
 
 [Icons]
-Name: "{group}\ZCode RTL"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\apps\ZCode\launch.vbs"""; WorkingDir: "{app}\apps\ZCode"; IconFilename: "{code:GetZCodeExe}"; Components: zcode
-Name: "{userdesktop}\ZCode RTL"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\apps\ZCode\launch.vbs"""; WorkingDir: "{app}\apps\ZCode"; IconFilename: "{code:GetZCodeExe}"; Components: zcode; Tasks: desktopicon_zcode
-Name: "{group}\Qoder RTL"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\apps\Qoder\launch.vbs"""; WorkingDir: "{app}\apps\Qoder"; IconFilename: "{code:GetQoderExe}"; Components: qoder
-Name: "{userdesktop}\Qoder RTL"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\apps\Qoder\launch.vbs"""; WorkingDir: "{app}\apps\Qoder"; IconFilename: "{code:GetQoderExe}"; Components: qoder; Tasks: desktopicon_qoder
-Name: "{group}\DeepSeek Harness RTL"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\apps\DeepSeekHarness\launch.vbs"""; WorkingDir: "{app}\apps\DeepSeekHarness"; IconFilename: "{code:GetDeepSeekExe}"; Components: deepseek
-Name: "{userdesktop}\DeepSeek Harness RTL"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\apps\DeepSeekHarness\launch.vbs"""; WorkingDir: "{app}\apps\DeepSeekHarness"; IconFilename: "{code:GetDeepSeekExe}"; Components: deepseek; Tasks: desktopicon_deepseek
-Name: "{group}\Antigravity RTL"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\apps\Antigravity\launch.vbs"""; WorkingDir: "{app}\apps\Antigravity"; IconFilename: "{code:GetAntigravityExe}"; Components: antigravity
-Name: "{userdesktop}\Antigravity RTL"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\apps\Antigravity\launch.vbs"""; WorkingDir: "{app}\apps\Antigravity"; IconFilename: "{code:GetAntigravityExe}"; Components: antigravity; Tasks: desktopicon_antigravity
-Name: "{group}\OpenCode RTL"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\apps\OpenCode\launch.vbs"""; WorkingDir: "{app}\apps\OpenCode"; IconFilename: "{code:GetOpenCodeExe}"; Components: opencode
-Name: "{userdesktop}\OpenCode RTL"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\apps\OpenCode\launch.vbs"""; WorkingDir: "{app}\apps\OpenCode"; IconFilename: "{code:GetOpenCodeExe}"; Components: opencode; Tasks: desktopicon_opencode
+Name: "{group}\ZCode RTL"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\apps\ZCode\launch.vbs"""; WorkingDir: "{app}\apps\ZCode"; IconFilename: "{app}\apps\ZCode\rtl-shortcut.ico"; Components: zcode
+Name: "{userdesktop}\ZCode RTL"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\apps\ZCode\launch.vbs"""; WorkingDir: "{app}\apps\ZCode"; IconFilename: "{app}\apps\ZCode\rtl-shortcut.ico"; Components: zcode; Tasks: desktopicon_zcode
+Name: "{group}\Qoder RTL"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\apps\Qoder\launch.vbs"""; WorkingDir: "{app}\apps\Qoder"; IconFilename: "{app}\apps\Qoder\rtl-shortcut.ico"; Components: qoder
+Name: "{userdesktop}\Qoder RTL"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\apps\Qoder\launch.vbs"""; WorkingDir: "{app}\apps\Qoder"; IconFilename: "{app}\apps\Qoder\rtl-shortcut.ico"; Components: qoder; Tasks: desktopicon_qoder
+Name: "{group}\DeepSeek Harness RTL"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\apps\DeepSeekHarness\launch.vbs"""; WorkingDir: "{app}\apps\DeepSeekHarness"; IconFilename: "{app}\apps\DeepSeekHarness\rtl-shortcut.ico"; Components: deepseek
+Name: "{userdesktop}\DeepSeek Harness RTL"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\apps\DeepSeekHarness\launch.vbs"""; WorkingDir: "{app}\apps\DeepSeekHarness"; IconFilename: "{app}\apps\DeepSeekHarness\rtl-shortcut.ico"; Components: deepseek; Tasks: desktopicon_deepseek
+Name: "{group}\Antigravity RTL"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\apps\Antigravity\launch.vbs"""; WorkingDir: "{app}\apps\Antigravity"; IconFilename: "{app}\apps\Antigravity\rtl-shortcut.ico"; Components: antigravity
+Name: "{userdesktop}\Antigravity RTL"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\apps\Antigravity\launch.vbs"""; WorkingDir: "{app}\apps\Antigravity"; IconFilename: "{app}\apps\Antigravity\rtl-shortcut.ico"; Components: antigravity; Tasks: desktopicon_antigravity
+Name: "{group}\OpenCode RTL"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\apps\OpenCode\launch.vbs"""; WorkingDir: "{app}\apps\OpenCode"; IconFilename: "{app}\apps\OpenCode\rtl-shortcut.ico"; Components: opencode
+Name: "{userdesktop}\OpenCode RTL"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\apps\OpenCode\launch.vbs"""; WorkingDir: "{app}\apps\OpenCode"; IconFilename: "{app}\apps\OpenCode\rtl-shortcut.ico"; Components: opencode; Tasks: desktopicon_opencode
+Name: "{group}\Claude Desktop RTL"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\apps\Claude\launch.vbs"""; WorkingDir: "{app}\apps\Claude"; IconFilename: "{app}\apps\Claude\rtl-shortcut.ico"; Components: claude-desktop
+Name: "{userdesktop}\Claude Desktop RTL"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\apps\Claude\launch.vbs"""; WorkingDir: "{app}\apps\Claude"; IconFilename: "{app}\apps\Claude\rtl-shortcut.ico"; Components: claude-desktop; Tasks: desktopicon_claude
 
 [UninstallRun]
 Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""{app}\cleanup.ps1"" -Root ""{app}"""; Flags: runhidden waituntilterminated; RunOnceId: "StopAgentRTLInjectors"
@@ -124,6 +129,11 @@ end;
 function GetOpenCodeExe(Param: String): String;
 begin
   Result := ExpandConstant('{localappdata}\Programs\ai.opencode.desktop\OpenCode.exe');
+end;
+
+function GetClaudeExe(Param: String): String;
+begin
+  Result := ExpandConstant('{localappdata}\Programs\Claude\Claude.exe');
 end;
 
 function IsQoderExe(const ExePath: String): Boolean;
@@ -232,7 +242,7 @@ function NextButtonClick(CurPageID: Integer): Boolean;
 begin
   Result := True;
   if CurPageID = wpSelectComponents then begin
-    if not (WizardIsComponentSelected('zcode') or WizardIsComponentSelected('qoder') or WizardIsComponentSelected('deepseek') or WizardIsComponentSelected('antigravity') or WizardIsComponentSelected('opencode')) then begin
+    if not (WizardIsComponentSelected('zcode') or WizardIsComponentSelected('qoder') or WizardIsComponentSelected('deepseek') or WizardIsComponentSelected('antigravity') or WizardIsComponentSelected('opencode') or WizardIsComponentSelected('claude-desktop')) then begin
       MsgBox('Select at least one RTL tool to install.', mbError, MB_OK);
       Result := False;
       exit;
@@ -259,6 +269,11 @@ begin
     end;
     if WizardIsComponentSelected('opencode') and not FileExists(GetOpenCodeExe('')) then begin
       MsgBox('OpenCode was selected but was not found in its standard install location. Install OpenCode first.', mbError, MB_OK);
+      Result := False;
+      exit;
+    end;
+    if WizardIsComponentSelected('claude-desktop') and not FileExists(GetClaudeExe('')) then begin
+      MsgBox('Claude Desktop was selected but was not found in its standard install location. Install Claude Desktop from claude.com/download first.', mbError, MB_OK);
       Result := False;
       exit;
     end;

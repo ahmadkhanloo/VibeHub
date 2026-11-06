@@ -179,10 +179,11 @@ test('Antigravity renders observed chat text in Vazirmatn and leaves code/editor
   }
 });
 
-test('Antigravity attaches only the local app renderer page', () => {
+test('Antigravity attaches local app renderer pages including the current onboarding route', () => {
   assert.equal(isAntigravityPageTarget({ type: 'page', url: 'https://127.0.0.1:62648/' }), true);
   assert.equal(isAntigravityPageTarget({ type: 'page', url: 'https://localhost:62648/' }), true);
-  assert.equal(isAntigravityPageTarget({ type: 'page', url: 'https://127.0.0.1:62648/onboarding?login=true' }), false);
+  assert.equal(isAntigravityPageTarget({ type: 'page', url: 'https://127.0.0.1:62648/onboarding?login=true' }), true);
+  assert.equal(isAntigravityPageTarget({ type: 'page', url: 'https://localhost:62648/conversation/123' }), true);
   assert.equal(isAntigravityPageTarget({ type: 'page', url: 'https://antigravity.google/' }), false);
   assert.equal(isAntigravityPageTarget({ type: 'page', url: 'data:text/html,app' }), false);
   assert.equal(isAntigravityPageTarget({ type: 'iframe', url: 'https://127.0.0.1:62648/' }), false);

@@ -9,7 +9,7 @@ test('browser mode never overrides an existing native transport', async ({ page 
   await expect(page.getByRole('heading', { name: 'Qoder', exact: true })).toHaveCount(0);
 });
 
-test('browser development boots and exposes separate launch actions without account UI', async ({ page }) => {
+test('browser development exposes separate launch actions and a read-only Codex accounts preview', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('http://127.0.0.1:1422/');
@@ -23,8 +23,9 @@ test('browser development boots and exposes separate launch actions without acco
   await page.locator('a[href="/settings"]').click();
   await expect(page).toHaveURL(/\/settings$/);
   await page.goto('http://127.0.0.1:1422/accounts');
-  await expect(page).toHaveURL(/\/$/);
-  expect(await page.evaluate(() => (window as any).__mock.calls.some((call: any) => call.cmd === 'app_accounts' || call.cmd === 'codex_accounts'))).toBe(false);
+  await expect(page).toHaveURL(/\/app\/chatgpt\?tab=accounts$/);
+  await expect(page.getByRole('heading', { name: 'حساب‌های واقعی در نسخه دسکتاپ' })).toBeVisible();
+  expect(await page.evaluate(() => (window as any).__mock.calls.some((call: any) => call.cmd === 'app_accounts' || (call.cmd === 'codex_accounts' && call.args.action !== 'list')))).toBe(false);
   expect(errors).toEqual([]);
   await page.screenshot({ path: 'output/playwright/browser-development.png' });
 });

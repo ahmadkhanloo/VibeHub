@@ -50,4 +50,27 @@ if ($installed) {
   $installedExecutable = Join-Path $installed.InstallLocation 'app\ChatGPT.exe'
   Assert-Product 'installed Codex package' $installed.Name $installedExecutable 'codex'
 }
+$desktopState = $ast.Find({ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Codex-DesktopState' }, $true)
+$stubs = @'
+function Get-AppxPackage {
+  param([string]$Name)
+  if ($Name -eq 'OpenAI.Codex') {
+    [pscustomobject]@{ Name=$Name; InstallLocation=(Split-Path (Split-Path $argsFixture[0])); PackageFamilyName='OpenAI.Codex_2p2nqsd0c76g0' }
+  }
+}
+function Get-Process {
+  param($Name)
+  [pscustomobject]@{Path=$argsFixture[1]; MainWindowHandle=0}
+  if ($argsFixture[2]) { [pscustomobject]@{Path=$argsFixture[0]; MainWindowHandle=0} }
+}
+Codex-DesktopState
+'@
+$desktopFixture = [scriptblock]::Create(($resolver.Extent.Text, $desktopState.Extent.Text, $stubs -join [Environment]::NewLine))
+foreach ($running in @($false,$true)) {
+  $argsFixture = @($codexPath,$chatGptPath,$running)
+  $state = & $desktopFixture
+  if ($state.running -ne $running -or $state.launchPath -ne $codexPath -or $state.ambiguous) {
+    throw 'Only the verified Codex package should count, including processes without a window.'
+  }
+}
 Write-Host 'OpenAI product identity fixtures passed'

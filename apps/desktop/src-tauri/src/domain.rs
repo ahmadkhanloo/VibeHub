@@ -8,16 +8,14 @@ pub const APP_IDS: [&str; 10] = [
     "opencode",
     "mimocode",
     "freebuff",
-    "antigravity",
+    "freebuff-desktop",
+    "antigravity-ide",
     "chatgpt",
-    "claude-desktop",
     "claude-code",
 ];
-pub const EDITOR_IDS: [&str; 10] = [
+pub const EDITOR_IDS: [&str; 8] = [
     "vscode",
     "vscode-insiders",
-    "antigravity",
-    "antigravity-ide",
     "cursor",
     "windsurf",
     "zed",

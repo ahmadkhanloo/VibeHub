@@ -104,17 +104,21 @@ export function validateRemoteGuides(raw: unknown, catalog: Catalog): Record<str
 export function applyRemoteCatalog(catalog: Catalog, guides: Record<string, string>, tutorials?: LearningTutorial[], learningArticles?: ReturnType<typeof parseLearningFeed>, newsItems?: ReturnType<typeof parseNewsFeed>): void {
   const nextArticles = learningArticles;
   const nextNews = newsItems;
-  // Older feeds predate the built-in Claude Desktop integration.
-  const localClaudeDesktop = initialCatalog.apps.find(app => app.id === 'claude-desktop');
-  const nextApps = catalog.apps.some(app => app.id === 'claude-desktop') || !localClaudeDesktop
-    ? catalog.apps : [...catalog.apps, localClaudeDesktop];
+  // Old feeds must neither resurrect retired desktop products nor hide the replacements.
+  const replacements = initialCatalog.apps.filter(app => ['antigravity-ide', 'claude-code'].includes(app.id));
+  const nextApps = [...catalog.apps.filter(app => !['antigravity', 'claude-desktop', 'antigravity-ide', 'claude-code'].includes(app.id)), ...replacements];
   apps.splice(0, apps.length, ...nextApps);
   providers.splice(0, providers.length, ...catalog.providers);
   bundledCatalog.offers.splice(0, bundledCatalog.offers.length, ...catalog.offers);
   for (const key of Object.keys(remoteGuides)) delete remoteGuides[key];
   Object.assign(remoteGuides, guides);
   if (tutorials !== undefined) learning = tutorials;
-  if (nextArticles !== undefined) { articles = nextArticles.articles; categories = nextArticles.categories; }
+  if (nextArticles !== undefined) {
+    articles = [...nextArticles.articles.filter(article => !['antigravity', 'claude-desktop', 'antigravity-ide', 'claude-code'].includes(article.id)), ...initialLearningFeed.articles.filter(article => ['antigravity-ide', 'claude-code'].includes(article.id))];
+    categories = nextArticles.categories;
+    // The bundled replacement guides use the existing apps category.
+    for (const category of initialLearningCategories) if (!categories.some(item => item.id === category.id) && articles.some(article => article.category === category.id)) categories = [...categories, category];
+  }
   if (nextNews !== undefined) news = nextNews;
   revision++; listeners.forEach(listener=>listener());
   window.dispatchEvent(new Event('vibehub:catalog-updated'));
@@ -139,7 +143,7 @@ export function appById(id: string): AppManifest | undefined {
 }
 
 export function guideText(appId: string, lang: 'fa' | 'en'): string | null {
-  const remote = remoteGuides[`${appId}/${lang}`];
+  const remote = ['antigravity-ide', 'claude-code'].includes(appId) ? undefined : remoteGuides[`${appId}/${lang}`];
   if (remote) return remote;
   const hit = Object.entries(guideModules).find(([p]) => p.includes(`/${appId}/${lang}.md`));
   return hit?.[1]?.trim() ? hit[1] : null;

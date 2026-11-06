@@ -71,12 +71,12 @@ test('new-document injection waits for product configuration and survives reload
 });
 
 
-test('standalone Antigravity exposes separate experimental RTL and normal actions through app IPC', async ({ page }) => {
-  await mockNative(page, 'antigravity');
-  await page.goto('/app/antigravity');
-  await expect(page.getByText('Chat RTL · experimental')).toBeVisible();
-  await expect(page.getByRole('button', {name:'Run Antigravity', exact:true})).toBeVisible();
-  await page.getByRole('button', {name:'Run RTL Antigravity',exact:true}).click();
-  await expect.poll(() => page.evaluate(() => (window as any).__mock.calls.filter((c: any) => c.cmd === 'launch_app'))).toEqual([{cmd:'launch_app',args:{req:{appId:'antigravity',rtl:true}}}]);
+test('Antigravity IDE uses normal app launch without an unverified RTL action', async ({ page }) => {
+  await mockNative(page, 'ide-cli');
+  await page.goto('/app/antigravity-ide');
+  await expect(page.getByRole('button', {name:'Run Antigravity IDE', exact:true})).toBeVisible();
+  await expect(page.getByRole('button', {name:/Run RTL Antigravity/})).toHaveCount(0);
+  await page.getByRole('button', {name:'Run Antigravity IDE',exact:true}).click();
+  await expect.poll(() => page.evaluate(() => (window as any).__mock.calls.filter((c: any) => c.cmd === 'launch_app'))).toEqual([{cmd:'launch_app',args:{req:{appId:'antigravity-ide',rtl:false}}}]);
   expect(await page.evaluate(() => (window as any).__mock.calls.some((c: any) => c.cmd === 'launch_editor'))).toBe(false);
 });

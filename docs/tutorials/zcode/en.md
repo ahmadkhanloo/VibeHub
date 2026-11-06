@@ -1,7 +1,5 @@
 # ZCode — English guide
 
-![Educational workflow schematic](../../../apps/desktop/public/tutorials/zcode.svg)
-
 ## Introduction
 ZCode is an AI coding agent/IDE used with a user account. VibeHub discovers it, launches it, and injects RTL so Persian text renders correctly.
 
@@ -39,3 +37,20 @@ Models and quotas come from the provider; BYOK status is "unknown" until tested 
 ## Shared RTL setup
 
 See the [Persian text and RTL guide](/learning/rtl-setup) for common installation, launch and recovery steps. This app's verification status remains in the RTL section above.
+
+
+## Illustrated exercise: project, model and request correction
+
+1. Choose a disposable project folder. Check its name and branch above the composer. For this exercise, choose Ask before changes and request only an explanation of hello.txt.
+
+![Official ZCode workspace: project and branch above the composer, permissions at bottom left and model at bottom right.](../../../apps/desktop/public/tutorials/screenshots/zcode-new-task.webp)
+
+2. Open the model name and choose a model available through your connection. Manage models opens provider configuration. The screenshot's models and example account allowance do not describe your own account.
+
+![The model picker and Manage models entry in an official ZCode example; this is not a live model catalog.](../../../apps/desktop/public/tutorials/screenshots/zcode-model-menu.webp)
+
+3. To correct the latest request, wait for execution to finish, hover your own message and choose the pencil icon. Revise the text or path and inspect the effects on files before sending again. Editing the latest turn can be unavailable while work is running or messages are queued.
+
+![Official macOS example of editing a previous request; the editable composer is above the conversation.](../../../apps/desktop/public/tutorials/screenshots/zcode-review-history.webp)
+
+[Official getting started guide](https://zcode.z.ai/en/docs/welcome) · [Model configuration](https://zcode.z.ai/en/docs/configuration) · [Edit history](https://zcode.z.ai/en/docs/edit-history)

@@ -1,5 +1,12 @@
 # Account detection, JSON import and one-percent threshold
 
+## 2026-11-05 Windows desktop follow-up
+
+- Detected Windows package `OpenAI.Codex` version `26.1029.7803.0` and Start registration `OpenAI.Codex_2p2nqsd0c76g0!App`. Found CLI `0.148.0` alongside `0.166.0-alpha.6`. The broker searches past incompatible executables.
+- The Windows identity fixture distinguishes Codex from ordinary ChatGPT and counts Codex processes with no visible window. Restart targets the verified package registration and checks that the selected executable started. The broker snapshots the outgoing account after shutdown, including credentials rotated during shutdown.
+- The Windows PowerShell identity fixture and 22 Rust account tests passed. The opt-in compatibility test also passed with the incompatible CLI first on PATH, using a synthetic encrypted profile and loopback endpoints.
+- Live acceptance remains pending. With two authorized accounts, save A, import B through the native file picker, exit Codex completely, select B and reopen Codex. Check B inside the desktop app and send one short request. Switch back to A and confirm its identity inside the app. Repeat with the confirmed restart action. Record the tested package and CLI versions without storing credentials or account identifiers in the validation log.
+
 ## Implemented
 
 - New Codex profiles default to 1% remaining quota. One-time migration changes the previous 10% value to 1%; other custom values are preserved. Automation remains opt-in.

@@ -36,3 +36,7 @@ VibeHub does not bundle third-party AI coding tools, model weights, API credenti
 ## Release verification
 
 For each release, generate a CycloneDX or SPDX SBOM from the exact source revision and build lockfiles, inspect all detected licenses and notices, and attach both the SBOM and this file to the public GitHub Release. An unknown or incompatible license blocks release until resolved and recorded.
+
+## Bundled Claude terminal RTL plugin
+
+VibeHub bundles rtl-terminal 1.0.7 from https://github.com/MohammedSaud404/rtl-terminal at commit c0572309deeec3695c0d82e5eae0d54459422373 under MIT. Its hooks, plugin manifest, upstream LICENSE and VIBEHUB-PROVENANCE.json are distributed in apps/ClaudeRtlPlugin. The vendored bidi-js notices remain beside its source. This is a rendering extension; Claude Code itself is not bundled. No RtlTerminal fork is required for this launch path.

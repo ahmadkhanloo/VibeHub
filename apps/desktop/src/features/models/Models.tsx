@@ -32,7 +32,17 @@ const catalogId = (id: string) => id === 'nvidia' ? 'nvidia-build' : id === 'cus
 const origin = (value: string) => { try { return new URL(value).origin; } catch { return null; } };
 const makeConnection = (preset: Preset): ProviderConnection => ({ id: `connection-${crypto.randomUUID()}`, providerId: preset.providerId, name: preset.name, baseUrl: preset.baseUrl, modelId: preset.modelId, hasKey: false });
 
-function ConnectionEditor({ connection, existing, onClose, onSaved }: { connection: ProviderConnection; existing: boolean; onClose: () => void; onSaved: (saved: ProviderConnection[]) => void }) {
+const CLAUDE_PRESETS = PRESETS
+  .filter(preset => ['anthropic', 'radeon-cloud', 'custom'].includes(preset.providerId))
+  .map(preset => {
+    if (preset.providerId === 'anthropic') return { ...preset, baseUrl: 'https://api.anthropic.com', modelId: '' };
+    if (preset.providerId === 'radeon-cloud') return { ...preset, baseUrl: 'https://developer.amd.com.cn/radeon/api' };
+    return preset;
+  });
+
+export const newClaudeConnection = () => makeConnection(CLAUDE_PRESETS[0]!);
+
+export function ConnectionEditor({ connection, existing, onClose, onSaved, forClaude = false }: { connection: ProviderConnection; existing: boolean; forClaude?: boolean; onClose: () => void; onSaved: (saved: ProviderConnection[]) => void }) {
   const { t } = useTranslation(['models', 'connectionsUx', 'common']);
   const id = useId();
   const [draft, setDraft] = useState({ ...connection });
@@ -41,7 +51,8 @@ function ConnectionEditor({ connection, existing, onClose, onSaved }: { connecti
   const [error, setError] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
   const saving = useRef(false);
-  const preset = PRESETS.find((p) => p.providerId === draft.providerId);
+  const presets = forClaude ? CLAUDE_PRESETS : PRESETS.filter(p => !['openai', 'anthropic', 'deepseek'].includes(p.providerId) || p.providerId === draft.providerId);
+  const preset = presets.find((p) => p.providerId === draft.providerId);
   const save = async () => {
     if (saving.current) return;
     const validation: Record<string, string> = {};
@@ -63,7 +74,7 @@ function ConnectionEditor({ connection, existing, onClose, onSaved }: { connecti
   return <Modal open title={t(existing ? 'models:editConnection' : 'models:newConnection')} onClose={close} busy={busy}>
     <form onSubmit={(e) => { e.preventDefault(); void save(); }} noValidate className="space-y-5">
       <fieldset disabled={busy} className="grid min-w-0 gap-4 sm:grid-cols-2">
-        <label className="block space-y-2 text-sm"><span className="block font-medium">{t('models:provider')}</span><select className="h-10 w-full rounded-lg border border-border bg-surface px-3" value={draft.providerId} onChange={(e) => { const selected = PRESETS.find((p) => p.providerId === e.target.value)!; setKey(''); setDraft({ ...draft, providerId: selected.providerId, baseUrl: selected.baseUrl, modelId: selected.modelId, name: selected.name, hasKey: false }); }}>{PRESETS.filter((p) => !['openai', 'anthropic', 'deepseek'].includes(p.providerId) || p.providerId === draft.providerId).map((p) => <option key={p.providerId} value={p.providerId}>{p.name}</option>)}</select></label>
+        <label className="block space-y-2 text-sm"><span className="block font-medium">{t('models:provider')}</span><select className="h-10 w-full rounded-lg border border-border bg-surface px-3" value={draft.providerId} onChange={(e) => { const selected = presets.find((p) => p.providerId === e.target.value)!; setKey(''); setDraft({ ...draft, providerId: selected.providerId, baseUrl: selected.baseUrl, modelId: selected.modelId, name: forClaude && selected.providerId === 'custom' ? '' : selected.name, hasKey: false }); }}>{presets.map((p) => <option key={p.providerId} value={p.providerId}>{forClaude && p.providerId === 'custom' ? t('models:claudeCustomEndpoint') : p.name}</option>)}</select></label>
         <label className="block space-y-2 text-sm" htmlFor={`${id}-name`}><span className="block font-medium">{t('models:connectionName')}</span><Input id={`${id}-name`} data-autofocus dir="auto" value={draft.name} maxLength={120} onChange={(e) => setDraft({ ...draft, name: e.target.value })} {...errorProps('name')} />{fieldError('name')}</label>
         <label className="block space-y-2 text-sm sm:col-span-2" htmlFor={`${id}-url`}><span className="block font-medium">{t('models:baseUrl')}</span><Input id={`${id}-url`} dir="ltr" className="ltr-tech" value={draft.baseUrl} onChange={(e) => { const baseUrl = e.target.value; const changed = origin(draft.baseUrl) !== origin(baseUrl); if (changed) setKey(''); setDraft({ ...draft, baseUrl, hasKey: changed ? false : draft.hasKey }); }} {...errorProps('url')} />{fieldError('url')}</label>
         <label className="block space-y-2 text-sm" htmlFor={`${id}-model`}><span className="block font-medium">{t('models:modelId')}</span><Input id={`${id}-model`} dir="ltr" className="ltr-tech" value={draft.modelId} maxLength={256} onChange={(e) => setDraft({ ...draft, modelId: e.target.value })} {...errorProps('model')} />{fieldError('model')}</label>

@@ -42,6 +42,9 @@ export interface RtlComponentStatus {
   id: string;
   available: boolean;
   configured: boolean;
+  setupSupported?: boolean;
+  reason?: string;
+  testedVersion?: string;
 }
 
 export interface EditorLaunchOutcome {
@@ -90,6 +93,18 @@ export interface CredentialClearResult {
   deletedConnectionIds: string[];
   deletedLegacyProviderIds: string[];
   failures: { kind: 'connection' | 'legacy'; id: string; errorKey: string }[];
+}
+
+export interface ClaudePersianTerminal {
+  ok: boolean;
+  installed: boolean;
+  opened: boolean;
+  claudeStarted: false;
+  proxyRoutingVerified: false;
+  quickInputAvailable: boolean;
+  version: string;
+  command: string;
+  cwd: string;
 }
 
 export interface FeedSyncResult {
@@ -156,6 +171,7 @@ export const ipc = {
     invoke<ProxyTestResult>('proxy_test', { profile, level }),
 
   terminalDetect: () => invoke<TerminalSetupState>('terminal_detect'),
+  claudePersianTerminal: (open = false, cwd?: string) => invoke<ClaudePersianTerminal>('claude_persian_terminal', { open, cwd }),
   terminalInstallPersian: () => invoke<{ ok: boolean; detail: string }>('terminal_install_persian'),
   terminalInstallOhMyPosh: () => invoke<InstallRunResult>('terminal_install_ohmyposh'),
   terminalInstallFont: (which: 'nerd' | 'vazirmatn') => invoke<FontInstallResult>('terminal_install_font', { which }),

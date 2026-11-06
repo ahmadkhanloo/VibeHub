@@ -1,10 +1,12 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
 $adapter = Join-Path $repo 'apps\desktop\src-tauri\src\windows.ps1'
 $temp = Join-Path ([IO.Path]::GetTempPath()) ('vibehub-apps-' + [guid]::NewGuid().ToString('N'))
 $oldLocal = $env:LOCALAPPDATA
+$oldProfile = $env:USERPROFILE
 try {
   $env:LOCALAPPDATA = $temp
+  $env:USERPROFILE = $temp
   function Invoke-Adapter($request) {
     $request.resourceRoot = $repo
     $raw = ($request | ConvertTo-Json -Compress -Depth 8) | powershell.exe -NoProfile -ExecutionPolicy Bypass -File $adapter
@@ -24,20 +26,20 @@ try {
   if (-not $rejected) { throw 'Wrong executable name was accepted' }
   $apps = @(Invoke-Adapter @{operation='detect'})
   if ((@($apps | Where-Object id -eq 'mimocode')[0]).path -ne $custom) { throw 'Rejected path changed saved setting' }
-  $claude = Join-Path $temp 'Programs\Claude\Claude.exe'
+  $claude = Join-Path $temp '.local\bin\claude.exe'
   New-Item -ItemType Directory -Force (Split-Path $claude) | Out-Null
   New-Item -ItemType File $claude | Out-Null
   $apps = @(Invoke-Adapter @{operation='detect'})
-  if ((@($apps | Where-Object id -eq 'claude-desktop')[0]).path -ne $claude) { throw 'Claude Desktop not detected' }
-  $manual = Join-Path $temp 'another folder\Claude.exe'
+  if ((@($apps | Where-Object id -eq 'claude-code')[0]).path -ne $claude) { throw 'Claude CLI not detected' }
+  $manual = Join-Path $temp 'another folder\claude.exe'
   New-Item -ItemType Directory -Force (Split-Path $manual) | Out-Null
   New-Item -ItemType File $manual | Out-Null
-  Invoke-Adapter @{operation='app-path';appId='claude-desktop';path=$manual} | Out-Null
+  Invoke-Adapter @{operation='app-path';appId='claude-code';path=$manual} | Out-Null
   $apps = @(Invoke-Adapter @{operation='detect'})
-  if ((@($apps | Where-Object id -eq 'claude-desktop')[0]).path -ne $manual) { throw 'Saved path did not take precedence' }
+  if ((@($apps | Where-Object id -eq 'claude-code')[0]).path -ne $manual) { throw 'Saved path did not take precedence' }
   Remove-Item -LiteralPath $manual
   $apps = @(Invoke-Adapter @{operation='detect'})
-  if ((@($apps | Where-Object id -eq 'claude-desktop')[0]).path -ne $claude) { throw 'Missing saved path did not fall back' }
+  if ((@($apps | Where-Object id -eq 'claude-code')[0]).path -ne $claude) { throw 'Missing saved path did not fall back' }
   Write-Host 'App path and Claude detection passed'
-} finally { $env:LOCALAPPDATA = $oldLocal; Remove-Item -LiteralPath $temp -Recurse -Force -ErrorAction SilentlyContinue }
+} finally { $env:LOCALAPPDATA = $oldLocal; $env:USERPROFILE = $oldProfile; $resolved=[IO.Path]::GetFullPath($temp); if ($resolved.StartsWith([IO.Path]::GetFullPath([IO.Path]::GetTempPath()),[StringComparison]::OrdinalIgnoreCase) -and (Split-Path -Leaf $resolved) -like 'vibehub-apps-*') { Remove-Item -LiteralPath $resolved -Recurse -Force -ErrorAction SilentlyContinue } }
 

@@ -21,7 +21,7 @@
   "saved": "Saved accounts",
   "empty": "No saved accounts",
   "emptyHint": "Sign in or import your local Codex account to get started.",
-  "active": "Active locally",
+  "active": "Active in local Codex credentials",
   "quotaUnknown": "Quota information is unknown. Refresh to check.",
   "window": "{{minutes}} minute window",
   "remaining": "{{percent}}% remaining",

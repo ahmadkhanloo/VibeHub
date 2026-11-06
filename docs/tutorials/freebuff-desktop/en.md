@@ -19,3 +19,13 @@ The renderer structure and message surface have not been inspected in an install
 ## Freebuff CLI is separate
 
 Freebuff CLI runs in a terminal through the official `freebuff` command and keeps the VibeHub catalog ID `freebuff`. This guide covers the separate desktop product with ID `freebuff-desktop`; changing CLI terminal output is outside this app's RTL scope.
+
+## Illustrated installation and first chat
+
+Run the official Windows installer and wait for the progress bar to finish.
+
+![Freebuff Desktop installation progress on Windows.](../../../apps/desktop/public/tutorials/screenshots/freebuff-install-progress.webp)
+
+Open a new chat in Code. Use New project to choose a disposable folder and check that Local is selected. Ask “Explain README.md without changing it,” then compare the answer with the file.
+
+![Freebuff Desktop composer with New project and Local controls above it.](../../../apps/desktop/public/tutorials/screenshots/freebuff-new-chat.webp)

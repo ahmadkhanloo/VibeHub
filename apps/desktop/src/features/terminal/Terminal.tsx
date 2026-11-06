@@ -8,7 +8,7 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 
 const PROMPT_PREVIEW = `  3.14.7  main ≡ ?2  C:/Projects/VibeHub  0ms\n❯ _`;
 const PERSIAN_SAMPLE = 'سلام، فارسی را پیوسته می‌نویسم.';
-type Action = 'persian' | 'omp' | 'nerd' | 'vazir' | 'apply' | 'undo';
+type Action = 'omp' | 'nerd' | 'vazir' | 'apply' | 'undo';
 
 export function TerminalPage() {
   const { t } = useTranslation(['terminal', 'common', 'journeyUx']);
@@ -34,8 +34,7 @@ export function TerminalPage() {
     if (actionLock.current) return;
     actionLock.current = true; setBusy(action); setCompleted(false); setError(null);
     try {
-      const result = action === 'persian' ? await ipc.terminalInstallPersian()
-        : action === 'omp' ? await ipc.terminalInstallOhMyPosh()
+      const result = action === 'omp' ? await ipc.terminalInstallOhMyPosh()
         : action === 'nerd' ? await ipc.terminalInstallFont('nerd')
         : action === 'vazir' ? await ipc.terminalInstallFont('vazirmatn')
         : action === 'apply' ? await ipc.terminalApplyTheme() : await ipc.terminalUndo();
@@ -87,10 +86,7 @@ export function TerminalPage() {
         <div><h2 className="vh-terminal-heading">{t('terminal:persian.title')}</h2><p className="mt-1 text-sm leading-7 text-muted">{t('terminal:persian.description')}</p></div>
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone={state?.hasPersianTerminal ? 'success' : 'muted'}>{state?.hasPersianTerminal ? t('terminal:persian.installedNeedsCheck') : t('terminal:status.notInstalled')}</Badge>
-          {state?.hasPersianTerminal
-            ? <Button size="sm" disabled><CheckCircle2 size={15} aria-hidden="true" />{t('terminal:persian.installed')}</Button>
-            : <Button size="sm" variant="primary" disabled={blocked} loading={busy === 'persian'} onClick={() => setConfirmation('persian')}><Download size={16} aria-hidden="true" />{t('terminal:persian.install')}</Button>}
-          <Button size="sm" variant="ghost" onClick={() => void openUrl('https://github.com/mirbehnam/RtlTerminal/releases/tag/v1.1.4').catch(setError)}><ExternalLink size={15} aria-hidden="true" />{t('terminal:persian.source')}</Button>
+          <Button size="sm" variant="primary" onClick={() => void openUrl('https://github.com/mirbehnam/RtlTerminal/releases/latest').catch(setError)}><ExternalLink size={16} aria-hidden="true" />{t('terminal:persian.install')}</Button>
         </div>
         <p className="text-xs leading-6 text-muted">{t('terminal:persian.requirements')}</p>
         <div className="vh-terminal-sample"><pre tabIndex={0} dir="ltr">{PERSIAN_SAMPLE}</pre><Button size="sm" variant="ghost" onClick={() => void copySample()}>{copied ? <Check size={15} aria-hidden="true" /> : <ClipboardCopy size={15} aria-hidden="true" />}{copied ? t('terminal:copied') : t('terminal:copySample')}</Button></div>
@@ -120,7 +116,7 @@ export function TerminalPage() {
 
     {!!log.length && <details className="vh-terminal-details rounded-xl border border-border p-4"><summary>{t('journeyUx:terminal.details')}</summary><pre tabIndex={0} dir="ltr" className="ltr-tech mt-3 whitespace-pre-wrap break-all text-xs text-muted">{log.join('\n')}</pre></details>}
     <Modal open={confirmation !== null} title={t(confirmation === 'apply' ? 'journeyUx:terminal.confirmApplyTitle' : confirmation === 'undo' ? 'journeyUx:terminal.confirmRestoreTitle' : 'journeyUx:terminal.confirmInstallTitle')} busy={!!busy} onClose={() => { setConfirmation(null); setError(null); }}>
-      <p className="text-sm leading-7">{t(confirmation === 'persian' ? 'terminal:persian.confirm' : confirmation === 'apply' ? 'journeyUx:terminal.confirmApply' : confirmation === 'undo' ? 'journeyUx:terminal.confirmRestore' : 'journeyUx:terminal.confirmInstall')}</p>
+      <p className="text-sm leading-7">{t(confirmation === 'apply' ? 'journeyUx:terminal.confirmApply' : confirmation === 'undo' ? 'journeyUx:terminal.confirmRestore' : 'journeyUx:terminal.confirmInstall')}</p>
       {error != null && <ErrorNotice error={error} />}
       <div className="flex justify-end gap-3"><Button data-autofocus disabled={!!busy} onClick={() => { setConfirmation(null); setError(null); }}>{t('common:cancel')}</Button><Button variant="primary" loading={!!busy} onClick={() => { if (confirmation) void run(confirmation); }}>{t('common:confirm')}</Button></div>
     </Modal>

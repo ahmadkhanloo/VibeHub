@@ -8,7 +8,7 @@ const descriptions: Record<string, [string, string]> = {
   mimocode: ['محدودهٔ مخزن و اتصال مدل را مشخص کنید و خروجی محلی را بررسی کنید.', 'Set repository scope and model access, then check the local result.'],
   freebuff: ['پوشه و هدف را مشخص کنید؛ تغییر پیشنهادی و اجرای برنامه را بررسی کنید.', 'Choose a folder and goal; inspect the proposed edit and run checks.'],
   chatgpt: ['پرسش و زمینهٔ مرتبط را بدهید؛ با گفت‌وگو نتیجه را روشن و راستی‌آزمایی کنید.', 'Provide a question and relevant context; refine and verify the result.'],
-  antigravity: ['پروژه، برنامهٔ کار، فعالیت ایجنت و خروجی قابل بررسی را دنبال کنید.', 'Follow the workspace, plan, agent activity and verifiable artifacts.'],
+  'antigravity-ide': ['پروژه، برنامهٔ کار، فعالیت ایجنت و خروجی قابل بررسی را دنبال کنید.', 'Follow the workspace, plan, agent activity and verifiable artifacts.'],
   'claude-code': ['ترمینال درخواست را به درگاه و ارائه‌دهنده می‌فرستد؛ مسیر مدل و کار ابزارها را جدا بررسی کنید.', 'Trace the terminal request through the gateway and provider; check tool actions separately.'],
   ui: ['چیدمان، حالت‌های تعامل و دسترس‌پذیری را قبل از تحویل رابط بررسی کنید.', 'Check layout, interaction states and accessibility before delivery.'],
   documents: ['PDF، ورد، اکسل و پاورپوینت را بخوانید؛ ساختار را بررسی، ویرایش و خروجی نهایی را بازبینی کنید.', 'Read PDF, Word, Excel and PowerPoint; inspect, edit, render and verify.'],

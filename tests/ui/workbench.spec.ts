@@ -9,7 +9,7 @@ test('the sidebar links directly to each destination and legacy routes remain us
     await expect(sidebar.getByRole('link', { name: label, exact: true })).toHaveAttribute('href', route);
   }
   await expect(sidebar.getByRole('link', { name: /More tools/i })).toHaveCount(0);
-  for (const [legacy, destination] of [['/tools','/'],['/accounts','/'],['/connections','/connections/api'],['/proxy','/connections/proxy'],['/settings?panel=terminal','/terminal']]) {
+  for (const [legacy, destination] of [['/tools','/'],['/accounts','/app/chatgpt'],['/connections','/connections/api'],['/proxy','/connections/proxy'],['/settings?panel=terminal','/terminal']]) {
     await page.goto(legacy);
     await expect.poll(() => new URL(page.url()).pathname).toBe(destination);
   }

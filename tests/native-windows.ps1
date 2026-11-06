@@ -64,23 +64,24 @@ try {
     $initial = "# original فارسی`r`n"
     [IO.File]::WriteAllText($profileFile, $initial, [Text.UTF8Encoding]::new($true))
     $detected = @(Run-Adapter @{operation='detect'})
-    Assert ($detected.Count -eq 11) 'Detection must return all eleven app records'
+    Assert ($detected.Count -eq 10) 'Detection must return the ten current app records'
     Assert (@($detected | Where-Object { $_.installed -isnot [bool] }).Count -eq 0) 'Detection installed flags must be booleans'
     $editors = @(Run-Adapter @{operation='detect-editors'})
     Assert ($editors.Count -eq 0) 'General IDE discovery must stay retired'
-    $knownEditorIds = @('vscode','vscode-insiders','antigravity','antigravity-ide','cursor','windsurf','zed','trae','kiro','vscodium')
+    $knownEditorIds = @('vscode','vscode-insiders','antigravity','cursor','windsurf','zed','trae','kiro','vscodium')
     Assert (@($editors | Where-Object { $_.id -notin $knownEditorIds -or $_.installed -ne $true -or -not (Test-Path -LiteralPath $_.path -PathType Leaf) }).Count -eq 0) 'Editor scan must return only known apps with existing executable paths'
     Assert (@($editors.id | Select-Object -Unique).Count -eq $editors.Count) 'Editor scan must not return duplicate app records'
-    $fakeEditorDir = Join-Path $sandbox 'Programs\Antigravity'
-    $fakeEditor = Join-Path $fakeEditorDir 'Antigravity.exe'
-    [IO.Directory]::CreateDirectory($fakeEditorDir) | Out-Null
+    $fakeEditorDir = Join-Path $sandbox 'Programs\Antigravity IDE'
+    $fakeEditor = Join-Path $fakeEditorDir 'Antigravity IDE.exe'
+    [IO.Directory]::CreateDirectory((Join-Path $fakeEditorDir 'resources\app')) | Out-Null
+    [IO.File]::WriteAllText((Join-Path $fakeEditorDir 'resources\app\product.json'), '{"applicationName":"antigravity-ide","nameShort":"Antigravity IDE"}')
     $probeSource = Join-Path $sandbox 'proxy-probe.rs'
     $probeOutput = Join-Path $fakeEditorDir 'proxy-env.txt'
     $probeCode = 'use std::{env, fs}; fn main() { let args: Vec<String> = env::args().collect(); if let Ok(out) = env::var("VIBEHUB_PROJECT_PROBE") { fs::write(out, format!("{}\n{}", env::current_dir().unwrap().display(), args.get(1).unwrap_or(&String::new()))).unwrap(); } let proxy = env::var("HTTP_PROXY").unwrap_or_else(|_| "unset".to_string()); fs::write(r#"' + $probeOutput + '"#, proxy).unwrap(); }'
     [IO.File]::WriteAllText($probeSource, $probeCode, [Text.UTF8Encoding]::new($false))
     & rustc --edition=2021 $probeSource -o $fakeEditor
     if ($LASTEXITCODE -ne 0) { throw "Could not compile the temporary editor probe (rustc exit $LASTEXITCODE)" }
-    $testEditor = @(Run-Adapter @{operation='detect'} | Where-Object { $_.id -eq 'antigravity' -and $_.installed } | Select-Object -First 1)
+    $testEditor = @(Run-Adapter @{operation='detect'} | Where-Object { $_.id -eq 'antigravity-ide' -and $_.installed } | Select-Object -First 1)
     Assert ($testEditor.Count -eq 1 -and $testEditor[0].path -eq $fakeEditor) "The proxy launch test must resolve its sandbox editor; received: $($testEditor | ConvertTo-Json -Compress)"
     $fakeChatDir = Join-Path $sandbox 'Programs\ChatGPT'
     [IO.Directory]::CreateDirectory($fakeChatDir) | Out-Null
@@ -97,7 +98,7 @@ try {
         $env:HTTP_PROXY = $priorHttpProxy
         Remove-Item -LiteralPath $probeOutput -Force -ErrorAction SilentlyContinue
     }
-    $proxyLaunch = Run-Adapter @{operation='launch';req=@{appId='antigravity';rtl=$false};proxyUrl='socks5h://127.0.0.1:10808';waitForTestExitMs=5000}
+    $proxyLaunch = Run-Adapter @{operation='launch';req=@{appId='antigravity-ide';rtl=$false};proxyUrl='socks5h://127.0.0.1:10808';waitForTestExitMs=5000}
     Assert $proxyLaunch.proxyConfigured 'Proxy profile should be passed to the editor launch request'
     Assert (-not $proxyLaunch.proxyRoutingVerified) 'The adapter must not claim that IDE traffic was verified'
     Assert ($proxyLaunch.testProcessCompleted -and $proxyLaunch.testExitCode -eq 0) "The proxy child should exit cleanly; launch result=$($proxyLaunch | ConvertTo-Json -Compress)"
@@ -107,7 +108,7 @@ try {
     [IO.Directory]::CreateDirectory($project) | Out-Null
     $env:VIBEHUB_PROJECT_PROBE = Join-Path $sandbox 'project-result.txt'
     try {
-        $projectLaunch = Run-Adapter @{operation='launch';req=@{appId='antigravity';rtl=$false;cwd=$project};waitForTestExitMs=5000}
+        $projectLaunch = Run-Adapter @{operation='launch';req=@{appId='antigravity-ide';rtl=$false;cwd=$project};waitForTestExitMs=5000}
         Assert ($projectLaunch.ok -and $projectLaunch.testExitCode -eq 0) 'Project child must exit successfully'
         $received = [IO.File]::ReadAllLines($env:VIBEHUB_PROJECT_PROBE)
         Assert ($received[0] -eq $project) 'Project path must set the child working directory exactly'

@@ -1,3 +1,4 @@
+import { claudeLaunchPreferences } from '@/services/claude-launch';
 import {
   createContext,
   useCallback,
@@ -217,7 +218,7 @@ export function ToolProvider({ children }: { children: ReactNode }) {
   ) => {
     const key = kind + ":" + id;
     if (inFlight.current.has(key)) return;
-    const rtlAvailable = kind === 'app' && rtlAdapterConfigured(id, components);
+    const rtlAvailable = kind === 'app' && (id === 'claude-code' || rtlAdapterConfigured(id, components));
     const managed = kind === "app" || id === "antigravity";
     if (managed && mode === 'rtl' && !rtlAvailable)
       return;
@@ -229,11 +230,11 @@ export function ToolProvider({ children }: { children: ReactNode }) {
       if (managed) {
         const latest = await ipc.launchState(id);
         setStates((old) => ({ ...old, [id]: latest }));
-        if (launchBlocked(mode, latest, rtlAvailable, false) && !(cwd && latest.phase === "running")) return false;
+        if (launchBlocked(mode, latest, rtlAvailable, false) && !((cwd || id === 'claude-code') && latest.phase === "running")) return false;
       }
       const result =
         kind === "app"
-          ? await ipc.launchApp({ appId: id, rtl: mode === "rtl", cwd })
+          ? await ipc.launchApp({ appId: id, rtl: mode === "rtl", cwd, ...(id === "claude-code" ? claudeLaunchPreferences() : {}) })
           : await ipc.launchEditor(id, mode === "rtl");
       if (result.ok) {
         setMessages((old) => ({ ...old, [key]: "accepted" }));

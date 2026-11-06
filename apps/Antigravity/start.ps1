@@ -39,7 +39,7 @@ if ($owner) {
   $launchArgs = "--remote-debugging-address=127.0.0.1 --remote-debugging-port=$Port"
   if ($ProxyUrl) { $launchArgs += ' --proxy-server=' + ($ProxyUrl -replace '^socks5h://','socks5://') }
   if ($env:VIBEHUB_PROJECT) { $launchArgs += ' "' + ($env:VIBEHUB_PROJECT.TrimEnd('\') + '\.') + '"' }
-  Start-Process -FilePath $exe -ArgumentList $launchArgs -WindowStyle Hidden | Out-Null
+  Start-Process -FilePath $exe -ArgumentList $launchArgs | Out-Null
   for ($i=0; $i -lt 40; $i++) {
     Start-Sleep -Milliseconds 250
     $owner = PortOwner $Port
