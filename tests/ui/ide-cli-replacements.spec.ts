@@ -16,12 +16,21 @@ test('workspace shows the IDE and CLI with normal launch and setup guides', asyn
 
 test('older remote feeds cannot hide the replacements or replace their setup guides', async ({page}) => {
   await mockNative(page, 'ide-cli');
-  await page.goto('/');
-  await page.evaluate(async () => {
-    const catalog = await import('/src/lib/catalog.ts');
-    catalog.applyRemoteCatalog({apps:[],providers:[],offers:[]}, {}, undefined,
-      {schemaVersion:1,categories:[],articles:[]});
+  await page.addInitScript(() => {
+    const host = window as any;
+    const original = host.__TAURI_INTERNALS__.invoke;
+    host.__TAURI_INTERNALS__.invoke = async (command: string, args: unknown) => {
+      if (command !== 'feed_sync') return original(command, args);
+      return {
+        ok: true, catalog: {apps: [], providers: [], offers: []}, guides: {},
+        learningArticles: {schemaVersion: 1, categories: [], articles: []},
+      };
+    };
   });
+  await page.goto('/learning');
+  await page.getByRole('button', {name: 'Refresh content', exact: true}).click();
+  await expect(page.getByText('New tutorials and news have been downloaded.')).toBeVisible();
+  await page.goto('/');
   await expect(page.getByTestId('app-tile-claude-code')).toBeVisible();
   await expect(page.getByTestId('app-tile-antigravity-ide')).toBeVisible();
   await page.goto('/app/claude-code?tab=guide');

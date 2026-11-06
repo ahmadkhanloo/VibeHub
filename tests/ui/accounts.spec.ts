@@ -9,7 +9,7 @@ test('Workspace hides retired products without restoring their RTL action', asyn
   await expect(page.getByRole('heading', { name: 'Antigravity', exact: true })).toHaveCount(0);
   await expect(page.getByTestId('app-tile-antigravity')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Run RTL Antigravity', exact: true })).toHaveCount(0);
-  await expect(page.getByTestId('app-tile-claude-code').locator('.vh-app-logo img')).toHaveCount(1);
+  await expect(page.getByTestId('app-tile-claude-code').locator('.vh-app-logo img').first()).toBeVisible();
 });
 
 test('failed app discovery remains unknown and offers retry', async ({ page }) => {

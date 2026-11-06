@@ -13,12 +13,12 @@ $script:downloadPath = $null
 function Find-PersianTerminal { if ($script:installed) { 'fixture.exe' } }
 function Invoke-WebRequest {
     param([switch]$UseBasicParsing, $Uri, $OutFile, $TimeoutSec)
-    if ($Uri -ne 'https://github.com/mirbehnam/RtlTerminal/releases/download/v1.1.4/RtlTerminal-Setup-1.1.4-x64.exe') { throw 'Unexpected source' }
+    if ($Uri -ne 'https://github.com/mirbehnam/RtlTerminal/releases/download/v1.1.6/RtlTerminal-Setup-1.1.6-x64.exe') { throw 'Unexpected source' }
     $script:downloadPath = $OutFile
     [IO.File]::WriteAllText($OutFile, 'fixture installer; never executed')
 }
 function Get-FileHash { param($LiteralPath, $Algorithm)
-    @{Hash=$(if ($script:validHash) { 'B9F60B9761FB7410994FCB33293111E012C1D79256E5BCFAB0B4D62D16B4A096' } else { 'invalid' })}
+    @{Hash=$(if ($script:validHash) { 'BF5B21D82CD4F74B60760472E41BED69257AE1C708D804E6FB254A2655104661' } else { 'invalid' })}
 }
 function Start-Process { param($FilePath, $ArgumentList, $Verb, $WindowStyle, [switch]$Wait, [switch]$PassThru)
     if ($Verb -ne 'RunAs' -or $WindowStyle -ne 'Hidden' -or '/NOCLOSEAPPLICATIONS' -notin $ArgumentList) { throw 'Unexpected installer options' }

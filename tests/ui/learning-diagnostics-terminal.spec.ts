@@ -54,36 +54,28 @@ test('diagnostic groups are visible before running and settle independently incl
   await expect(native.getByRole('heading', { name: 'node', exact: true })).toBeVisible();
 });
 
-test('Persian shaping host installation requires confirmation, exposes failures and refreshes detection', async ({ page }) => {
+test('Persian host links to the official download and reports detected installations', async ({ page }) => {
   await mockNative(page);
   await page.addInitScript(() => {
     const host = window as any, original = host.__TAURI_INTERNALS__.invoke;
-    let installed = false, attempt = 0;
-    host.__TAURI_INTERNALS__.invoke = async (cmd: string, args: any) => {
-      if (cmd === 'terminal_detect') return { hasOhMyPosh: false, hasNerdFont: false, themeApplied: false, hasPersianTerminal: installed };
-      if (cmd === 'terminal_install_persian') {
-        host.__mock.calls.push({ cmd });
-        if (++attempt === 1) throw Error('Fixture download failed');
-        installed = true;
-        return { ok: true, detail: 'Installed fixture host' };
-      }
+    host.__TAURI_INTERNALS__.invoke = async (cmd: string, args: unknown) => {
+      if (cmd === 'terminal_detect') return {
+        hasOhMyPosh: false, hasNerdFont: false, themeApplied: false,
+        hasPersianTerminal: sessionStorage.getItem('persianHostInstalled') === 'true',
+      };
       return original(cmd, args);
     };
   });
   await page.goto('/terminal');
-  const install = page.getByRole('button', { name: 'Install RtlTerminal for PowerShell', exact: true });
-  await install.click();
-  await page.keyboard.press('Escape');
-  expect(await page.evaluate(() => (window as any).__mock.calls.filter((c: any) => c.cmd === 'terminal_install_persian').length)).toBe(0);
-  await install.click();
-  const dialog = page.getByRole('dialog');
-  await dialog.getByRole('button', { name: 'Confirm', exact: true }).click();
-  await expect(dialog.getByRole('alert')).toBeVisible();
-  await dialog.locator('summary').click();
-  await expect(dialog.getByText('Error: Fixture download failed', { exact: true })).toBeVisible();
-  await dialog.getByRole('button', { name: 'Confirm', exact: true }).click();
-  await expect(dialog).not.toBeVisible();
-  await expect(page.getByRole('button', { name: 'RtlTerminal installed', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: 'Open latest release download page', exact: true }).click();
+  const calls = await page.evaluate(() => (window as any).__mock.calls);
+  expect(calls).toContainEqual(expect.objectContaining({
+    cmd: 'plugin:opener|open_url',
+    args: expect.objectContaining({ url: 'https://github.com/mirbehnam/RtlTerminal/releases/latest' }),
+  }));
+  expect(calls.some((call: any) => call.cmd === 'terminal_install_persian')).toBe(false);
+  await page.evaluate(() => sessionStorage.setItem('persianHostInstalled', 'true'));
+  await page.reload();
   await expect(page.getByText('Installed; check Persian rendering', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('سلام، فارسی را پیوسته می‌نویسم.', { exact: true })).toBeVisible();
 });
