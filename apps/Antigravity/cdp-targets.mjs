@@ -4,8 +4,7 @@ export function isAntigravityPageTarget(target) {
   try {
     const url = new URL(target.url);
     return url.protocol === 'https:'
-      && ['127.0.0.1', 'localhost'].includes(url.hostname)
-      && url.pathname === '/';
+      && ['127.0.0.1', 'localhost'].includes(url.hostname);
   } catch {
     return false;
   }

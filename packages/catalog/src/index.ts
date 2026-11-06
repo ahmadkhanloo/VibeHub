@@ -18,6 +18,8 @@ export interface Catalog {
 
 export class CatalogError extends Error {}
 
+const removedAppIds = new Set(['claude-desktop', 'antigravity']);
+
 export function loadCatalog(raw: {
   apps: unknown[];
   providers: unknown[];
@@ -27,7 +29,7 @@ export function loadCatalog(raw: {
     const parsed = appManifestSchema.safeParse(a);
     if (!parsed.success) throw new CatalogError(`app[${i}]: ${parsed.error.message}`);
     return parsed.data as AppManifest;
-  });
+  }).filter(app => !removedAppIds.has(app.id));
   const providers = raw.providers.map((p, i) => {
     const parsed = providerManifestSchema.safeParse(p);
     if (!parsed.success) throw new CatalogError(`provider[${i}]: ${parsed.error.message}`);

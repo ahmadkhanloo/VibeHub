@@ -13,3 +13,10 @@ Open Settings → DeepSeek 网页登录 → 浏览器窗口登录; sign in at ch
 ## Getting started
 
 See [Install and manage skills](/learning/skill-basics) for host compatibility, prerequisites, removal, and troubleshooting.
+
+
+## Login and usage screens
+
+![Plugin web-login panel in Harness settings; the blue button starts Edge sign-in.](../../../../apps/desktop/public/tutorials/screenshots/dsh-login-settings.webp)
+
+![Plugin usage statistics; example numbers do not represent your account allowance.](../../../../apps/desktop/public/tutorials/screenshots/dsh-login-usage.webp)

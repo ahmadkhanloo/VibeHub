@@ -17,3 +17,12 @@ Read the file changes, real execution, or report; an agent's claim alone is not 
 Keep changes, checks, open items, and next steps in a project note so another session can continue from the same point.
 
 This adapts [Anthropic's long-running agent examples](https://github.com/anthropics/cwc-long-running-agents). Do not transfer Claude Code-specific hooks to another tool without checking compatibility.
+
+
+## Illustrated example: preserve context in Claude Code
+
+As a conversation grows, its summary should retain the goal, decisions, important files and pending work. The official example below shows compaction output; compare it with the actual project and keep a separate handoff note too.
+
+![A Claude Code Compact summary showing the goal, technical context and file references for continuing work.](../../../apps/desktop/public/tutorials/screenshots/claude-compact-summary.webp)
+
+[Session and context lesson](/learning/claude-sessions) · [Official image source](https://academy.claude.com/courses/claude-code-101/context-management)

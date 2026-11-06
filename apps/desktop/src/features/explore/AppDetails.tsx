@@ -1,8 +1,10 @@
 import { AppPath } from '@/components/AppPath';
+import { ClaudePersianTerminal } from '@/components/ClaudePersianTerminal';
 import { Projects } from '@/components/Projects';
 import { AppSummary } from '@/components/AppSummary';
 import { AppConnection } from '@/components/AppConnection';
 import { LearningPage } from '@/features/learning/Learning';
+import { AccountsPage } from '@/features/accounts/Accounts';
 import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -26,18 +28,20 @@ export function AppDetailsPage() {
   const [error, setError] = useState<unknown>(null);
   const app = catalog.apps.find(a => a.id === appId);
   useEffect(() => {
-    if (params.get('tab') !== 'accounts') return;
+    if (appId === 'chatgpt' || params.get('tab') !== 'accounts') return;
     const next = new URLSearchParams(params);
     next.delete('tab');
     setParams(next, { replace: true });
-  }, [params, setParams]);
+  }, [appId, params, setParams]);
   if (!app) return <EmptyState title={t('ux:notFound')} action={<Link className="vh-link" to="/discover">{t('ux:backDiscover')}</Link>} />;
   const installed = ctx.apps.find(a => a.id === appId && a.installed);
-  const tabs = ['launch', 'connections', 'guide', 'about'];
-  const selectedTab = tabs.includes(params.get('tab') ?? '') ? params.get('tab')! : installed ? 'launch' : 'about';
+  const tabs = [{ value: 'launch', label: t('ux:launchTab') }, { value: 'connections', label: t('ux:connections') }, { value: 'guide', label: t('ux:guideTab') }, { value: 'about', label: t('ux:aboutTab') }];
+  if (appId === 'chatgpt') tabs.push({ value: 'accounts', label: t('ux:accountsTab') });
+  const selectedTab = tabs.find(tab => tab.value === params.get('tab'))?.value ?? (installed ? 'launch' : 'about');
   const lang = i18n.language.startsWith('fa') ? 'fa' : 'en';
   const ready = rtlAdapterConfigured(appId, ctx.components);
   const setupSupported = rtlAdapterSetupSupported(appId, ctx.components);
+  const rtlStatus = ctx.components.find(component => component.id === appId);
   const source = async (url: string) => { try { await openUrl(url); setError(null); } catch (cause) { setError(cause); } };
   const compatible = catalog.providers.filter(p => p.supportedApps[appId] && !['unknown', 'unsupported'].includes(p.supportedApps[appId]!));
   const truth = (value: boolean | null) => t(value === true ? 'ux:yes' : value === false ? 'ux:no' : 'ux:unknown');
@@ -75,14 +79,16 @@ export function AppDetailsPage() {
       <AppPath key={appId + '-quick-path'} appId={appId} />
       <Button variant="ghost" onClick={() => void source(app.websiteUrl)}>{t('ux:external')}</Button>
     </div>
-    <Tabs panelId="app-panel" label={app.name} value={selectedTab} onChange={value => setParams({ tab: value })} items={[{ value: 'launch', label: t('ux:launchTab') }, { value: 'connections', label: t('ux:connections') }, { value: 'guide', label: t('ux:guideTab') }, { value: 'about', label: t('ux:aboutTab') }]} />
+    <Tabs panelId="app-panel" label={app.name} value={selectedTab} onChange={value => setParams({ tab: value })} items={tabs} />
     <div id="app-panel" role="tabpanel" aria-labelledby={'app-panel-tab-' + selectedTab}>
       <section hidden={selectedTab !== 'launch'} className="space-y-4">
         <Projects key={appId} appId={appId} />
+        {appId === 'claude-code' && installed && <ClaudePersianTerminal />}
         <div className="space-y-3 text-sm">
-          <VerificationBadge status={app.capabilities.rtl} />
+          {appId === 'claude-code' ? <Badge tone="warning">{t('ux:claudePersian.experimental')}</Badge> : <VerificationBadge status={app.capabilities.rtl} />}
           {appId === 'antigravity' && <Badge tone="warning">{t('ux:rtlExperimental')}</Badge>}
-          <p className="text-muted">{t(setupSupported ? ready ? 'apps:rtlBundled' : 'ux:rtlMissing' : 'apps:rtlUnavailable')}</p>
+          {appId !== 'claude-code' && <p className="text-muted">{t(setupSupported ? ready ? 'apps:rtlBundled' : 'ux:rtlMissing' : 'apps:rtlUnavailable')}</p>}
+          {!setupSupported && rtlStatus?.reason && <p className="text-warning" role="status">{rtlStatus.reason}</p>}
           <p className="text-muted">{t('ux:launchNote')}</p>
           {!installed && <p className="text-muted">{t('ux:installNote')}</p>}
         </div>
@@ -99,6 +105,7 @@ export function AppDetailsPage() {
       </section>
         {selectedTab === 'guide' && <LearningPage embeddedArticleId={appId} />}
       <section hidden={selectedTab !== 'about'} className="vh-card">{access}</section>
+      {selectedTab === 'accounts' && <AccountsPage embedded />}
     </div>
     <Link className="vh-button vh-button-ghost" to={'/doctor?tool=' + encodeURIComponent(appId) + '&kind=app'}>{t('ux:doctor')}</Link>
 

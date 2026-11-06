@@ -69,9 +69,10 @@ function Get-RtlExecutable([string]$Id, [string]$AdapterDir) {
     'deepseek-harness' { @('DeepSeek Harness.exe') }
     'antigravity' { @('Antigravity.exe') }
     'opencode' { @('OpenCode.exe') }
+    'claude-desktop' { @('Claude.exe') }
     default { return $null }
   }
-  $envName = switch ($Id) { 'zcode' {'ZCODE_RTL_EXE'} 'qoder' {'QODER_RTL_EXE'} 'deepseek-harness' {'DEEPSEEK_HARNESS_RTL_EXE'} 'antigravity' {'ANTIGRAVITY_RTL_EXE'} 'opencode' {'OPENCODE_RTL_EXE'} }
+  $envName = switch ($Id) { 'zcode' {'ZCODE_RTL_EXE'} 'qoder' {'QODER_RTL_EXE'} 'deepseek-harness' {'DEEPSEEK_HARNESS_RTL_EXE'} 'antigravity' {'ANTIGRAVITY_RTL_EXE'} 'opencode' {'OPENCODE_RTL_EXE'} 'claude-desktop' {'CLAUDE_RTL_EXE'} }
   $override = [Environment]::GetEnvironmentVariable($envName)
   if ($override) {
     if (Test-Path -LiteralPath $override -PathType Leaf) { return $override }
@@ -92,8 +93,18 @@ function Get-RtlExecutable([string]$Id, [string]$AdapterDir) {
     'deepseek-harness' { @("$env:LOCALAPPDATA\Programs\DeepSeek Harness") }
     'antigravity' { @("$env:LOCALAPPDATA\Programs\antigravity") }
     'opencode' { @("$env:LOCALAPPDATA\Programs\ai.opencode.desktop") }
+    'claude-desktop' { @("$env:LOCALAPPDATA\AnthropicClaude", "$env:LOCALAPPDATA\Programs\Claude", "$env:LOCALAPPDATA\Claude") }
   }
   foreach ($base in $bases) {
+    if ($Id -eq 'claude-desktop') {
+      $versions = Get-ChildItem -LiteralPath $base -Directory -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -match '^app-\d+(\.\d+){1,3}$' -and (Test-Path -LiteralPath (Join-Path $_.FullName 'Claude.exe') -PathType Leaf) } |
+        Sort-Object { [version]($_.Name -replace '^app-', '') } -Descending
+      foreach ($version in $versions) {
+        $candidate = Join-Path $version.FullName 'Claude.exe'
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
+      }
+    }
     if ($Id -eq 'qoder') {
       $versions = Get-ChildItem -LiteralPath (Join-Path $base '.qoder-versions') -Directory -ErrorAction SilentlyContinue |
         Where-Object { $_.Name -match '^\d+(\.\d+){2,3}$' -and (Test-Path -LiteralPath (Join-Path $_.FullName 'resources\app.asar')) } |
@@ -107,6 +118,14 @@ function Get-RtlExecutable([string]$Id, [string]$AdapterDir) {
     foreach ($name in $names) {
       $candidate = Join-Path $base $name
       if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
+    }
+  }
+  if ($Id -eq 'claude-desktop' -and (Get-Command Get-AppxPackage -ErrorAction SilentlyContinue)) {
+    foreach ($package in @(Get-AppxPackage -Name 'Claude' -ErrorAction SilentlyContinue)) {
+      foreach ($relative in @('app\Claude.exe', 'Claude.exe')) {
+        $candidate = Join-Path $package.InstallLocation $relative
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
+      }
     }
   }
   # Slow custom-path fallback only when saved and standard paths did not resolve.

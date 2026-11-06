@@ -25,7 +25,8 @@ test('ordinary ChatGPT stays out of RTL setup and RTL launch fails closed', () =
   for (const expression of [
     /ordinary ChatGPT/i,
     /Codex Desktop RTL is unavailable/i,
-    /'rtl-setup'[\s\S]*?if \(\$id -notin @\('zcode','qoder','deepseek-harness','antigravity','opencode'\)\)/,
+    /'rtl-setup'[\s\S]*?if \(\$id -notin @\('zcode','qoder','deepseek-harness','antigravity','opencode','claude-desktop'\)\)/,
+    /if \(\$id -eq 'claude-desktop'\)[\s\S]*?Get-RtlComponents \$root[\s\S]*?setupSupported/,
     /if \(\$id -eq 'chatgpt' -and \$request\.req\.rtl\)[\s\S]*?CodexRtlStatus/,
   ]) assert.ok(expression.test(windows), `missing ChatGPT fail-closed contract: ${expression}`);
 });
@@ -35,5 +36,7 @@ test('Codex account-management operation IDs and discovery remain intact', () =>
     assert.ok(new RegExp(`'${operation}'`).test(windows), `lost account operation ${operation}`);
   }
   assert.ok(/function\s+Codex-DesktopState\b/.test(windows));
-  assert.ok(/Find-DesktopProduct\s+'chatgpt'\s+-All/.test(windows));
+  const desktopState = windows.match(/function\s+Codex-DesktopState\b[\s\S]*?(?=\nfunction\s)/)?.[0] ?? '';
+  assert.ok(/Get-AppxPackage\s+-Name\s+'OpenAI\.Codex'/.test(desktopState));
+  assert.ok(/Resolve-OpenAIProduct\b[^\r\n]+-eq\s+'codex'/.test(desktopState));
 });

@@ -39,6 +39,7 @@ export function AccountsPage({ embedded = false }: { embedded?: boolean }) {
   const date = (value: number | null) => value ? new Date(value * 1000).toLocaleString(i18n.language) : t('unknown');
   const previous = data?.accounts.find(a => a.id === data.previousId && a.id !== data.activeId);
   const pending = data?.accounts.find(a => a.id === data.pendingId);
+  const pendingLogin = data?.loginPending && <div role="status" className="flex flex-wrap items-center gap-3 text-sm">{t('loginPending')}<Button disabled={busy} onClick={() => void act('cancel')}>{t('cancelLogin')}</Button></div>;
   const submitDialog = async () => {
     if (!dialog) return;
     const { kind, account } = dialog;
@@ -51,13 +52,15 @@ export function AccountsPage({ embedded = false }: { embedded?: boolean }) {
     {error && !adding && <ErrorNotice error={error} message={error} />}
     {!data ? <p role="status">{t('loading')}</p> : data.nativePreview ? <Card className="space-y-3"><h2 className="font-bold">{t('browserAccountsTitle')}</h2><p role="status" className="text-sm leading-7">{t('browserAccountsHint')}</p><code dir="ltr" className="block">pnpm dev:desktop</code></Card> : <>
       {!data.cliReady && <Card className="space-y-3"><p role="status">{t('cliMissing', { version: data.supportedVersion })}</p><Link className="vh-link" to="/guides/chatgpt">{t('setup')}</Link></Card>}
-      <Disclosure title={t('ux:help')}><p className="text-sm text-muted">{t('desktopUnverified')}</p><p className="mt-3 text-sm text-muted">{t('initialRead')}</p></Disclosure>
+      {!data.desktopVerified && <p className="text-sm text-muted">{t('desktopUnverified')}</p>}
+      <Disclosure title={t('ux:help')}><p className="text-sm text-muted">{t('initialRead')}</p></Disclosure>
       {data.notice && <Card className="space-y-3" as="section"><p role="status">{t(`notices.${data.notice}`, { defaultValue: t(`errors.${data.notice}`, { defaultValue: t('errors.requestFailed') }) })}</p>
         {pending && <p><bdi>{pending.name}</bdi></p>}
         <div className="flex flex-wrap gap-2">{pending && <Button disabled={busy} onClick={() => setDialog({ kind: 'switch', account: pending })}>{t('restartAndSwitch')}</Button>}
           <Button variant="ghost" disabled={busy} onClick={() => void act('dismiss')}>{t('dismiss')}</Button></div>
       </Card>}
       {adding && <Modal open title={t('add')} onClose={() => setAdding(false)} busy={busy}><div className="space-y-4">{error && <ErrorNotice error={error} message={error} />}<label className="block space-y-2 text-sm"><span>{t('accountName')}</span><Input value={name} maxLength={120} dir="auto" onChange={e => setName(e.target.value)} /></label>
+        {pendingLogin}
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" disabled={busy || !data.cliReady || data.loginPending} onClick={() => void act('login', { name })}>{t('signIn')}</Button>
           <Button disabled={busy || !data.cliReady || data.loginPending} onClick={() => void act('import', { name })}>{t('import')}</Button>
@@ -65,7 +68,7 @@ export function AccountsPage({ embedded = false }: { embedded?: boolean }) {
         </div>
         <p className="text-xs leading-6 text-muted">{t('jsonHint')}</p>
       </div></Modal>}
-      {data.loginPending && <div role="status" className="flex flex-wrap items-center gap-3 text-sm">{t('loginPending')}<Button disabled={busy} onClick={() => void act('cancel')}>{t('cancelLogin')}</Button></div>}
+      {!adding && pendingLogin}
       <Disclosure title={t('automation')}>
         <Toggle label={t('enableAutomation')} checked={data.settings.enabled} disabled={busy || !data.cliReady} onChange={enabled => void act('settings', { enabled, threshold })} />
         <label className="block max-w-xs space-y-2 text-sm"><span>{t('threshold')}</span><Input type="number" min={0} max={90} value={threshold} onChange={e => setThreshold(Number(e.target.value))} /></label>

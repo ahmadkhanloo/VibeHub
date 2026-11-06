@@ -66,6 +66,7 @@
   "deleteKey": "Delete key from vault",
   "keyStored": "Key saved",
   "noKeyStored": "No key stored",
+  "claudeCustomEndpoint": "Custom Anthropic Messages endpoint",
   "customEndpoint": "Custom OpenAI-compatible endpoint",
   "customNote": "Cost and terms are defined by the endpoint itself.",
   "agentIntegration": "Connections are entered through each tool's own settings; 'ready to configure' is different from 'tested inside the tool'.",

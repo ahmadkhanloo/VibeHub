@@ -1,15 +1,15 @@
 import { test, expect } from '@playwright/test';
 import { mockNative } from './mock';
 
-test('Apps lists Antigravity IDE as its own installed editor with normal launch only', async ({ page }) => {
+test('Workspace hides retired products without restoring their RTL action', async ({ page }) => {
   await mockNative(page, 'antigravity');
   await page.goto('/');
-  const ide = page.getByTestId('app-tile-antigravity-ide');
-  await expect(ide.getByRole('heading', { name: 'Antigravity IDE', exact: true })).toBeVisible();
-  await expect(ide.getByRole('button', { name: 'Run Antigravity IDE', exact: true })).toBeVisible();
-  await expect(ide.getByRole('button', { name: /RTL|right-to-left/i })).toHaveCount(0);
-  await expect(page.getByRole('heading', { name: 'Antigravity', exact: true })).toBeVisible();
-  expect(await page.evaluate(() => (window as any).__mock.calls.some((call: any) => call.cmd === 'detect_editors'))).toBe(true);
+  await expect(page.getByTestId('app-tile-antigravity-ide')).toHaveCount(0);
+  await expect(page.getByTestId('app-tile-claude-code')).toHaveCount(1);
+  await expect(page.getByRole('heading', { name: 'Antigravity', exact: true })).toHaveCount(0);
+  await expect(page.getByTestId('app-tile-antigravity')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Run RTL Antigravity', exact: true })).toHaveCount(0);
+  await expect(page.getByTestId('app-tile-claude-code').locator('.vh-app-logo img').first()).toBeVisible();
 });
 
 test('failed app discovery remains unknown and offers retry', async ({ page }) => {

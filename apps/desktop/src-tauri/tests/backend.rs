@@ -469,7 +469,7 @@ fn per_app_proxy_can_target_a_detected_editor() {
         vec![json!({"id":"proxy","name":"local","mode":"socks5","host":"127.0.0.1","port":10808})];
     assert!(
         validate_config(
-            &json!({"globalProfileId":"","requireProxy":false,"perApp":{"antigravity":"proxy"}}),
+            &json!({"globalProfileId":"","requireProxy":false,"perApp":{"antigravity-ide":"proxy"}}),
             &profiles
         )
         .is_ok()

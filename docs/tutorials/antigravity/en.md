@@ -1,7 +1,5 @@
 # Antigravity
 
-![Educational workflow schematic](../../../apps/desktop/public/tutorials/antigravity.svg)
-
 ## Access from Iran and regional restrictions
 
 Iran is absent from the geographic list in [Antigravity's official FAQ](https://antigravity.google/docs/faq), checked November 1, 2026. Network restrictions may require a connectivity workaround or proxy; Google account eligibility and associated region also matter. Changing IP does not establish regional support. Connectivity and login from Iran remain untested.

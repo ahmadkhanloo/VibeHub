@@ -6,6 +6,7 @@ import freebuffLogo from '@/assets/apps/freebuff.png';
 import mimoLogo from '@/assets/apps/mimocode.png';
 import opencodeLogo from '@/assets/apps/opencode.png';
 import antigravityLogo from '@/assets/apps/antigravity.png';
+import claudeLogo from '@/assets/apps/claude.png';
 import chatgptLogo from '@/assets/apps/chatgpt.svg';
 import { AppWindow } from 'lucide-react';
 
@@ -16,21 +17,21 @@ const logos: Record<string, string> = {
   freebuff: freebuffLogo,
   mimocode: mimoLogo,
   opencode: opencodeLogo,
-  antigravity: antigravityLogo,
   'antigravity-ide': antigravityLogo,
+  'claude-code': claudeLogo,
   chatgpt: chatgptLogo,
 };
 
-export function AppLogo({ appId, name, size = 44 }: { appId: string; name: string; size?: number }) {
+export function AppLogo({ appId, name, size = 44, rtl = false }: { appId: string; name: string; size?: number; rtl?: boolean }) {
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [appId]);
-  const darkBackground = ['opencode', 'freebuff', 'mimocode', 'antigravity'].includes(appId);
+  const darkBackground = ['opencode', 'freebuff', 'mimocode', 'antigravity-ide'].includes(appId);
   const logo = logos[appId];
 
   return (
     <span
       aria-hidden="true"
-      className={`vh-app-logo ${darkBackground ? 'vh-app-logo-dark' : ''}`}
+      className={`vh-app-logo ${rtl ? 'vh-app-logo-rtl' : ''} ${darkBackground ? 'vh-app-logo-dark' : ''}`}
       style={{ width: size, height: size }}
     >
       {logo && !failed ? (
@@ -38,6 +39,7 @@ export function AppLogo({ appId, name, size = 44 }: { appId: string; name: strin
       ) : (
         <AppWindow size={24} aria-hidden="true" />
       )}
+      {rtl && <span className="vh-rtl-mark">RTL</span>}
     </span>
   );
 }

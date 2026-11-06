@@ -63,6 +63,13 @@ export function installMockNative({ scenario, language, onboardingDone }: { scen
           )
             throw Error("Simulated native failure");
           switch (cmd) {
+            case "codex_accounts":
+              if (scenario === 'codex-login-pending') {
+                if (args.action === 'cancel') state.loginCancelled = true;
+                return { cliReady: true, loginPending: !state.loginCancelled, settings: { enabled: false, threshold: 1 }, accounts: [] };
+              }
+              if (args.action === 'list') return { nativePreview: true, settings: { enabled: false, threshold: 1 }, accounts: [] };
+              throw new Error('accounts:browserPreview');
             case "app_accounts": {
               const id = args.appId;
               const snapshots = state as any;
@@ -89,11 +96,21 @@ export function installMockNative({ scenario, language, onboardingDone }: { scen
                     },
                     { id: "qoder", installed: false, via: "fixture" },
                     ...(state.scenario === "antigravity" ? [{id:"antigravity",installed:true,path:"C:/Fixtures/Antigravity.exe",via:"fixture"}] : []),
+                    ...(state.scenario === "antigravity" ? [{id:"claude-code",installed:true,path:"C:/Fixtures/claude.cmd",via:"legacy-cache"}] : []),
+                    ...(['ide-cli', 'persian-missing', 'persian-old'].includes(state.scenario) ? [
+                      {id:"antigravity-ide",installed:true,path:"C:/Fixtures/Antigravity IDE.exe",via:"fixture"},
+                      {id:"claude-code",installed:true,path:"C:/Fixtures/claude.cmd",via:"fixture"},
+                    ] : []),
                   ];
             case "detect_editors":
               return state.scenario === "antigravity"
-                ? [{id:"antigravity-ide",name:"Antigravity IDE",installed:true,path:"C:/Fixtures/Antigravity IDE.exe",version:"2.5.5",via:"standard-path"}]
+                ? [
+                    {id:"antigravity-ide",name:"Antigravity IDE",installed:true,path:"C:/Fixtures/Antigravity IDE.exe",version:"2.5.5",via:"standard-path"},
+                    {id:"antigravity",name:"Antigravity IDE",installed:true,path:"C:/Fixtures/Antigravity IDE.exe",version:"2.5.5",via:"legacy-editor-cache"},
+                  ]
                 : [];
+            case "claude_persian_terminal":
+              return {ok:true, installed:state.scenario !== 'persian-missing', opened:args.open === true, claudeStarted:false, proxyRoutingVerified:false, quickInputAvailable:state.scenario !== 'persian-old', version:state.scenario === 'persian-old' ? '1.1.4' : '1.1.6', command:"& 'C:/Fixtures/claude.cmd'", cwd:args.cwd ?? 'C:/Projects'};
             case "rtl_setup":
               return { ok: true, shortcut: "C:/Fixtures/RTL.lnk" };
             case "rtl_components":

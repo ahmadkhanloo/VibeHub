@@ -38,7 +38,7 @@ export function AppSummary({ appId }: { appId: string }) {
   const apiLabel = ctx.connections === null
     ? ctx.connectionsError ? t('connectionsUx:apiReferenceUnavailable') : t('ux:accountSummary.loading')
     : apiConnectionInvalid ? t('connectionsUx:apiReferenceUnavailable') : apiConnection?.name ?? t('ux:accountSummary.noApiReference');
-  const detailsPath = appId === 'antigravity-ide' ? `/editor/${appId}` : `/app/${appId}?tab=connections`;
+  const detailsPath = `/app/${appId}?tab=connections`;
 
   return <div className="vh-app-summary-details">
     <Link className="vh-connection-summary" to={detailsPath}>

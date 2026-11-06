@@ -9,13 +9,14 @@
   "requiresApiKey": true,
   "usageTermsUrl": "https://amd-aim.github.io/radeon-cloud-docs/guides/token-factory/",
   "supportedApps": {
-    "qoder": "unknown"
+    "qoder": "unknown",
+    "claude-code": "reported"
   },
   "eligibilityStatus": "unknown",
-  "lastVerified": "2026-10-28",
+  "lastVerified": "2026-11-04",
   "notes": {
-    "fa": "رایگان با سقف روزانه؛ فقط سایت چین و برای آزمایش و توسعه. موجودی مدل‌ها و شرایط حساب را بررسی کنید.",
-    "en": "Free daily allowance on the China site only, for trial and development; check account eligibility and current models."
+    "fa": "سهمیهٔ روزانهٔ رایگان در سایت چین، برای آزمایش و توسعه؛ شرایط حساب و سهمیه بررسی شود. در ۲۰۲۶/۱۱/۰۴، Claude Code 2.1.318 با افزونهٔ rtl-terminal 1.0.7 و DeepSeek-V4.1-Flash پاسخ جریانی، Read و ادامهٔ گفتگو را پاس کرد. Qwen3.8-Flash-Next با پیام system پس از user در این نسخه شکست خورد. فارسی تعاملی هنوز تأیید نشده است. نشانی Anthropic بدون /v1 استفاده شود.",
+    "en": "Free daily allowance on the China site only, for trial and development; check eligibility and quota. On 2026-11-04 Claude Code 2.1.318 with bundled rtl-terminal 1.0.7 and DeepSeek-V4.1-Flash passed live streaming, Read and conversation continuation. Qwen3.8-Flash-Next failed with non-leading system messages on this CLI. Interactive Persian remains unverified. Use the Anthropic base without /v1."
   },
   "endpoint": {
     "baseUrl": "https://developer.amd.com.cn/radeon/api/v1",

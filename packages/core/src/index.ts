@@ -136,6 +136,8 @@ export interface DetectedApp {
 export interface LaunchRequest {
   appId: string;
   rtl: boolean;
+  connectionId?: string;
+  authHeader?: 'api-key' | 'bearer';
   proxyProfileId?: string;
   cwd?: string;
 }
@@ -166,7 +168,7 @@ export interface TerminalSetupState {
 }
 
 export const CAPABILITY_KEYS: Capability[] = ['install', 'launch', 'rtl', 'proxy', 'terminal', 'byok'];
-export const APP_IDS = ['zcode', 'qoder', 'deepseek-harness', 'opencode', 'mimocode', 'freebuff', 'freebuff-desktop', 'antigravity', 'chatgpt', 'claude-desktop', 'claude-code'] as const;
+export const APP_IDS = ['zcode', 'qoder', 'deepseek-harness', 'opencode', 'mimocode', 'freebuff', 'freebuff-desktop', 'antigravity-ide', 'chatgpt', 'claude-code'] as const;
 export type AppId = (typeof APP_IDS)[number];
 
 export { appManifestSchema, providerManifestSchema, offerSchema, feedIndexSchema, assertNoExecutablePayload } from './schemas.ts';

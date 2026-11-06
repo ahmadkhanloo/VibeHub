@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { mockNative } from "./mock";
+import qoder from "../../content/apps/qoder.json";
 
 test("search includes model services and targets selected provider without saving", async ({
   page,
@@ -25,7 +26,7 @@ test("search includes model services and targets selected provider without savin
 test("add-app lists only uninstalled tools without catalog filters or tabs", async ({ page }) => {
   await mockNative(page);
   await page.goto("/discover");
-  await expect(page.locator('.vh-catalog-tile')).toHaveCount(10);
+  await expect(page.locator('.vh-catalog-tile')).toHaveCount(9);
   await expect(page.getByRole('link', { name: /Qoder/ })).toBeVisible();
   await expect(page.getByRole('link', { name: /ZCode/ })).toHaveCount(0);
   await expect(page.getByRole('tab')).toHaveCount(0);
@@ -349,23 +350,22 @@ test("validated catalog refresh updates an already mounted result list", async (
   page,
 }) => {
   await mockNative(page);
+  await page.addInitScript((app) => {
+    const host = window as any;
+    const original = host.__TAURI_INTERNALS__.invoke;
+    const response = new Promise(resolve => {
+      host.__completeFeed = () => resolve({
+        ok: true,
+        catalog: { apps: [{ ...app, name: "Qoder refreshed" }], providers: [], offers: [] },
+        guides: { "qoder/fa": "راهنمای آزمایشی", "qoder/en": "Fixture guide" },
+      });
+    });
+    host.__TAURI_INTERNALS__.invoke = (command: string, args: unknown) =>
+      command === "feed_sync" ? response : original(command, args);
+  }, qoder);
   await page.goto("/discover");
   await expect(page.getByRole("link", { name: /Qoder/ })).toBeVisible();
-  await page.evaluate(async () => {
-    const data = await import("/src/lib/catalog.ts");
-    const apps = data.apps.map((app: any) =>
-      app.id === "qoder" ? { ...app, name: "Qoder refreshed" } : app,
-    );
-    const guides: any = {};
-    for (const app of apps)
-      for (const lang of ["fa", "en"])
-        guides[app.id + "/" + lang] = data.guideText(app.id, lang);
-    const catalog = { apps, providers: data.providers, offers: [] };
-    data.applyRemoteCatalog(
-      catalog,
-      data.validateRemoteGuides(guides, catalog),
-    );
-  });
+  await page.evaluate(() => (window as any).__completeFeed());
   await expect(
     page.getByRole("link", { name: /Qoder refreshed/ }),
   ).toBeVisible();

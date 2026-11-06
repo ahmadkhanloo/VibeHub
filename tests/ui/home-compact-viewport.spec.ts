@@ -1,30 +1,31 @@
 import { test, expect, type Page } from '@playwright/test';
 import { mockNative } from './mock';
 
+const appIds = ['zcode', 'qoder', 'antigravity-ide', 'deepseek-harness', 'mimocode'];
+
 async function seedFiveAppHome(page: Page, language: 'en' | 'fa', themeMode: 'light' | 'dark') {
   await mockNative(page, 'ready', language);
-  await page.addInitScript(({ language, themeMode }: { language: 'en' | 'fa'; themeMode: 'light' | 'dark' }) => {
+  await page.addInitScript(({ language, themeMode, appIds }) => {
     const host = window as any;
     host.__mock.language = language;
     host.__mock.themeMode = themeMode;
     const original = host.__TAURI_INTERNALS__.invoke;
-    const ids = ['zcode', 'qoder', 'antigravity', 'deepseek-harness', 'mimocode'];
     localStorage.setItem('vibehub.settings.v1', JSON.stringify({
       language: host.__mock.language, density: 'compact', themeMode: host.__mock.themeMode,
     }));
     host.__TAURI_INTERNALS__.invoke = async (command: string, args: any = {}) => {
-      if (command === 'detect_apps') return ids.map(id => ({
+      if (command === 'detect_apps') return appIds.map(id => ({
         id, installed: true, path: `C:/Fixtures/${id}.exe`, version: '1.0', via: 'fixture',
       }));
       if (command === 'detect_editors') return [];
       return original(command, args);
     };
-  }, { language, themeMode });
+  }, { language, themeMode, appIds });
 }
 
 async function expectFiveRunButtonsVisible(page: Page) {
-  for (const id of ['zcode', 'qoder', 'antigravity', 'deepseek-harness', 'mimicode']) {
-    const launchButton = page.locator('.vh-app-tile').nth(['zcode', 'qoder', 'antigravity', 'deepseek-harness', 'mimocode'].indexOf(id)).locator('.vh-launch-actions > button').first();
+  for (const [index, id] of appIds.entries()) {
+    const launchButton = page.locator('.vh-app-tile').nth(index).locator('.vh-launch-actions > button').first();
     await expect(launchButton).toBeVisible();
     const box = await launchButton.boundingBox();
     expect(box, `${id} launch control has a layout box`).not.toBeNull();

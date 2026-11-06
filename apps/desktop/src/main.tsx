@@ -28,9 +28,6 @@ const DiscoverPage = lazy(async () => ({
 const AppDetailsPage = lazy(async () => ({
   default: (await import("@/features/explore/AppDetails")).AppDetailsPage,
 }));
-const EditorDetailsPage = lazy(async () => ({
-  default: (await import("@/features/explore/EditorDetails")).EditorDetailsPage,
-}));
 const ProxyPage = lazy(async () => ({
   default: (await import("@/features/proxy/Proxy")).ProxyPage,
 }));
@@ -68,8 +65,9 @@ function Gate() {
         <Route path="/tools" element={<Navigate to="/" replace />} />
         <Route path="/discover" element={<DiscoverPage />} />
         <Route path="/app/:appId" element={<AppDetailsPage />} />
-        <Route path="/app/antigravity-ide" element={<Navigate to="/editor/antigravity-ide" replace />} />
-        <Route path="/editor/:editorId" element={<EditorDetailsPage />} />
+        <Route path="/app/antigravity" element={<Navigate to="/app/antigravity-ide" replace />} />
+        <Route path="/app/claude-desktop" element={<Navigate to="/app/claude-code" replace />} />
+        <Route path="/editor/:editorId" element={<Navigate to="/" replace />} />
         <Route path="/my-apps" element={<Navigate to="/" replace />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/connections" element={<Navigate to="/connections/api" replace />} />
@@ -86,7 +84,7 @@ function Gate() {
         />
         <Route path="/guides" element={<Navigate to="/learning?category=applications" replace />} />
         <Route path="/guides/extensions" element={<Navigate to="/learning?category=skills" replace />} />
-        <Route path="/accounts" element={<Navigate to="/" replace />} />
+        <Route path="/accounts" element={<Navigate to="/app/chatgpt?tab=accounts" replace />} />
         <Route path="/guides/:appId" element={<LegacyGuide />} />
         <Route path="/offers" element={<OffersPage />} />
         <Route path="/learning" element={<LearningPage />} />

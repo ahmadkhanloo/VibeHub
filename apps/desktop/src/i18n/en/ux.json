@@ -106,8 +106,9 @@
     "freebuff": "Desktop coding assistant",
     "mimocode": "Code with MiMo models",
     "opencode": "Desktop coding agent",
-    "antigravity": "Google development environment",
-    "chatgpt": "ChatGPT and Codex accounts"
+    "chatgpt": "ChatGPT and Codex accounts",
+    "antigravity-ide": "Google code editor with network and extension API guidance",
+    "claude-code": "Terminal coding with Claude sign-in or another API"
   },
   "appearanceTab": "Appearance",
   "terminalTab": "Terminal",
@@ -173,5 +174,30 @@
   "rtlRepairFor": "Repair RTL for {{name}}",
   "rtlSetupDownload": "Get the full VibeHub installer",
   "runRtlCompact": "Run RTL",
-  "rtlReady": "RTL ready"
+  "rtlReady": "RTL ready",
+  "openAnotherTerminal": "Open another terminal",
+  "claudePersian": {
+    "title": "Persian writing in Claude",
+    "experimental": "Experimental",
+    "description": "Launch Claude in your usual terminal with a bundled Persian rendering plugin. Requires Claude Code 2.1.294 or newer. PowerShell profiles and prompt themes are not loaded.",
+    "setup": "Install or update Persian terminal",
+    "detected": "RtlTerminal detected: {{version}}",
+    "missing": "RtlTerminal is not installed. Install version 1.1.6 or newer from the Terminal page.",
+    "upgrade": "Quick Input needs RtlTerminal 1.1.6 or newer. Update before relying on the native Persian editor.",
+    "manualStep": "Open the Persian terminal, select PowerShell or PowerShell 7, then paste and run this command. Configure your API credentials in that same session if needed.",
+    "copy": "Copy Claude launch command",
+    "open": "Run in Persian",
+    "opened": "Terminal launch requested. Claude, Persian rendering and model connectivity are not yet verified.",
+    "input": "In RtlTerminal 1.1.6+, press Ctrl+Shift+Space for Quick Input. Enable RTL, write your text, use Insert to paste without submitting, or Send to submit it.",
+    "verify": "Check joined letters, English fragments, numbers and punctuation. Full-screen Claude cursor and editing behavior are not yet verified. Code should remain LTR.",
+    "apiGuide": "Claude installation and API setup guide",
+    "downloadUpdate": "Download the update from the official source",
+    "refresh": "Refresh",
+    "connection": "Model connection",
+    "existing": "Use existing Claude configuration",
+    "auth": "Gateway authentication",
+    "compatibility": "Use an Anthropic Messages compatible endpoint. Non-Claude models and Persian editing require live compatibility testing.",
+    "manage": "Manage connections and test models",
+    "normal": "Run normally"
+  }
 }

@@ -10,6 +10,7 @@ const adapters = new Map([
   ['deepseek-harness', 'DeepSeekHarness'],
   ['antigravity', 'Antigravity'],
   ['opencode', 'OpenCode'],
+  ['claude-desktop', 'Claude'],
 ]);
 const payloadFiles = ['start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs', 'cdp-targets.mjs', 'rtl.ico'];
 const fontFiles = ['assets/OFL.txt', 'assets/Vazirmatn-Regular.woff2', 'assets/Vazirmatn-Bold.woff2'];
@@ -32,7 +33,7 @@ function fullPackageHas(resources, relative) {
   });
 }
 
-test('every usable adapter carries its launcher, injector, style, target guard and fonts in both payload modes', async () => {
+test('every usable adapter carries its launcher, injector, style, target guard, logo badge icon and fonts in both payload modes', async () => {
   const prepare = await read('scripts/prepare-windows-rtl-payload.ps1');
   const independent = parsePowerShellAdapterMap(prepare);
   const tauri = JSON.parse(await read('apps/desktop/src-tauri/tauri.conf.json'));
@@ -45,8 +46,14 @@ test('every usable adapter carries its launcher, injector, style, target guard a
       assert.ok(fullPackageHas(resources, `${folder}/${file}`), `${folder} full Tauri package is missing ${file}`);
       await read(`apps/${folder}/${file}`);
     }
-    if (folder !== 'OpenCode') {
-      assert.ok(files.includes('rtl-shortcut.ico'), `${folder} independent payload is missing its shortcut icon`);
+    assert.ok(files.includes('rtl-shortcut.ico'), `${folder} independent payload is missing its logo plus RTL shortcut icon`);
+    await read(`apps/${folder}/rtl-shortcut.ico`);
+    if (id === 'claude-desktop') {
+      assert.ok(files.includes('compatibility.json'), 'Claude Desktop must ship its version-specific RTL compatibility gate');
+      assert.ok(fullPackageHas(resources, `${folder}/compatibility.json`), 'Claude Desktop compatibility gate must ship in the full package');
+      const compatibility = JSON.parse(await read(`apps/${folder}/compatibility.json`));
+      assert.equal(compatibility.adapterVerified, false, 'unverified Claude Desktop RTL must remain disabled');
+      assert.ok(compatibility.reason, 'unverified Claude Desktop RTL must explain the compatibility blocker');
     }
     assert.ok(folder && id, 'adapter map entries must remain named');
   }
@@ -68,7 +75,8 @@ test('the independent RTL installer offers every available adapter and keeps tra
   const installer = await read('apps/desktop/src-tauri/windows/installer.nsi');
   for (const token of [
     'OpenCode RTL', 'SEC_OPENCODE', 'ModeOpenCode', 'VibeHubOpenCode',
-    'Choose 1–5 tools', 'Choose RTL tools (5 available)', 'All 5 RTL tools',
+    'Claude Desktop RTL', 'SEC_CLAUDE', 'ModeClaude', 'VibeHubClaude',
+    'Choose 1–6 tools', 'Choose RTL tools (6 available)', 'All 6 RTL tools',
   ]) assert.ok(installer.includes(token), `NSIS independent RTL mode is missing ${token}`);
   assert.match(installer, /File \/r "\$\{VIBEHUB_PAYLOAD_DIR\}\\OpenCode\\\*"/);
   assert.match(installer, /StrCpy \$SelectedComponents "[^"]*opencode[^"]*"/);
@@ -80,8 +88,12 @@ test('the independent RTL installer offers every available adapter and keeps tra
     assert.ok(legacy.includes(`apps\\${folder}\\*`), `${folder} files are missing from the independent installer`);
   }
   const sourceInstaller = await read('install.ps1');
-  for (const id of ['antigravity', 'opencode']) {
-    assert.match(sourceInstaller, new RegExp(`^\\s*${id}\\s*=`, 'm'), `source-checkout shortcut helper must support ${id}`);
+  assert.match(sourceInstaller, /function Assert-ClaudeRtlCompatible/);
+  assert.match(sourceInstaller, /adapterVerified -ne \$true[\s\S]*?Get-AuthenticodeSignature[\s\S]*?ProductVersion/,
+    'the source-checkout helper must keep Claude shortcut creation version- and signature-gated');
+  for (const id of ['antigravity', 'opencode', 'claude-desktop']) {
+    const key = id === 'claude-desktop' ? `['"]${id}['"]` : id;
+    assert.match(sourceInstaller, new RegExp(`^\\s*${key}\\s*=`, 'm'), `source-checkout shortcut helper must support ${id}`);
   }
 });
 
@@ -97,6 +109,7 @@ test('upgrades preserve foreign shortcuts and uninstall removes only exact VibeH
   const labels = new Map([
     ['ZCode', 'ZCode'], ['Qoder', 'Qoder'], ['DeepSeekHarness', 'DeepSeek Harness'],
     ['Antigravity', 'Antigravity'], ['OpenCode', 'OpenCode'],
+    ['Claude', 'Claude Desktop'],
   ]);
   for (const [, folder] of adapters) {
     const label = labels.get(folder);

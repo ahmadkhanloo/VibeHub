@@ -1,7 +1,5 @@
 # Qoder — learn the interface and use free model allowances
 
-![Educational workflow schematic](../../../apps/desktop/public/tutorials/qoder.svg)
-
 English | [فارسی](fa.md)
 
 ## 0. Learning path and product choice — beginner
@@ -65,3 +63,14 @@ After installation, rescan in VibeHub. See the [shared RTL guide](/learning/rtl-
 - **Credits deducted:** inspect Usage, allowance, actual model, Auto and features with separate model calls.
 - **Login/network error:** see [Qoder troubleshooting](https://docs.qoder.com/qoder/troubleshooting).
 - **RTL launch failure:** inspect VibeHub's error and Doctor; fully close an already-running app before relaunching.
+
+
+## 9. Choose a custom agent in Qoder — advanced
+
+This section uses the Qoder application, not Qoder IDE. Open New Task, then open the Qoder name or adjacent arrow at the top. Choose a reviewer under Custom Agents. Confirm that the executor name changes to that agent before sending.
+
+![The executor picker on Qoder's macOS New Task page; Custom Agents are in the middle and Customize Agents is at the bottom.](../../../apps/desktop/public/tutorials/screenshots/qoder-agent-picker.webp)
+
+If no agent exists yet, choose Customize Agents, review its purpose, model and permissions, then save it. Try: “Read only hello.txt and suggest one improvement; do not edit any files.” The Chinese labels in this screenshot are example agent names from the source. Agent and team features depend on your version and account.
+
+[Official Qoder agent guide](https://docs.qoder.com/qoder/custom-agents)

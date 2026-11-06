@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "VibeHub",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "identifier": "com.ahmadkhanloo.vibehub",
   "build": {
     "frontendDist": "../dist",
@@ -49,6 +49,7 @@
       "../../../apps/DeepSeekHarness/": "apps/DeepSeekHarness/",
       "../../../apps/Antigravity/": "apps/Antigravity/",
       "../../../apps/OpenCode/": "apps/OpenCode/",
+      "../../../apps/Claude/": "apps/Claude/",
       "../../../apps/Qoder/start.ps1": "apps/Qoder/start.ps1",
       "../../../apps/Qoder/launch.vbs": "apps/Qoder/launch.vbs",
       "../../../apps/Qoder/injector.mjs": "apps/Qoder/injector.mjs",
@@ -72,7 +73,11 @@
       "../../../apps/ZCode/rtl.ico": "apps/ZCode/rtl.ico",
       "../../../apps/Qoder/rtl.ico": "apps/Qoder/rtl.ico",
       "../../../apps/Antigravity/rtl.ico": "apps/Antigravity/rtl.ico",
-      "../../../apps/DeepSeekHarness/rtl.ico": "apps/DeepSeekHarness/rtl.ico"
+      "../../../apps/DeepSeekHarness/rtl.ico": "apps/DeepSeekHarness/rtl.ico",
+      "../../../apps/ClaudeRtlPlugin/hooks/": "apps/ClaudeRtlPlugin/hooks/",
+      "../../../apps/ClaudeRtlPlugin/.claude-plugin/": "apps/ClaudeRtlPlugin/.claude-plugin/",
+      "../../../apps/ClaudeRtlPlugin/LICENSE": "apps/ClaudeRtlPlugin/LICENSE",
+      "../../../apps/ClaudeRtlPlugin/VIBEHUB-PROVENANCE.json": "apps/ClaudeRtlPlugin/VIBEHUB-PROVENANCE.json"
     },
     "icon": [
       "icons/32x32.png",
