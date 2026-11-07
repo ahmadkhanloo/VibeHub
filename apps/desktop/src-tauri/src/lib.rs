@@ -178,11 +178,19 @@ async fn provider_connection_save(
         let _lock = storage::SETTINGS_LOCK
             .lock()
             .map_err(|_| "Settings lock failed")?;
-        storage::save_provider_connection(
-            &storage::provider_connection_file(&app)?,
-            connection,
-            key.as_deref(),
-        )
+        domain::validate_provider_connection(&connection)?;
+        let path = storage::provider_connection_file(&app)?;
+        let id = domain::field(&connection, "id")?.to_owned();
+        let connections = storage::provider_connections(&path)?;
+        let previous = connections.as_array().and_then(|list| list.iter().find(|item| item["id"] == id));
+        if previous.is_some_and(|previous| {
+            previous["providerId"] != connection["providerId"]
+                || previous["baseUrl"] != connection["baseUrl"]
+                || key.as_deref().is_some_and(|value| !value.is_empty())
+        }) {
+            storage::clear_model_snapshots(&storage::provider_model_snapshots(&app)?, &[id])?;
+        }
+        storage::save_provider_connection(&path, connection, key.as_deref())
     })
     .await
 }
@@ -193,6 +201,7 @@ async fn provider_connection_delete(app: tauri::AppHandle, id: String) -> Result
         let _lock = storage::SETTINGS_LOCK
             .lock()
             .map_err(|_| "Settings lock failed")?;
+        storage::clear_model_snapshots(&storage::provider_model_snapshots(&app)?, std::slice::from_ref(&id))?;
         storage::delete_provider_connection(&storage::provider_connection_file(&app)?, &id)
     })
     .await
@@ -219,6 +228,7 @@ async fn provider_credentials_clear(
         let _lock = storage::SETTINGS_LOCK
             .lock()
             .map_err(|_| "Settings lock failed")?;
+        storage::clear_model_snapshots(&storage::provider_model_snapshots(&app)?, &connection_ids)?;
         storage::provider_credentials_clear(
             &storage::provider_connection_file(&app)?,
             &connection_ids,
@@ -229,14 +239,107 @@ async fn provider_credentials_clear(
 }
 
 #[tauri::command]
-async fn provider_connection_models(app: tauri::AppHandle, id: String) -> Result<Value> {
-    let (connection, profile) = tauri::async_runtime::spawn_blocking(move || {
-        let connections = storage::provider_connections(&storage::provider_connection_file(&app)?)?;
-        let connection = connections.as_array().and_then(|list| list.iter().find(|item| item["id"] == id)).cloned().ok_or("Provider connection does not exist")?;
+async fn provider_connection_preview_models(
+    app: tauri::AppHandle,
+    provider_id: String,
+    base_url: String,
+    key: Option<String>,
+) -> Result<Value> {
+    let http = system::blocking(move || {
         let (profile, _) = storage::selected_profile(&storage::settings(&app)?, "*", None)?;
-        Ok::<_, String>((connection, profile))
-    }).await.map_err(|_| "Provider connection lookup failed")??;
-    network::connection_models(connection, profile).await
+        network::client(profile.as_ref())
+    }).await?;
+    network::connection_models(&provider_id, &base_url, http, key.as_deref()).await
+}
+
+#[tauri::command]
+async fn provider_notes(app: tauri::AppHandle) -> Result<Value> {
+    system::blocking(move || {
+        let _lock = storage::SETTINGS_LOCK.lock().map_err(|_| "Settings lock failed")?;
+        let path = storage::provider_connection_file(&app)?.with_file_name("provider-notes.json");
+        let notes = storage::read(&path, json!({}))?;
+        if !notes.as_object().is_some_and(|entries| entries.values().all(Value::is_string)) { return Err("Invalid provider notes".into()); }
+        Ok(notes)
+    }).await
+}
+
+#[tauri::command]
+async fn provider_note_save(app: tauri::AppHandle, target: String, note: String) -> Result<Value> {
+    system::blocking(move || {
+        if target.is_empty() || target.len() > 2048 || target.chars().any(char::is_control) || note.len() > 16000 {
+            return Err("Invalid note".into());
+        }
+        let _lock = storage::SETTINGS_LOCK.lock().map_err(|_| "Settings lock failed")?;
+        let path = storage::provider_connection_file(&app)?.with_file_name("provider-notes.json");
+        let mut notes = storage::read(&path, json!({}))?;
+        let entries = notes.as_object_mut().ok_or("Invalid provider notes")?;
+        if note.trim().is_empty() { entries.remove(&target); } else { entries.insert(target, json!(note)); }
+        storage::write(&path, &notes)?;
+        Ok(notes)
+    }).await
+}
+
+#[tauri::command]
+async fn provider_connection_preview_test(app: tauri::AppHandle, connection: Value, key: Option<String>) -> Result<Value> {
+    domain::validate_provider_connection(&connection)?;
+    if let Some(secret) = key.as_deref().filter(|s| !s.is_empty()) { storage::validate_vault_secret(secret)?; }
+    let http = system::blocking(move || {
+        let (profile, _) = storage::selected_profile(&storage::settings(&app)?, "*", None)?;
+        network::client(profile.as_ref())
+    }).await?;
+    let secret = if connection["providerId"] == "ollama" { None } else { key.filter(|s| !s.is_empty()) };
+    network::connection_test_with_client(connection, http, secret).await
+}
+
+#[tauri::command]
+async fn provider_connection_cached_models(app: tauri::AppHandle) -> Result<Value> {
+    system::blocking(move || {
+        let _lock = storage::SETTINGS_LOCK.lock().map_err(|_| "Settings lock failed")?;
+        storage::model_snapshots(&storage::provider_model_snapshots(&app)?).map(Value::Object)
+    }).await
+}
+
+fn model_list_connection(app: &tauri::AppHandle, id: &str) -> Result<(Value, Option<String>)> {
+    let connections = storage::provider_connections(&storage::provider_connection_file(app)?)?;
+    let connection = connections.as_array()
+        .and_then(|list| list.iter().find(|item| item["id"] == id))
+        .cloned().ok_or("Provider connection does not exist")?;
+    let secret = if connection["providerId"] == "ollama" {
+        None
+    } else {
+        storage::vault_get(&format!("vibehub.provider-key.connection.{id}"))?
+    };
+    Ok((connection, secret))
+}
+
+#[tauri::command]
+async fn provider_connection_models(app: tauri::AppHandle, id: String) -> Result<Value> {
+    let (connection, http, secret) = {
+        let app = app.clone();
+        let id = id.clone();
+        system::blocking(move || {
+            let (connection, secret, profile) = {
+                let _lock = storage::SETTINGS_LOCK.lock().map_err(|_| "Settings lock failed")?;
+                let (connection, secret) = model_list_connection(&app, &id)?;
+                let (profile, _) = storage::selected_profile(&storage::settings(&app)?, "*", None)?;
+                (connection, secret, profile)
+            };
+            Ok((connection, network::client(profile.as_ref())?, secret))
+        }).await?
+    };
+    let result = network::connection_models(
+        domain::field(&connection, "providerId")?,
+        domain::field(&connection, "baseUrl")?,
+        http,
+        secret.as_deref(),
+    ).await?;
+    system::blocking(move || {
+        let _lock = storage::SETTINGS_LOCK.lock().map_err(|_| "Settings lock failed")?;
+        if model_list_connection(&app, &id)? != (connection, secret) {
+            return Err("Connection changed during model refresh".into());
+        }
+        storage::save_model_snapshot(&storage::provider_model_snapshots(&app)?, id, result)
+    }).await
 }
 
 #[tauri::command]
@@ -409,6 +512,7 @@ async fn launch_app(app: tauri::AppHandle, req: Value) -> Result<Value> {
                     let connections = storage::provider_connections(&storage::provider_connection_file(&app)?)?;
                     let connection = connections.as_array().ok_or("Invalid connections")?.iter()
                         .find(|c| c["id"].as_str() == Some(connection_id)).ok_or("Selected connection no longer exists")?;
+                    domain::validate_connection_model(domain::field(connection, "modelId")?)?;
                     request["claudeBaseUrl"] = connection["baseUrl"].clone();
                     request["claudeModel"] = connection["modelId"].clone();
                     request["claudeKey"] = json!(storage::vault_get(&format!("vibehub.provider-key.connection.{connection_id}"))?
@@ -504,7 +608,31 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_process::init())
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                let _ = window.hide();
+            }
+        })
         .setup(|app| {
+            use tauri::menu::{Menu, MenuItem};
+            use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+            let open = MenuItem::with_id(app, "open", "Open / باز کردن", true, None::<&str>)?;
+            let quit = MenuItem::with_id(app, "quit", "Quit / خروج", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&open, &quit])?;
+            let mut tray = TrayIconBuilder::new().tooltip("VibeHub").menu(&menu)
+                .on_menu_event(|app, event| match event.id().as_ref() {
+                    "open" => { if let Some(window) = app.get_webview_window("main") { let _ = window.show(); let _ = window.unminimize(); let _ = window.set_focus(); } },
+                    "quit" => app.exit(0),
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if matches!(event, TrayIconEvent::Click { button: MouseButton::Left, button_state: MouseButtonState::Up, .. }) {
+                        if let Some(window) = tray.app_handle().get_webview_window("main") { let _ = window.show(); let _ = window.unminimize(); let _ = window.set_focus(); }
+                    }
+                });
+            if let Some(icon) = app.default_window_icon() { tray = tray.icon(icon.clone()); }
+            tray.build(app)?;
             accounts::start_monitor(app.handle().clone());
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -564,6 +692,11 @@ pub fn run() {
             provider_credentials_clear,
             provider_connection_test,
             provider_connection_models,
+            provider_connection_cached_models,
+            provider_notes,
+            provider_note_save,
+            provider_connection_preview_test,
+            provider_connection_preview_models,
             api_test,
             feed_sync
         ])

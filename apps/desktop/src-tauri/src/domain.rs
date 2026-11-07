@@ -150,6 +150,16 @@ pub fn safe_url(value: &str) -> Result<reqwest::Url> {
     Ok(url)
 }
 
+pub fn validate_connection_model(model: &str) -> Result<()> {
+    if model.trim().is_empty() {
+        return Err("Choose a model for this connection first".into());
+    }
+    if model.len() > 256 || model.chars().any(char::is_control) {
+        return Err("Invalid model identifier".into());
+    }
+    Ok(())
+}
+
 pub fn validate_provider_connection(connection: &Value) -> Result<()> {
     let allowed = ["id", "name", "providerId", "baseUrl", "modelId", "hasKey"];
     let object = connection.as_object().ok_or("Expected connection object")?;
@@ -159,12 +169,14 @@ pub fn validate_provider_connection(connection: &Value) -> Result<()> {
     let id = field(connection, "id")?;
     let name = field(connection, "name")?.trim();
     let provider = field(connection, "providerId")?;
-    let model = field(connection, "modelId")?.trim();
+    let model = field(connection, "modelId")?;
+    if model.chars().any(char::is_control) { return Err("Invalid model identifier".into()); }
+    let model = model.trim();
     if !identifier(id) || !identifier(provider) || name.is_empty() || name.len() > 120 {
         return Err("Invalid provider connection identity".into());
     }
-    if model.is_empty() || model.len() > 256 || model.chars().any(char::is_control) {
-        return Err("Invalid model identifier".into());
+    if !model.is_empty() {
+        validate_connection_model(model)?;
     }
     safe_url(field(connection, "baseUrl")?)?;
     if connection

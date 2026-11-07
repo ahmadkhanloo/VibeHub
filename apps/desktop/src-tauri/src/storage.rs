@@ -63,6 +63,45 @@ pub fn provider_connection_file(app: &tauri::AppHandle) -> Result<std::path::Pat
         .map_err(|e| e.to_string())
 }
 
+pub fn provider_model_snapshots(app: &tauri::AppHandle) -> Result<std::path::PathBuf> {
+    Ok(provider_connection_file(app)?.with_file_name("provider-model-snapshots.json"))
+}
+
+pub fn model_snapshots(path: &Path) -> Result<serde_json::Map<String, Value>> {
+    match fs::read(path) {
+        Ok(bytes) => Ok(serde_json::from_slice(&bytes).unwrap_or_default()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(serde_json::Map::new()),
+        Err(error) => Err(error.to_string()),
+    }
+}
+
+pub fn save_model_snapshot(path: &Path, id: String, result: Value) -> Result<Value> {
+    let mut snapshots = model_snapshots(path)?;
+    let checked_at = |value: &Value| {
+        value["checkedAt"].as_str().and_then(|date| chrono::DateTime::parse_from_rfc3339(date).ok())
+    };
+    if let Some(previous) = snapshots.get(&id) {
+        if checked_at(previous) > checked_at(&result) {
+            return Ok(previous.clone());
+        }
+    }
+    snapshots.insert(id, result.clone());
+    write(path, &Value::Object(snapshots))?;
+    Ok(result)
+}
+
+pub fn clear_model_snapshots(path: &Path, ids: &[String]) -> Result<()> {
+    let mut snapshots = model_snapshots(path)?;
+    let before = snapshots.len();
+    for id in ids {
+        snapshots.remove(id);
+    }
+    if before != snapshots.len() {
+        write(path, &Value::Object(snapshots))?;
+    }
+    Ok(())
+}
+
 pub fn provider_connections(path: &Path) -> Result<Value> {
     provider_connections_with(path, |service| Ok(vault_get(service)?.is_some()))
 }
@@ -92,6 +131,23 @@ fn provider_connections_with(
     Ok(value)
 }
 
+fn legacy_connection_service(provider: &str, origin: &str) -> Option<&'static str> {
+    match (provider, origin) {
+        ("openrouter", "https://openrouter.ai") => Some("vibehub.provider-key.openrouter"),
+        ("nvidia", "https://integrate.api.nvidia.com") => Some("vibehub.provider-key.nvidia-build"),
+        _ => None,
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn legacy_keys_are_not_used_for_unrelated_origins() {
+    assert!(legacy_connection_service("custom", "https://example.com").is_none());
+    assert!(legacy_connection_service("nvidia", "https://example.com").is_none());
+    assert!(legacy_connection_service("openrouter", "https://example.com").is_none());
+    assert!(legacy_connection_service("nvidia", "https://integrate.api.nvidia.com").is_some());
+}
+
 pub fn save_provider_connection(
     path: &Path,
     mut connection: Value,
@@ -117,6 +173,9 @@ pub fn save_provider_connection(
                     .map(|url| url.origin().ascii_serialization())
                     .map_or(true, |previous_origin| previous_origin != origin)
         });
+    if let Some(secret) = key.filter(|secret| !secret.is_empty() && provider != "ollama") {
+        validate_vault_secret(secret)?;
+    }
     if scope_changed || provider == "ollama" {
         vault_delete(&service)?;
     }
@@ -128,13 +187,8 @@ pub fn save_provider_connection(
         connection["hasKey"] = json!(true);
     } else {
         let mut has_key = vault_get(&service)?.is_some();
-        if !has_key && !scope_changed {
-            let legacy = match provider.as_str() {
-                "openrouter" => Some("vibehub.provider-key.openrouter"),
-                "nvidia" => Some("vibehub.provider-key.nvidia-build"),
-                "custom" => Some("vibehub.provider-key.custom-openai-compatible"),
-                _ => None,
-            };
+        if !has_key && !scope_changed && connection["modelId"] != "" {
+            let legacy = legacy_connection_service(&provider, &origin);
             if let Some(legacy) = legacy {
                 if let Some(secret) = vault_get(legacy)? {
                     vault_set(&service, &secret)?;
@@ -316,10 +370,15 @@ pub fn vault_get(service: &str) -> Result<Option<String>> {
     }
 }
 
-pub fn vault_set(service: &str, key: &str) -> Result<()> {
+pub(crate) fn validate_vault_secret(key: &str) -> Result<()> {
     if key.is_empty() || key.len() > 2400 || key.chars().any(char::is_control) {
         return Err("Credential must be nonempty and contain no control characters".into());
     }
+    Ok(())
+}
+
+pub fn vault_set(service: &str, key: &str) -> Result<()> {
+    validate_vault_secret(key)?;
     entry(service)?
         .set_password(key)
         .map_err(|_| "Could not save Windows credential".into())

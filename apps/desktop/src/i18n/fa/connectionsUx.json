@@ -28,6 +28,7 @@
   "freeAccess": {
     "free_forever": "دسترسی رایگان همیشگی",
     "free_tier": "پلن رایگان",
+    "paid": "API پولی",
     "trial": "آزمایشی",
     "ad_supported": "رایگان با تبلیغات",
     "unknown": "شرایط دسترسی نامشخص"

@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "cloudflare-workers-ai",
+  "name": "Cloudflare Workers AI",
+  "officialUrl": "https://developers.cloudflare.com/workers-ai/",
+  "keyUrl": "https://developers.cloudflare.com/workers-ai/get-started/rest-api/",
+  "modelsDocUrl": "https://developers.cloudflare.com/workers-ai/models/",
+  "usageTermsUrl": "https://developers.cloudflare.com/workers-ai/platform/pricing/",
+  "notes": {
+    "fa": "پلن Workers Free روزانه ۱۰٬۰۰۰ Neuron سهمیه دارد. برخی مدل‌ها به پرداخت نیاز دارند.",
+    "en": "Workers Free includes 10,000 Neurons per day. Some models require paid billing."
+  },
+  "gettingStarted": {
+    "fa": "توکن Workers AI و شناسهٔ حساب را از داشبورد بگیرید. در فرم اتصال، ACCOUNT_ID را در نشانی API با شناسهٔ حساب جایگزین کنید.",
+    "en": "Get a Workers AI token and your account ID from the dashboard. In the connection form, replace ACCOUNT_ID in the API URL with your account ID."
+  },
+  "freeAccess": "free_tier",
+  "requiresAccount": true,
+  "requiresApiKey": true,
+  "supportedApps": {},
+  "eligibilityStatus": "unknown",
+  "lastVerified": "2026-11-07"
+}

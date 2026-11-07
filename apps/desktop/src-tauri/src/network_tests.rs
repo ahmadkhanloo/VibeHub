@@ -487,3 +487,149 @@ fn feed_downloads_optional_dynamic_learning_and_news_without_a_client_update() {
     assert_eq!(result["learningArticles"]["categories"], json!([]));
     assert_eq!(result["news"]["news"], json!([]));
 }
+
+
+#[test]
+fn model_discovery_classifies_returned_models_and_redacts_errors() {
+    let payload = json!({"data":[
+        {"id":"route:free"},
+        {"id":"paid","pricing":{"prompt":"0.0001","completion":"0"}},
+        {"id":"zero","pricing":{"prompt":"0","completion":0,"request":"0"}},
+        {"id":"partial","pricing":{"prompt":"0"}},
+        {"id":"conflict:free","pricing":{"prompt":"1","completion":"0"}},
+        {"id":"malformed","pricing":{"prompt":"0","completion":"NaN"}},
+        {"id":KEY}
+    ]});
+    let (port, server) = http_server(200, payload.to_string(), String::new());
+    let result = tauri::async_runtime::block_on(connection_models(
+        "openrouter", &format!("http://127.0.0.1:{port}/v1/"), direct(), Some(KEY)
+    )).unwrap();
+    let captured = server.join().unwrap();
+    assert!(captured.starts_with("GET /v1/models HTTP/1.1"));
+    assert!(captured.contains(&format!("authorization: Bearer {KEY}")));
+    assert_eq!(result["models"], json!([
+        {"id":"route:free","free":true},
+        {"id":"paid","free":false},
+        {"id":"zero","free":true},
+        {"id":"partial","free":null},
+        {"id":"conflict:free","free":null},
+        {"id":"malformed","free":null}
+    ]));
+    assert_eq!(model_free_status("radeon-cloud", "fixture", &json!({"free":false})), Some(false));
+    assert_eq!(model_free_status("custom", "unverified-free", &json!({})), None);
+
+    for (status, body, expected) in [
+        (401, KEY, "HTTP 401"),
+        (302, KEY, "HTTP 302"),
+        (200, "{}", "supported model list"),
+    ] {
+        let (port, server) = http_server(status, body.into(), "Location: http://127.0.0.1:1/\r\n".into());
+        let error = tauri::async_runtime::block_on(connection_models(
+            "custom", &format!("http://127.0.0.1:{port}/v1"), direct(), Some(KEY)
+        )).unwrap_err();
+        server.join().unwrap();
+        assert!(error.contains(expected));
+        assert!(!error.contains(KEY));
+    }
+}
+
+#[test]
+fn native_model_catalogs_paginate_on_the_same_endpoint() {
+    for (provider, header, first, second, next_path, expected) in [
+        ("anthropic", "x-api-key", json!({"data":[{"id":"first"}],"has_more":true,"last_id":"cursor/1"}), json!({"data":[{"id":"second"}],"has_more":false}), "after_id=cursor%2F1", "second"),
+        ("google", "x-goog-api-key", json!({"models":[{"name":"models/first"}],"nextPageToken":"cursor/1"}), json!({"models":[{"name":"models/second"}]}), "pageToken=cursor%2F1", "second"),
+    ] {
+        let fixture = listener();
+        let port = fixture.local_addr().unwrap().port();
+        let server = thread::spawn(move || {
+            for (query, body) in [("".to_owned(), first), (format!("?{next_path}"), second)] {
+                let (mut stream, _) = fixture.accept().unwrap();
+                let captured = request(&mut stream);
+                assert!(captured.starts_with(&format!("GET /v1/models{query} HTTP/1.1")));
+                assert!(captured.contains(&format!("{header}: {KEY}")));
+                response(&mut stream, 200, &body.to_string(), "");
+            }
+        });
+        let result = tauri::async_runtime::block_on(connection_models(
+            provider, &format!("http://127.0.0.1:{port}/v1"), direct(), Some(KEY)
+        )).unwrap();
+        server.join().unwrap();
+        assert_eq!(result["models"][0]["id"], "first");
+        assert_eq!(result["models"][1]["id"], expected);
+    }
+}
+
+#[test]
+fn a_saved_connection_can_list_models_without_an_inference_model() {
+    let (port, server) = http_server(200, r#"{"data":[]}"#.into(), String::new());
+    let mut saved = connection("ollama", port);
+    saved["modelId"] = json!("");
+    crate::domain::validate_provider_connection(&saved).unwrap();
+    assert!(tauri::async_runtime::block_on(connection_test_with_client(
+        saved.clone(), direct(), None,
+    )).unwrap_err().contains("Choose a model"));
+    let result = tauri::async_runtime::block_on(connection_models(
+        "ollama", saved["baseUrl"].as_str().unwrap(), direct(), Some(KEY)
+    )).unwrap();
+    assert_eq!(result["models"], json!([]));
+    assert!(!server.join().unwrap().contains(KEY));
+}
+
+#[test]
+fn custom_endpoint_can_list_and_test_without_credentials() {
+    let (port, server) = http_server(200, r#"{"data":[{"id":"fixture"}]}"#.into(), String::new());
+    let result = tauri::async_runtime::block_on(connection_models(
+        "custom", &format!("http://127.0.0.1:{port}/v1"), direct(), None
+    )).unwrap();
+    assert_eq!(result["models"][0]["id"], "fixture");
+    assert!(!server.join().unwrap().to_lowercase().contains("authorization:"));
+
+    let (port, server) = http_server(401, "{}".into(), String::new());
+    let report = tauri::async_runtime::block_on(connection_test_with_client(
+        connection("custom", port), direct(), None
+    )).unwrap();
+    assert_eq!(report["authValidated"], false);
+    assert_eq!(report["modelResponded"], false);
+    assert_eq!(report["httpStatus"], 401);
+    assert!(!server.join().unwrap().to_lowercase().contains("authorization:"));
+}
+
+#[test]
+#[ignore = "Explicit live acceptance: uses selected provider credentials and quota"]
+fn live_selected_saved_providers() {
+    let root = std::path::PathBuf::from(std::env::var_os("APPDATA").expect("APPDATA required")).join("com.ahmadkhanloo.vibehub");
+    let connections = crate::storage::provider_connections(&root.join("provider-connections.json")).expect("Read connections");
+    let (profile, _) = crate::storage::selected_profile(&root.join("proxy.json"), "*", None).expect("Read proxy");
+    for provider in ["nvidia", "kira-ai", "inferx"] {
+        let Some(connection) = connections.as_array().unwrap().iter().find(|c| c["providerId"] == provider && c["hasKey"] == true) else { println!("LIVE_RESULT {} missing saved credential", provider); continue; };
+        let id = connection["id"].as_str().unwrap();
+        let key = crate::storage::vault_get(&format!("vibehub.provider-key.connection.{id}")).expect("Read credential");
+        let http = client(profile.as_ref()).expect("Configured proxy");
+        let models = tauri::async_runtime::block_on(connection_models(provider, connection["baseUrl"].as_str().unwrap_or(""), http, key.as_deref()));
+        let mut result = json!({"provider":provider, "modelsOk":models.is_ok()});
+        match models { Ok(list) => result["modelCount"] = json!(list["models"].as_array().map_or(0, |v| v.len())), Err(error) => result["modelsError"] = json!(error) }
+        if !connection["modelId"].as_str().unwrap_or("").trim().is_empty() {
+            match tauri::async_runtime::block_on(connection_test(connection.clone(), profile.clone())) {
+                Ok(report) => { result["httpStatus"] = report["httpStatus"].clone(); result["modelResponded"] = report["modelResponded"].clone(); result["authValidated"] = report["authValidated"].clone(); },
+                Err(_) => result["testError"] = json!("Could not test connection"),
+            }
+        } else { result["testError"] = json!("No model selected"); }
+        println!("LIVE_RESULT {}", result);
+    }
+}
+
+#[test]
+#[ignore = "Explicit live acceptance: one inference per selected provider"]
+fn live_selected_provider_inference() {
+    let root = std::path::PathBuf::from(std::env::var_os("APPDATA").expect("APPDATA required")).join("com.ahmadkhanloo.vibehub");
+    let connections = crate::storage::provider_connections(&root.join("provider-connections.json")).expect("Read connections");
+    let (profile, _) = crate::storage::selected_profile(&root.join("proxy.json"), "*", None).expect("Read proxy");
+    for (provider, model) in [("nvidia", "meta/llama-3.3-70b-instruct"), ("kira-ai", "minimax-m3-free"), ("inferx", "Qwen/Qwen3.6-35B-A3B")] {
+        let Some(mut connection) = connections.as_array().unwrap().iter().find(|c| c["providerId"] == provider && c["hasKey"] == true).cloned() else { println!("LIVE_INFERENCE {} unavailable", provider); continue; };
+        connection["modelId"] = json!(model);
+        match tauri::async_runtime::block_on(connection_test(connection, profile.clone())) {
+            Ok(report) => println!("LIVE_INFERENCE {}", json!({"provider":provider,"model":model,"httpStatus":report["httpStatus"],"modelResponded":report["modelResponded"],"authValidated":report["authValidated"],"httpResponse":report["httpResponse"]})),
+            Err(_) => println!("LIVE_INFERENCE {}", json!({"provider":provider,"model":model,"error":"Could not test connection"})),
+        }
+    }
+}

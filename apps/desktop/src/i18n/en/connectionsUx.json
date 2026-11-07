@@ -28,6 +28,7 @@
   "freeAccess": {
     "free_forever": "Free ongoing access",
     "free_tier": "Free tier",
+    "paid": "Paid API",
     "trial": "Trial",
     "ad_supported": "Ad-supported",
     "unknown": "Access terms unknown"

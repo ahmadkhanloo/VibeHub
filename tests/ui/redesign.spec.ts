@@ -13,7 +13,7 @@ test("search includes model services and targets selected provider without savin
   await expect(page).toHaveURL(/search\?q=NVIDIA/);
   await page.getByRole("link", { name: /NVIDIA API Catalog/ }).click();
   await expect(page).toHaveURL(/connections\/api\?provider=nvidia-build/);
-  await expect(page.getByTestId('provider-nvidia-build')).toHaveClass(/border-primary/);
+  await expect(page.getByTestId('provider-nvidia-build')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole("dialog")).toHaveCount(0);
   expect(
     await page.evaluate(() =>
@@ -178,7 +178,7 @@ test("model editor retains Persian draft when changing locale", async ({
   await mockNative(page);
   await page.goto("/models");
   await page
-    .getByRole("button", { name: "Add connection", exact: true })
+    .getByRole("button", { name: "Try a custom URL", exact: true })
     .click();
   await page.getByLabel("Display name").fill("اتصال آزمایشی");
   await page.evaluate(async () => {
@@ -205,7 +205,7 @@ test("dialogs cancel without writes and restore focus", async ({ page }) => {
   await mockNative(page);
   await page.goto("/models");
   const button = page.getByRole("button", {
-    name: "Add connection",
+    name: "Try a custom URL",
     exact: true,
   });
   await button.click();
@@ -435,6 +435,7 @@ test("single model deletion cancels without touching any connection", async ({
 }) => {
   await mockNative(page);
   await page.goto("/models");
+  await page.getByTestId("provider-ollama").click();
   await page
     .getByRole("button", { name: "Delete connection Local Ollama" })
     .click();
@@ -463,7 +464,7 @@ test("keyboard tabs follow RTL order and dialog Tab stays inside", async ({
     page.getByRole("tab", { name: "اتصال‌ها", exact: true }),
   ).toHaveAttribute("aria-selected", "true");
   await page.goto("/models");
-  await page.getByRole("button", { name: "افزودن اتصال", exact: true }).click();
+  await page.getByRole("button", { name: "آزمایش آدرس دلخواه", exact: true }).click();
   await expect(page.getByLabel("نام دلخواه")).toBeFocused();
   const dialog = page.getByRole("dialog");
   for (let i = 0; i < 12; i++) {
