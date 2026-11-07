@@ -81,7 +81,7 @@ test('expanded settings and model editor fit a narrow window', async ({ page }) 
   }
   expect(await page.locator('main').evaluate(main => main.scrollWidth <= main.clientWidth + 1)).toBe(true);
   await page.goto('/models');
-  await page.getByRole('button', { name: 'افزودن اتصال', exact: true }).click();
+  await page.getByRole('button', { name: 'آزمایش آدرس دلخواه', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   expect(await page.getByRole('dialog').evaluate(dialog => dialog.scrollWidth <= dialog.clientWidth + 1)).toBe(true);
   await page.keyboard.press('Escape');

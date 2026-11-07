@@ -75,6 +75,11 @@ export interface ApiTestReport {
   redactedError?: string;
 }
 
+export interface ModelList {
+  models: { id: string; free: boolean | null }[];
+  checkedAt: string;
+}
+
 export interface ProviderConnection {
   id: string;
   name: string;
@@ -193,7 +198,13 @@ export const ipc = {
   providerCredentialsInventory: () => invoke<ProviderCredentialInventory>('provider_credentials_inventory'),
   providerCredentialsClear: (connectionIds: string[], legacyProviderIds: string[]) =>
     invoke<CredentialClearResult>('provider_credentials_clear', { connectionIds, legacyProviderIds }),
-  providerConnectionModels: (id: string) => invoke<{ models: { id: string; free: boolean | null }[]; checkedAt: string }>('provider_connection_models', { id }),
+  providerNotes: () => invoke<Record<string, string>>('provider_notes'),
+  providerNoteSave: (target: string, note: string) => invoke<Record<string, string>>('provider_note_save', { target, note }),
+  providerConnectionPreviewTest: (connection: ProviderConnection, key?: string) => invoke<ApiTestReport>('provider_connection_preview_test', { connection, key }),
+  providerConnectionCachedModels: () => invoke<Record<string, ModelList>>('provider_connection_cached_models'),
+  providerConnectionModels: (id: string) => invoke<ModelList>('provider_connection_models', { id }),
+  providerConnectionPreviewModels: (providerId: string, baseUrl: string, key?: string) =>
+    invoke<ModelList>('provider_connection_preview_models', { providerId, baseUrl, key }),
   providerConnectionTest: (id: string) => invoke<ApiTestReport>('provider_connection_test', { id }),
 
   feedSync: async (feedBaseUrl: string): Promise<FeedSyncResult> => {

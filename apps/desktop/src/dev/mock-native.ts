@@ -48,7 +48,13 @@ export function installMockNative({ scenario, language, onboardingDone }: { scen
           },
         },
         clearAttempts: 0,
+        modelSnapshots: {},
       };
+      const modelFixture = scenario === 'model-discovery';
+      if (modelFixture) {
+        state.connections = JSON.parse(sessionStorage.getItem('vibehub.fixture.connections') ?? 'null') ?? state.connections;
+        state.modelSnapshots = JSON.parse(sessionStorage.getItem('vibehub.fixture.modelSnapshots') ?? '{}');
+      }
       (window as any).__mock = state;
       (window as any).__TAURI_INTERNALS__ = {
         invoke: async (cmd: string, args: any = {}) => {
@@ -173,12 +179,40 @@ export function installMockNative({ scenario, language, onboardingDone }: { scen
                 (p: any) => p.id !== args.id,
               );
               return structuredClone(state.profiles);
+            case "provider_notes":
+              return JSON.parse(sessionStorage.getItem('vibehub.fixture.notes') || '{}');
+            case "provider_note_save": {
+              const notes = JSON.parse(sessionStorage.getItem('vibehub.fixture.notes') || '{}');
+              if (args.note.trim()) notes[args.target] = args.note; else delete notes[args.target];
+              sessionStorage.setItem('vibehub.fixture.notes', JSON.stringify(notes));
+              return notes;
+            }
+            case "provider_connection_preview_test":
+              return { dnsResolved: true, httpResponse: true, authRequired: !!args.key, authValidated: !!args.key, modelResponded: true, httpStatus: 200 };
             case "provider_connections":
               return structuredClone(state.connections);
+            case "provider_connection_cached_models":
+              return structuredClone(state.modelSnapshots);
+            case "provider_connection_preview_models":
+            case "provider_connection_models": {
+              if (state.failModelList) throw Error("Model list request returned HTTP 401");
+              const models = Array.from({ length: 200 }, (_, index) => ({
+                id: `fixture-${index}`,
+                free: index % 3 === 0 ? true : index % 3 === 1 ? false : null,
+              }));
+              if (state.updatedModels) models[0] = { id: 'fixture-new', free: true };
+              const result = { models, checkedAt: new Date().toISOString() };
+              if (cmd === "provider_connection_models") {
+                state.modelSnapshots[args.id] = result;
+                if (modelFixture) sessionStorage.setItem('vibehub.fixture.modelSnapshots', JSON.stringify(state.modelSnapshots));
+              }
+              return result;
+            }
             case "provider_connection_save":
               state.connections = state.connections
                 .filter((c: any) => c.id !== args.connection.id)
                 .concat(args.connection);
+              if (modelFixture) sessionStorage.setItem('vibehub.fixture.connections', JSON.stringify(state.connections));
               return structuredClone(state.connections);
             case "provider_connection_delete":
               state.connections = state.connections.filter(

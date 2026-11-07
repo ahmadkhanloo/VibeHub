@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "groq",
+  "name": "Groq",
+  "officialUrl": "https://console.groq.com/",
+  "keyUrl": "https://console.groq.com/keys",
+  "modelsDocUrl": "https://console.groq.com/docs/models",
+  "usageTermsUrl": "https://console.groq.com/docs/rate-limits",
+  "notes": {
+    "fa": "پلن رایگان برای مدل‌های پشتیبانی‌شده سقف درخواست و توکن دارد. سقف دقیق هر مدل را در بخش Limits حساب ببینید.",
+    "en": "The Free tier has request and token limits for supported models. Check your account's Limits page for exact model quotas."
+  },
+  "gettingStarted": {
+    "fa": "کلید Groq را بسازید و در فرم اتصال Groq وارد کنید. مدل پیش‌فرض GPT-OSS 20B است.",
+    "en": "Create a Groq API key and enter it in the Groq connection form. The default model is GPT-OSS 20B."
+  },
+  "endpoint": {
+    "baseUrl": "https://api.groq.com/openai/v1",
+    "kind": "openai-compatible"
+  },
+  "freeAccess": "free_tier",
+  "requiresAccount": true,
+  "requiresApiKey": true,
+  "supportedApps": {},
+  "eligibilityStatus": "unknown",
+  "lastVerified": "2026-11-07"
+}

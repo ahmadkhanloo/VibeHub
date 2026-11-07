@@ -25,7 +25,9 @@
     "orcarouter",
     "apinex",
     "google",
-    "mistral"
+    "mistral",
+    "cloudflare-workers-ai",
+    "groq"
   ],
   "offers": [
     "qoder-daily-credits",

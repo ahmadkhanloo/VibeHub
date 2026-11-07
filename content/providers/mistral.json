@@ -4,7 +4,7 @@
   "name": "Mistral AI",
   "officialUrl": "https://console.mistral.ai/",
   "modelsDocUrl": "https://docs.mistral.ai/admin/billing-usage/usage-limits",
-  "freeAccess": "free_tier",
+  "freeAccess": "paid",
   "requiresAccount": true,
   "requiresApiKey": true,
   "usageTermsUrl": "https://docs.mistral.ai/admin/billing-usage/usage-limits",
@@ -12,10 +12,10 @@
     "qoder": "unknown"
   },
   "eligibilityStatus": "unknown",
-  "lastVerified": "2026-10-28",
+  "lastVerified": "2026-11-07",
   "notes": {
-    "fa": "حالت رایگان سهمیه و محدودیت ماهانه دارد؛ با فعال کردن پرداخت اضافه، پس از سهمیه ممکن است از اعتبار حساب هزینه شود.",
-    "en": "Free mode includes limited monthly usage; enabling pay-as-you-go can charge prepaid credits after the allowance."
+    "fa": "حالت رایگان برای Vibe و Studio است. ساخت کلید و استفاده از API به فعال‌سازی پرداخت بر اساس مصرف نیاز دارد.",
+    "en": "Free mode covers Vibe and Studio. API keys and API usage require pay-as-you-go billing."
   },
   "endpoint": {
     "baseUrl": "https://api.mistral.ai/v1",

@@ -218,7 +218,7 @@ export const providerManifestSchema = z.object({
   keyUrl: z.string().url().optional(),
   gettingStarted: localized.optional(),
   modelsDocUrl: z.string().url().optional(),
-  freeAccess,
+  freeAccess: freeAccess.or(z.literal('paid')),
   requiresAccount: z.boolean().nullable(),
   requiresApiKey: z.boolean().nullable(),
   usageTermsUrl: z.string().url(),

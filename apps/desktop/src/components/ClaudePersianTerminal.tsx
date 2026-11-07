@@ -37,7 +37,7 @@ export function ClaudePersianTerminal() {
     <label className="block space-y-2"><span>{t('claudePersian.connection')}</span>
       <select className="vh-input w-full" value={connectionId} disabled={busy} onChange={e => setConnectionId(e.target.value)}>
         <option value="">{t('claudePersian.existing')}</option>
-        {connections.map(c => <option key={c.id} value={c.id}>{c.name} — {c.modelId}</option>)}
+        {connections.map(c => <option key={c.id} value={c.id} disabled={!c.modelId.trim()}>{c.name} — {c.modelId}</option>)}
       </select>
     </label>
     <Button disabled={busy} onClick={() => setDraft(newClaudeConnection())}>{t('models:addConnection')}</Button>

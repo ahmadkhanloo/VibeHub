@@ -274,40 +274,137 @@ pub async fn api_test(
     }
 }
 
-fn model_free_status(provider: &str, id: &str, item: &Value) -> Option<bool> {
-    if provider == "openrouter" && id.ends_with(":free") { Some(true) }
-    else if provider == "radeon-cloud" { item["free"].as_bool() }
-    else { None }
+fn model_rate(value: &Value) -> Option<f64> {
+    value.as_f64()
+        .or_else(|| value.as_str()?.parse::<f64>().ok())
+        .filter(|rate| rate.is_finite() && *rate >= 0.0)
 }
 
-pub async fn connection_models(connection: Value, profile: Option<Value>) -> Result<Value> {
-    crate::domain::validate_provider_connection(&connection)?;
-    let provider = field(&connection, "providerId")?.to_owned();
-    let base = safe_url(field(&connection, "baseUrl")?)?;
-    let endpoint = format!("{}/models", base.as_str().trim_end_matches('/'));
-    let service = format!("vibehub.provider-key.connection.{}", field(&connection, "id")?);
-    let (http, secret) = crate::system::blocking(move || Ok((client(profile.as_ref())?, storage::vault_get(&service)?))).await?;
-    let mut request = http.get(endpoint);
-    if let Some(key) = secret {
-        request = if provider == "anthropic" { request.header("x-api-key", key).header("anthropic-version", "2023-06-01") }
-            else if provider == "google" { request.header("x-goog-api-key", key) }
-            else { request.bearer_auth(key) };
-    } else if provider != "ollama" { return Err("Save an API key before listing models".into()); }
-    let response = request.send().await.map_err(|_| "Model list request failed; check the connection and proxy")?;
-    if !response.status().is_success() { return Err(format!("Model list request returned HTTP {}", response.status().as_u16())); }
-    let body = bounded_json(response, 4 * 1024 * 1024).await?;
-    let items = body["data"].as_array().or_else(|| body["models"].as_array()).ok_or("Provider did not return a supported model list")?;
-    let models: Vec<Value> = items.iter().take(3000).filter_map(|item| {
-        let id = item["id"].as_str().or_else(|| item["name"].as_str())?;
-        if id.is_empty() || id.len() > 256 || id.chars().any(char::is_control) { return None; }
-        let free = model_free_status(&provider, id, item);
-        Some(json!({"id": id, "free": free}))
-    }).collect();
-    Ok(json!({"models":models,"checkedAt":chrono::Utc::now().to_rfc3339()}))
+fn model_free_status(provider: &str, id: &str, item: &Value) -> Option<bool> {
+    let declared = if provider == "openrouter" && id.ends_with(":free") {
+        Some(true)
+    } else if provider == "radeon-cloud" {
+        item["free"].as_bool()
+    } else {
+        None
+    };
+    let Some(pricing) = item.get("pricing") else { return declared };
+    let pricing = pricing.as_object()?;
+    if !["prompt", "completion", "request"].iter().any(|key| pricing.contains_key(*key)) {
+        return declared;
+    }
+    let rates = pricing.values().map(model_rate).collect::<Option<Vec<_>>>()?;
+    let priced = if rates.iter().any(|rate| *rate > 0.0) {
+        Some(false)
+    } else if pricing.contains_key("prompt") && pricing.contains_key("completion") {
+        Some(true)
+    } else {
+        None
+    };
+    match (declared, priced) {
+        (Some(a), Some(b)) if a != b => None,
+        _ => declared.or(priced),
+    }
+}
+
+pub async fn connection_models(
+    provider: &str,
+    base_url: &str,
+    http: reqwest::Client,
+    secret: Option<&str>,
+) -> Result<Value> {
+    if !crate::domain::identifier(provider) || provider == "cloudflare-workers-ai" {
+        return Err("This provider does not support model listing here".into());
+    }
+    let mut endpoint = safe_url(base_url)?;
+    // Claude's launch editor stores the official Anthropic host without /v1.
+    if provider == "anthropic" && endpoint.host_str() == Some("api.anthropic.com") && endpoint.path() == "/" {
+        endpoint.set_path("/v1");
+    }
+    endpoint.path_segments_mut().map_err(|_| "Invalid provider URL")?
+        .pop_if_empty().push("models");
+    let secret = if provider == "ollama" {
+        None
+    } else if provider == "custom" && secret.map(str::trim).filter(|key| !key.is_empty()).is_none() {
+        None
+    } else {
+        let key = secret.map(str::trim).filter(|key| !key.is_empty())
+            .ok_or("Enter an API key before listing models")?;
+        storage::validate_vault_secret(key)?;
+        Some(key)
+    };
+
+    let is_google = matches!(provider, "google" | "gemini");
+    let mut models = Vec::new();
+    let mut ids = std::collections::HashSet::new();
+    let mut cursors = std::collections::HashSet::new();
+    let mut cursor = None::<(&str, String)>;
+    let started = std::time::Instant::now();
+    for _ in 0..20 {
+        let remaining = Duration::from_secs(25).saturating_sub(started.elapsed());
+        if remaining.is_zero() {
+            return Err("Model list request timed out".into());
+        }
+        let mut page_url = endpoint.clone();
+        if let Some((param, token)) = &cursor {
+            page_url.query_pairs_mut().append_pair(param, token);
+        }
+        let mut request = http.get(page_url).timeout(remaining);
+        if let Some(key) = secret {
+            request = if provider == "anthropic" {
+                request.header("x-api-key", key).header("anthropic-version", "2023-06-01")
+            } else if is_google {
+                request.header("x-goog-api-key", key)
+            } else {
+                request.bearer_auth(key)
+            };
+        }
+        let response = request.send().await.map_err(|error| {
+            if error.is_timeout() { "Model list request timed out" }
+            else { "Model list request failed; check the connection and proxy" }
+        })?;
+        if !response.status().is_success() {
+            return Err(format!("Model list request returned HTTP {}", response.status().as_u16()));
+        }
+        let body = bounded_json(response, 4 * 1024 * 1024).await?;
+        let items = body["data"].as_array().or_else(|| body["models"].as_array())
+            .ok_or("Provider did not return a supported model list")?;
+        for item in items {
+            let Some(id) = item["id"].as_str().or_else(|| item["name"].as_str()) else { continue };
+            let id = if is_google { id.strip_prefix("models/").unwrap_or(id) } else { id };
+            if crate::domain::validate_connection_model(id).is_err()
+                || secret.is_some_and(|key| id.contains(key))
+                || !ids.insert(id.to_owned())
+            {
+                continue;
+            }
+            if models.len() == 3000 {
+                return Err("Provider model list exceeded the supported limit".into());
+            }
+            models.push(json!({"id":id,"free":model_free_status(provider, id, item)}));
+        }
+        let next = if provider == "anthropic" && body["has_more"] == true {
+            Some(("after_id", body["last_id"].as_str().ok_or("Missing model list cursor")?))
+        } else if is_google {
+            body["nextPageToken"].as_str().filter(|token| !token.is_empty())
+                .map(|token| ("pageToken", token))
+        } else {
+            None
+        };
+        let Some((param, token)) = next else {
+            return Ok(json!({"models":models,"checkedAt":chrono::Utc::now().to_rfc3339()}));
+        };
+        if token.is_empty() || token.len() > 4096 || !cursors.insert(token.to_owned()) {
+            return Err("Invalid model list cursor".into());
+        }
+        cursor = Some((param, token.to_owned()));
+    }
+    Err("Provider model list exceeded the supported page limit".into())
 }
 
 pub async fn connection_test(connection: Value, profile: Option<Value>) -> Result<Value> {
     crate::domain::validate_provider_connection(&connection)?;
+    crate::domain::validate_connection_model(field(&connection, "modelId")?)?;
     let service = format!(
         "vibehub.provider-key.connection.{}",
         field(&connection, "id")?
@@ -325,7 +422,7 @@ pub async fn connection_test(connection: Value, profile: Option<Value>) -> Resul
     connection_test_with_client(connection, http, secret).await
 }
 
-async fn connection_test_with_client(
+pub(crate) async fn connection_test_with_client(
     connection: Value,
     client: reqwest::Client,
     secret: Option<String>,
@@ -333,9 +430,10 @@ async fn connection_test_with_client(
     crate::domain::validate_provider_connection(&connection)?;
     let provider = field(&connection, "providerId")?;
     let model = field(&connection, "modelId")?;
+    crate::domain::validate_connection_model(model)?;
     let base = safe_url(field(&connection, "baseUrl")?)?;
     let needs_key = provider != "ollama";
-    if needs_key && secret.is_none() {
+    if needs_key && provider != "custom" && secret.is_none() {
         return Ok(json!({
             "dnsResolved":false,"httpResponse":false,"authValidated":false,"authRequired":true,"modelResponded":false,
             "redactedError":"Save an API key for this connection before testing"
@@ -363,9 +461,11 @@ async fn connection_test_with_client(
             json!({"model":model,"max_tokens":8,"messages":[{"role":"user","content":"Reply with OK."}]}),
         )
     } else {
+        // Groq's default reasoning model can spend the token budget before emitting a reply.
+        let max_tokens = if provider == "groq" { 256 } else { 8 };
         (
             format!("{base}/chat/completions"),
-            json!({"model":model,"messages":[{"role":"user","content":"Reply with OK."}],"max_tokens":8,"stream":false}),
+            json!({"model":model,"messages":[{"role":"user","content":"Reply with OK."}],"max_tokens":max_tokens,"stream":false}),
         )
     };
     let mut request = client.post(endpoint).json(&body);
