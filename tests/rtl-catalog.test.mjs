@@ -68,16 +68,15 @@ test('Freebuff CLI and Desktop have separate validated catalog records and guide
 
 test('shared AppId covers the supported Windows catalog IDs', async () => {
   const source = await read('packages/core/src/index.ts');
-  for (const id of ['freebuff-desktop', 'chatgpt', 'claude-code', 'antigravity-ide']) assert.match(source, new RegExp(`['"]${id}['"]`));
-  assert.doesNotMatch(source, /claude-desktop/);
+  for (const id of ['freebuff-desktop', 'chatgpt', 'claude-code', 'claude-desktop', 'antigravity-ide']) assert.match(source, new RegExp(`['"]${id}['"]`));
 });
 
 test('shared AppId is the exact unique Windows host catalog allowlist', () => {
-  assert.deepEqual([...APP_IDS], ['zcode', 'qoder', 'deepseek-harness', 'opencode', 'mimocode', 'freebuff', 'freebuff-desktop', 'antigravity-ide', 'chatgpt', 'claude-code']);
+  assert.deepEqual([...APP_IDS], ['zcode', 'qoder', 'deepseek-harness', 'opencode', 'mimocode', 'freebuff', 'freebuff-desktop', 'copilot-cli', 'antigravity-ide', 'chatgpt', 'claude-code', 'claude-desktop']);
   assert.equal(new Set(APP_IDS).size, APP_IDS.length);
 });
 
-test('removed Claude Desktop and Antigravity App entries from old feeds stay out of the catalog', () => {
+test('retired standalone Antigravity stays out of the catalog', () => {
   const legacyApp = id => ({
     schemaVersion: 1, id, name: id, kind: 'cli_agent', platforms: ['windows'],
     summary: { fa: 'legacy', en: 'legacy' }, websiteUrl: 'https://example.com/',
@@ -85,6 +84,6 @@ test('removed Claude Desktop and Antigravity App entries from old feeds stay out
     requiresSignup: true, requiresPaymentCard: null, sourceOfFreeAccess: 'https://example.com/',
     lastVerified: '2026-11-02', capabilities: { install: 'reported', launch: 'reported', rtl: 'unsupported', proxy: 'unknown', terminal: 'unsupported', byok: 'unknown' },
   });
-  const catalog = loadCatalog({ apps: [legacyApp('claude-desktop'), legacyApp('antigravity')], providers: [], offers: [] });
+  const catalog = loadCatalog({ apps: [legacyApp('antigravity')], providers: [], offers: [] });
   assert.deepEqual(catalog.apps, []);
 });

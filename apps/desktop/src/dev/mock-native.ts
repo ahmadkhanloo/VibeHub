@@ -106,6 +106,7 @@ export function installMockNative({ scenario, language, onboardingDone }: { scen
                     ...(['ide-cli', 'persian-missing', 'persian-old'].includes(state.scenario) ? [
                       {id:"antigravity-ide",installed:true,path:"C:/Fixtures/Antigravity IDE.exe",via:"fixture"},
                       {id:"claude-code",installed:true,path:"C:/Fixtures/claude.cmd",via:"fixture"},
+                      {id:"claude-desktop",installed:true,path:"C:/Fixtures/AnthropicClaude/Claude.exe",via:"fixture"},
                     ] : []),
                   ];
             case "detect_editors":

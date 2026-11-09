@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "claude-desktop",
+  "name": "Claude Desktop",
+  "summary": {
+    "fa": "برنامهٔ گرافیکی Claude برای گفتگو، Code و Cowork، با تنظیم API یا درگاه سازگار در خود برنامه.",
+    "en": "Claude’s graphical app for chat, Code, and Cowork, with in-app setup for an API key or compatible gateway."
+  },
+  "kind": "desktop_agent",
+  "platforms": ["windows"],
+  "websiteUrl": "https://claude.com/download",
+  "docsUrl": "https://claude.com/docs/third-party/claude-desktop/in-app-configuration",
+  "isOpenSource": false,
+  "freeAccess": "free_tier",
+  "freeAccessDetails": {
+    "fa": "گفتگو با حساب Claude پلن رایگان دارد. در حالت عادی Code و Cowork به پلن پولی نیاز دارند. در حالت API، هزینه و سهمیه تابع ارائه‌دهنده یا درگاه انتخابی است.",
+    "en": "Claude accounts have a free chat tier. Standard Code and Cowork access requires a paid plan. In API mode, your configured provider or gateway handles usage and billing."
+  },
+  "requiresSignup": null,
+  "requiresPaymentCard": null,
+  "sourceOfFreeAccess": "https://support.claude.com/en/articles/10065433-install-claude-desktop",
+  "lastVerified": "2026-11-08",
+  "capabilities": {
+    "install": "reported",
+    "launch": "reported",
+    "rtl": "unsupported",
+    "proxy": "unknown",
+    "terminal": "unsupported",
+    "byok": "reported"
+  },
+  "installMethods": [{ "method": "official-installer", "idOrUrl": "https://claude.com/download" }]
+}

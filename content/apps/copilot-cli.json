@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "copilot-cli",
+  "name": "GitHub Copilot CLI",
+  "summary": {
+    "fa": "عامل کدنویسی خط فرمان با سهمیهٔ AI Credits در Copilot Free.",
+    "en": "Command-line coding agent with an AI Credits allowance on Copilot Free."
+  },
+  "kind": "cli_agent",
+  "platforms": [
+    "windows",
+    "linux",
+    "macos"
+  ],
+  "websiteUrl": "https://github.com/features/copilot/cli",
+  "docsUrl": "https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli",
+  "sourceRepoUrl": "https://github.com/github/copilot-cli",
+  "isOpenSource": null,
+  "freeAccess": "free_tier",
+  "freeAccessDetails": {
+    "fa": "سهمیه به حساب GitHub و سیاست سازمان بستگی دارد.",
+    "en": "Allowance depends on the GitHub account and organization policy."
+  },
+  "requiresSignup": true,
+  "requiresPaymentCard": null,
+  "sourceOfFreeAccess": "https://docs.github.com/en/copilot/get-started/plans",
+  "lastVerified": "2026-11-09",
+  "capabilities": {
+    "install": "reported",
+    "launch": "reported",
+    "rtl": "unsupported",
+    "proxy": "unknown",
+    "terminal": "reported",
+    "byok": "unknown"
+  },
+  "installMethods": [
+    {
+      "method": "winget",
+      "idOrUrl": "GitHub.Copilot",
+      "note": {
+        "fa": "دستور نصب: winget install GitHub.Copilot",
+        "en": "Install with winget install GitHub.Copilot"
+      }
+    }
+  ]
+}

@@ -11,12 +11,12 @@ const manifest = id => ({ schemaVersion: 1, id, name: id, kind: 'desktop_agent',
   requiresPaymentCard:null, sourceOfFreeAccess:'https://example.com/', lastVerified:'2026-11-04',
   capabilities:{install:'reported',launch:'reported',rtl:'unsupported',proxy:'unknown',terminal:'unsupported',byok:'unknown'} });
 
-test('replacement products survive while retired desktop entries are excluded from old feeds', () => {
+test('Claude Desktop and CLI have separate identities while standalone Antigravity is excluded', () => {
   const catalog = loadCatalog({ apps: ['antigravity','claude-desktop','antigravity-ide','claude-code'].map(manifest), providers:[], offers:[] });
-  assert.deepEqual(catalog.apps.map(x => x.id), ['antigravity-ide','claude-code']);
+  assert.deepEqual(catalog.apps.map(x => x.id), ['claude-desktop','antigravity-ide','claude-code']);
   assert.ok(APP_IDS.includes('claude-code'));
   assert.ok(APP_IDS.includes('antigravity-ide'));
-  assert.ok(!APP_IDS.includes('claude-desktop'));
+  assert.ok(APP_IDS.includes('claude-desktop'));
   assert.ok(!APP_IDS.includes('antigravity'));
 });
 
@@ -26,7 +26,8 @@ test('bundled replacements advertise their actual interface and include bilingua
   const apps = loadCatalog({apps:records,providers:[],offers:[]}).apps;
   assert.equal(apps.find(x=>x.id==='claude-code')?.kind,'cli_agent');
   assert.equal(apps.find(x=>x.id==='antigravity-ide')?.capabilities.rtl,'unsupported');
-  for (const id of ['claude-code','antigravity-ide']) for (const lang of ['fa','en']) {
+  assert.equal(apps.find(x=>x.id==='claude-desktop')?.kind,'desktop_agent');
+  for (const id of ['claude-code','claude-desktop','antigravity-ide']) for (const lang of ['fa','en']) {
     const guide = await read(`docs/tutorials/${id}/${lang}.md`);
     assert.match(guide,/https:\/\//);
     assert.match(guide,lang==='fa' ? /ایران/ : /Iran/);

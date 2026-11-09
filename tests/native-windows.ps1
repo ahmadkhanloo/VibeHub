@@ -64,7 +64,7 @@ try {
     $initial = "# original فارسی`r`n"
     [IO.File]::WriteAllText($profileFile, $initial, [Text.UTF8Encoding]::new($true))
     $detected = @(Run-Adapter @{operation='detect'})
-    Assert ($detected.Count -eq 10) 'Detection must return the ten current app records'
+    Assert ($detected.Count -eq 12) 'Detection must return the twelve current app records'
     Assert (@($detected | Where-Object { $_.installed -isnot [bool] }).Count -eq 0) 'Detection installed flags must be booleans'
     $editors = @(Run-Adapter @{operation='detect-editors'})
     Assert ($editors.Count -eq 0) 'General IDE discovery must stay retired'

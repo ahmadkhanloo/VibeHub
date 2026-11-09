@@ -307,6 +307,18 @@ fn model_free_status(provider: &str, id: &str, item: &Value) -> Option<bool> {
     }
 }
 
+fn normalize_official_connection_base(provider: &str, url: &mut reqwest::Url) {
+    let base = url.as_str().trim_end_matches('/');
+    if matches!((provider, base),
+        ("openrouter", "https://openrouter.ai/api") |
+        ("radeon-cloud", "https://developer.amd.com.cn/radeon/api")) {
+        url.set_path("/api/v1");
+        if provider == "radeon-cloud" {
+            url.set_path("/radeon/api/v1");
+        }
+    }
+}
+
 pub async fn connection_models(
     provider: &str,
     base_url: &str,
@@ -317,6 +329,7 @@ pub async fn connection_models(
         return Err("This provider does not support model listing here".into());
     }
     let mut endpoint = safe_url(base_url)?;
+    normalize_official_connection_base(provider, &mut endpoint);
     // Claude's launch editor stores the official Anthropic host without /v1.
     if provider == "anthropic" && endpoint.host_str() == Some("api.anthropic.com") && endpoint.path() == "/" {
         endpoint.set_path("/v1");
@@ -431,7 +444,8 @@ pub(crate) async fn connection_test_with_client(
     let provider = field(&connection, "providerId")?;
     let model = field(&connection, "modelId")?;
     crate::domain::validate_connection_model(model)?;
-    let base = safe_url(field(&connection, "baseUrl")?)?;
+    let mut base = safe_url(field(&connection, "baseUrl")?)?;
+    normalize_official_connection_base(provider, &mut base);
     let needs_key = provider != "ollama";
     if needs_key && provider != "custom" && secret.is_none() {
         return Ok(json!({
@@ -643,3 +657,20 @@ async fn optional_feed_json(client: &reqwest::Client, url: String) -> Result<Opt
 #[cfg(test)]
 #[path = "network_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+mod official_connection_base_tests {
+    use super::normalize_official_connection_base;
+    #[test]
+    fn legacy_messages_bases_use_model_api_without_rewriting_custom_urls() {
+        for (provider, input, expected) in [
+            ("openrouter", "https://openrouter.ai/api", "https://openrouter.ai/api/v1"),
+            ("radeon-cloud", "https://developer.amd.com.cn/radeon/api", "https://developer.amd.com.cn/radeon/api/v1"),
+            ("openrouter", "https://example.org/api", "https://example.org/api"),
+        ] {
+            let mut url = reqwest::Url::parse(input).unwrap();
+            normalize_official_connection_base(provider, &mut url);
+            assert_eq!(url.as_str(), expected);
+        }
+    }
+}

@@ -8,8 +8,10 @@ test('adds and selects an API connection from the Claude launch panel', async ({
  await expect(add).toBeVisible();
  await add.click();
  const dialog=page.getByRole('dialog');
+ await expect(dialog.getByLabel('Provider and connection type')).toHaveValue('openrouter');
+ await expect(dialog.locator('option[value=nvidia]')).toHaveAttribute('disabled', '');
  await dialog.getByLabel('Provider and connection type').selectOption('radeon-cloud');
- await expect(dialog.getByLabel('Base URL')).toHaveValue('https://developer.amd.com.cn/radeon/api');
+ await expect(dialog.getByLabel('Base URL')).toHaveValue('https://developer.amd.com.cn/radeon/api/v1');
  await dialog.getByLabel('Model ID').fill('fixture-model');
  await dialog.getByLabel('API key').fill('fixture-key');
  await dialog.getByRole('button',{name:'Save connection'}).click();

@@ -19,6 +19,7 @@ const logos: Record<string, string> = {
   opencode: opencodeLogo,
   'antigravity-ide': antigravityLogo,
   'claude-code': claudeLogo,
+  'claude-desktop': claudeLogo,
   chatgpt: chatgptLogo,
 };
 

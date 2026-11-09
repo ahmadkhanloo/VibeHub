@@ -21,7 +21,10 @@ try {
   New-Item -ItemType Directory -Path $cliFolder -Force|Out-Null
   New-Item -ItemType File -Path (Join-Path $cliFolder 'claude.exe')|Out-Null
   $apps=@(Run-Adapter @{operation='detect'})
-  if (@($apps|Where-Object {$_.id -in @('antigravity','claude-desktop')}).Count) {throw 'Retired desktop entries were detected'}
+  if (@($apps|Where-Object id -eq 'antigravity').Count) {throw 'Retired Antigravity entry was detected'}
+  if (@($apps|Where-Object id -eq 'claude-desktop').Count -ne 1) {throw 'Claude Desktop detection result missing'}
+  $result=Run-Adapter @{operation='launch';req=@{appId='claude-desktop';rtl=$true}}
+  if ($result.error -notmatch 'RTL is not verified') {throw 'Unverified Claude Desktop RTL was accepted'}
   if (@($apps|Where-Object {$_.id -eq 'antigravity-ide' -and $_.installed -and $_.path -eq (Join-Path $ideFolder 'Antigravity IDE.exe')}).Count -ne 1) {throw 'IDE not identified separately'}
   if (@($apps|Where-Object {$_.id -eq 'claude-code' -and $_.installed -and $_.path -eq (Join-Path $cliFolder 'claude.exe')}).Count -ne 1) {throw 'Native Claude CLI not found'}
   $wrong=Join-Path $sandbox 'Antigravity.exe'; New-Item -ItemType File -Path $wrong|Out-Null
