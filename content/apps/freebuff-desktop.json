@@ -3,11 +3,15 @@
   "id": "freebuff-desktop",
   "name": "Freebuff Desktop",
   "summary": {
-    "fa": "نسخهٔ دسکتاپ Freebuff برای اجرای عامل‌های محلی در macOS، Windows و Linux. آداپتور RTL وایب‌هاب تا بررسی فایل اجرایی و renderer رسمی در دسترس نیست.",
-    "en": "Freebuff's desktop client for running local agents on macOS, Windows and Linux. VibeHub RTL stays unavailable until its official executable and renderer are inspected."
+    "fa": "نسخهٔ دسکتاپ Freebuff. نسخهٔ بررسی‌شده گزینه‌های remote debugging را حذف می‌کند و RTL چت در VibeHub در دسترس نیست.",
+    "en": "Freebuff Desktop. The inspected version removes remote debugging switches, so chat RTL is unavailable in VibeHub."
   },
   "kind": "desktop_agent",
-  "platforms": ["windows", "linux", "macos"],
+  "platforms": [
+    "windows",
+    "linux",
+    "macos"
+  ],
   "websiteUrl": "https://freebuff.com/desktop",
   "isOpenSource": null,
   "freeAccess": "ad_supported",

@@ -79,6 +79,7 @@ export function clearContentCache() {
  revision++;listeners.forEach(listener=>listener());
 }
 const initialCatalog = {apps: [...apps], providers: [...providers], offers: [...bundledCatalog.offers]};
+const bundledAppIds = new Set(['antigravity-ide', 'claude-code', 'claude-desktop', 'copilot-cli']);
 
 export function validateRemoteGuides(raw: unknown, catalog: Catalog): Record<string, string> {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('Incomplete guide feed');
@@ -104,9 +105,9 @@ export function validateRemoteGuides(raw: unknown, catalog: Catalog): Record<str
 export function applyRemoteCatalog(catalog: Catalog, guides: Record<string, string>, tutorials?: LearningTutorial[], learningArticles?: ReturnType<typeof parseLearningFeed>, newsItems?: ReturnType<typeof parseNewsFeed>): void {
   const nextArticles = learningArticles;
   const nextNews = newsItems;
-  // Old feeds must neither resurrect retired desktop products nor hide the replacements.
-  const replacements = initialCatalog.apps.filter(app => ['antigravity-ide', 'claude-code'].includes(app.id));
-  const nextApps = [...catalog.apps.filter(app => !['antigravity', 'claude-desktop', 'antigravity-ide', 'claude-code'].includes(app.id)), ...replacements];
+  // Keep the entries tied to this build when a cached feed predates them.
+  const bundledApps = initialCatalog.apps.filter(app => bundledAppIds.has(app.id));
+  const nextApps = [...catalog.apps.filter(app => !bundledAppIds.has(app.id)), ...bundledApps];
   apps.splice(0, apps.length, ...nextApps);
   providers.splice(0, providers.length, ...catalog.providers);
   bundledCatalog.offers.splice(0, bundledCatalog.offers.length, ...catalog.offers);
@@ -114,7 +115,7 @@ export function applyRemoteCatalog(catalog: Catalog, guides: Record<string, stri
   Object.assign(remoteGuides, guides);
   if (tutorials !== undefined) learning = tutorials;
   if (nextArticles !== undefined) {
-    articles = [...nextArticles.articles.filter(article => !['antigravity', 'claude-desktop', 'antigravity-ide', 'claude-code'].includes(article.id)), ...initialLearningFeed.articles.filter(article => ['antigravity-ide', 'claude-code'].includes(article.id))];
+    articles = [...nextArticles.articles.filter(article => article.id !== 'antigravity' && !bundledAppIds.has(article.id)), ...initialLearningFeed.articles.filter(article => bundledAppIds.has(article.id))];
     categories = nextArticles.categories;
     // The bundled replacement guides use the existing apps category.
     for (const category of initialLearningCategories) if (!categories.some(item => item.id === category.id) && articles.some(article => article.category === category.id)) categories = [...categories, category];
@@ -143,7 +144,7 @@ export function appById(id: string): AppManifest | undefined {
 }
 
 export function guideText(appId: string, lang: 'fa' | 'en'): string | null {
-  const remote = ['antigravity-ide', 'claude-code'].includes(appId) ? undefined : remoteGuides[`${appId}/${lang}`];
+  const remote = bundledAppIds.has(appId) ? undefined : remoteGuides[`${appId}/${lang}`];
   if (remote) return remote;
   const hit = Object.entries(guideModules).find(([p]) => p.includes(`/${appId}/${lang}.md`));
   return hit?.[1]?.trim() ? hit[1] : null;

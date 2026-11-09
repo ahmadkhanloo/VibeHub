@@ -168,7 +168,7 @@ export interface TerminalSetupState {
 }
 
 export const CAPABILITY_KEYS: Capability[] = ['install', 'launch', 'rtl', 'proxy', 'terminal', 'byok'];
-export const APP_IDS = ['zcode', 'qoder', 'deepseek-harness', 'opencode', 'mimocode', 'freebuff', 'freebuff-desktop', 'antigravity-ide', 'chatgpt', 'claude-code'] as const;
+export const APP_IDS = ['zcode', 'qoder', 'deepseek-harness', 'opencode', 'mimocode', 'freebuff', 'freebuff-desktop', 'copilot-cli', 'antigravity-ide', 'chatgpt', 'claude-code', 'claude-desktop'] as const;
 export type AppId = (typeof APP_IDS)[number];
 
 export { appManifestSchema, providerManifestSchema, offerSchema, feedIndexSchema, assertNoExecutablePayload } from './schemas.ts';

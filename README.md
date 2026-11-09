@@ -28,6 +28,16 @@ VibeHub is a companion app for people who code with AI assistants. Instead of ju
 
 VibeHub does not host models, proxy traffic, or provide accounts. It separates each tool's license, free-access terms, and regional eligibility — and shows unavailable values as explicitly unavailable.
 
+## AI connections and system tray
+
+The **AI connections** page groups provider references and saved connections in a searchable grid. Select a provider to see its suggested API address, saved connections, and personal note; **My notes** collects notes for quick editing. Notes are stored locally as plain text; API keys are stored separately in the system credential vault. Existing custom URLs use a fallback icon when no bundled logo is available.
+
+Choose **Try a custom URL** to list models or test a selected model before saving. Model tests send a real request and may consume quota; saving is a separate action. Model prices marked unknown have not been established as free or paid. Cloudflare Workers AI requires an account ID and uses its official model documentation instead of in-app listing. See the [connection guide](docs/tutorials/rtl-setup.en.md#ai-connections).
+
+Closing the window hides VibeHub in the Windows notification area. Select its tray icon to reopen it, or choose **Quit / خروج** from the tray menu to exit completely. Tray interaction in the installed beta has not yet been independently verified.
+
+The current prerelease is [v0.2.6-beta.2](https://github.com/ahmadkhanloo/VibeHub/releases/tag/v0.2.6-beta.2) ([Windows installer](https://github.com/ahmadkhanloo/VibeHub/releases/download/v0.2.6-beta.2/VibeHub-Setup.exe)). It is separate from the latest stable release. The existing screenshot below predates the redesigned connections screen.
+
 ## Screenshots
 
 | Learning library (فارسی) | Learning library (English) | API notebook (English) |

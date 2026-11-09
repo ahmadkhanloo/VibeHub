@@ -20,6 +20,10 @@ Fully quit an app already running without RTL, including its tray process, befor
 
 Standalone Antigravity chat RTL is experimental and is separate from Antigravity IDE. Setup is available on its tile and app page. Mixed-language chat rendering in a real signed-in conversation still needs live compatibility verification; setup success proves shortcut creation, not a working vendor conversation.
 
-## API notebook
+## AI connections
 
-The API notebook saves endpoints, model IDs, and optional keys. Optional connection tests send real requests. Select or copy a saved entry and configure it manually inside the coding app. The separate Proxy page configures requests for the next app launch; saving an API entry does not configure that app automatically.
+Open **AI connections** and select a provider in the searchable grid to see its suggested address and saved connections. Filter to saved entries or **My notes**; notes are local plain text and can be edited from the provider or notes list. Keys are stored separately in the operating system credential vault.
+
+To try an OpenAI-compatible endpoint, choose **Try a custom URL**, enter its base URL and, when needed, an API key. Select **Get models** or enter a model ID and confirm **Test connection**. Listing and testing do not save the connection; choose **Save connection** separately. A model test sends a real request and may consume quota. Use HTTPS, or HTTP for localhost; URLs with embedded credentials, queries, or fragments are rejected. Cloudflare Workers AI requires an account ID and links to its official model list.
+
+Select or copy a saved entry and configure it manually inside the coding app. The separate Proxy page configures requests for the next app launch; saving an API entry does not configure that app automatically. Free/paid status can be unknown and should be checked against current provider terms.

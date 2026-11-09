@@ -13,6 +13,9 @@ export function ClaudePersianTerminal() {
   const [draft, setDraft] = useState<ProviderConnection>();
   const [connectionId, setConnectionId] = useState(() => claudeLaunchPreferences().connectionId ?? '');
   const [authHeader, setAuthHeader] = useState<'api-key' | 'bearer'>(() => claudeLaunchPreferences().authHeader);
+  const selectedConnection = connections.find(connection => connection.id === connectionId);
+  const officialBase = selectedConnection?.baseUrl.replace(/\/$/, '');
+  const officialAuth = selectedConnection?.providerId === 'openrouter' && ['https://openrouter.ai/api', 'https://openrouter.ai/api/v1'].includes(officialBase ?? '') ? 'bearer' : selectedConnection?.providerId === 'radeon-cloud' && ['https://developer.amd.com.cn/radeon/api', 'https://developer.amd.com.cn/radeon/api/v1'].includes(officialBase ?? '') ? 'api-key' : undefined;
   const [cwd, setCwd] = useState<string>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
@@ -25,7 +28,7 @@ export function ClaudePersianTerminal() {
   const run = async (rtl: boolean) => {
     setBusy(true); setError(null); setMessage('');
     try {
-      await ipc.launchApp({appId:'claude-code', rtl, cwd, ...(connectionId ? {connectionId, authHeader} : {})});
+      await ipc.launchApp({appId:'claude-code', rtl, cwd, ...(connectionId ? {connectionId, authHeader: officialAuth ?? authHeader} : {})});
       setMessage(t('claudePersian.opened'));
     } catch (reason) { setError(reason); }
     finally { setBusy(false); }
@@ -37,12 +40,12 @@ export function ClaudePersianTerminal() {
     <label className="block space-y-2"><span>{t('claudePersian.connection')}</span>
       <select className="vh-input w-full" value={connectionId} disabled={busy} onChange={e => setConnectionId(e.target.value)}>
         <option value="">{t('claudePersian.existing')}</option>
-        {connections.map(c => <option key={c.id} value={c.id} disabled={!c.modelId.trim()}>{c.name} — {c.modelId}</option>)}
+        {connections.map(c => <option key={c.id} value={c.id} disabled={!c.modelId.trim() || (c.providerId === 'nvidia' && c.baseUrl.replace(/\/$/, '') === 'https://integrate.api.nvidia.com/v1')}>{c.name} — {c.modelId}</option>)}
       </select>
     </label>
     <Button disabled={busy} onClick={() => setDraft(newClaudeConnection())}>{t('models:addConnection')}</Button>
     {connectionId && <label className="block space-y-2"><span>{t('claudePersian.auth')}</span>
-      <select className="vh-input w-full" value={authHeader} disabled={busy} onChange={e => setAuthHeader(e.target.value as typeof authHeader)}>
+      <select className="vh-input w-full" value={officialAuth ?? authHeader} disabled={busy || !!officialAuth} onChange={e => setAuthHeader(e.target.value as typeof authHeader)}>
         <option value="api-key">x-api-key</option><option value="bearer">Bearer</option>
       </select>
     </label>}

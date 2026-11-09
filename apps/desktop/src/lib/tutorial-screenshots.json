@@ -1,5 +1,16 @@
 [
   {
+    "id": "claude-desktop-inference",
+    "file": "screenshots/claude-desktop-inference.webp",
+    "sourcePage": "https://claude.com/docs/third-party/claude-desktop/in-app-configuration",
+    "sourceImage": "https://mintcdn.com/claude-ai/kVj7_7KF4fI3bEAn/images/third-party/in-app-configuration-window.png",
+    "retrievedAt": "2026-11-08",
+    "kind": "official-screenshot",
+    "width": 1812,
+    "height": 1462,
+    "sourceVersion": null
+  },
+  {
     "id": "claude-permissions",
     "file": "screenshots/claude-permissions.webp",
     "sourcePage": "https://code.claude.com/docs/en/permissions",
@@ -372,5 +383,17 @@
     "height": 255,
     "sourceVersion": null,
     "captureDescription": "Windows desktop composer, cropped above the local path."
+  },
+  {
+    "id": "copilot-cli-vibehub",
+    "file": "screenshots/copilot-cli-vibehub.webp",
+    "sourcePage": "https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli",
+    "sourceImage": null,
+    "retrievedAt": "2026-11-09",
+    "kind": "local-screenshot",
+    "width": 1280,
+    "height": 860,
+    "sourceVersion": null,
+    "captureDescription": "VibeHub browser-mode mock showing the GitHub Copilot CLI catalog page."
   }
 ]

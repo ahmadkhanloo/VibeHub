@@ -1,7 +1,7 @@
 use serde_json::Value;
 
 pub type Result<T> = std::result::Result<T, String>;
-pub const APP_IDS: [&str; 10] = [
+pub const APP_IDS: [&str; 12] = [
     "zcode",
     "qoder",
     "deepseek-harness",
@@ -9,9 +9,11 @@ pub const APP_IDS: [&str; 10] = [
     "mimocode",
     "freebuff",
     "freebuff-desktop",
+    "copilot-cli",
     "antigravity-ide",
     "chatgpt",
     "claude-code",
+    "claude-desktop",
 ];
 pub const EDITOR_IDS: [&str; 8] = [
     "vscode",
@@ -231,5 +233,27 @@ pub fn install_spec(app: &str, method: &str, package: Option<&str>) -> Result<&'
         _ => Err(
             "No audited package mapping for this app. Use its official installation guide.".into(),
         ),
+    }
+}
+
+pub fn claude_connection_endpoint<'a>(provider: &str, base: &'a str, auth: &'a str) -> Result<(&'a str, &'a str)> {
+    let base = base.trim_end_matches('/');
+    match (provider, base) {
+        ("nvidia", "https://integrate.api.nvidia.com/v1") => Err("NVIDIA hosted API is not available for Claude Code".into()),
+        ("openrouter", "https://openrouter.ai/api" | "https://openrouter.ai/api/v1") => Ok(("https://openrouter.ai/api", "ANTHROPIC_AUTH_TOKEN")),
+        ("radeon-cloud", "https://developer.amd.com.cn/radeon/api" | "https://developer.amd.com.cn/radeon/api/v1") => Ok(("https://developer.amd.com.cn/radeon/api", "ANTHROPIC_API_KEY")),
+        _ => Ok((base, auth)),
+    }
+}
+
+#[cfg(test)]
+mod claude_endpoint_tests {
+    use super::claude_connection_endpoint;
+    #[test]
+    fn official_endpoints_use_their_messages_protocol_without_rewriting_custom_hosts() {
+        assert_eq!(claude_connection_endpoint("openrouter", "https://openrouter.ai/api/v1", "ANTHROPIC_API_KEY").unwrap(), ("https://openrouter.ai/api", "ANTHROPIC_AUTH_TOKEN"));
+        assert_eq!(claude_connection_endpoint("radeon-cloud", "https://developer.amd.com.cn/radeon/api/v1", "ANTHROPIC_AUTH_TOKEN").unwrap(), ("https://developer.amd.com.cn/radeon/api", "ANTHROPIC_API_KEY"));
+        assert_eq!(claude_connection_endpoint("openrouter", "https://example.org/v1", "ANTHROPIC_API_KEY").unwrap(), ("https://example.org/v1", "ANTHROPIC_API_KEY"));
+        assert!(claude_connection_endpoint("nvidia", "https://integrate.api.nvidia.com/v1", "ANTHROPIC_API_KEY").is_err());
     }
 }

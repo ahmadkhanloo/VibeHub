@@ -66,7 +66,6 @@ function Gate() {
         <Route path="/discover" element={<DiscoverPage />} />
         <Route path="/app/:appId" element={<AppDetailsPage />} />
         <Route path="/app/antigravity" element={<Navigate to="/app/antigravity-ide" replace />} />
-        <Route path="/app/claude-desktop" element={<Navigate to="/app/claude-code" replace />} />
         <Route path="/editor/:editorId" element={<Navigate to="/" replace />} />
         <Route path="/my-apps" element={<Navigate to="/" replace />} />
         <Route path="/search" element={<SearchPage />} />
