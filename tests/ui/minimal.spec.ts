@@ -17,7 +17,7 @@ test('catalog apps render local images or icon fallbacks with external requests 
   await page.route('https://**/*', route => route.abort());
   await page.goto('/discover');
   const tiles = page.locator('.vh-catalog-tile');
-  await expect(tiles).toHaveCount(9);
+  await expect(tiles).toHaveCount(11);
   await expect.poll(() => tiles.locator('img').evaluateAll(images => images.every(image => (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0))).toBe(true);
   expect(await tiles.locator('img').evaluateAll(images => images.every(image => (image as HTMLImageElement).src.startsWith('data:image/') || new URL((image as HTMLImageElement).src).origin === location.origin))).toBe(true);
   await expect(page.getByRole('button', { name: /Filters|Open-source/i })).toHaveCount(0);

@@ -41,6 +41,7 @@ test('API test requires confirmation and unauthenticated local models do not cla
     };
   });
   await page.goto('/models');
+  await page.getByRole('searchbox', { name: 'Search providers and notes' }).fill('Ollama');
   await page.getByTestId('provider-ollama').click();
   await page.getByRole('button',{name:'Test connection',exact:true}).click();
   expect(await page.evaluate(() => (window as any).__mock.calls.filter((c: any) => c.cmd === 'provider_connection_test').length)).toBe(0);
@@ -86,7 +87,7 @@ for (const lang of ['en', 'fa']) {
     await dialog.locator('button[type=submit]').click();
     await expect(dialog).toBeHidden();
     await page.reload();
-    await page.getByRole('searchbox').last().fill('models.example.invalid');
+    await page.locator('main input[type=search]').first().fill('models.example.invalid');
     await page.locator('[data-testid^="provider-custom:"]').click();
 
     const card = page.locator('[data-testid^=connection-]').filter({ hasText: 'OpenAI-compatible' });
@@ -109,7 +110,7 @@ for (const lang of ['en', 'fa']) {
       .map((call: any) => Object.keys(call.args)))).toEqual([['id'], ['id'], ['id']]);
     const savedTime = await card.locator('bdi').first().textContent();
     await page.reload();
-    await page.getByRole('searchbox').last().fill('models.example.invalid');
+    await page.locator('main input[type=search]').first().fill('models.example.invalid');
     await page.locator('[data-testid^="provider-custom:"]').click();
     await expect(card.getByText('fixture-new', { exact: true })).toBeVisible();
     await expect(card.locator('bdi').first()).toHaveText(savedTime ?? '');

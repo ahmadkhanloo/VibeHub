@@ -26,7 +26,7 @@ test("search includes model services and targets selected provider without savin
 test("add-app lists only uninstalled tools without catalog filters or tabs", async ({ page }) => {
   await mockNative(page);
   await page.goto("/discover");
-  await expect(page.locator('.vh-catalog-tile')).toHaveCount(9);
+  await expect(page.locator('.vh-catalog-tile')).toHaveCount(11);
   await expect(page.getByRole('link', { name: /Qoder/ })).toBeVisible();
   await expect(page.getByRole('link', { name: /ZCode/ })).toHaveCount(0);
   await expect(page.getByRole('tab')).toHaveCount(0);
@@ -435,6 +435,7 @@ test("single model deletion cancels without touching any connection", async ({
 }) => {
   await mockNative(page);
   await page.goto("/models");
+  await page.getByRole("searchbox", { name: "Search providers and notes" }).fill("Ollama");
   await page.getByTestId("provider-ollama").click();
   await page
     .getByRole("button", { name: "Delete connection Local Ollama" })
