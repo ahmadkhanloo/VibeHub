@@ -121,5 +121,12 @@
   "suggestedAddress": "Suggested API address",
   "selectProvider": "Select a provider to see details.",
   "tryCustom": "Try a custom URL",
-  "compatibility": "Compatible tools"
+  "compatibility": "Compatible tools",
+  "providerCost": {
+    "openrouter": "Selected free models",
+    "radeon-cloud": "Limited free allowance",
+    "nvidia-build": "Free development and prototyping",
+    "anthropic": "Paid API"
+  },
+  "nvidiaClaudeUnavailable": "NVIDIA NIM is available in general model connections."
 }

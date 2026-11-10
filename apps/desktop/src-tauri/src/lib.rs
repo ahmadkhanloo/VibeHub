@@ -513,11 +513,15 @@ async fn launch_app(app: tauri::AppHandle, req: Value) -> Result<Value> {
                     let connection = connections.as_array().ok_or("Invalid connections")?.iter()
                         .find(|c| c["id"].as_str() == Some(connection_id)).ok_or("Selected connection no longer exists")?;
                     domain::validate_connection_model(domain::field(connection, "modelId")?)?;
-                    request["claudeBaseUrl"] = connection["baseUrl"].clone();
+                    let base = domain::field(connection, "baseUrl")?.trim_end_matches('/');
+                    let provider = domain::field(connection, "providerId")?;
+                    let requested_auth = if req["authHeader"] == "bearer" { "ANTHROPIC_AUTH_TOKEN" } else { "ANTHROPIC_API_KEY" };
+                    let (claude_base, official_auth) = domain::claude_connection_endpoint(provider, base, requested_auth)?;
+                    request["claudeBaseUrl"] = json!(claude_base);
                     request["claudeModel"] = connection["modelId"].clone();
                     request["claudeKey"] = json!(storage::vault_get(&format!("vibehub.provider-key.connection.{connection_id}"))?
                         .ok_or("Save an API key for this connection first")?);
-                    request["claudeAuth"] = json!(if req["authHeader"] == "bearer" { "ANTHROPIC_AUTH_TOKEN" } else { "ANTHROPIC_API_KEY" });
+                    request["claudeAuth"] = json!(official_auth);
                 }
             }
             request["req"] = req;

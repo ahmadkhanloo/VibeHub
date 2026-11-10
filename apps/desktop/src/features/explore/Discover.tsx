@@ -1,4 +1,4 @@
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { filterApps } from '@catalog';
 import { useCatalog } from '@/lib/catalog';
@@ -24,6 +24,7 @@ export function DiscoverPage() {
 
   return <div className="space-y-6">
     <PageHeader title={t('ux:discover')} />
+    <nav className="vh-choice-group" aria-label={t('ux:workspace')}><Link to="/">{t('ux:installed')}</Link><Link aria-current="page" to="/discover">{t('ux:discover')}</Link></nav>
     {ctx.errors.length > 0 && <ErrorNotice error={ctx.errors.join('\n')} onRetry={() => void ctx.refresh()} />}
     {query && <Button size="sm" onClick={() => setParams({})}>{t('ux:clearSearch')}: {query}</Button>}
     {ctx.loading ? <Spinner /> : ctx.detectionFailed ? <EmptyState title={t('apps:installedUnknown')} sub={t('apps:installedUnknownHint')} action={<Button onClick={() => void ctx.refresh()}>{t('refresh')}</Button>} /> : <>

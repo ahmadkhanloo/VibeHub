@@ -1,12 +1,14 @@
 import { test, expect } from '@playwright/test';
 import { mockNative } from './mock';
 
-test('retired desktop routes point at their replacements', async ({page}) => {
+test('Claude Desktop has its own guide and the retired Antigravity route redirects', async ({page}) => {
   await mockNative(page);
-  for (const [oldId, nextId] of [['claude-desktop','claude-code'], ['antigravity','antigravity-ide']]) {
-    await page.goto('/app/'+oldId);
-    await expect(page).toHaveURL(new RegExp('/app/'+nextId));
-  }
+  await page.goto('/app/claude-desktop?tab=connections');
+  await page.getByRole('link', {name:'Add and test models in Claude Desktop'}).click();
+  await expect(page).toHaveURL(/\/app\/claude-desktop\?tab=guide$/);
+  await expect(page.getByRole('heading', {name:'Fix the Cowork reinstall prompt on Windows'})).toBeVisible();
+  await page.goto('/app/antigravity');
+  await expect(page).toHaveURL(/\/app\/antigravity-ide$/);
   await page.goto('/editor/antigravity');
   await expect(page).toHaveURL(/\/$/);
 });

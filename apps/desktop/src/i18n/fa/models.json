@@ -121,5 +121,12 @@
   "suggestedAddress": "آدرس پیشنهادی API",
   "selectProvider": "برای دیدن جزئیات، یک سرویس انتخاب کنید.",
   "tryCustom": "آزمایش آدرس دلخواه",
-  "compatibility": "ابزارهای سازگار"
+  "compatibility": "ابزارهای سازگار",
+  "providerCost": {
+    "openrouter": "مدل‌های رایگان مشخص",
+    "radeon-cloud": "سهمیهٔ محدود رایگان",
+    "nvidia-build": "رایگان برای توسعه و نمونه‌سازی",
+    "anthropic": "API پولی"
+  },
+  "nvidiaClaudeUnavailable": "NVIDIA NIM در اتصال عمومی مدل‌ها در دسترس است."
 }

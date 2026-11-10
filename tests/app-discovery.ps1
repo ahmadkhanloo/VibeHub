@@ -4,6 +4,7 @@ $adapter = Join-Path $repo 'apps\desktop\src-tauri\src\windows.ps1'
 $temp = Join-Path ([IO.Path]::GetTempPath()) ('vibehub-apps-' + [guid]::NewGuid().ToString('N'))
 $oldLocal = $env:LOCALAPPDATA
 $oldProfile = $env:USERPROFILE
+$oldPath = $env:PATH
 try {
   $env:LOCALAPPDATA = $temp
   $env:USERPROFILE = $temp
@@ -40,6 +41,28 @@ try {
   Remove-Item -LiteralPath $manual
   $apps = @(Invoke-Adapter @{operation='detect'})
   if ((@($apps | Where-Object id -eq 'claude-code')[0]).path -ne $claude) { throw 'Missing saved path did not fall back' }
-  Write-Host 'App path and Claude detection passed'
-} finally { $env:LOCALAPPDATA = $oldLocal; $env:USERPROFILE = $oldProfile; $resolved=[IO.Path]::GetFullPath($temp); if ($resolved.StartsWith([IO.Path]::GetFullPath([IO.Path]::GetTempPath()),[StringComparison]::OrdinalIgnoreCase) -and (Split-Path -Leaf $resolved) -like 'vibehub-apps-*') { Remove-Item -LiteralPath $resolved -Recurse -Force -ErrorAction SilentlyContinue } }
+
+  $desktop = Join-Path $temp 'Programs\@codebufffreebuff-desktop\Freebuff.exe'
+  New-Item -ItemType Directory -Force (Join-Path (Split-Path $desktop) 'resources') | Out-Null
+  New-Item -ItemType File $desktop, (Join-Path (Split-Path $desktop) 'resources\app.asar') | Out-Null
+  $apps = @(Invoke-Adapter @{operation='detect'})
+  if ((@($apps | Where-Object id -eq 'freebuff-desktop')[0]).path -ne $desktop) { throw 'Freebuff Desktop standard path not detected' }
+  $manualDesktop = Join-Path $temp 'custom Freebuff\Freebuff.exe'
+  New-Item -ItemType Directory -Force (Join-Path (Split-Path $manualDesktop) 'resources') | Out-Null
+  New-Item -ItemType File $manualDesktop, (Join-Path (Split-Path $manualDesktop) 'resources\app.asar') | Out-Null
+  Invoke-Adapter @{operation='app-path';appId='freebuff-desktop';path=$manualDesktop} | Out-Null
+  $apps = @(Invoke-Adapter @{operation='detect'})
+  if ((@($apps | Where-Object id -eq 'freebuff-desktop')[0]).path -ne $manualDesktop) { throw 'Freebuff Desktop manual path not detected' }
+  Remove-Item -LiteralPath $manualDesktop
+  $apps = @(Invoke-Adapter @{operation='detect'})
+  if ((@($apps | Where-Object id -eq 'freebuff-desktop')[0]).path -ne $desktop) { throw 'Missing Freebuff Desktop path did not fall back' }
+
+  $copilot = Join-Path $temp 'copilot.cmd'
+  Set-Content -LiteralPath $copilot -Value '@echo off'
+  $env:PATH = "$temp;$env:PATH"
+  $apps = @(Invoke-Adapter @{operation='detect'})
+  if ((@($apps | Where-Object id -eq 'copilot-cli')[0]).path -ne $copilot) { throw 'Copilot CLI command was not detected' }
+  Write-Host 'App path, Freebuff Desktop and Copilot detection passed'
+
+} finally { $env:LOCALAPPDATA = $oldLocal; $env:USERPROFILE = $oldProfile; $env:PATH = $oldPath; $resolved=[IO.Path]::GetFullPath($temp); if ($resolved.StartsWith([IO.Path]::GetFullPath([IO.Path]::GetTempPath()),[StringComparison]::OrdinalIgnoreCase) -and (Split-Path -Leaf $resolved) -like 'vibehub-apps-*') { Remove-Item -LiteralPath $resolved -Recurse -Force -ErrorAction SilentlyContinue } }
 

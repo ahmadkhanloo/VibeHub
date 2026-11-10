@@ -97,6 +97,7 @@ export function AppDetailsPage() {
         <div className="space-y-6">
           <section><h2 className="mb-3 text-sm font-bold">{t('connectionsUx:nextLaunchProxy')}</h2><ToolProxy appId={appId} /></section>
           <AppConnection key={appId} appId={appId} />
+          {appId === 'claude-desktop' && <Link className="vh-link" to="?tab=guide"><BookOpen size={16} aria-hidden="true" />{t('apps:claudeDesktopApiGuide')}</Link>}
           <Disclosure title={t('ux:compatible')}><h2 className="text-sm font-bold">{t('ux:modelSetup')}</h2><p className="text-sm text-muted">{t('ux:modelManual')}</p>
             <h3 className="text-sm font-bold">{t('ux:compatible')}</h3>
             {compatible.length ? compatible.map(provider => <div key={provider.id} className="flex flex-wrap items-center justify-between gap-3 text-sm"><Link className="vh-link" to={'/connections/api?provider=' + provider.id}>{provider.name}</Link><VerificationBadge status={provider.supportedApps[appId] ?? 'unknown'} /></div>) : <p className="text-sm text-muted">{t('ux:noCompatibility')}</p>}

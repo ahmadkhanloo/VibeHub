@@ -31,6 +31,7 @@ export function HomePage() {
       <Button variant="ghost" loading={ctx.loading} onClick={() => void ctx.refresh()} aria-label={t('refresh')} title={t('refresh')}><RefreshCw size={18} aria-hidden="true" /></Button>
       <Link to="/discover" className="vh-button vh-button-primary"><Plus size={16} aria-hidden="true" />{t('addApp')}</Link>
     </>} />
+    <nav className="vh-choice-group" aria-label={t('ux:workspace')}><Link aria-current="page" to="/">{t('ux:installed')}</Link><Link to="/discover">{t('ux:discover')}</Link></nav>
     <div className="vh-workspace-meta"><span><i className="vh-count-dot" aria-hidden="true" />{t('workbench:installedCount', {count:tools.length})}</span>{running > 0 && <span><i className="vh-count-dot is-running" aria-hidden="true" />{t('workbench:runningCount', {count:running})}</span>}</div>
     {ctx.errors.length > 0 && <ErrorNotice error={ctx.errors.join('\n')} message={ctx.detectionFailed ? undefined : t('partial')} onRetry={() => void ctx.refresh()} />}
     {ctx.loading && !tools.length ? <Spinner /> : !tools.length && !ctx.detectionFailed ? <EmptyState title={t('noInstalled')} sub={t('noInstalledSub')} action={<Link to="/discover" className="vh-button vh-button-primary">{t('discover')}</Link>} /> : !!tools.length && <>

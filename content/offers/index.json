@@ -11,7 +11,8 @@
     "opencode",
     "qoder",
     "zcode",
-    "claude-code"
+    "claude-code",
+    "claude-desktop"
   ],
   "providers": [
     "nvidia-build",

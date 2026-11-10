@@ -126,11 +126,11 @@ test('provider tiles form a listbox with arrow-key navigation', async ({ page })
   await expect(list).toBeVisible();
   await page.getByTestId('provider-anthropic').focus();
   await page.keyboard.press('Home');
-  await expect(page.getByTestId('provider-ollama')).toHaveAttribute('aria-selected', 'true');
-  await expect(page.locator('.model-workspace-detail')).toContainText('Ollama');
+  // Priority providers lead the list, so Home lands on OpenRouter rather than the alphabetical first row.
+  await expect(page.getByTestId('provider-openrouter')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('.model-workspace-detail')).toContainText('OpenRouter');
   await page.keyboard.press('ArrowRight');
-  // Sorted order: the seeded Ollama connection first, then catalog rows alphabetically (Anthropic before APInex).
-  await expect(page.getByTestId('provider-anthropic')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByTestId('provider-radeon-cloud')).toHaveAttribute('aria-selected', 'true');
   // Exactly one option stays selected.
   await expect(list.locator('[aria-selected="true"]')).toHaveCount(1);
 });

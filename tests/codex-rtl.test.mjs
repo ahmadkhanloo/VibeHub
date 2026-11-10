@@ -25,8 +25,7 @@ test('ordinary ChatGPT stays out of RTL setup and RTL launch fails closed', () =
   for (const expression of [
     /ordinary ChatGPT/i,
     /Codex Desktop RTL is unavailable/i,
-    /'rtl-setup'[\s\S]*?if \(\$id -notin @\('zcode','qoder','deepseek-harness','antigravity','opencode','claude-desktop'\)\)/,
-    /if \(\$id -eq 'claude-desktop'\)[\s\S]*?Get-RtlComponents \$root[\s\S]*?setupSupported/,
+    /'rtl-setup'[\s\S]*?if \(\$id -notin @\('zcode','qoder','deepseek-harness','antigravity','opencode'\)\)/,
     /if \(\$id -eq 'chatgpt' -and \$request\.req\.rtl\)[\s\S]*?CodexRtlStatus/,
   ]) assert.ok(expression.test(windows), `missing ChatGPT fail-closed contract: ${expression}`);
 });

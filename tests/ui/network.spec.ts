@@ -4,11 +4,11 @@ import { mockNative } from './mock';
 test('free API presets are listed and Workers AI requires an account ID', async ({ page }) => {
   await mockNative(page);
   await page.goto('/models');
-  await page.getByRole('searchbox').last().fill('groq');
+  await page.locator('main input[type=search]').first().fill('groq');
   await expect(page.getByTestId('provider-groq')).toBeVisible();
-  await page.getByRole('searchbox').last().fill('cloudflare');
+  await page.locator('main input[type=search]').first().fill('cloudflare');
   await expect(page.getByTestId('provider-cloudflare-workers-ai')).toBeVisible();
-  await page.getByRole('searchbox').last().fill('');
+  await page.locator('main input[type=search]').first().fill('');
 
   await page.getByRole('button', { name: 'Try a custom URL', exact: true }).click();
   const dialog = page.getByRole('dialog');
@@ -86,7 +86,7 @@ for (const lang of ['en', 'fa']) {
     await dialog.locator('button[type=submit]').click();
     await expect(dialog).toBeHidden();
     await page.reload();
-    await page.getByRole('searchbox').last().fill('models.example.invalid');
+    await page.locator('main input[type=search]').first().fill('models.example.invalid');
     await page.locator('[data-testid^="provider-custom:"]').click();
 
     const card = page.locator('[data-testid^=connection-]').filter({ hasText: 'OpenAI-compatible' });
@@ -109,7 +109,7 @@ for (const lang of ['en', 'fa']) {
       .map((call: any) => Object.keys(call.args)))).toEqual([['id'], ['id'], ['id']]);
     const savedTime = await card.locator('bdi').first().textContent();
     await page.reload();
-    await page.getByRole('searchbox').last().fill('models.example.invalid');
+    await page.locator('main input[type=search]').first().fill('models.example.invalid');
     await page.locator('[data-testid^="provider-custom:"]').click();
     await expect(card.getByText('fixture-new', { exact: true })).toBeVisible();
     await expect(card.locator('bdi').first()).toHaveText(savedTime ?? '');

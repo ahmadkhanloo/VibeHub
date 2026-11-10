@@ -7,7 +7,10 @@ test('workspace shows the IDE and CLI with normal launch and setup guides', asyn
   await expect(page.getByTestId('app-tile-antigravity-ide')).toBeVisible();
   await expect(page.getByTestId('app-tile-claude-code')).toBeVisible();
   await expect(page.getByTestId('app-tile-antigravity')).toHaveCount(0);
-  await expect(page.getByTestId('app-tile-claude-desktop')).toHaveCount(0);
+  const desktop = page.getByTestId('app-tile-claude-desktop');
+  await expect(desktop).toBeVisible();
+  await desktop.getByRole('button', {name:'Run Claude Desktop',exact:true}).click();
+  await expect.poll(() => page.evaluate(() => (window as any).__mock.calls.find((call: any) => call.cmd === 'launch_app')?.args.req)).toEqual({appId:'claude-desktop',rtl:false});
   await page.goto('/app/claude-code?tab=guide');
   await expect(page.getByRole('heading',{name:'Radeon without a Claude account'})).toBeVisible();
   await page.goto('/app/antigravity-ide?tab=guide');
@@ -33,6 +36,9 @@ test('older remote feeds cannot hide the replacements or replace their setup gui
   await page.goto('/');
   await expect(page.getByTestId('app-tile-claude-code')).toBeVisible();
   await expect(page.getByTestId('app-tile-antigravity-ide')).toBeVisible();
+  await expect(page.getByTestId('app-tile-claude-desktop')).toBeVisible();
+  await page.goto('/app/claude-desktop?tab=guide');
+  await expect(page.getByRole('heading',{name:'Test the model in Code'})).toBeVisible();
   await page.goto('/app/claude-code?tab=guide');
   await expect(page.getByRole('heading',{name:'Radeon without a Claude account'})).toBeVisible();
 });
