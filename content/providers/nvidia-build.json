@@ -23,7 +23,7 @@
     "en": "Free development access subject to eligibility and limits; the API service itself is not open source. Check each model's commercial license and regional availability at use time. If your account/region is restricted, we explain it, never bypass it."
   },
   "endpoint": {
-    "baseUrl": "https://integrate.api.nvidia.com/",
+    "baseUrl": "https://integrate.api.nvidia.com/v1",
     "kind": "nvidia-nim"
   },
   "logo": "nvidia-build",

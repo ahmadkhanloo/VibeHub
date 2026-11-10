@@ -19,5 +19,9 @@
   "requiresApiKey": true,
   "supportedApps": {},
   "eligibilityStatus": "unknown",
-  "lastVerified": "2026-11-07"
+  "lastVerified": "2026-11-07",
+  "endpoint": {
+    "baseUrl": "https://api.cloudflare.com/client/v4/accounts/ACCOUNT_ID/ai/v1",
+    "kind": "openai-compatible"
+  }
 }

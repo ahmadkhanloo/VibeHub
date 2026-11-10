@@ -97,6 +97,10 @@ label.space-y-1 {display:flex;flex-direction:column;gap:6px;}
 .vh-switch.is-checked{background:var(--primary);border-color:var(--primary);}.vh-switch.is-checked span{transform:translateX(18px);background:var(--primary-foreground);}
 [dir='rtl'] .vh-switch{transform:scaleX(-1);}.vh-switch:disabled{opacity:.5;cursor:not-allowed;}
 .vh-dialog{position:fixed;inset:0;margin:auto;max-width:720px;width:calc(100% - 48px);max-height:calc(100% - 48px);overflow:auto;border:1px solid var(--control-border);border-radius:12px;padding:0;background:var(--surface);color:var(--text);box-shadow:0 16px 64px #0005;}
+/* With a footer, the dialog becomes a flex column so the footer stays visible while the body scrolls. */
+.vh-dialog.vh-dialog-footered{display:flex;flex-direction:column;overflow:hidden;}
+.vh-dialog.vh-dialog-footered>.vh-dialog-body{flex:1 1 auto;min-height:0;overflow:auto;}
+.vh-dialog.vh-dialog-footered>.vh-dialog-footer{flex-shrink:0;display:flex;justify-content:flex-end;gap:8px;padding:14px 24px;border-top:1px solid var(--border);background:var(--surface);}
 .vh-dialog::backdrop{background:#10182899;}
 .vh-tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--border);}
 .vh-tabs button{padding:12px 16px;border-bottom:2px solid transparent;font-size:14px;white-space:nowrap;color:var(--muted);}

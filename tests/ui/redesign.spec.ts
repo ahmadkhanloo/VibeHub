@@ -13,7 +13,7 @@ test("search includes model services and targets selected provider without savin
   await expect(page).toHaveURL(/search\?q=NVIDIA/);
   await page.getByRole("link", { name: /NVIDIA API Catalog/ }).click();
   await expect(page).toHaveURL(/connections\/api\?provider=nvidia-build/);
-  await expect(page.getByTestId('provider-nvidia-build')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('provider-nvidia-build')).toHaveAttribute('aria-selected', 'true');
   await expect(page.getByRole("dialog")).toHaveCount(0);
   expect(
     await page.evaluate(() =>

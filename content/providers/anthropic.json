@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "anthropic",
+  "name": "Anthropic",
+  "officialUrl": "https://www.anthropic.com/",
+  "keyUrl": "https://console.anthropic.com/settings/keys",
+  "modelsDocUrl": "https://docs.anthropic.com/en/docs/about-claude/models/overview",
+  "usageTermsUrl": "https://www.anthropic.com/legal/commercial-terms",
+  "freeAccess": "paid",
+  "requiresAccount": true,
+  "requiresApiKey": true,
+  "supportedApps": {},
+  "eligibilityStatus": "unknown",
+  "lastVerified": "2026-11-09",
+  "notes": {
+    "fa": "API پولی و بر اساس مصرف است. نشانی پایهٔ ثبت‌شده همین‌جا لایهٔ سازگار با OpenAI است؛ اتصال Claude در برنامه‌های مخصوص Claude از نشانی ریشه استفاده می‌کند.",
+    "en": "The API is paid and usage-based. The base URL listed here is the OpenAI-compatible layer; Claude connections in Claude-specific apps use the root URL."
+  },
+  "gettingStarted": {
+    "fa": "از کنسول رسمی، کلید API بسازید. سپس نشانی API، شناسهٔ مدل و کلید را در برنامهٔ سازگار ثبت کنید؛ سازگاری هر برنامه در راهنمای همان برنامه مشخص شده است.",
+    "en": "Create an API key from the official console. Then enter the API endpoint, model ID, and key in a compatible client; each app's guide lists its verified compatibility."
+  },
+  "endpoint": {
+    "baseUrl": "https://api.anthropic.com/v1",
+    "kind": "openai-compatible"
+  },
+  "logo": "anthropic"
+}
