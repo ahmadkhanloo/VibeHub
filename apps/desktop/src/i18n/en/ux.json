@@ -199,5 +199,8 @@
     "compatibility": "Use an Anthropic Messages compatible endpoint. Non-Claude models and Persian editing require live compatibility testing.",
     "manage": "Manage connections and test models",
     "normal": "Run normally"
-  }
+  },
+  "themeToggle": "Day and night",
+  "dayMode": "Switch to day",
+  "nightMode": "Switch to night"
 }
