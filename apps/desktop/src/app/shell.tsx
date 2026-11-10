@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useSettings } from "./settings";
 import { Button, Spinner } from "@/components/ui";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import vibeHubMark from "@/assets/vibehub-mark.svg";
 export function AppShell() {
   const { t } = useTranslation(["ux", "nav", "common", "workshop"]);
@@ -167,6 +168,7 @@ export function AppShell() {
             <Languages aria-hidden="true" size={18} />
             {settings.language === "fa" ? "English" : "فارسی"}
           </Button>
+          <ThemeToggle />
         </header>
         <main id="main-content" ref={main} tabIndex={-1} className="vh-main">
           <div className="vh-content">

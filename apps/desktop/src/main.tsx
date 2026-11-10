@@ -11,6 +11,7 @@ import {
 } from "react-router-dom";
 import "@/styles/main.css";
 import "@/styles/workbench.css";
+import "@/styles/day-night.css";
 import i18n from "@/i18n";
 import { SettingsProvider } from "@/app/settings";
 import { ToolProvider } from "@/app/tool-context";
