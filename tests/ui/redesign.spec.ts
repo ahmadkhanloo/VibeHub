@@ -13,7 +13,7 @@ test("search includes model services and targets selected provider without savin
   await expect(page).toHaveURL(/search\?q=NVIDIA/);
   await page.getByRole("link", { name: /NVIDIA API Catalog/ }).click();
   await expect(page).toHaveURL(/connections\/api\?provider=nvidia-build/);
-  await expect(page.getByTestId('provider-nvidia-build')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('provider-nvidia-build')).toHaveAttribute('aria-selected', 'true');
   await expect(page.getByRole("dialog")).toHaveCount(0);
   expect(
     await page.evaluate(() =>
@@ -435,7 +435,6 @@ test("single model deletion cancels without touching any connection", async ({
 }) => {
   await mockNative(page);
   await page.goto("/models");
-  await page.getByRole("searchbox", { name: "Search providers and notes" }).fill("Ollama");
   await page.getByTestId("provider-ollama").click();
   await page
     .getByRole("button", { name: "Delete connection Local Ollama" })

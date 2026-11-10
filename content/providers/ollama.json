@@ -23,7 +23,7 @@
     "en": "Runs models locally; no subscription cost, but RAM/VRAM usage and each model's weights license are separate concerns."
   },
   "endpoint": {
-    "baseUrl": "http://127.0.0.1:11434",
+    "baseUrl": "http://127.0.0.1:11434/v1",
     "kind": "ollama"
   },
   "logo": "ollama",

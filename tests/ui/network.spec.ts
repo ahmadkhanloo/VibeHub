@@ -4,11 +4,11 @@ import { mockNative } from './mock';
 test('free API presets are listed and Workers AI requires an account ID', async ({ page }) => {
   await mockNative(page);
   await page.goto('/models');
-  await page.getByRole('searchbox').last().fill('groq');
+  await page.locator('main input[type=search]').first().fill('groq');
   await expect(page.getByTestId('provider-groq')).toBeVisible();
-  await page.getByRole('searchbox').last().fill('cloudflare');
+  await page.locator('main input[type=search]').first().fill('cloudflare');
   await expect(page.getByTestId('provider-cloudflare-workers-ai')).toBeVisible();
-  await page.getByRole('searchbox').last().fill('');
+  await page.locator('main input[type=search]').first().fill('');
 
   await page.getByRole('button', { name: 'Try a custom URL', exact: true }).click();
   const dialog = page.getByRole('dialog');
@@ -41,7 +41,6 @@ test('API test requires confirmation and unauthenticated local models do not cla
     };
   });
   await page.goto('/models');
-  await page.getByRole('searchbox', { name: 'Search providers and notes' }).fill('Ollama');
   await page.getByTestId('provider-ollama').click();
   await page.getByRole('button',{name:'Test connection',exact:true}).click();
   expect(await page.evaluate(() => (window as any).__mock.calls.filter((c: any) => c.cmd === 'provider_connection_test').length)).toBe(0);

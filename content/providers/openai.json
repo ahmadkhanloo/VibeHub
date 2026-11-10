@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "openai",
+  "name": "OpenAI",
+  "officialUrl": "https://openai.com/",
+  "keyUrl": "https://platform.openai.com/api-keys",
+  "modelsDocUrl": "https://platform.openai.com/docs/models",
+  "usageTermsUrl": "https://openai.com/policies/terms-of-use/",
+  "freeAccess": "paid",
+  "requiresAccount": true,
+  "requiresApiKey": true,
+  "supportedApps": {},
+  "eligibilityStatus": "unknown",
+  "lastVerified": "2026-11-09",
+  "notes": {
+    "fa": "API پولی و بر اساس مصرف است؛ پلن رایگانی برای آن نمی‌شناسیم. قیمت و سقف هر مدل را در مستندات رسمی بررسی کنید.",
+    "en": "The API is paid and usage-based; we know of no free plan for it. Check pricing and each model's limits in the official documentation."
+  },
+  "gettingStarted": {
+    "fa": "از پنل رسمی، کلید API بسازید. سپس نشانی API، شناسهٔ مدل و کلید را در برنامهٔ سازگار ثبت کنید؛ سازگاری هر برنامه در راهنمای همان برنامه مشخص شده است.",
+    "en": "Create an API key from the official console. Then enter the API endpoint, model ID, and key in a compatible client; each app's guide lists its verified compatibility."
+  },
+  "endpoint": {
+    "baseUrl": "https://api.openai.com/v1",
+    "kind": "openai-compatible"
+  },
+  "logo": "openai"
+}

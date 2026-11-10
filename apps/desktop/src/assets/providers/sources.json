@@ -1,7 +1,43 @@
 {
-  "reviewedOn": "2026-11-01",
+  "reviewedOn": "2026-11-10",
   "notice": "Provider marks identify their respective service providers. These small favicons are bundled locally; the interface never fetches logo images at runtime. Missing icons use a text fallback.",
   "assets": [
+    {
+      "file": "anthropic.png",
+      "provider": "anthropic",
+      "source": "https://www.google.com/s2/favicons/?sz=128&domain_url=https%3A%2F%2Fconsole.anthropic.com%2F",
+      "retrieval": "official-domain-favicon-cache"
+    },
+    {
+      "file": "apinex.jpg",
+      "provider": "apinex",
+      "source": "https://www.google.com/s2/favicons/?sz=128&domain_url=https%3A%2F%2Fapinex.bond%2F",
+      "retrieval": "official-domain-favicon-cache"
+    },
+    {
+      "file": "cloudflare-workers-ai.png",
+      "provider": "cloudflare-workers-ai",
+      "source": "https://www.google.com/s2/favicons/?sz=128&domain_url=https%3A%2F%2Fdash.cloudflare.com%2F",
+      "retrieval": "official-domain-favicon-cache"
+    },
+    {
+      "file": "deepseek.png",
+      "provider": "deepseek",
+      "source": "https://www.google.com/s2/favicons/?sz=128&domain_url=https%3A%2F%2Fwww.deepseek.com%2F",
+      "retrieval": "official-domain-favicon-cache"
+    },
+    {
+      "file": "groq.ico",
+      "provider": "groq",
+      "source": "https://groq.com/favicon.ico",
+      "retrieval": "official-site-favicon"
+    },
+    {
+      "file": "openai.png",
+      "provider": "openai",
+      "source": "https://www.google.com/s2/favicons/?sz=128&domain_url=https%3A%2F%2Fplatform.openai.com%2F",
+      "retrieval": "official-domain-favicon-cache"
+    },
     {
       "file": "clean-apis.png",
       "provider": "clean-apis",

@@ -31,7 +31,7 @@ for (const provider of ['openrouter', 'radeon-cloud', 'nvidia-build']) {
   test('provider direct link opens ' + provider, async ({page}) => {
     await mockNative(page);
     await page.goto('/connections/api?provider=' + provider);
-    await expect(page.getByTestId('provider-' + provider)).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByTestId('provider-' + provider)).toHaveAttribute('aria-selected', 'true');
     await expect(page.locator('.model-workspace-detail')).toContainText(provider === 'radeon-cloud' ? 'Radeon' : provider === 'openrouter' ? 'OpenRouter' : 'NVIDIA');
   });
 }

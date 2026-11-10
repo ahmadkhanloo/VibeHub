@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "deepseek",
+  "name": "DeepSeek",
+  "officialUrl": "https://www.deepseek.com/",
+  "keyUrl": "https://platform.deepseek.com/api_keys",
+  "modelsDocUrl": "https://api-docs.deepseek.com/",
+  "usageTermsUrl": "https://www.deepseek.com/downloads/DeepSeek%20Terms%20of%20Use.html",
+  "freeAccess": "paid",
+  "requiresAccount": true,
+  "requiresApiKey": true,
+  "supportedApps": {},
+  "eligibilityStatus": "unknown",
+  "lastVerified": "2026-11-09",
+  "notes": {
+    "fa": "API پولی و بر اساس مصرف است. اگر حساب شما اعتبار هدیه داشته باشد، همان در پنل رسمی مشخص می‌شود؛ وایب‌هاب دربارهٔ سهمیه حدس نمی‌زند.",
+    "en": "The API is paid and usage-based. If your account has trial credit, the official console shows it; VibeHub does not guess quotas."
+  },
+  "gettingStarted": {
+    "fa": "از پلتفرم رسمی، کلید API بسازید. سپس نشانی API، شناسهٔ مدل و کلید را در برنامهٔ سازگار ثبت کنید؛ سازگاری هر برنامه در راهنمای همان برنامه مشخص شده است.",
+    "en": "Create an API key from the official platform. Then enter the API endpoint, model ID, and key in a compatible client; each app's guide lists its verified compatibility."
+  },
+  "endpoint": {
+    "baseUrl": "https://api.deepseek.com/v1",
+    "kind": "openai-compatible"
+  },
+  "logo": "deepseek"
+}

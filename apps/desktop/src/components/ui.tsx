@@ -282,11 +282,14 @@ export function ErrorNotice({
   onRetry,
   message,
   recovery,
+  role = "alert",
 }: {
   error: unknown;
   onRetry?: () => void;
   message?: string;
   recovery?: string;
+  /** Pass "status" when the notice renders inside another live region. */
+  role?: "alert" | "status";
 }) {
   const { t } = useTranslation("ux");
   const raw = String(error ?? "");
@@ -309,7 +312,7 @@ export function ErrorNotice({
       "$1[redacted]",
     );
   return (
-    <div className="vh-error" role="alert">
+    <div className="vh-error" role={role}>
       <div className="flex items-start gap-3">
         <AlertCircle size={19} aria-hidden="true" className="shrink-0" />
         <div className="min-w-0 flex-1">
@@ -337,12 +340,15 @@ export function Modal({
   onClose,
   children,
   busy = false,
+  footer,
 }: {
   open: boolean;
   title: string;
   onClose: () => void;
   children: ReactNode;
   busy?: boolean;
+  /** Rendered in a sticky footer bar so primary actions stay visible in long dialogs. */
+  footer?: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -378,7 +384,7 @@ export function Modal({
         if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
         else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
       }}
-      className="vh-dialog"
+      className={"vh-dialog" + (footer != null ? " vh-dialog-footered" : "")}
       onCancel={(e) => {
         e.preventDefault();
         if (!busy) closeRef.current();
@@ -398,7 +404,8 @@ export function Modal({
           <X aria-hidden="true" size={18} />
         </Button>
       </header>
-      <div className="space-y-4 p-6">{children}</div>
+      <div className={(footer != null ? "vh-dialog-body " : "") + "space-y-4 p-6"}>{children}</div>
+      {footer != null && <footer className="vh-dialog-footer">{footer}</footer>}
     </dialog>
   );
 }
