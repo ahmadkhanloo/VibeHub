@@ -39,12 +39,6 @@
       "retrieval": "official-domain-favicon-cache"
     },
     {
-      "file": "clean-apis.png",
-      "provider": "clean-apis",
-      "source": "https://www.google.com/s2/favicons/?sz=128&domain_url=https%3A%2F%2Fwww.cleanapis.com%2F",
-      "retrieval": "official-domain-favicon-cache"
-    },
-    {
       "file": "custom-openai-compatible.png",
       "provider": "custom-openai-compatible",
       "source": "https://www.google.com/s2/favicons/?sz=128&domain_url=https%3A%2F%2Fplatform.openai.com%2Fdocs%2Fapi-reference",
@@ -54,18 +48,6 @@
       "file": "google.png",
       "provider": "google",
       "source": "https://www.google.com/s2/favicons/?sz=128&domain_url=https%3A%2F%2Faistudio.google.com%2F",
-      "retrieval": "official-domain-favicon-cache"
-    },
-    {
-      "file": "inferx.ico",
-      "provider": "inferx",
-      "source": "https://inferx.net/favicon.ico",
-      "retrieval": "official-site-favicon"
-    },
-    {
-      "file": "kira-ai.png",
-      "provider": "kira-ai",
-      "source": "https://www.google.com/s2/favicons/?sz=128&domain_url=https%3A%2F%2Fkiraai.vn%2F",
       "retrieval": "official-domain-favicon-cache"
     },
     {
@@ -93,12 +75,6 @@
       "retrieval": "official-site-favicon"
     },
     {
-      "file": "orcarouter.ico",
-      "provider": "orcarouter",
-      "source": "https://www.orcarouter.ai/favicon.ico",
-      "retrieval": "official-site-favicon"
-    },
-    {
       "file": "radeon-cloud.ico",
       "provider": "radeon-cloud",
       "source": "https://developer.amd.com.cn/favicon.ico",
@@ -106,4 +82,3 @@
     }
   ]
 }
-

@@ -2,7 +2,7 @@ import { Disclosure } from '@/components/Disclosure';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ExternalLink, Eye, EyeOff, KeyRound, Plus, Save, StickyNote, Trash2, Zap } from 'lucide-react';
+import { ExternalLink, Eye, EyeOff, KeyRound, Plus, Save, Search, StickyNote, Trash2, Zap } from 'lucide-react';
 import { Badge, Button, Card, CopyButton, EmptyState, ErrorNotice, Input, Modal, PageHeader } from '@/components/ui';
 import { useCatalog, providers as bundledProviders } from '@/lib/catalog';
 import { ProviderLogo } from '@/components/ProviderLogo';
@@ -17,7 +17,7 @@ const origin = (value: string) => { try { return new URL(value).origin; } catch 
 
 // Single source of truth: the provider catalog (content/providers/*.json). This table only adds
 // the default model ID and the display order, plus the manifest-less `custom` preset.
-const PRESET_ORDER = ['openai', 'anthropic', 'google', 'deepseek', 'mistral', 'openrouter', 'nvidia', 'radeon-cloud', 'inferx', 'kira-ai', 'clean-apis', 'orcarouter', 'apinex', WORKERS_AI, 'groq', 'ollama'];
+const PRESET_ORDER = ['openai', 'anthropic', 'google', 'deepseek', 'mistral', 'openrouter', 'nvidia', 'radeon-cloud', 'apinex', WORKERS_AI, 'groq', 'ollama'];
 const DEFAULT_MODELS: Record<string, string> = {
   openai: 'gpt-4o-mini',
   anthropic: 'claude-sonnet-4-5-20250929',
@@ -27,10 +27,6 @@ const DEFAULT_MODELS: Record<string, string> = {
   openrouter: 'openai/gpt-oss-20b:free',
   nvidia: 'meta/llama-3.3-70b-instruct',
   'radeon-cloud': 'DeepSeek-V4-Flash',
-  inferx: 'Qwen/Qwen3.6-35B-A3B',
-  'kira-ai': 'minimax-m3-free',
-  'clean-apis': 'claude-opus-4.8',
-  orcarouter: 'deepseek/deepseek-v4-flash-free',
   apinex: 'free/jev-1.13',
   [WORKERS_AI]: '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
   groq: 'openai/gpt-oss-20b',
@@ -383,8 +379,13 @@ export function ModelsPage() {
     <p className="max-w-[70ch] text-sm leading-7 text-muted">{t('models:connectionIntro')}</p>
     {error != null && !deleting && !testing && <ErrorNotice error={error} onRetry={() => void reload()} />}{message && <p role="status" className="text-sm text-success">{message}</p>}
     <div className="space-y-4">
-      <label className="block max-w-xl space-y-1"><span>{t('models:searchProviders')}</span><Input type="search" value={search} onChange={event => changeSearch(event.target.value)} /></label>
-      <div className="vh-choice-group model-filter-group max-w-xl" role="group" aria-label={t('models:filterLabel')}>{(['all', 'saved', 'notes'] as const).map(value => <button key={value} type="button" aria-pressed={filter === value} onClick={() => changeFilter(value)}>{t(`models:views.${value}`)}</button>)}</div>
+      <div className="model-toolbar">
+        <div className="model-search">
+          <Search size={16} aria-hidden="true" />
+          <Input type="search" aria-label={t('models:searchProviders')} placeholder={t('models:searchProviders')} value={search} onChange={event => changeSearch(event.target.value)} />
+        </div>
+        <div className="vh-choice-group model-filter-group" role="group" aria-label={t('models:filterLabel')}>{(['all', 'saved', 'notes'] as const).map(value => <button key={value} type="button" aria-pressed={filter === value} onClick={() => changeFilter(value)}>{t(`models:views.${value}`)}</button>)}</div>
+      </div>
       {!loading && <p role="status" className="text-sm text-muted">{t('models:resultsCount', { count: visible.length })}</p>}
       {loading ? <p role="status">{t('common:loading')}</p> : <div className="model-workspace" data-selected={!!row}>
           <div className="model-workspace-side min-w-0">
@@ -394,11 +395,11 @@ export function ModelsPage() {
               if (filter === 'notes' && Object.keys(notes).length === 0) return <li role="presentation" className="col-span-full"><EmptyState icon={<StickyNote size={22} aria-hidden="true" />} title={t('models:noNotesYet')} sub={t('models:noNotesHint')} /></li>;
               return <li role="presentation" className="col-span-full"><p role="status">{t('models:noResults')}</p></li>;
             })()}
-            {paged.map(item => <li key={item.id} role="presentation" className="space-y-2"><button type="button" ref={element => { if (element) tileRefs.current.set(item.id, element); else tileRefs.current.delete(item.id); }} role="option" aria-selected={selected === item.id} tabIndex={selected === item.id || (!selected && paged[0]?.id === item.id) ? 0 : -1} className="model-provider-row" onClick={() => selectProvider(item.id)} data-testid={`provider-${item.id}`}><ProviderLogo id={item.provider?.logo ?? item.provider?.id ?? (item.id.startsWith("custom:") ? "custom-openai-compatible" : item.id)} name={item.name} /><span className="model-provider-name">{item.name}</span>{costProviders.includes(item.id) && <span className="model-provider-meta">{t(`models:providerCost.${item.id}`)}</span>}<span className="flex flex-wrap justify-center gap-1">{item.connections.length > 0 && <Badge tone="success">{t('models:connectionsCount', { count: item.connections.length })}</Badge>}{notes[item.id] && <Badge tone="muted">{t('models:note')}</Badge>}</span></button>{filter === 'notes' && <div className="rounded-lg border border-border bg-surface p-3 space-y-2">{noteEditing && selected === item.id ? <><textarea aria-label={t('models:note')} className="vh-input w-full" rows={3} dir="auto" value={noteDraft} onChange={event => setNoteDraft(event.target.value)} /><div className="flex gap-2"><Button size="sm" onClick={() => setNoteEditing(false)}>{t('common:cancel')}</Button><Button size="sm" variant="primary" loading={busy} onClick={() => void act(async () => { setNotes(await ipc.providerNoteSave(item.id, noteDraft)); setNoteEditing(false); })}>{t('common:save')}</Button></div></> : <><p className="whitespace-pre-wrap break-words" dir="auto">{notes[item.id]}</p><Button size="sm" onClick={() => { selectProvider(item.id); setNoteDraft(notes[item.id] ?? ''); setNoteEditing(true); }}>{t('common:edit')}</Button></>}</div>}</li>)}
+            {paged.map(item => <li key={item.id} role="presentation" className="space-y-2"><button type="button" ref={element => { if (element) tileRefs.current.set(item.id, element); else tileRefs.current.delete(item.id); }} role="option" aria-selected={selected === item.id} tabIndex={selected === item.id || (!selected && paged[0]?.id === item.id) ? 0 : -1} className="model-provider-row" onClick={() => selectProvider(item.id)} data-testid={`provider-${item.id}`}><ProviderLogo id={item.provider?.logo ?? item.provider?.id ?? (item.id.startsWith("custom:") ? "custom-openai-compatible" : item.id)} name={item.name} /><span className="model-provider-body"><span className="model-provider-name">{item.name}</span><span className="model-provider-meta">{costProviders.includes(item.id) && <span>{t(`models:providerCost.${item.id}`)}</span>}{item.connections.length > 0 && <Badge tone="success">{t('models:connectionsCount', { count: item.connections.length })}</Badge>}{notes[item.id] && <Badge tone="muted">{t('models:note')}</Badge>}</span></span></button>{filter === 'notes' && <div className="rounded-lg border border-border bg-surface p-3 space-y-2">{noteEditing && selected === item.id ? <><textarea aria-label={t('models:note')} className="vh-input w-full" rows={3} dir="auto" value={noteDraft} onChange={event => setNoteDraft(event.target.value)} /><div className="flex gap-2"><Button size="sm" onClick={() => setNoteEditing(false)}>{t('common:cancel')}</Button><Button size="sm" variant="primary" loading={busy} onClick={() => void act(async () => { setNotes(await ipc.providerNoteSave(item.id, noteDraft)); setNoteEditing(false); })}>{t('common:save')}</Button></div></> : <><p className="whitespace-pre-wrap break-words" dir="auto">{notes[item.id]}</p><Button size="sm" onClick={() => { selectProvider(item.id); setNoteDraft(notes[item.id] ?? ''); setNoteEditing(true); }}>{t('common:edit')}</Button></>}</div>}</li>)}
           </ul>
           {visible.length > 10 && <nav className="mt-3 flex items-center gap-2" aria-label={t('models:paginationLabel')}><Button size="sm" disabled={page === 0} onClick={() => changePage(page - 1)}>{t('models:previous')}</Button><span>{page + 1} / {Math.ceil(visible.length / 10)}</span><Button size="sm" disabled={(page + 1) * 10 >= visible.length} onClick={() => changePage(page + 1)}>{t('models:next')}</Button></nav>}
           </div>
-          <div className="model-workspace-detail" role="region" aria-labelledby={detailId}>{row ? <div className="space-y-5"><Button className="model-back" size="sm" onClick={() => selectProvider('')}>{t('models:backToList')}</Button><h2 id={detailId} ref={headingRef} tabIndex={-1} className="text-lg font-bold" dir="auto">{row.name}</h2>
+          <div className="model-workspace-detail" role="region" aria-labelledby={detailId}>{row ? <div className="space-y-5"><Button className="model-back" size="sm" onClick={() => selectProvider('')}>{t('models:backToList')}</Button><div className="model-detail-head"><ProviderLogo id={provider?.logo ?? provider?.id ?? (row.id.startsWith("custom:") ? "custom-openai-compatible" : row.id)} name={row.name} /><h2 id={detailId} ref={headingRef} tabIndex={-1} className="text-lg font-bold" dir="auto">{row.name}</h2></div>
             {provider && <div className="space-y-3"><p className="text-sm text-muted">{provider.notes[lang]}</p>{preset && <p><span>{t('models:suggestedAddress')}: </span><code dir="ltr" className="break-all">{preset.baseUrl}</code></p>}<div className="flex flex-wrap gap-2"><Button size="sm" onClick={() => void act(async () => { await openUrl(provider.keyUrl ?? provider.officialUrl); })}><ExternalLink size={15} />{t(provider.requiresApiKey ? 'models:openKeyPortal' : 'models:openProvider')}</Button>{preset && <Button size="sm" onClick={() => startNew(preset.providerId)}>{t('models:addConnection')}</Button>}<Button size="sm" onClick={() => void act(async () => { await openUrl(provider.modelsDocUrl ?? provider.officialUrl); })}>{t('models:officialUrl')}</Button><Button size="sm" onClick={() => void act(async () => { await openUrl(provider.usageTermsUrl); })}>{t('models:terms')}</Button></div><p className="text-sm text-muted">{provider.gettingStarted?.[lang]}</p><p className="text-sm text-muted">{t('models:compatibility')}: {Object.entries(provider.supportedApps).filter(([,status]) => status === 'verified').map(([id]) => apps.find(app => app.id === id)?.name ?? id).join(', ') || t('models:noVerifiedTools')}</p></div>}
             {!provider && preset && <div className="space-y-3"><p><span>{t('models:suggestedAddress')}: </span><code dir="ltr" className="break-all">{preset.baseUrl}</code></p><Button size="sm" onClick={() => startNew(preset.providerId)}>{t('models:addConnection')}</Button></div>}
             <section className="space-y-2"><h3 className="font-bold">{t('models:note')}</h3>{noteEditing ? <><textarea aria-label={t('models:note')} className="vh-input w-full" rows={4} dir="auto" value={noteDraft} onChange={event => setNoteDraft(event.target.value)} /><div className="flex gap-2"><Button size="sm" onClick={() => setNoteEditing(false)}>{t('common:cancel')}</Button><Button size="sm" variant="primary" loading={busy} onClick={() => void act(async () => { setNotes(await ipc.providerNoteSave(row.id, noteDraft)); setNoteEditing(false); })}>{t('common:save')}</Button></div></> : <><p className="whitespace-pre-wrap" dir="auto">{notes[row.id] || t('models:noNote')}</p><Button size="sm" onClick={() => { setNoteDraft(notes[row.id] ?? ''); setNoteEditing(true); }}>{t('common:edit')}</Button></>}</section>
