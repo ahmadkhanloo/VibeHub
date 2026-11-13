@@ -27,7 +27,10 @@ function Get-CdpInfo {
 }
 
 function PortOwner([int]$p = $Port) {
-  try { Get-NetTCPConnection -LocalPort $p -State Listen -ErrorAction Stop | Select-Object -First 1 }
+  # No -State Listen filter: on recent Windows builds a loopback-only listener
+  # (our node injector lock) reports a Bound state, so filtering by state would
+  # never match it. Ownership is verified separately in Owns-InjectorLock.
+  try { Get-NetTCPConnection -LocalPort $p -ErrorAction Stop | Select-Object -First 1 }
   catch { $null }
 }
 
@@ -72,7 +75,6 @@ $main = Get-CimInstance Win32_Process -Filter "Name='DeepSeek Harness.exe'" -Err
   Where-Object { $_.CommandLine -notmatch '--type=' -and $_.ExecutablePath -ieq $exe } |
   Select-Object -First 1
 $owner = PortOwner
-$lockOwner = PortOwner ($Port + 1)
 $info = Get-CdpInfo
 
 if ($owner) {
@@ -88,8 +90,23 @@ if ($owner) {
     exit 1
   }
 } elseif ($main) {
-  Say 'DeepSeek Harness is already running without the DevTools port. Fully quit it, including the tray, then start it with the DeepSeek Harness RTL shortcut.' 48
-  exit 1
+  if ($main.CommandLine -match [regex]::Escape("--remote-debugging-port=$Port")) {
+    # Mid-startup from an earlier RTL launch (its DevTools port opens late);
+    # wait for it instead of demanding a full quit.
+    Say "DeepSeek Harness is already starting with its RTL port $Port - waiting for it to open."
+    for ($i = 0; $i -lt 60; $i++) {
+      Start-Sleep -Milliseconds 500
+      $info = Get-CdpInfo
+      if ($info) { break }
+    }
+    if (-not $info) {
+      Say "DeepSeek Harness did not open its RTL port $Port. Fully quit it, including the tray, then start it again with the DeepSeek Harness RTL shortcut." 48
+      exit 1
+    }
+  } else {
+    Say 'DeepSeek Harness is already running without the DevTools port. Fully quit it, including the tray, then start it with the DeepSeek Harness RTL shortcut.' 48
+    exit 1
+  }
 } else {
   Say "starting DeepSeek Harness with --remote-debugging-port=$Port"
   $launchArgs = "--remote-debugging-port=$Port"
@@ -112,6 +129,7 @@ if ($owner) {
   }
 }
 
+$lockOwner = PortOwner ($Port + 1)
 if ($lockOwner -and -not (Owns-InjectorLock $lockOwner $injector)) {
   Say "Port $($Port + 1) is already used by another program. Close it or set DEEPSEEK_HARNESS_RTL_PORT to a different port." 16
   exit 1
@@ -126,7 +144,7 @@ if (-not (Owns-InjectorLock $lockOwner $injector)) {
     if (Owns-InjectorLock (PortOwner ($Port + 1)) $injector) { $injectorReady = $true; break }
   }
   if (-not $injectorReady) {
-    Say "The injector could not acquire port $($Port + 1). Check that port and try again." 16
+    Say "The RTL injector did not start. See $err and $out for details, then try again." 16
     exit 1
   }
 }

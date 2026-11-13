@@ -26,7 +26,10 @@ function Say([string]$msg, [int]$icon = 0) {
 }
 
 function PortOwner([int]$p) {
-  try { Get-NetTCPConnection -LocalPort $p -State Listen -ErrorAction Stop | Select-Object -First 1 }
+  # No -State Listen filter: on recent Windows builds a loopback-only listener
+  # (our node injector lock) reports a Bound state, so filtering by state would
+  # never match it. Ownership is verified separately in Owns-InjectorLock.
+  try { Get-NetTCPConnection -LocalPort $p -ErrorAction Stop | Select-Object -First 1 }
   catch { $null }
 }
 
@@ -95,12 +98,12 @@ try {
 # --- already RTL? then only revive the injector if it died ---
 $injector = Join-Path $Dir 'injector.mjs'
 $owner = PortOwner $Port
-$lockOwner = PortOwner ($Port + 1)
 if ($owner) {
   if (-not (Has-QoderTarget)) {
     Say "Port $Port is already used by another program. Close it or set QODER_RTL_PORT to another port." 16
     exit 1
   }
+  $lockOwner = PortOwner ($Port + 1)
   if (Owns-InjectorLock $lockOwner $injector) {
     Say "already running with RTL (port $Port, injector pid $($lockOwner.OwningProcess))."
     exit 0
@@ -113,31 +116,46 @@ if ($owner) {
 } else {
   $main = Get-RunningQoder | Where-Object { $_.ExecutablePath -ieq $exe }
   if ($main) {
-    Say "Qoder is already running without the DevTools port, so a second start would just re-use it.`n`nFully quit Qoder (window + tray), then start it again with the Qoder RTL shortcut." 48
-    exit 1
-  }
-
-  Say "starting Qoder with --remote-debugging-port=$Port"
-  $launchArgs = "--remote-debugging-port=$Port"
-  if ($env:VIBEHUB_PROJECT) { $launchArgs += ' "' + ($env:VIBEHUB_PROJECT.TrimEnd('\') + '\.') + '"' }
-  Start-Process -FilePath $exe -ArgumentList $launchArgs | Out-Null
-  for ($i = 0; $i -lt 40; $i++) {
-    Start-Sleep -Milliseconds 500
-    $owner = PortOwner $Port
-    if ($owner) { break }
-  }
-  if (-not $owner) {
-    Say "Qoder started but nothing listens on port $Port.`n`nThis Qoder build ignores --remote-debugging-port; the RTL injector cannot work." 16
-    exit 1
-  }
-  $qoderReady = $false
-  for ($i = 0; $i -lt 40; $i++) {
-    if (Has-QoderTarget) { $qoderReady = $true; break }
-    Start-Sleep -Milliseconds 500
-  }
-  if (-not $qoderReady) {
-    Say "Port $Port is open, but it does not belong to a Qoder window." 16
-    exit 1
+    if ($main.CommandLine -match [regex]::Escape("--remote-debugging-port=$Port")) {
+      # Mid-startup from an earlier RTL launch (its DevTools port opens late);
+      # wait for it instead of demanding a full quit.
+      Say "Qoder is already starting with its RTL port $Port - waiting for it to open."
+      for ($i = 0; $i -lt 60; $i++) {
+        Start-Sleep -Milliseconds 500
+        $owner = PortOwner $Port
+        if ($owner) { break }
+      }
+      if (-not $owner) {
+        Say "Qoder did not open its RTL port $Port. Fully quit Qoder (window + tray), then start it again with the Qoder RTL shortcut." 48
+        exit 1
+      }
+    } else {
+      Say "Qoder is already running without the DevTools port, so a second start would just re-use it.`n`nFully quit Qoder (window + tray), then start it again with the Qoder RTL shortcut." 48
+      exit 1
+    }
+  } else {
+    Say "starting Qoder with --remote-debugging-port=$Port"
+    $launchArgs = "--remote-debugging-port=$Port"
+    if ($env:VIBEHUB_PROJECT) { $launchArgs += ' "' + ($env:VIBEHUB_PROJECT.TrimEnd('\') + '\.') + '"' }
+    Start-Process -FilePath $exe -ArgumentList $launchArgs | Out-Null
+    for ($i = 0; $i -lt 40; $i++) {
+      Start-Sleep -Milliseconds 500
+      $owner = PortOwner $Port
+      if ($owner) { break }
+    }
+    if (-not $owner) {
+      Say "Qoder started but nothing listens on port $Port.`n`nThis Qoder build ignores --remote-debugging-port; the RTL injector cannot work." 16
+      exit 1
+    }
+    $qoderReady = $false
+    for ($i = 0; $i -lt 40; $i++) {
+      if (Has-QoderTarget) { $qoderReady = $true; break }
+      Start-Sleep -Milliseconds 500
+    }
+    if (-not $qoderReady) {
+      Say "Port $Port is open, but it does not belong to a Qoder window." 16
+      exit 1
+    }
   }
 }
 
@@ -152,7 +170,9 @@ for ($i = 0; $i -lt 20; $i++) {
   if (Owns-InjectorLock (PortOwner ($Port + 1)) $injector) { $injectorReady = $true; break }
 }
 if (-not $injectorReady) {
-  Say "The injector could not acquire port $($Port + 1). Check that port and try again." 16
+  $err = Join-Path $env:TEMP 'qoder-rtl-injector.err.log'
+  $out = Join-Path $env:TEMP 'qoder-rtl-injector.out.log'
+  Say "The RTL injector did not start. See $err and $out for details, then try again." 16
   exit 1
 }
 

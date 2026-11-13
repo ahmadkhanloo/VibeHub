@@ -47,24 +47,31 @@ const INJECT_SOURCE = `(() => {
 
 // Keep the app-specific lock bound for this process lifetime.
 const lock = createServer();
-lock.once('error', () => {
-  console.log('[zcode-rtl] injector already running, exiting.');
+lock.once('error', (e) => {
+  console.log(`[zcode-rtl] injector lock unavailable (${e.code || e.message}), exiting.`);
   process.exit(0);
 });
 lock.listen(LOCK_PORT, '127.0.0.1');
+
+// The launcher starts us right after the app's CDP port comes up, so once we
+// have seen it, a long silence means the app was closed: exit instead of
+// lingering forever as an orphan that keeps the lock and pollutes the logs.
+const APP_LINGER_MS = 75_000;
+let lastCdpSeen = 0;
+let everConnected = false;
 
 const injected = new Set();
 
 async function listPages() {
   try {
     const res = await fetch(`http://127.0.0.1:${PORT}/json/list`);
-    if (!res.ok) return [];
+    if (!res.ok) return null;
     const targets = await res.json();
     return targets.filter(
       (t) => t.type === 'page' && t.webSocketDebuggerUrl && !t.url.startsWith('devtools://'),
     );
   } catch {
-    return []; // app not started (yet) via the RTL shortcut
+    return null; // app not running (anymore)
   }
 }
 
@@ -155,7 +162,12 @@ async function browserWsUrl() {
   try {
     const res = await fetch(`http://127.0.0.1:${PORT}/json/version`);
     if (!res.ok) return null;
-    return (await res.json()).webSocketDebuggerUrl || null;
+    const url = (await res.json()).webSocketDebuggerUrl || null;
+    if (url) {
+      lastCdpSeen = Date.now();
+      everConnected = true;
+    }
+    return url;
   } catch {
     return null; // app not started (yet) via the RTL shortcut
   }
@@ -165,7 +177,12 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 console.log(`[zcode-rtl] waiting for ZCode on port ${PORT}...`);
 setInterval(async () => {
-  for (const t of await listPages()) {
+  const pages = await listPages();
+  if (pages) {
+    lastCdpSeen = Date.now();
+    everConnected = true;
+  }
+  for (const t of pages || []) {
     if (!injected.has(t.id)) await attach(t);
   }
 }, POLL_MS);
@@ -173,5 +190,9 @@ setInterval(async () => {
 for (;;) {
   const url = await browserWsUrl();
   if (url) await watchBrowser(url);
+  else if (everConnected && Date.now() - lastCdpSeen > APP_LINGER_MS) {
+    console.log('[zcode-rtl] ZCode has been gone for a while; injector exiting.');
+    process.exit(0);
+  }
   await sleep(1000);
 }

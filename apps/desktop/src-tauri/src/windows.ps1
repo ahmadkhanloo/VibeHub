@@ -574,7 +574,9 @@ function Stop-ManagedRtlInjector([string]$appId, $state) {
     if ($statePath -ine $expectedPath) { throw 'RTL state path does not match this app injector. Refusing stop.' }
     $injectorPid = 0
     if (-not [int]::TryParse([string]$state.injectorPid, [ref]$injectorPid) -or $injectorPid -le 0) { throw 'RTL injector PID is invalid. Refusing stop.' }
-    $connections = @(Get-NetTCPConnection -LocalPort $binding.lockPort -State Listen -ErrorAction SilentlyContinue)
+    # No -State Listen filter: on recent Windows builds a loopback-only listener
+    # (the node injector lock) reports a Bound state, so filtering by state would never match it.
+    $connections = @(Get-NetTCPConnection -LocalPort $binding.lockPort -ErrorAction SilentlyContinue)
     $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$injectorPid" -ErrorAction SilentlyContinue
     if (-not $proc) {
         if ($connections.Count) { throw 'The injector lock port is owned by another process. Refusing stop.' }
@@ -602,7 +604,9 @@ function Get-LaunchState($state, [string]$appId = '') {
             if ([IO.Path]::GetFullPath([string]$state.injectorPath) -ine $binding.injectorPath) { throw 'RTL state injector path mismatch.' }
             $injectorPid = [int]$state.injectorPid
             $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$injectorPid" -ErrorAction SilentlyContinue
-            $connections = @(Get-NetTCPConnection -LocalPort $binding.lockPort -State Listen -ErrorAction SilentlyContinue)
+            # No -State Listen filter: on recent Windows builds a loopback-only listener
+            # (the node injector lock) reports a Bound state, so filtering by state would never match it.
+            $connections = @(Get-NetTCPConnection -LocalPort $binding.lockPort -ErrorAction SilentlyContinue)
             $ownsLock = $connections.Count -gt 0 -and @($connections | Where-Object { [int]$_.OwningProcess -eq $injectorPid }).Count -eq $connections.Count
             $alive = $proc -and $proc.Name -ieq 'node.exe' -and $proc.CommandLine -match [regex]::Escape($binding.injectorPath) -and $ownsLock
             if ($alive) {
@@ -1011,7 +1015,9 @@ try {
                 Invoke-HubRtlLauncher $script
                 if ($alreadyRtl -and $request.req.cwd) { Start-Process -FilePath $exe -ArgumentList ('"' + ($cwd.TrimEnd('\') + '\.') + '"') -WorkingDirectory $cwd | Out-Null }
                 $injector = Join-Path $root "apps\$folder\injector.mjs"
-                $owner = Get-NetTCPConnection -LocalPort $binding.lockPort -State Listen -ErrorAction Stop | Select-Object -First 1
+                # No -State Listen filter: on recent Windows builds a loopback-only listener
+                # (the node injector lock) reports a Bound state, so filtering by state would never match it.
+                $owner = Get-NetTCPConnection -LocalPort $binding.lockPort -ErrorAction Stop | Select-Object -First 1
                 $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$($owner.OwningProcess)"
                 if ($proc.Name -ine 'node.exe' -or $proc.CommandLine -notmatch [regex]::Escape($binding.injectorPath)) { throw 'RTL injector ownership verification failed' }
                 @{ok=$true;id=$id;rtl=$true;port=$port;injectorPid=$proc.ProcessId;injectorPath=$binding.injectorPath;since=[DateTime]::UtcNow.ToString('o');detail='RTL launcher and owned injector are running'}

@@ -26,8 +26,11 @@ function Get-CdpInfo {
   catch { $null }
 }
 
-function PortOwner {
-  try { Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction Stop | Select-Object -First 1 }
+function PortOwner([int]$p = $Port) {
+  # No -State Listen filter: on recent Windows builds a loopback-only listener
+  # (our node injector lock) reports a Bound state, so filtering by state would
+  # never match it. Ownership is verified separately in Owns-InjectorLock.
+  try { Get-NetTCPConnection -LocalPort $p -ErrorAction Stop | Select-Object -First 1 }
   catch { $null }
 }
 
@@ -72,7 +75,6 @@ $main = Get-CimInstance Win32_Process -Filter "Name='ZCode.exe'" -ErrorAction Si
   Where-Object { $_.CommandLine -notmatch '--type=' -and $_.ExecutablePath -ieq $exe } |
   Select-Object -First 1
 $owner = PortOwner
-$lockOwner = (Get-NetTCPConnection -LocalPort ($Port + 1) -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1)
 $info = Get-CdpInfo
 
 if ($owner) {
@@ -85,18 +87,33 @@ if ($owner) {
     Say "Port $Port is open, but ZCode could not be identified. Close the conflicting process and try again." 16
     exit 1
   }
+  $lockOwner = PortOwner ($Port + 1)
+  if (Owns-InjectorLock $lockOwner $injector) {
+    Say "ZCode RTL is already active on port $Port."
+    exit 0
+  }
   if ($lockOwner) {
-    $lockInjector = Owns-InjectorLock $lockOwner (Join-Path $Dir 'injector.mjs')
-    if ($lockInjector) {
-      Say "ZCode RTL is already active on port $Port."
-      exit 0
-    }
     Say "Port $($Port + 1) is already used by another program. Close it or set ZCODE_RTL_PORT to a different port." 16
     exit 1
   }
 } elseif ($main) {
-  Say "ZCode is already running without the DevTools port. Fully quit it, including the tray, then start it with the ZCode RTL shortcut." 48
-  exit 1
+  if ($main.CommandLine -match [regex]::Escape("--remote-debugging-port=$Port")) {
+    # Mid-startup from an earlier RTL launch (its DevTools port opens late);
+    # wait for it instead of demanding a full quit.
+    Say "ZCode is already starting with its RTL port $Port - waiting for it to open."
+    for ($i = 0; $i -lt 60; $i++) {
+      Start-Sleep -Milliseconds 500
+      $info = Get-CdpInfo
+      if ($info) { break }
+    }
+    if (-not $info) {
+      Say "ZCode did not open its RTL port $Port. Fully quit it, including the tray, then start it again with the ZCode RTL shortcut." 48
+      exit 1
+    }
+  } else {
+    Say "ZCode is already running without the DevTools port. Fully quit it, including the tray, then start it with the ZCode RTL shortcut." 48
+    exit 1
+  }
 } else {
   Say "starting ZCode with --remote-debugging-port=$Port"
   $launchArgs = "--remote-debugging-port=$Port"
@@ -119,11 +136,10 @@ Start-Process -FilePath $nodePath -ArgumentList ('"' + $injector + '"') -Working
 $injectorReady = $false
 for ($i = 0; $i -lt 20; $i++) {
   Start-Sleep -Milliseconds 250
-  $lockOwner = Get-NetTCPConnection -LocalPort ($Port + 1) -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
-  if (Owns-InjectorLock $lockOwner $injector) { $injectorReady = $true; break }
+  if (Owns-InjectorLock (PortOwner ($Port + 1)) $injector) { $injectorReady = $true; break }
 }
 if (-not $injectorReady) {
-  Say "The injector could not acquire port $($Port + 1). Check that port and try again." 16
+  Say "The RTL injector did not start. See $err and $out for details, then try again." 16
   exit 1
 }
 Say "ZCode RTL is active on port $Port."

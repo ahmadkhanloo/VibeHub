@@ -23,11 +23,19 @@ const log = (...a) => console.log('[qoder-rtl]', ...a);
 
 // --- single instance: a second daemon exits instead of double-injecting ---
 const lock = createServer();
-lock.once('error', () => {
-  log('injector already running, exiting.');
+lock.once('error', (e) => {
+  log(`injector lock unavailable (${e.code || e.message}), exiting.`);
   process.exit(0);
 });
 lock.listen(LOCK_PORT, '127.0.0.1');
+
+// The launcher starts us right after the app's CDP port comes up, so once we
+// have seen it, a long silence means the app was closed: exit instead of
+// lingering forever as an orphan that keeps the lock and pollutes the logs.
+const APP_LINGER_MS = 75_000;
+let lastCdpSeen = 0;
+let everConnected = false;
+let downLogged = false;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -177,6 +185,9 @@ async function runOnce() {
   const version = await getJson('/json/version');
   const wsUrl = version && version.webSocketDebuggerUrl;
   if (!wsUrl) return null;
+  lastCdpSeen = Date.now();
+  everConnected = true;
+  downLogged = false;
 
   const ws = new WebSocket(wsUrl);
   const cdp = new Cdp(ws);
@@ -221,8 +232,9 @@ async function runOnce() {
   await bootstrapTargets(cdp);
   log(`connected to Qoder on ${PORT}`);
 
-  const sweep = setInterval(async () => {
-    await bootstrapTargets(cdp);
+  const sweep = setInterval(() => {
+    lastCdpSeen = Date.now(); // the open browser session itself proves CDP is alive
+    bootstrapTargets(cdp).catch(() => {});
   }, SWEEP_MS);
   sweep.unref();
 
@@ -239,7 +251,15 @@ for (;;) {
   try {
     await runOnce();
   } catch (e) {
-    log('connection error:', e.message);
+    // Log the loss once instead of spamming the out log every second.
+    if (everConnected && !downLogged) {
+      log('connection lost; waiting before exiting:', e.message);
+      downLogged = true;
+    }
+  }
+  if (everConnected && Date.now() - lastCdpSeen > APP_LINGER_MS) {
+    log('Qoder is gone; injector exiting.');
+    process.exit(0);
   }
   await sleep(1000);
 }

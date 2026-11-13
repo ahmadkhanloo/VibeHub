@@ -18,7 +18,10 @@ function Resolve-AntigravityProxy([string]$explicitProxy, [string]$inheritedProx
 }
 $ProxyUrl = Resolve-AntigravityProxy $ProxyUrl $env:HTTPS_PROXY
 function PortOwner([int]$p) {
-  Get-NetTCPConnection -LocalPort $p -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+  # No -State Listen filter: on recent Windows builds a loopback-only listener
+  # (our node injector lock) reports a Bound state, so filtering by state would
+  # never match it. Ownership is verified separately in OwnsInjector.
+  Get-NetTCPConnection -LocalPort $p -ErrorAction SilentlyContinue | Select-Object -First 1
 }
 function OwnsInjector($owner, [string]$path) {
   if (-not $owner) { return $false }
