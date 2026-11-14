@@ -267,6 +267,8 @@ export function installMockNative({ scenario, language, onboardingDone }: { scen
               ];
             case "plugin:notification|is_permission_granted":
               return false;
+            case "tray_update":
+              return null;
             default:
               throw Error("Unexpected mock command " + cmd);
           }

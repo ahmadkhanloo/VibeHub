@@ -22,6 +22,7 @@ import {
   type RtlComponentStatus,
 } from "@/services/ipc";
 import { useSettings } from "./settings";
+import { useCatalog } from "@/lib/catalog";
 import { launchBlocked, launchFailureKind, rtlAdapterConfigured } from "@core";
 interface ToolContext {
   apps: DetectedApp[];
@@ -72,7 +73,8 @@ export function ToolProvider({ children }: { children: ReactNode }) {
     scan = useRef<Promise<void> | null>(null),
     proxyWrite = useRef<Promise<void>>(Promise.resolve()),
     polling = useRef(false),
-    connectionFlight = useRef<Promise<void> | null>(null);
+    connectionFlight = useRef<Promise<void> | null>(null),
+    trayPayload = useRef('');
   const { settings, update } = useSettings();
   const acceptStates = useCallback((next: Record<string, LaunchState>) => {
     setStates(old => Object.entries(next).every(([id, value]) => JSON.stringify(old[id]) === JSON.stringify(value)) ? old : { ...old, ...next });
@@ -192,6 +194,22 @@ export function ToolProvider({ children }: { children: ReactNode }) {
     }, 15000);
     return () => clearInterval(timer);
   }, [states, checkStates]);
+  // Mirror the RTL-capable inventory into the tray menu so quick launches stay
+  // available while the window is hidden. Pushed only when the payload changes.
+  const catalog = useCatalog();
+  useEffect(() => {
+    const payload = apps
+      .filter((a) => a.installed && (a.id === 'claude-code' || rtlAdapterConfigured(a.id, components)))
+      .map((a) => ({
+        id: a.id,
+        name: catalog.apps.find((c) => c.id === a.id)?.name ?? a.id,
+        running: states[a.id]?.phase === 'running',
+      }));
+    const next = JSON.stringify(payload);
+    if (trayPayload.current === next) return;
+    trayPayload.current = next;
+    void ipc.traySync(payload).catch(() => {});
+  }, [apps, components, states, catalog]);
   const saveToolProxy = useCallback(
     (appId: string, profileId: string) => {
       const task = proxyWrite.current

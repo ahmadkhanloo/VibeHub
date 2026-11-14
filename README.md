@@ -34,7 +34,7 @@ The **AI connections** page groups provider references and saved connections in 
 
 Choose **Try a custom URL** to list models or test a selected model before saving. Model tests send a real request and may consume quota; saving is a separate action. Model prices marked unknown have not been established as free or paid. Cloudflare Workers AI requires an account ID and uses its official model documentation instead of in-app listing. See the [connection guide](docs/tutorials/rtl-setup.en.md#ai-connections).
 
-Closing the window hides VibeHub in the Windows notification area. Select its tray icon to reopen it, or choose **Quit / خروج** from the tray menu to exit completely. Tray interaction in the installed beta has not yet been independently verified.
+Closing the window hides VibeHub in the Windows notification area. Select its tray icon to reopen it, or choose **Quit / خروج** from the tray menu to exit completely. The tray menu also lists one **· RTL** entry for every detected app that has an RTL launcher, so a Persian-text run is one click away without reopening the window; running apps are marked with a dot. VibeHub runs as a single instance — launching it again focuses the existing window. Tray interaction in the installed beta has not yet been independently verified.
 
 The current prerelease is [v0.2.6-beta.2](https://github.com/ahmadkhanloo/VibeHub/releases/tag/v0.2.6-beta.2) ([Windows installer](https://github.com/ahmadkhanloo/VibeHub/releases/download/v0.2.6-beta.2/VibeHub-Setup.exe)). It is separate from the latest stable release. The existing screenshot below predates the redesigned connections screen.
 
@@ -48,8 +48,8 @@ The current prerelease is [v0.2.6-beta.2](https://github.com/ahmadkhanloo/VibeHu
 
 | App | Notes |
 |---|---|
-| ZCode | Launch, RTL launcher, accounts view, guides |
-| Qoder | Launch, RTL launcher, accounts view, guides |
+| ZCode | Launch, RTL launcher, guides |
+| Qoder | Launch, RTL launcher, guides |
 | DeepSeek Harness | Launch, RTL launcher, guides |
 | Antigravity | Launch, RTL launcher (chat RTL experimental), guides |
 | ChatGPT / Codex | Launch plus Codex CLI account management (currently Codex CLI 0.148.0) |
