@@ -604,39 +604,38 @@ fn app_version(app: tauri::AppHandle) -> String {
     app.package_info().version.to_string()
 }
 
-/// Tray quick-launch menu: Open, one "· RTL" entry per RTL-capable app, Quit.
+/// Tray quick-launch menu: Open, an "RTL launchers" submenu with one entry per
+/// RTL-capable app (● marks running ones), Quit.
 fn tray_menu(
     app: &tauri::AppHandle,
     apps: &[(String, String, bool)],
 ) -> tauri::Result<tauri::menu::Menu<tauri::Wry>> {
-    use tauri::menu::{IsMenuItem, Menu, MenuItem, PredefinedMenuItem};
-    let mut items: Vec<Box<dyn IsMenuItem<tauri::Wry>>> = vec![Box::new(
-        MenuItem::with_id(app, "open", "Open / باز کردن", true, None::<&str>)?,
-    )];
-    if !apps.is_empty() {
-        items.push(Box::new(PredefinedMenuItem::separator(app)?));
+    use tauri::menu::{IsMenuItem, Menu, MenuItem, Submenu};
+    let open = MenuItem::with_id(app, "open", "Open / باز کردن", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "Quit / خروج", true, None::<&str>)?;
+    if apps.is_empty() {
+        return Menu::with_items(app, &[&open, &quit]);
     }
+    let mut children: Vec<MenuItem<tauri::Wry>> = Vec::new();
     for (id, label, running) in apps {
-        items.push(Box::new(MenuItem::with_id(
+        children.push(MenuItem::with_id(
             app,
             format!("rtl:{id}"),
-            if *running { format!("● {label} · RTL") } else { format!("{label} · RTL") },
+            if *running { format!("● {label}") } else { label.clone() },
             true,
             None::<&str>,
-        )?));
+        )?);
     }
-    if !apps.is_empty() {
-        items.push(Box::new(PredefinedMenuItem::separator(app)?));
-    }
-    items.push(Box::new(MenuItem::with_id(
+    let refs: Vec<&dyn IsMenuItem<tauri::Wry>> =
+        children.iter().map(|item| item as &dyn IsMenuItem<tauri::Wry>).collect();
+    let launchers = Submenu::with_id_and_items(
         app,
-        "quit",
-        "Quit / خروج",
+        "rtl-launchers",
+        "اجراگرهای RTL / RTL launchers",
         true,
-        None::<&str>,
-    )?));
-    let refs: Vec<&dyn IsMenuItem<tauri::Wry>> = items.iter().map(|item| item.as_ref()).collect();
-    Menu::with_items(app, &refs)
+        &refs,
+    )?;
+    Menu::with_items(app, &[&open, &launchers, &quit])
 }
 
 /// The frontend pushes its detected RTL-capable inventory after every scan so
