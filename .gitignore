@@ -10,3 +10,9 @@ apps/desktop/src-tauri/windows/payload/
 /output/
 /.playwright-mcp/
 /.repowise/
+/.qa/
+/.playwright-cli/
+/.zcode/
+/.superpowers/
+/Microsoft/
+/.migration-preserved/

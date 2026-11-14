@@ -44,7 +44,7 @@ export function HomePage() {
             <div className="vh-app-tile-heading">{tool.kind === 'app' ? <Link className="vh-app-identity" to={`/app/${tool.id}`} aria-label={t('prepare') + ' ' + name}>
               <AppLogo appId={tool.id} name={name} size={40} />
               <h2><bdi>{name}</bdi></h2>
-            </Link> : <Link className="vh-app-identity" to={`/editor/${tool.id}`} aria-label={t('prepare') + ' ' + name}><AppLogo appId={tool.id} name={name} size={40} /><h2><bdi>{name}</bdi></h2></Link>}
+            </Link> : <div className="vh-app-identity"><AppLogo appId={tool.id} name={name} size={40} /><h2><bdi>{name}</bdi></h2></div>}
             <span className="vh-app-status"><i aria-hidden="true" />{t('ux:' + status)}</span></div>
             {tool.app ? <p className="vh-app-description"><bdi>{new URL(tool.app.websiteUrl).hostname.replace(/^www\./, '')}</bdi><span aria-hidden="true"> · </span>{t('ux:' + (tool.app.freeAccess === 'unknown' ? 'unknownAccess' : tool.app.freeAccess))}</p>
               : null}

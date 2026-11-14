@@ -600,7 +600,7 @@ fn live_selected_saved_providers() {
     let root = std::path::PathBuf::from(std::env::var_os("APPDATA").expect("APPDATA required")).join("com.ahmadkhanloo.vibehub");
     let connections = crate::storage::provider_connections(&root.join("provider-connections.json")).expect("Read connections");
     let (profile, _) = crate::storage::selected_profile(&root.join("proxy.json"), "*", None).expect("Read proxy");
-    for provider in ["nvidia", "kira-ai", "inferx"] {
+    for provider in ["nvidia-build", "apinex", "openrouter"] {
         let Some(connection) = connections.as_array().unwrap().iter().find(|c| c["providerId"] == provider && c["hasKey"] == true) else { println!("LIVE_RESULT {} missing saved credential", provider); continue; };
         let id = connection["id"].as_str().unwrap();
         let key = crate::storage::vault_get(&format!("vibehub.provider-key.connection.{id}")).expect("Read credential");
@@ -624,7 +624,7 @@ fn live_selected_provider_inference() {
     let root = std::path::PathBuf::from(std::env::var_os("APPDATA").expect("APPDATA required")).join("com.ahmadkhanloo.vibehub");
     let connections = crate::storage::provider_connections(&root.join("provider-connections.json")).expect("Read connections");
     let (profile, _) = crate::storage::selected_profile(&root.join("proxy.json"), "*", None).expect("Read proxy");
-    for (provider, model) in [("nvidia", "meta/llama-3.3-70b-instruct"), ("kira-ai", "minimax-m3-free"), ("inferx", "Qwen/Qwen3.6-35B-A3B")] {
+    for (provider, model) in [("nvidia-build", "meta/llama-3.3-70b-instruct"), ("apinex", "free/jev-1.13"), ("openrouter", "openai/gpt-oss-20b:free")] {
         let Some(mut connection) = connections.as_array().unwrap().iter().find(|c| c["providerId"] == provider && c["hasKey"] == true).cloned() else { println!("LIVE_INFERENCE {} unavailable", provider); continue; };
         connection["modelId"] = json!(model);
         match tauri::async_runtime::block_on(connection_test(connection, profile.clone())) {

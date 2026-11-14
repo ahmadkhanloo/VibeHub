@@ -3,8 +3,7 @@ import { useMemo, useSyncExternalStore } from 'react';
 // overlays this via the feed_sync IPC after schema validation on the Rust side.
 
 import { loadCatalog, classifyOffers, type Catalog, type OfferView } from '@catalog';
-import { assertNoExecutablePayload, parseLearningIndex, parseLearningFeed, parseNewsFeed, parseLearningTutorials, type LearningArticle, type LearningCategory, type LearningTutorial, type AppManifest, type ProviderManifest } from '@core';
-import bundledLearning from '../../../../content/learning/extensions.json';
+import { assertNoExecutablePayload, parseLearningIndex, parseLearningFeed, parseNewsFeed, type LearningArticle, type LearningCategory, type AppManifest, type ProviderManifest } from '@core';
 import bundledLearningIndex from '../../../../content/learning/index.json';
 import bundledNews from '../../../../content/news/index.json';
 
@@ -33,7 +32,6 @@ export const apps: AppManifest[] = bundledCatalog.apps;
 export const providers: ProviderManifest[] = bundledCatalog.providers;
 
 const remoteGuides: Record<string, string> = {};
-let learning = parseLearningTutorials(bundledLearning);
 const initialLearningIndex = parseLearningIndex(bundledLearningIndex);
 const initialLearningCategories: LearningCategory[] = initialLearningIndex.categories;
 function localArticleBody(id: string, path: string | undefined, lang: 'fa' | 'en') {
@@ -64,14 +62,13 @@ let revision = 0;
 const listeners = new Set<() => void>();
 export function useCatalog() {
  const version = useSyncExternalStore((listener) => {listeners.add(listener);return () => {listeners.delete(listener);};}, () => revision);
- return useMemo(() => ({apps: [...apps], providers: [...providers], offers: [...bundledCatalog.offers], learning: [...learning], articles: [...articles], categories: [...categories], news: [...news]}), [version]);
+ return useMemo(() => ({apps: [...apps], providers: [...providers], offers: [...bundledCatalog.offers], articles: [...articles], categories: [...categories], news: [...news]}), [version]);
 }
 export function clearContentCache() {
  localStorage.removeItem('vibehub.content.v1');
  apps.splice(0,apps.length,...initialCatalog.apps);
  providers.splice(0,providers.length,...initialCatalog.providers);
  bundledCatalog.offers.splice(0,bundledCatalog.offers.length,...initialCatalog.offers);
- learning = parseLearningTutorials(bundledLearning);
  articles = initialLearningFeed.articles;
  categories = initialLearningFeed.categories;
  news = parseNewsFeed(bundledNews);
@@ -102,7 +99,7 @@ export function validateRemoteGuides(raw: unknown, catalog: Catalog): Record<str
   return guides;
 }
 
-export function applyRemoteCatalog(catalog: Catalog, guides: Record<string, string>, tutorials?: LearningTutorial[], learningArticles?: ReturnType<typeof parseLearningFeed>, newsItems?: ReturnType<typeof parseNewsFeed>): void {
+export function applyRemoteCatalog(catalog: Catalog, guides: Record<string, string>, learningArticles?: ReturnType<typeof parseLearningFeed>, newsItems?: ReturnType<typeof parseNewsFeed>): void {
   const nextArticles = learningArticles;
   const nextNews = newsItems;
   // Keep the entries tied to this build when a cached feed predates them.
@@ -113,7 +110,6 @@ export function applyRemoteCatalog(catalog: Catalog, guides: Record<string, stri
   bundledCatalog.offers.splice(0, bundledCatalog.offers.length, ...catalog.offers);
   for (const key of Object.keys(remoteGuides)) delete remoteGuides[key];
   Object.assign(remoteGuides, guides);
-  if (tutorials !== undefined) learning = tutorials;
   if (nextArticles !== undefined) {
     articles = [...nextArticles.articles.filter(article => article.id !== 'antigravity' && !bundledAppIds.has(article.id)), ...initialLearningFeed.articles.filter(article => bundledAppIds.has(article.id))];
     categories = nextArticles.categories;
@@ -123,7 +119,7 @@ export function applyRemoteCatalog(catalog: Catalog, guides: Record<string, stri
   if (nextNews !== undefined) news = nextNews;
   revision++; listeners.forEach(listener=>listener());
   window.dispatchEvent(new Event('vibehub:catalog-updated'));
-  try { localStorage.setItem('vibehub.content.v1', JSON.stringify({ catalog, guides, learning, learningArticles: { schemaVersion: 1, categories, articles }, news: { schemaVersion: 1, news } })); } catch { /* Current in-memory content remains usable. */ }
+  try { localStorage.setItem('vibehub.content.v1', JSON.stringify({ catalog, guides, learningArticles: { schemaVersion: 1, categories, articles }, news: { schemaVersion: 1, news } })); } catch { /* Current in-memory content remains usable. */ }
 }
 
 try {
@@ -132,30 +128,17 @@ try {
     assertNoExecutablePayload(cached);
     const raw = JSON.parse(cached);
     const catalog = loadCatalog(raw.catalog);
-    const tutorials = raw.learning === undefined ? undefined : parseLearningTutorials(raw.learning);
     const learningArticles = raw.learningArticles === undefined ? undefined : parseLearningFeed(raw.learningArticles);
     const newsItems = raw.news === undefined ? undefined : parseNewsFeed(raw.news);
-    applyRemoteCatalog(catalog, validateRemoteGuides(raw.guides, catalog), tutorials, learningArticles, newsItems);
+    applyRemoteCatalog(catalog, validateRemoteGuides(raw.guides, catalog), learningArticles, newsItems);
   }
 } catch { /* Invalid cache or unavailable storage: use the bundled snapshot. */ }
-
-export function appById(id: string): AppManifest | undefined {
-  return apps.find((a) => a.id === id);
-}
 
 export function guideText(appId: string, lang: 'fa' | 'en'): string | null {
   const remote = bundledAppIds.has(appId) ? undefined : remoteGuides[`${appId}/${lang}`];
   if (remote) return remote;
   const hit = Object.entries(guideModules).find(([p]) => p.includes(`/${appId}/${lang}.md`));
   return hit?.[1]?.trim() ? hit[1] : null;
-}
-
-export function guideSections(markdown: string): { title: string; body: string }[] {
-  const parts = markdown.split(/^##\s+/m).slice(1);
-  return parts.map((part) => {
-    const nl = part.indexOf('\n');
-    return { title: part.slice(0, nl).trim(), body: part.slice(nl + 1).trim() };
-  });
 }
 
 export { classifyOffers };
