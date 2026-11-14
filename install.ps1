@@ -91,6 +91,7 @@ foreach ($name in $requested) {
   }
   if ($name -eq 'claude-desktop' -and -not (Test-Path -LiteralPath (Join-Path $folder 'compatibility.json'))) { throw 'Missing Claude Desktop compatibility status.' }
   if (-not (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'apps\rtl-style.mjs'))) { throw 'Missing apps\rtl-style.mjs shared style helper.' }
+  if (-not (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'apps\rtl-launch-lib.ps1'))) { throw 'Missing apps\rtl-launch-lib.ps1 shared launcher library.' }
   if ($name -eq 'qoder') {
     $discovery = @(& $powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $folder 'start.ps1') -Discover 2>&1)
     # Prefer the base64 handoff: raw path text is corrupted to '?' whenever the

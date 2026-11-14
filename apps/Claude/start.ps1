@@ -3,12 +3,13 @@ try {
   $ErrorActionPreference = 'Stop'
   $Dir = Split-Path -Parent $PSCommandPath
   . (Join-Path $Dir '..\rtl-paths.ps1')
+  . (Join-Path $Dir '..\rtl-launch-lib.ps1')
   $compatibility = Get-Content -LiteralPath (Join-Path $Dir 'compatibility.json') -Raw | ConvertFrom-Json
   if (-not $compatibility.testedVersion -or $compatibility.adapterVerified -ne $true) { throw [string]$compatibility.reason }
   $exe = Get-RtlExecutable 'claude-desktop' $Dir
   if (-not $exe -and -not $Discover) { $exe = Select-RtlExecutable 'claude-desktop' 'Claude Desktop' 'Claude.exe' }
   if (-not $exe) { throw 'Claude.exe was not found. Install Claude Desktop from claude.com/download.' }
-  if ($Discover) { 'RTL_DISCOVER_B64:' + [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($exe)); exit 0 }
+  if ($Discover) { ConvertTo-RtlDiscoverLine $exe; exit 0 }
   $signature = Get-AuthenticodeSignature -FilePath $exe
   if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch 'Anthropic') {
     throw 'Claude Desktop RTL requires a valid Anthropic-signed Claude.exe.'
@@ -20,27 +21,11 @@ try {
 
   $Port = if ($env:CLAUDE_RTL_PORT) { [int]$env:CLAUDE_RTL_PORT } else { 9237 }
   if ($Port -lt 1024 -or $Port -gt 65534) { throw 'Invalid Claude Desktop RTL port.' }
-  # No -State Listen filter: on recent Windows builds a loopback-only listener
-  # (our node injector lock) reports a Bound state, so filtering by state would
-  # never match it. Ownership is verified separately in OwnsInjector.
-  function PortOwner([int]$p) { Get-NetTCPConnection -LocalPort $p -ErrorAction SilentlyContinue | Select-Object -First 1 }
-  function OwnsInjector($owner, [string]$path) {
-    if (-not $owner) { return $false }
-    $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$($owner.OwningProcess)" -ErrorAction SilentlyContinue
-    $proc -and $proc.Name -ieq 'node.exe' -and $proc.CommandLine -match [regex]::Escape($path)
-  }
-  function Resolve-ClaudeProxy([string]$explicitProxy, [string]$inheritedProxy) {
-    $value = if ($explicitProxy) { $explicitProxy } else { $inheritedProxy }
-    if (-not $value) { return '' }
-    $address = $null
-    if (-not [Uri]::TryCreate($value, [UriKind]::Absolute, [ref]$address) -or $address.Scheme -notin @('http','socks5','socks5h') -or -not $address.Host -or $address.UserInfo) { throw 'Use an HTTP or SOCKS5 proxy without embedded credentials.' }
-    return $value
-  }
-  $ProxyUrl = Resolve-ClaudeProxy $ProxyUrl $env:HTTPS_PROXY
+  $ProxyUrl = Resolve-RtlProxy $ProxyUrl $env:HTTPS_PROXY
   $injector = Join-Path $Dir 'injector.mjs'
-  $owner = PortOwner $Port
-  $lockOwner = PortOwner ($Port + 1)
-  if ($lockOwner -and -not (OwnsInjector $lockOwner $injector)) { throw "Port $($Port + 1) belongs to another program." }
+  $owner = Get-RtlPortOwner $Port
+  $lockOwner = Get-RtlPortOwner ($Port + 1)
+  if ($lockOwner -and -not (Test-RtlInjectorLock $lockOwner $injector)) { throw "Port $($Port + 1) belongs to another program." }
   if ($owner) {
     $hostProcess = Get-Process -Id $owner.OwningProcess -ErrorAction Stop
     if ($hostProcess.Path -ine $exe) { throw "Port $Port belongs to another program." }
@@ -53,20 +38,15 @@ try {
     Start-Process -FilePath $exe -ArgumentList $launchArgs -WindowStyle Normal | Out-Null
     for ($i=0; $i -lt 40; $i++) {
       Start-Sleep -Milliseconds 250
-      $owner = PortOwner $Port
+      $owner = Get-RtlPortOwner $Port
       if ($owner) { break }
     }
     if (-not $owner -or (Get-Process -Id $owner.OwningProcess -ErrorAction Stop).Path -ine $exe) { throw 'Claude Desktop did not expose its own RTL debugging port.' }
   }
-  $null = Invoke-RestMethod "http://127.0.0.1:$Port/json/version" -TimeoutSec 2
-  if (-not (OwnsInjector $lockOwner $injector)) {
+  if (-not (Get-RtlCdpInfo $Port)) { throw 'Claude Desktop did not expose its own RTL debugging port.' }
+  if (-not (Test-RtlInjectorLock $lockOwner $injector)) {
     $node = Get-RtlNodePath $Dir
-    Start-Process -FilePath $node -ArgumentList ('"' + $injector + '"') -WorkingDirectory $Dir -WindowStyle Hidden -RedirectStandardOutput (Join-Path $env:TEMP 'claude-desktop-rtl.out.log') -RedirectStandardError (Join-Path $env:TEMP 'claude-desktop-rtl.err.log') | Out-Null
-    for ($i=0; $i -lt 20; $i++) {
-      Start-Sleep -Milliseconds 250
-      if (OwnsInjector (PortOwner ($Port + 1)) $injector) { break }
-    }
-    if (-not (OwnsInjector (PortOwner ($Port + 1)) $injector)) { throw 'Claude Desktop RTL injector did not start.' }
+    if (-not (Start-RtlInjector ($Port + 1) $node $injector (Join-Path $env:TEMP 'claude-desktop-rtl.out.log') (Join-Path $env:TEMP 'claude-desktop-rtl.err.log'))) { throw 'Claude Desktop RTL injector did not start.' }
   }
   Write-Output 'Claude Desktop RTL injector is running.'
 } catch {

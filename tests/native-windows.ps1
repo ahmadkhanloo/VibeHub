@@ -45,14 +45,14 @@ try {
     $launchError = $null
     try { Invoke-HubRtlLauncher $fakeLauncher } catch { $launchError = $_.Exception.Message }
     Assert ($launchError -eq 'VIBEHUB_LAUNCH_ALREADY_OPEN') 'Already-open launch errors must remain distinguishable from a port conflict'
-    $proxyAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $repo 'apps\Antigravity\start.ps1'), [ref]$null, [ref]$null)
-    $proxyFunction = $proxyAst.Find({param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Resolve-AntigravityProxy'}, $true)
+    $proxyAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $repo 'apps\rtl-launch-lib.ps1'), [ref]$null, [ref]$null)
+    $proxyFunction = $proxyAst.Find({param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Resolve-RtlProxy'}, $true)
     . ([scriptblock]::Create($proxyFunction.Extent.Text))
-    Assert ((Resolve-AntigravityProxy '' 'socks5h://127.0.0.1:10808') -eq 'socks5h://127.0.0.1:10808') 'Antigravity RTL must inherit the selected app proxy'
-    Assert ((Resolve-AntigravityProxy 'http://127.0.0.1:8888' 'http://127.0.0.1:10808') -eq 'http://127.0.0.1:8888') 'Explicit Antigravity proxy must take precedence'
-    Assert ((Resolve-AntigravityProxy '' '') -eq '') 'No Antigravity proxy must remain empty'
+    Assert ((Resolve-RtlProxy '' 'socks5h://127.0.0.1:10808') -eq 'socks5h://127.0.0.1:10808') 'RTL launchers must inherit the selected app proxy'
+    Assert ((Resolve-RtlProxy 'http://127.0.0.1:8888' 'http://127.0.0.1:10808') -eq 'http://127.0.0.1:8888') 'Explicit proxy must take precedence'
+    Assert ((Resolve-RtlProxy '' '') -eq '') 'No proxy must remain empty'
     $proxyError = $null
-    try { Resolve-AntigravityProxy 'http://user:synthetic-secret@127.0.0.1:10808' '' } catch { $proxyError = $_.Exception.Message }
+    try { Resolve-RtlProxy 'http://user:synthetic-secret@127.0.0.1:10808' '' } catch { $proxyError = $_.Exception.Message }
     Assert ($proxyError -and $proxyError -notmatch 'synthetic-secret') 'Embedded proxy credentials must fail without leaking their value'
     $developmentNode = Join-Path $repo 'apps\desktop\src-tauri\windows\payload\node.exe'
     if (Test-Path -LiteralPath $developmentNode -PathType Leaf) {

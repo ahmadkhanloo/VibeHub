@@ -1,37 +1,20 @@
-﻿param([switch]$Gui, [switch]$Discover, [string]$ProxyUrl)
+param([switch]$Gui, [switch]$Discover, [string]$ProxyUrl)
 try {
 $ErrorActionPreference = 'Stop'
 $Dir = Split-Path -Parent $PSCommandPath
 . (Join-Path $Dir '..\rtl-paths.ps1')
+. (Join-Path $Dir '..\rtl-launch-lib.ps1')
 $Port = if ($env:ANTIGRAVITY_RTL_PORT) { [int]$env:ANTIGRAVITY_RTL_PORT } else { 9231 }
 if ($Port -lt 1024 -or $Port -gt 65534) { throw 'Invalid Antigravity RTL port.' }
 $exe = Get-RtlExecutable 'antigravity' $Dir
 if (-not $exe -and -not $Discover) { $exe = Select-RtlExecutable 'antigravity' 'Antigravity' 'Antigravity.exe' }
 if (-not $exe) { throw 'Antigravity.exe was not found. Install standalone Antigravity or select its executable.' }
-if ($Discover) { 'RTL_DISCOVER_B64:' + [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($exe)); exit 0 }
-function Resolve-AntigravityProxy([string]$explicitProxy, [string]$inheritedProxy) {
-  $value = if ($explicitProxy) { $explicitProxy } else { $inheritedProxy }
-  if (-not $value) { return '' }
-  $proxyAddress = $null
-  if (-not [Uri]::TryCreate($value, [UriKind]::Absolute, [ref]$proxyAddress) -or $proxyAddress.Scheme -notin @('http','socks5','socks5h') -or -not $proxyAddress.Host -or $proxyAddress.UserInfo) { throw 'Use an HTTP or SOCKS5 proxy without embedded credentials.' }
-  return $value
-}
-$ProxyUrl = Resolve-AntigravityProxy $ProxyUrl $env:HTTPS_PROXY
-function PortOwner([int]$p) {
-  # No -State Listen filter: on recent Windows builds a loopback-only listener
-  # (our node injector lock) reports a Bound state, so filtering by state would
-  # never match it. Ownership is verified separately in OwnsInjector.
-  Get-NetTCPConnection -LocalPort $p -ErrorAction SilentlyContinue | Select-Object -First 1
-}
-function OwnsInjector($owner, [string]$path) {
-  if (-not $owner) { return $false }
-  $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$($owner.OwningProcess)" -ErrorAction SilentlyContinue
-  $proc -and $proc.Name -ieq 'node.exe' -and $proc.CommandLine -match [regex]::Escape($path)
-}
+if ($Discover) { ConvertTo-RtlDiscoverLine $exe; exit 0 }
+$ProxyUrl = Resolve-RtlProxy $ProxyUrl $env:HTTPS_PROXY
 $injector = Join-Path $Dir 'injector.mjs'
-$owner = PortOwner $Port
-$lockOwner = PortOwner ($Port + 1)
-if ($lockOwner -and -not (OwnsInjector $lockOwner $injector)) { throw "Port $($Port + 1) belongs to another program." }
+$owner = Get-RtlPortOwner $Port
+$lockOwner = Get-RtlPortOwner ($Port + 1)
+if ($lockOwner -and -not (Test-RtlInjectorLock $lockOwner $injector)) { throw "Port $($Port + 1) belongs to another program." }
 if ($owner) {
   $hostProcess = Get-Process -Id $owner.OwningProcess -ErrorAction Stop
   if ($hostProcess.Path -ine $exe) { throw "Port $Port belongs to another program." }
@@ -45,20 +28,15 @@ if ($owner) {
   Start-Process -FilePath $exe -ArgumentList $launchArgs | Out-Null
   for ($i=0; $i -lt 40; $i++) {
     Start-Sleep -Milliseconds 250
-    $owner = PortOwner $Port
+    $owner = Get-RtlPortOwner $Port
     if ($owner) { break }
   }
   if (-not $owner -or (Get-Process -Id $owner.OwningProcess -ErrorAction Stop).Path -ine $exe) { throw 'Antigravity did not expose its own RTL debugging port.' }
 }
-$null = Invoke-RestMethod "http://127.0.0.1:$Port/json/version" -TimeoutSec 2
-if (-not (OwnsInjector $lockOwner $injector)) {
+if (-not (Get-RtlCdpInfo $Port)) { throw 'Antigravity did not expose its own RTL debugging port.' }
+if (-not (Test-RtlInjectorLock $lockOwner $injector)) {
   $node = Get-RtlNodePath $Dir
-  Start-Process -FilePath $node -ArgumentList ('"' + $injector + '"') -WorkingDirectory $Dir -WindowStyle Hidden -RedirectStandardOutput (Join-Path $env:TEMP 'antigravity-rtl.out.log') -RedirectStandardError (Join-Path $env:TEMP 'antigravity-rtl.err.log') | Out-Null
-  for ($i=0; $i -lt 20; $i++) {
-    Start-Sleep -Milliseconds 250
-    if (OwnsInjector (PortOwner ($Port + 1)) $injector) { break }
-  }
-  if (-not (OwnsInjector (PortOwner ($Port + 1)) $injector)) { throw 'Antigravity RTL injector did not start.' }
+  if (-not (Start-RtlInjector ($Port + 1) $node $injector (Join-Path $env:TEMP 'antigravity-rtl.out.log') (Join-Path $env:TEMP 'antigravity-rtl.err.log'))) { throw 'Antigravity RTL injector did not start.' }
 }
 Write-Output 'Antigravity RTL injector is running; chat rendering requires a loaded application page.'
 

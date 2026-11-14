@@ -1,4 +1,4 @@
-﻿# Qoder RTL - launcher
+# Qoder RTL - launcher
 #
 #   normal:  powershell -ExecutionPolicy Bypass -File start.ps1
 #   hidden:  launch.vbs calls this with -Gui (no console window at all)
@@ -10,6 +10,7 @@ $Port   = if ($env:QODER_RTL_PORT) { [int]$env:QODER_RTL_PORT } else { 9225 }
 $Dir    = Split-Path -Parent $PSCommandPath
 $RtlHelpers = Join-Path $Dir '..\rtl-paths.ps1'
 if (Test-Path -LiteralPath $RtlHelpers) { . $RtlHelpers }
+. (Join-Path $Dir '..\rtl-launch-lib.ps1')
 $Log    = Join-Path $env:TEMP 'qoder-rtl.log'
 
 function Say([string]$msg, [int]$icon = 0) {
@@ -25,28 +26,14 @@ function Say([string]$msg, [int]$icon = 0) {
   }
 }
 
-function PortOwner([int]$p) {
-  # No -State Listen filter: on recent Windows builds a loopback-only listener
-  # (our node injector lock) reports a Bound state, so filtering by state would
-  # never match it. Ownership is verified separately in Owns-InjectorLock.
-  try { Get-NetTCPConnection -LocalPort $p -ErrorAction Stop | Select-Object -First 1 }
-  catch { $null }
-}
-
 function Has-QoderTarget {
   try {
-    $owner = PortOwner $Port
+    $owner = Get-RtlPortOwner $Port
     $process = if ($owner) { Get-Process -Id $owner.OwningProcess -ErrorAction SilentlyContinue } else { $null }
     if (-not $process -or $process.Path -ine $exe) { return $false }
     $targets = Invoke-RestMethod "http://127.0.0.1:$Port/json/list" -TimeoutSec 2
     return [bool]($targets | Where-Object { $_.type -eq 'page' -and $_.url -like 'qoder-app://renderer/*' })
   } catch { return $false }
-}
-
-function Owns-InjectorLock($Owner, [string]$InjectorPath) {
-  if (-not $Owner) { return $false }
-  $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$($Owner.OwningProcess)" -ErrorAction SilentlyContinue
-  return $proc -and $proc.Name -ieq 'node.exe' -and $proc.CommandLine -match [regex]::Escape($InjectorPath)
 }
 
 function Get-RunningQoder {
@@ -75,8 +62,7 @@ if ($Discover) {
   # Machine-readable handoff for install.ps1: base64(UTF-8) survives consoles
   # whose codepage cannot represent characters in the path (e.g. Persian user
   # folders) - raw text gets corrupted to '?' across the process boundary.
-  $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($exe))
-  Write-Output "RTL_DISCOVER_B64:$b64"
+  Write-Output (ConvertTo-RtlDiscoverLine $exe)
   Write-Output $exe
   exit 0
 }
@@ -97,14 +83,14 @@ try {
 
 # --- already RTL? then only revive the injector if it died ---
 $injector = Join-Path $Dir 'injector.mjs'
-$owner = PortOwner $Port
+$owner = Get-RtlPortOwner $Port
 if ($owner) {
   if (-not (Has-QoderTarget)) {
     Say "Port $Port is already used by another program. Close it or set QODER_RTL_PORT to another port." 16
     exit 1
   }
-  $lockOwner = PortOwner ($Port + 1)
-  if (Owns-InjectorLock $lockOwner $injector) {
+  $lockOwner = Get-RtlPortOwner ($Port + 1)
+  if (Test-RtlInjectorLock $lockOwner $injector) {
     Say "already running with RTL (port $Port, injector pid $($lockOwner.OwningProcess))."
     exit 0
   }
@@ -122,7 +108,7 @@ if ($owner) {
       Say "Qoder is already starting with its RTL port $Port - waiting for it to open."
       for ($i = 0; $i -lt 60; $i++) {
         Start-Sleep -Milliseconds 500
-        $owner = PortOwner $Port
+        $owner = Get-RtlPortOwner $Port
         if ($owner) { break }
       }
       if (-not $owner) {
@@ -140,7 +126,7 @@ if ($owner) {
     Start-Process -FilePath $exe -ArgumentList $launchArgs | Out-Null
     for ($i = 0; $i -lt 40; $i++) {
       Start-Sleep -Milliseconds 500
-      $owner = PortOwner $Port
+      $owner = Get-RtlPortOwner $Port
       if ($owner) { break }
     }
     if (-not $owner) {
@@ -159,19 +145,9 @@ if ($owner) {
   }
 }
 
-Start-Process -FilePath $nodePath -ArgumentList ( '"' + (Join-Path $Dir 'injector.mjs') + '"' ) `
-  -WorkingDirectory $Dir -WindowStyle Hidden `
-  -RedirectStandardOutput (Join-Path $env:TEMP 'qoder-rtl-injector.out.log') `
-  -RedirectStandardError (Join-Path $env:TEMP 'qoder-rtl-injector.err.log') | Out-Null
-
-$injectorReady = $false
-for ($i = 0; $i -lt 20; $i++) {
-  Start-Sleep -Milliseconds 250
-  if (Owns-InjectorLock (PortOwner ($Port + 1)) $injector) { $injectorReady = $true; break }
-}
-if (-not $injectorReady) {
-  $err = Join-Path $env:TEMP 'qoder-rtl-injector.err.log'
-  $out = Join-Path $env:TEMP 'qoder-rtl-injector.out.log'
+$out = Join-Path $env:TEMP 'qoder-rtl-injector.out.log'
+$err = Join-Path $env:TEMP 'qoder-rtl-injector.err.log'
+if (-not (Start-RtlInjector ($Port + 1) $nodePath $injector $out $err)) {
   Say "The RTL injector did not start. See $err and $out for details, then try again." 16
   exit 1
 }

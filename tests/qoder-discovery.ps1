@@ -55,6 +55,7 @@ try {
   New-Item -ItemType Directory -Path $launcherDir -Force | Out-Null
   Copy-Item -LiteralPath $sourceLauncher -Destination $launcher
   Copy-Item -LiteralPath (Join-Path $repoRoot 'apps\rtl-paths.ps1') -Destination (Join-Path $tempRoot 'rtl-paths.ps1')
+  Copy-Item -LiteralPath (Join-Path $repoRoot 'apps\rtl-launch-lib.ps1') -Destination (Join-Path $tempRoot 'rtl-launch-lib.ps1')
 
   $newRoot = Join-Path $tempRoot 'new-install'
   $newExe = Add-QoderInstall (Join-Path $newRoot 'Programs\Qoder IDE') 'Qoder IDE.exe'

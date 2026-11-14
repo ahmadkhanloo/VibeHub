@@ -40,6 +40,7 @@
       "../../../apps/rtl-direction.mjs": "apps/rtl-direction.mjs",
       "../../../apps/rtl-style.mjs": "apps/rtl-style.mjs",
       "../../../apps/rtl-paths.ps1": "apps/rtl-paths.ps1",
+      "../../../apps/rtl-launch-lib.ps1": "apps/rtl-launch-lib.ps1",
       "../../../apps/migrate-agentrtl-paths.ps1": "apps/migrate-agentrtl-paths.ps1",
       "../../../cleanup.ps1": "cleanup.ps1",
       "windows/payload/node.exe": "runtime/node.exe",

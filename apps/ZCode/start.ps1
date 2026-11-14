@@ -1,10 +1,11 @@
-﻿param([switch]$Gui, [switch]$Discover)
+param([switch]$Gui, [switch]$Discover)
 
 $ErrorActionPreference = 'Stop'
 $Port = if ($env:ZCODE_RTL_PORT) { [int]$env:ZCODE_RTL_PORT } else { 9222 }
 $Dir = Split-Path -Parent $PSCommandPath
 $RtlHelpers = Join-Path $Dir '..\rtl-paths.ps1'
 if (Test-Path -LiteralPath $RtlHelpers) { . $RtlHelpers }
+. (Join-Path $Dir '..\rtl-launch-lib.ps1')
 $Log = Join-Path $env:TEMP 'zcode-rtl.log'
 
 function Say([string]$Message, [int]$Icon = 0) {
@@ -21,25 +22,6 @@ function Say([string]$Message, [int]$Icon = 0) {
 
 function Find-ZCode { Get-RtlExecutable 'zcode' $Dir }
 
-function Get-CdpInfo {
-  try { Invoke-RestMethod "http://127.0.0.1:$Port/json/version" -TimeoutSec 2 }
-  catch { $null }
-}
-
-function PortOwner([int]$p = $Port) {
-  # No -State Listen filter: on recent Windows builds a loopback-only listener
-  # (our node injector lock) reports a Bound state, so filtering by state would
-  # never match it. Ownership is verified separately in Owns-InjectorLock.
-  try { Get-NetTCPConnection -LocalPort $p -ErrorAction Stop | Select-Object -First 1 }
-  catch { $null }
-}
-
-function Owns-InjectorLock($Owner, [string]$InjectorPath) {
-  if (-not $Owner) { return $false }
-  $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$($Owner.OwningProcess)" -ErrorAction SilentlyContinue
-  return $proc -and $proc.Name -ieq 'node.exe' -and $proc.CommandLine -match [regex]::Escape($InjectorPath)
-}
-
 $exe = Find-ZCode
 if (-not $exe -and (Get-Command Select-RtlExecutable -ErrorAction SilentlyContinue)) {
   $exe = Select-RtlExecutable 'zcode' 'ZCode' 'ZCode.exe'
@@ -50,8 +32,7 @@ if (-not $exe) {
 }
 if ($Discover) {
   # Codepage-proof handoff; see apps/Qoder/start.ps1 for the rationale.
-  $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($exe))
-  Write-Output "RTL_DISCOVER_B64:$b64"
+  Write-Output (ConvertTo-RtlDiscoverLine $exe)
   Say "resolved: $exe"
   exit 0
 }
@@ -74,8 +55,8 @@ $injector = Join-Path $Dir 'injector.mjs'
 $main = Get-CimInstance Win32_Process -Filter "Name='ZCode.exe'" -ErrorAction SilentlyContinue |
   Where-Object { $_.CommandLine -notmatch '--type=' -and $_.ExecutablePath -ieq $exe } |
   Select-Object -First 1
-$owner = PortOwner
-$info = Get-CdpInfo
+$owner = Get-RtlPortOwner $Port
+$info = Get-RtlCdpInfo $Port
 
 if ($owner) {
   $ownerProcess = Get-Process -Id $owner.OwningProcess -ErrorAction SilentlyContinue
@@ -87,8 +68,8 @@ if ($owner) {
     Say "Port $Port is open, but ZCode could not be identified. Close the conflicting process and try again." 16
     exit 1
   }
-  $lockOwner = PortOwner ($Port + 1)
-  if (Owns-InjectorLock $lockOwner $injector) {
+  $lockOwner = Get-RtlPortOwner ($Port + 1)
+  if (Test-RtlInjectorLock $lockOwner $injector) {
     Say "ZCode RTL is already active on port $Port."
     exit 0
   }
@@ -103,7 +84,7 @@ if ($owner) {
     Say "ZCode is already starting with its RTL port $Port - waiting for it to open."
     for ($i = 0; $i -lt 60; $i++) {
       Start-Sleep -Milliseconds 500
-      $info = Get-CdpInfo
+      $info = Get-RtlCdpInfo $Port
       if ($info) { break }
     }
     if (-not $info) {
@@ -121,7 +102,7 @@ if ($owner) {
   Start-Process -FilePath $exe -ArgumentList $launchArgs | Out-Null
   for ($i = 0; $i -lt 40; $i++) {
     Start-Sleep -Milliseconds 500
-    $info = Get-CdpInfo
+    $info = Get-RtlCdpInfo $Port
     if ($info) { break }
   }
   if (-not $info) {
@@ -132,13 +113,7 @@ if ($owner) {
 
 $out = Join-Path $env:TEMP 'zcode-rtl-injector.out.log'
 $err = Join-Path $env:TEMP 'zcode-rtl-injector.err.log'
-Start-Process -FilePath $nodePath -ArgumentList ('"' + $injector + '"') -WorkingDirectory $Dir -WindowStyle Hidden -RedirectStandardOutput $out -RedirectStandardError $err | Out-Null
-$injectorReady = $false
-for ($i = 0; $i -lt 20; $i++) {
-  Start-Sleep -Milliseconds 250
-  if (Owns-InjectorLock (PortOwner ($Port + 1)) $injector) { $injectorReady = $true; break }
-}
-if (-not $injectorReady) {
+if (-not (Start-RtlInjector ($Port + 1) $nodePath $injector $out $err)) {
   Say "The RTL injector did not start. See $err and $out for details, then try again." 16
   exit 1
 }

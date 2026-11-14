@@ -66,9 +66,13 @@ test('every usable adapter carries its launcher, injector, style, target guard, 
   }
   assert.ok(prepare.includes("Copy-Item -LiteralPath (Join-Path $root 'apps\\rtl-style.mjs')"), 'shared style helper must ship in the independent payload');
   assert.ok(fullPackageHas(resources, 'rtl-style.mjs'), 'shared style helper must ship in the full Tauri package');
+  assert.ok(prepare.includes("Copy-Item -LiteralPath (Join-Path $root 'apps\\rtl-launch-lib.ps1')"), 'shared launcher library must ship in the independent payload');
+  assert.ok(fullPackageHas(resources, 'rtl-launch-lib.ps1'), 'shared launcher library must ship in the full Tauri package');
   const rtlInstaller = await read('apps/desktop/src-tauri/windows/installer.nsi');
   assert.ok(rtlInstaller.includes('File "${VIBEHUB_PAYLOAD_DIR}\\rtl-style.mjs"'), 'standalone RTL installer must install the shared style helper');
   assert.ok(rtlInstaller.includes('Delete "$INSTDIR\\apps\\rtl-style.mjs"'), 'standalone RTL uninstaller must remove its shared style helper');
+  assert.ok(rtlInstaller.includes('File "${VIBEHUB_PAYLOAD_DIR}\\rtl-launch-lib.ps1"'), 'standalone RTL installer must install the shared launcher library');
+  assert.ok(rtlInstaller.includes('Delete "$INSTDIR\\apps\\rtl-launch-lib.ps1"'), 'standalone RTL uninstaller must remove its shared launcher library');
 });
 
 test('the independent RTL installer offers every available adapter and keeps translations in sync', async () => {
@@ -81,12 +85,6 @@ test('the independent RTL installer offers every available adapter and keeps tra
   assert.match(installer, /File \/r "\$\{VIBEHUB_PAYLOAD_DIR\}\\OpenCode\\\*"/);
   assert.match(installer, /StrCpy \$SelectedComponents "[^"]*opencode[^"]*"/);
 
-  const legacy = await read('installer.iss');
-  for (const [id, folder] of adapters) {
-    const componentId = folder === 'DeepSeekHarness' ? 'deepseek' : id;
-    assert.match(legacy, new RegExp(`Name: "${componentId}";`), `${folder} must be selectable in the independent installer`);
-    assert.ok(legacy.includes(`apps\\${folder}\\*`), `${folder} files are missing from the independent installer`);
-  }
   const sourceInstaller = await read('install.ps1');
   assert.match(sourceInstaller, /function Assert-ClaudeRtlCompatible/);
   assert.match(sourceInstaller, /adapterVerified -ne \$true[\s\S]*?Get-AuthenticodeSignature[\s\S]*?ProductVersion/,

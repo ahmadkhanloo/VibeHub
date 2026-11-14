@@ -270,32 +270,19 @@ function Get-OpenAIProductForPath([string]$executablePath) {
 
 function Get-CodexRtlAvailability([string]$resourceRoot, [string]$packageName, [string]$executablePath, [bool]$cdpLaunchVerified = $false) {
     $resolvedProduct = Resolve-OpenAIProduct $packageName $executablePath
-    $adapter = Join-Path $resourceRoot 'apps\CodexDesktop'
-    $required = @(
-        (Join-Path $resourceRoot 'apps\rtl-paths.ps1'),
-        (Join-Path $resourceRoot 'apps\rtl-direction.mjs'),
-        (Join-Path $adapter 'start.ps1'),
-        (Join-Path $adapter 'launch.vbs'),
-        (Join-Path $adapter 'injector.mjs'),
-        (Join-Path $adapter 'style.mjs'),
-        (Join-Path $adapter 'cdp-targets.mjs'),
-        (Join-Path $adapter 'rtl.ico'),
-        (Join-Path $adapter 'assets\Vazirmatn-Regular.woff2'),
-        (Join-Path $adapter 'assets\Vazirmatn-Bold.woff2')
-    )
+    # No CodexDesktop adapter ships today; the six shipped adapters live under apps\ in the payload.
     $runtime = (Test-Path -LiteralPath (Join-Path $resourceRoot 'runtime\node.exe') -PathType Leaf) -or
         (Test-Path -LiteralPath (Join-Path $resourceRoot 'apps\desktop\src-tauri\windows\payload\node.exe') -PathType Leaf)
-    $filesPresent = @($required | Where-Object { -not (Test-Path -LiteralPath $_ -PathType Leaf) }).Count -eq 0
     $available = $resolvedProduct -eq 'codex' -and $cdpLaunchVerified -and
-        (Test-Path -LiteralPath $executablePath -PathType Leaf) -and $runtime -and $filesPresent
+        (Test-Path -LiteralPath $executablePath -PathType Leaf) -and $runtime
     $reason = if ($resolvedProduct -eq 'chatgpt') {
         'RTL is unavailable for ordinary ChatGPT; only Codex Desktop is eligible.'
     } elseif ($resolvedProduct -ne 'codex') {
         'The OpenAI executable is not tied to a verified OpenAI desktop package.'
     } elseif (-not $cdpLaunchVerified) {
         'Codex Desktop RTL is unavailable because a supported CDP startup path has not been verified for the installed package.'
-    } elseif (-not $runtime -or -not $filesPresent) {
-        'Codex Desktop RTL files or the bundled runtime are missing.'
+    } elseif (-not $runtime) {
+        'The bundled RTL runtime is missing.'
     } else { '' }
     @{id='chatgpt';available=[bool]$available;configured=$false;setupSupported=($resolvedProduct -eq 'codex' -and $cdpLaunchVerified);product=$resolvedProduct;reason=$reason}
 }
@@ -477,7 +464,7 @@ function Get-RtlComponents([string]$resourceRoot) {
         (Test-Path -LiteralPath (Join-Path $resourceRoot 'apps\desktop\src-tauri\windows\payload\node.exe') -PathType Leaf)
     foreach ($id in @('zcode','qoder','deepseek-harness','antigravity','opencode')) {
         $adapter = Join-Path $resourceRoot ('apps\' + $names[$id])
-        $required = @((Join-Path $resourceRoot 'apps\rtl-paths.ps1'), (Join-Path $resourceRoot 'apps\rtl-direction.mjs'))
+        $required = @((Join-Path $resourceRoot 'apps\rtl-paths.ps1'), (Join-Path $resourceRoot 'apps\rtl-launch-lib.ps1'), (Join-Path $resourceRoot 'apps\rtl-direction.mjs'))
         $required += @('start.ps1','launch.vbs','injector.mjs','rtl.ico','rtl-shortcut.ico') | ForEach-Object { Join-Path $adapter $_ }
         if ($id -in @('qoder','antigravity','opencode')) { $required += Join-Path $adapter 'style.mjs' }
         if ($id -in @('qoder','zcode','deepseek-harness','antigravity','opencode')) { $required += @('Vazirmatn-Regular.woff2','Vazirmatn-Bold.woff2') | ForEach-Object { Join-Path $adapter ('assets\' + $_) } }
