@@ -76,17 +76,6 @@ export function installMockNative({ scenario, language, onboardingDone }: { scen
               }
               if (args.action === 'list') return { nativePreview: true, settings: { enabled: false, threshold: 1 }, accounts: [] };
               throw new Error('accounts:browserPreview');
-            case "app_accounts": {
-              const id = args.appId;
-              const snapshots = state as any;
-              snapshots.desktopAccounts ??= {};
-              const accountId = 'account-' + 'a'.repeat(24);
-              const data = snapshots.desktopAccounts[id] ??= { appId: id, accounts: [{ id: accountId, name: 'Local fixture', email: 'fixture@example.invalid', plan: 'Fixture plan', usage: [{ label: 'Credits', remaining: 75, unit: 'percent' }], checkedAt: Math.floor(Date.now()/1000), error: null }], activeId: accountId, notice: null, version: id === 'qoder' ? '0.4.2' : '3.16.3', supportedVersion: id === 'qoder' ? '0.4.2' : '3.16.3', desktopRunning: true, liveSwitchVerified: false, capabilities: { canImport: true, canLogin: true, canRefresh: true, canSwitch: true } };
-              if (args.action === 'rename') data.accounts.find((a: any) => a.id === args.payload.id).name = args.payload.name;
-              if (args.action === 'delete') data.accounts = data.accounts.filter((a: any) => a.id !== args.payload.id);
-              if (args.action === 'switch') data.activeId = args.payload.id;
-              return structuredClone(data);
-            }
             case "app_version":
               return "0.1.0";
             case "detect_apps":

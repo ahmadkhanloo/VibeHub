@@ -234,5 +234,5 @@ export interface AccountsSnapshot {
   errorCode?: string | null;
   accounts: CodexAccount[]; activeId: string | null; pendingId: string | null; notice: string | null;
   settings: { enabled: boolean; threshold: number }; lastSwitch: number; cliReady: boolean; nativePreview?: boolean;
-  supportedVersion: string; desktopRunning: boolean; desktopVerified: boolean; loginPending: boolean;
+  supportedVersion: string; cliVersion?: string | null; desktopRunning: boolean; desktopVerified: boolean; loginPending: boolean;
 }

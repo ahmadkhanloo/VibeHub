@@ -301,18 +301,33 @@ function Codex-DesktopState {
         (Resolve-OpenAIProduct $_.Name (Join-Path $_.InstallLocation 'app\ChatGPT.exe')) -eq 'codex'
     })
     $package = $packages | Select-Object -First 1
-    $exe = if ($package) { Join-Path $package.InstallLocation 'app\ChatGPT.exe' }
+    # The 26.x desktop ships a second GUI exe (app\Codex.exe) next to ChatGPT.exe, plus CLI
+    # helpers under app\resources. Only the two GUI exes mean "the desktop is running";
+    # helpers belong to this package and must never look like a second installation.
+    $guiExes = @()
+    if ($package) {
+        foreach ($name in @('ChatGPT.exe','Codex.exe')) {
+            $candidate = Join-Path $package.InstallLocation (Join-Path 'app' $name)
+            if (Test-Path -LiteralPath $candidate -PathType Leaf) { $guiExes += $candidate }
+        }
+    }
+    $appRoot = if ($guiExes.Count -gt 0) { ((Split-Path -Parent $guiExes[0]).TrimEnd('\') + '\') } else { $null }
+    $installRoot = if ($package) { (([IO.Path]::GetFullPath($package.InstallLocation)).TrimEnd('\') + '\') } else { $null }
     $processes = @(Get-Process -Name ChatGPT,Codex -ErrorAction SilentlyContinue)
-    $known = @($processes | Where-Object { $exe -and $_.Path -ieq $exe })
+    $known = @($processes | Where-Object {
+        $path = $_.Path
+        $path -and @($guiExes | Where-Object { $path -ieq $_ }).Count -gt 0
+    })
     $unknown = @($processes | Where-Object {
-        (-not $_.Path -and $_.MainWindowHandle -ne 0) -or
-        ($_.Path -ine $exe -and $_.Path -match '\\WindowsApps\\OpenAI\.Codex_')
+        if (-not $_.Path) { return ($_.MainWindowHandle -ne 0) }
+        $insidePackage = $installRoot -and $_.Path.StartsWith($installRoot, [StringComparison]::OrdinalIgnoreCase)
+        return ($_.Path -match '\\WindowsApps\\OpenAI\.Codex_' -and -not $insidePackage)
     })
     @{
         installed=($packages.Count -gt 0)
         running=($known.Count -gt 0 -or $unknown.Count -gt 0)
         ambiguous=($packages.Count -gt 1 -or $unknown.Count -gt 0)
-        launchPath=$exe
+        launchPath=$appRoot
         packageFamily=$package.PackageFamilyName
     }
 }
@@ -759,33 +774,60 @@ try {
         'codex-desktop' { Codex-DesktopState }
         'codex-desktop-close' {
             $state = Codex-DesktopState
-            if ($state.ambiguous -or -not $request.path -or $state.launchPath -ine $request.path) { throw 'Codex desktop installation changed.' }
-            $exe = $state.launchPath
-            $processes = @(Get-Process -Name ChatGPT,Codex -ErrorAction SilentlyContinue | Where-Object { try { $_.Path -ieq $exe } catch { $false } })
-            foreach ($proc in $processes) { if ($proc.MainWindowHandle -ne 0) { [void]$proc.CloseMainWindow() } }
-            $deadline = [DateTime]::UtcNow.AddSeconds(10)
+            if ($state.ambiguous -or -not $request.path -or -not $state.launchPath) { throw 'Codex desktop installation changed.' }
+            # launchPath is the package app folder; close every GUI process from it (ChatGPT.exe and Codex.exe).
+            if ([IO.Path]::GetFullPath($request.path).TrimEnd('\') -ine [IO.Path]::GetFullPath($state.launchPath).TrimEnd('\')) { throw 'Codex desktop installation changed.' }
+            $appDir = [IO.Path]::GetFullPath($state.launchPath).TrimEnd('\')
+            $guiProcesses = {
+                @(Get-Process -Name ChatGPT,Codex -ErrorAction SilentlyContinue | Where-Object {
+                    $path = $_.Path
+                    $path -and [IO.Path]::GetDirectoryName($path) -ieq $appDir
+                })
+            }
+            foreach ($proc in @(& $guiProcesses)) { if ($proc.MainWindowHandle -ne 0) { [void]$proc.CloseMainWindow() } }
+            # This app shuts down slowly: processes linger for a minute or two after
+            # WM_CLOSE before exiting, so grant a generous grace period first.
+            $deadline = [DateTime]::UtcNow.AddSeconds(45)
             do {
-                $alive = @(Get-Process -Name ChatGPT,Codex -ErrorAction SilentlyContinue | Where-Object { try { $_.Path -ieq $exe } catch { $false } })
-                if ($alive.Count -eq 0) { break }
-                Start-Sleep -Milliseconds 100
+                if (@(& $guiProcesses).Count -eq 0) { break }
+                Start-Sleep -Milliseconds 250
             } while ([DateTime]::UtcNow -lt $deadline)
-            if ($alive.Count -gt 0) { throw 'Codex desktop is still open; finish ongoing work and close it before switching.' }
+            # The 26.x app can also hide in the tray instead of exiting on WM_CLOSE;
+            # terminate it like the account-switcher extensions do so the switch
+            # completes unattended.
+            if (@(& $guiProcesses).Count -gt 0) {
+                foreach ($proc in @(& $guiProcesses)) { try { Stop-Process -Id $proc.Id -Force -ErrorAction Stop } catch { } }
+                $deadline = [DateTime]::UtcNow.AddSeconds(45)
+                do {
+                    if (@(& $guiProcesses).Count -eq 0) { break }
+                    Start-Sleep -Milliseconds 250
+                } while ([DateTime]::UtcNow -lt $deadline)
+            }
+            if (@(& $guiProcesses).Count -gt 0) { throw 'Codex desktop is still open; finish ongoing work and close it before switching.' }
             @{ok=$true}
         }
         'codex-desktop-open' {
             $state = Codex-DesktopState
-            if ($state.ambiguous -or -not $request.path -or $state.launchPath -ine $request.path) {
+            if ($state.ambiguous -or -not $request.path -or -not $state.launchPath) {
                 throw 'Codex desktop installation changed.'
             }
+            if ([IO.Path]::GetFullPath($request.path).TrimEnd('\') -ine [IO.Path]::GetFullPath($state.launchPath).TrimEnd('\')) {
+                throw 'Codex desktop installation changed.'
+            }
+            $appDir = [IO.Path]::GetFullPath($state.launchPath).TrimEnd('\')
             $appIds = @(Get-StartApps | Where-Object { $_.AppID -like "$($state.packageFamily)!*" })
             if ($appIds.Count -ne 1) { throw 'Codex desktop activation entry could not be identified.' }
             Start-Process -FilePath explorer.exe -ArgumentList "shell:AppsFolder\$($appIds[0].AppID)"
-            $deadline = [DateTime]::UtcNow.AddSeconds(10)
+            # A cold start of this app can take well over ten seconds to spawn.
+            $deadline = [DateTime]::UtcNow.AddSeconds(45)
             do {
                 $running = @(Get-Process -Name ChatGPT,Codex -ErrorAction SilentlyContinue |
-                    Where-Object { $_.Path -ieq $state.launchPath })
+                    Where-Object {
+                        $path = $_.Path
+                        $path -and [IO.Path]::GetDirectoryName($path) -ieq $appDir
+                    })
                 if ($running.Count -gt 0) { break }
-                Start-Sleep -Milliseconds 100
+                Start-Sleep -Milliseconds 250
             } while ([DateTime]::UtcNow -lt $deadline)
             if ($running.Count -eq 0) { throw 'Codex desktop did not start.' }
             @{ok=$true}

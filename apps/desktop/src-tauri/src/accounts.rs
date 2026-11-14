@@ -18,6 +18,8 @@ use std::{
 use tauri::{Emitter, Manager};
 use tauri_plugin_notification::NotificationExt;
 
+/// Account flows depend on the app-server protocol, not the marketing version:
+/// any CLI at or above this floor is accepted, older builds are refused.
 const SUPPORTED: &str = "0.148.0";
 const DEFAULT_THRESHOLD: f64 = 1.0;
 static BROKER: Mutex<Option<Broker>> = Mutex::new(None);
@@ -168,7 +170,50 @@ impl Rpc {
     }
 }
 
-fn cli_path() -> Option<PathBuf> {
+struct Cli {
+    path: PathBuf,
+    version: (u64, u64, u64),
+}
+fn parse_cli_version(output: &str) -> Option<(u64, u64, u64)> {
+    let rest = output.trim().strip_prefix("codex-cli ")?.trim();
+    let mut numbers = rest.split('.');
+    let major = numbers.next()?.parse().ok()?;
+    let minor = numbers.next()?.parse().ok()?;
+    let patch = numbers.next()?.parse().ok()?;
+    // Pre-release suffixes ("0.149.0-beta") fail the numeric patch parse on purpose.
+    Some((major, minor, patch))
+}
+fn min_version() -> (u64, u64, u64) {
+    parse_cli_version(&format!("codex-cli {SUPPORTED}")).unwrap_or((0, 0, 0))
+}
+fn cli_version_label(version: (u64, u64, u64)) -> String {
+    format!("{}.{}.{}", version.0, version.1, version.2)
+}
+fn probe(binary: &Path) -> Option<(u64, u64, u64)> {
+    let mut cmd = Command::new(binary);
+    cmd.arg("--version")
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null());
+    system::hidden(&mut cmd);
+    let Ok(mut child) = cmd.spawn() else {
+        return None;
+    };
+    let start = Instant::now();
+    while matches!(child.try_wait(), Ok(None)) {
+        if start.elapsed() > Duration::from_secs(5) {
+            let _ = child.kill();
+            let _ = child.wait();
+            return None;
+        }
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    let mut out = String::new();
+    if let Some(stdout) = child.stdout.take() {
+        let _ = stdout.take(256).read_to_string(&mut out);
+    }
+    parse_cli_version(&out).filter(|version| *version >= min_version())
+}
+fn find_cli() -> Option<Cli> {
     let mut paths = Vec::new();
     for directory in std::env::split_paths(&std::env::var_os("PATH").unwrap_or_default()) {
         paths.push(directory.join("codex.exe"));
@@ -185,31 +230,12 @@ fn cli_path() -> Option<PathBuf> {
             paths.push(package.join(format!("vendor/{arch}/codex/codex.exe")));
         }
     }
-    paths.into_iter().find(|p| p.is_file() && compatible(p))
-}
-fn compatible(binary: &Path) -> bool {
-    let mut cmd = Command::new(binary);
-    cmd.arg("--version")
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null());
-    system::hidden(&mut cmd);
-    let Ok(mut child) = cmd.spawn() else {
-        return false;
-    };
-    let start = Instant::now();
-    while matches!(child.try_wait(), Ok(None)) {
-        if start.elapsed() > Duration::from_secs(5) {
-            let _ = child.kill();
-            let _ = child.wait();
-            return false;
+    paths.into_iter().find_map(|p| {
+        if !p.is_file() {
+            return None;
         }
-        std::thread::sleep(Duration::from_millis(20));
-    }
-    let mut out = String::new();
-    if let Some(stdout) = child.stdout.take() {
-        let _ = stdout.take(256).read_to_string(&mut out);
-    }
-    out.trim() == format!("codex-cli {SUPPORTED}")
+        probe(&p).map(|version| Cli { path: p, version })
+    })
 }
 fn global_home() -> Result<PathBuf> {
     if let Some(home) = std::env::var_os("CODEX_HOME").filter(|s| !s.is_empty()) {
@@ -435,7 +461,7 @@ struct Broker {
     path: PathBuf,
     root: PathBuf,
     global: PathBuf,
-    binary: Option<PathBuf>,
+    cli: Option<Cli>,
     state: Value,
     login: Option<Login>,
     proxy: Value,
@@ -480,12 +506,12 @@ impl Broker {
         if !state["accounts"].is_array() || !state["settings"]["enabled"].is_boolean() {
             return Err(err("storage"));
         }
-        let binary = cli_path();
+        let cli = find_cli();
         Ok(Self {
             path,
             root,
             global: global_home()?,
-            binary,
+            cli,
             state,
             login: None,
             proxy: json!({}),
@@ -511,7 +537,10 @@ impl Broker {
     }
     fn rpc(&self, home: &Path, isolated: bool) -> Result<Rpc> {
         Rpc::start(
-            self.binary.as_deref().ok_or_else(|| err("cliMissing"))?,
+            self.cli
+                .as_ref()
+                .map(|cli| cli.path.as_path())
+                .ok_or_else(|| err("cliMissing"))?,
             home,
             isolated,
             &self.proxy,
@@ -527,6 +556,15 @@ impl Broker {
             return Ok(false);
         }
         let id = identity(&auth).ok().map(|x| x.0);
+        // A token refresh rewrites auth.json without changing the account; only a
+        // different identity is an external change the user must review.
+        let same_account = id
+            .as_deref()
+            .is_some_and(|current| self.state["activeIdentity"].as_str() == Some(current));
+        self.state["activeIdentity"] = id
+            .as_deref()
+            .map(|current| json!(current))
+            .unwrap_or(Value::Null);
         self.state["activeId"] = id
             .as_deref()
             .filter(|id| self.index(id).is_ok())
@@ -536,7 +574,7 @@ impl Broker {
             fs::create_dir_all(&home).map_err(|_| err("storage"))?;
             write_vault(&home, &auth)?;
         }
-        if !self.state["fingerprint"].is_null() {
+        if !self.state["fingerprint"].is_null() && !same_account {
             self.state["notice"] = json!("externalChanged");
         }
         self.state["fingerprint"] = json!(fp);
@@ -700,7 +738,7 @@ impl Broker {
     }
     fn switch(&mut self, app: &tauri::AppHandle, id: &str, confirmed: bool) -> Result<()> {
         self.index(id)?;
-        if self.binary.is_none() {
+        if self.cli.is_none() {
             return Err(err("cliMissing"));
         }
         let active = self.state["activeId"].clone();
@@ -770,6 +808,9 @@ impl Broker {
                 committed["previousId"] = json!(outgoing_id);
             }
             committed["activeId"] = json!(id);
+            // Keep the identity watcher in step with the switch so the next token
+            // refresh of the selected account is not mistaken for an external change.
+            committed["activeIdentity"] = json!(id);
             committed["pendingId"] = Value::Null;
             committed["lastSwitch"] = json!(now());
             committed["notice"] = json!("switched");
@@ -849,7 +890,7 @@ impl Broker {
         Ok(())
     }
     fn automation(&mut self, app: &tauri::AppHandle) -> Result<()> {
-        if self.state["settings"]["enabled"] != true || self.binary.is_none() {
+        if self.state["settings"]["enabled"] != true || self.cli.is_none() {
             return Ok(());
         }
         if self.reconcile()? {
@@ -908,7 +949,12 @@ impl Broker {
         let mut value = json!({"accounts":accounts,"activeId":self.state["activeId"],"pendingId":self.state["pendingId"],
             "previousId":self.state["previousId"],"settings":self.state["settings"],"lastSwitch":self.state["lastSwitch"],"notice":self.state["notice"]});
         value["errorCode"] = self.state["summaryErrorCode"].clone();
-        value["cliReady"] = json!(self.binary.is_some());
+        value["cliReady"] = json!(self.cli.is_some());
+        value["cliVersion"] = self
+            .cli
+            .as_ref()
+            .map(|cli| json!(cli_version_label(cli.version)))
+            .unwrap_or(Value::Null);
         value["supportedVersion"] = json!(SUPPORTED);
         value["desktopRunning"] = self.desktop["running"].clone();
         value["desktopVerified"] = json!(false); // Only a recorded live acceptance can change this claim.
@@ -1135,10 +1181,7 @@ pub fn handle(app: &tauri::AppHandle, action: &str, payload: Value) -> Result<Va
     }
     match action {
         "list" => {
-            broker.binary = broker
-                .binary
-                .take()
-                .or_else(cli_path);
+            broker.cli = broker.cli.take().or_else(find_cli);
             broker.desktop = system::powershell(app, json!({"operation":"codex-desktop"}))?;
             if let Err(error) = broker
                 .read_initial_account()
@@ -1201,7 +1244,7 @@ pub fn handle(app: &tauri::AppHandle, action: &str, payload: Value) -> Result<Va
             }
         }
         "import" => {
-            if broker.binary.is_none() {
+            if broker.cli.is_none() {
                 return Err(err("cliMissing"));
             }
             let auth = read_global(&broker.global)?;
@@ -1423,7 +1466,7 @@ mod tests {
             path: profiles.0.join("accounts.json"),
             root: profiles.0.clone(),
             global: global.0.clone(),
-            binary: None,
+            cli: None,
             state: json!({"accounts":[],"settings":{"enabled":false,"threshold":1}}),
             login: None,
             proxy: json!({}),
@@ -1549,12 +1592,11 @@ mod tests {
     #[test]
     #[ignore = "Opt-in installed Codex CLI compatibility check, using isolated synthetic credentials and loopback-only endpoints"]
     fn installed_cli_reads_official_encrypted_profile() {
-        let binary = cli_path().expect("Codex CLI must be installed");
-        assert!(compatible(&binary));
+        let cli = find_cli().expect("Codex CLI must be installed");
         let root = Sandbox::new();
         fs::write(root.0.join("config.toml"),"chatgpt_base_url = 'http://127.0.0.1:9'\nopenai_base_url = 'http://127.0.0.1:9/v1'\ncheck_for_update_on_startup = false\n").unwrap();
         write_vault(&root.0, &synthetic_auth("fixture")).unwrap();
-        let mut rpc = Rpc::start(&binary, &root.0, true, &json!({"direct":true})).unwrap();
+        let mut rpc = Rpc::start(&cli.path, &root.0, true, &json!({"direct":true})).unwrap();
         let result = rpc
             .call("account/read", json!({"refreshToken":false}))
             .unwrap();
@@ -1564,9 +1606,9 @@ mod tests {
     #[test]
     #[ignore = "Opt-in installed Codex CLI compatibility check with a synthetic key"]
     fn reads_encrypted_profile_written_by_installed_cli() {
-        let binary = cli_path().expect("Codex CLI must be installed");
+        let cli = find_cli().expect("Codex CLI must be installed");
         let root = Sandbox::new();
-        let mut child = Command::new(binary)
+        let mut child = Command::new(cli.path)
             .args([
                 "-c", "cli_auth_credentials_store=\"keyring\"",
                 "--enable", "secret_auth_storage",
@@ -1623,13 +1665,58 @@ mod tests {
         assert_ne!(first.0, identity(&auth).unwrap().0);
     }
     #[test]
+    fn token_refresh_of_same_account_is_quiet_and_a_new_identity_notifies() {
+        let global = Sandbox::new();
+        let profiles = Sandbox::new();
+        let auth = synthetic_auth("current");
+        let id = identity(&auth).unwrap().0;
+        storage::write(&global.0.join("auth.json"), &auth).unwrap();
+        let mut broker = Broker {
+            path: profiles.0.join("accounts.json"),
+            root: profiles.0.clone(),
+            global: global.0.clone(),
+            cli: None,
+            state: json!({"accounts":[],"settings":{"enabled":false,"threshold":1}}),
+            login: None,
+            proxy: json!({}),
+            desktop: json!({}),
+        };
+        broker.add(auth.clone(), "").unwrap();
+        broker.reconcile().unwrap();
+        assert!(broker.state["notice"].is_null());
+        assert_eq!(broker.state["activeId"], json!(id));
+        let mut refreshed = auth.clone();
+        refreshed["tokens"]["access_token"] = json!("rotated-access");
+        storage::write(&global.0.join("auth.json"), &refreshed).unwrap();
+        broker.reconcile().unwrap();
+        assert!(broker.state["notice"].is_null());
+        assert_eq!(broker.state["activeId"], json!(id));
+        assert_eq!(read_vault(&broker.home(&id).unwrap()).unwrap(), Some(refreshed));
+        let other = synthetic_auth("other");
+        storage::write(&global.0.join("auth.json"), &other).unwrap();
+        broker.reconcile().unwrap();
+        assert_eq!(broker.state["notice"], json!("externalChanged"));
+        assert_eq!(broker.state["activeId"], Value::Null);
+    }
+    #[test]
+    fn version_floor_accepts_newer_cli_and_rejects_older() {
+        assert_eq!(parse_cli_version("codex-cli 0.147.9"), Some((0, 147, 9)));
+        assert!(parse_cli_version("codex-cli 0.147.9").unwrap() < min_version());
+        for output in ["codex-cli 0.148.0", "codex-cli 0.149.1", "codex-cli 1.0.0"] {
+            assert!(parse_cli_version(output).unwrap() >= min_version());
+        }
+        for output in ["codex 0.148.0", "codex-cli 0.148", "codex-cli abc", ""] {
+            assert_eq!(parse_cli_version(output), None);
+        }
+    }
+    #[test]
     fn webview_projection_excludes_credentials_and_auth_fingerprint() {
         let root = Sandbox::new();
         let broker = Broker {
             path: root.0.join("accounts.json"),
             root: root.0.clone(),
             global: root.0.clone(),
-            binary: None,
+            cli: None,
             state: json!({"accounts":[{"id":"account-test","name":"Test","email":"test@example.invalid","tokens":{"access_token":"synthetic-secret"},"windows":[]}],"settings":{"enabled":false,"threshold":10},"fingerprint":"synthetic-fingerprint","tokens":"synthetic-secret"}),
             login: None,
             proxy: json!({}),
