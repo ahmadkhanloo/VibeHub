@@ -43,4 +43,4 @@
 
 ![بازبین code-reviewer در نمونهٔ رسمی Claude Code؛ فعالیت ابزارها زیر نام ایجنت دیده می‌شود و باید تا دریافت گزارش نهایی پیگیری شود.](../../../apps/desktop/public/tutorials/screenshots/claude-review-agent.webp)
 
-[آموزش ساخت بازبین محدود](/learning/claude-agents) · [نمونهٔ رسمی Claude Academy](https://academy.claude.com/courses/claude-code-101/the-explore-plan-code-commit-workflow)
+[آموزش ساخت بازبین محدود](/learning/claude-agents) · [نمونهٔ رسمی Claude Academy](https://academy.claude.com/courses/claude-code-101/the-explore-plan-code-commit-workflow) · [فشرده‌سازی و سنجش ریسک با RepoWise](/learning/repowise)

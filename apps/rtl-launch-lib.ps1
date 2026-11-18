@@ -5,8 +5,13 @@ function Get-RtlPortOwner([int]$p) {
   # No -State Listen filter: on recent Windows builds a loopback-only listener
   # (our node injector lock) reports a Bound state, so filtering by state would
   # never match it. Ownership is verified separately by Test-RtlInjectorLock.
-  try { Get-NetTCPConnection -LocalPort $p -ErrorAction Stop | Select-Object -First 1 }
-  catch { $null }
+  # TimeWait/Closed rows carry PID 0 after a normal app exit; they must not
+  # count as an owner or an immediate relaunch would be refused.
+  try {
+    Get-NetTCPConnection -LocalPort $p -ErrorAction Stop |
+      Where-Object { $_.OwningProcess -gt 0 -and $_.State -notin @('TimeWait', 'Closed', 'DeleteTCB') } |
+      Select-Object -First 1
+  } catch { $null }
 }
 
 function Test-RtlInjectorLock($Owner, [string]$InjectorPath) {

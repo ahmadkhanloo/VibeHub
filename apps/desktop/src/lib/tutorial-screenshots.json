@@ -395,5 +395,17 @@
     "height": 860,
     "sourceVersion": null,
     "captureDescription": "VibeHub browser-mode mock showing the GitHub Copilot CLI catalog page."
+  },
+  {
+    "id": "minimax-code-rtl",
+    "file": "screenshots/minimax-code-rtl.webp",
+    "sourcePage": "https://code.minimax.io/",
+    "sourceImage": null,
+    "retrievedAt": "2026-11-14",
+    "kind": "local-screenshot",
+    "width": 1360,
+    "height": 630,
+    "sourceVersion": "3.1.15.221",
+    "captureDescription": "Windows MiniMax Code answer to a Persian prompt with VibeHub RTL enabled, cropped to exclude the account sidebar and the right-side panels; Persian prose is right-to-left with Vazirmatn and the TypeScript block stays left-to-right."
   }
 ]

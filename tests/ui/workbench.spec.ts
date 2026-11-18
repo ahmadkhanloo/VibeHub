@@ -5,11 +5,11 @@ test('the sidebar links directly to each destination and legacy routes remain us
   await mockNative(page);
   await page.goto('/');
   const sidebar = page.getByRole('navigation', { name: 'Main navigation' });
-  for (const [label, route] of [['AI connections','/connections/api'],['Proxy','/connections/proxy'],['News and offers','/offers'],['Terminal & Persian text','/terminal'],['Diagnostics','/doctor'],['Learn','/learning']]) {
+  for (const [label, route] of [['API notebook','/connections/api'],['Proxy','/connections/proxy'],['Terminal','/terminal'],['Diagnostics','/doctor'],['Learn','/learning']]) {
     await expect(sidebar.getByRole('link', { name: label, exact: true })).toHaveAttribute('href', route);
   }
   await expect(sidebar.getByRole('link', { name: /More tools/i })).toHaveCount(0);
-  for (const [legacy, destination] of [['/tools','/'],['/accounts','/app/chatgpt'],['/connections','/connections/api'],['/proxy','/connections/proxy'],['/settings?panel=terminal','/terminal']]) {
+  for (const [legacy, destination] of [['/accounts','/app/chatgpt'],['/connections','/connections/api'],['/proxy','/connections/proxy'],['/settings?panel=terminal','/terminal']]) {
     await page.goto(legacy);
     await expect.poll(() => new URL(page.url()).pathname).toBe(destination);
   }

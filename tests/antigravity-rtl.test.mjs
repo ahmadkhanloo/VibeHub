@@ -92,7 +92,7 @@ test('Antigravity renders observed chat text in Vazirmatn and leaves code/editor
       paragraph.textContent = 'پاسخ تدریجی فارسی';
       node.append(paragraph);
     });
-    await page.waitForFunction(() => document.querySelector('#streamed')?.getAttribute('dir') === 'auto');
+    await page.waitForFunction(() => document.querySelector('#streamed')?.getAttribute('dir') === 'rtl');
     await page.evaluate(() => document.fonts.ready);
 
     const result = await page.evaluate(() => {
@@ -136,12 +136,12 @@ test('Antigravity renders observed chat text in Vazirmatn and leaves code/editor
     assert.equal(result.observerCount, 1);
     assert.equal(result.heading.direction, 'rtl');
     assert.equal(result.heading.textAlign, 'right');
-    assert.equal(result.heading.dir, 'auto');
+    assert.equal(result.heading.dir, 'rtl');
     assert.equal(result.mixed.direction, 'rtl');
     assert.equal(result.mixed.unicodeBidi, 'plaintext');
-    assert.equal(result.mixed.dir, 'auto');
+    assert.equal(result.mixed.dir, 'rtl');
     assert.equal(result.english.direction, 'ltr');
-    assert.equal(result.english.dir, 'auto');
+    assert.equal(result.english.dir, 'ltr');
     assert.equal(result.prewrap.direction, 'rtl');
     assert.equal(result.list.direction, 'rtl');
     assert.equal(result.table.textAlign, 'center');
@@ -172,7 +172,7 @@ test('Antigravity renders observed chat text in Vazirmatn and leaves code/editor
       direction: getComputedStyle(document.querySelector('#after-reload')).direction,
       dir: document.querySelector('#after-reload').getAttribute('dir'),
     }));
-    assert.deepEqual(afterReload, { styleCount: 1, observerCount: 1, direction: 'rtl', dir: 'auto' });
+    assert.deepEqual(afterReload, { styleCount: 1, observerCount: 1, direction: 'rtl', dir: 'rtl' });
     await context.close();
   } finally {
     await browser.close();

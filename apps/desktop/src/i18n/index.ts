@@ -34,8 +34,19 @@ export function applyLanguageDir(lang: AppLanguage): void {
 }
 
 export function changeLanguage(lang: AppLanguage): void {
-  void i18n.changeLanguage(lang);
-  applyLanguageDir(lang);
+  const dir = lang === 'fa' ? 'rtl' : 'ltr';
+  const dirChanged = document.documentElement.dir !== dir;
+  void i18n.changeLanguage(lang).then(() => {
+    applyLanguageDir(lang);
+    if (!dirChanged) return;
+    // Chromium keeps stale bidi runs when text is mutated under a new dir
+    // (parenthesized counts render mirrored until reload). Rebuild the subtree
+    // after React has committed the translated strings.
+    setTimeout(() => {
+      const app = document.getElementById('root');
+      if (app) { app.style.display = 'none'; void app.offsetHeight; app.style.display = ''; }
+    }, 100);
+  });
 }
 
 export default i18n;

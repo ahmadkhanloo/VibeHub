@@ -76,7 +76,7 @@ export function clearContentCache() {
  revision++;listeners.forEach(listener=>listener());
 }
 const initialCatalog = {apps: [...apps], providers: [...providers], offers: [...bundledCatalog.offers]};
-const bundledAppIds = new Set(['antigravity-ide', 'claude-code', 'claude-desktop', 'copilot-cli']);
+const bundledAppIds = new Set(['antigravity-ide', 'claude-code', 'claude-desktop', 'copilot-cli', 'minimax-code']);
 
 export function validateRemoteGuides(raw: unknown, catalog: Catalog): Record<string, string> {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('Incomplete guide feed');

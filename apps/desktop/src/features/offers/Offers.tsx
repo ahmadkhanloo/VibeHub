@@ -31,7 +31,7 @@ function freshSource(offer: OfferView) {
   return offer.status === 'verified' && offer.sourceState === 'fresh' && Number.isFinite(age) && age >= 0 && age <= 48 * 3600000;
 }
 
-export function OffersPage() {
+export function NewsAndOffers({ embedded = false }: { embedded?: boolean }) {
   const { t, i18n } = useTranslation(['offers', 'common']);
   const lang = i18n.resolvedLanguage?.startsWith('fa') ? 'fa' : 'en';
   const { settings, update } = useSettings();
@@ -100,13 +100,18 @@ export function OffersPage() {
   const unreadNews = catalog.news.filter(item => !readNews.includes(`${item.id}:${item.checkedAt}`));
   const unreadOffers = offers.filter(offer => !readOffers.includes(offer.offerId));
 
+  const syncAction = <Button size="sm" variant="ghost" loading={syncing} disabled={syncing} onClick={() => void sync()}><RefreshCw size={16} aria-hidden="true" />{t('notifications.checkNow')}</Button>;
+
   return <div className="vh-news-page space-y-5">
-    <PageHeader title={t('title')} description={t('subtitle')} actions={<Button size="sm" variant="ghost" loading={syncing} disabled={syncing} onClick={() => void sync()}><RefreshCw size={16} aria-hidden="true" />{t('notifications.checkNow')}</Button>} />
+    {!embedded && <PageHeader title={t('title')} description={t('subtitle')} actions={syncAction} />}
     {offline && <p role="status" className="text-sm text-warning">{t('feedOffline')}</p>}
     {error != null && <ErrorNotice error={error} onRetry={() => void sync()} />}
     <div className="vh-news-meta">
       <p role="status">{lastSynced ? `${t('notifications.lastSynced')}: ${formatDate(lastSynced, lang)}` : t('lastSyncUnknown')}</p>
-      <details className="vh-news-settings"><summary><BellRing size={15} aria-hidden="true" />{t('notifications.title')}</summary><div><Toggle checked={settings.nativeNotifications} disabled={permissionBusy} onChange={enabled => void toggleNotifications(enabled)} label={t('notifications.native')} /><p>{t('notifications.nativeHint')}</p></div></details>
+      <div className="flex flex-wrap items-center gap-3">
+        {embedded && syncAction}
+        <details className="vh-news-settings"><summary><BellRing size={15} aria-hidden="true" />{t('notifications.title')}</summary><div><Toggle checked={settings.nativeNotifications} disabled={permissionBusy} onChange={enabled => void toggleNotifications(enabled)} label={t('notifications.native')} /><p>{t('notifications.nativeHint')}</p></div></details>
+      </div>
     </div>
     <nav className="vh-news-tabs" aria-label={t('sections')}>
       <button type="button" aria-pressed={tab === 'news'} onClick={() => setTab('news')}>{t('newsTab')}<Badge tone="muted">{unreadNews.length}</Badge></button>

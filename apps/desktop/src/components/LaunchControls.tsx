@@ -52,7 +52,7 @@ export function LaunchControls({
       <Button variant="primary" disabled={focusRunning ? busy || focusing : normalBlocked} loading={busy || focusing} aria-label={(focusRunning ? t('focusApp') : repeatCli && state?.phase === 'running' ? t('openAnotherTerminal') : t('run')) + ' ' + name} onClick={() => focusRunning ? focus() : run('normal')}>
         <Play aria-hidden="true" size={15} />{focusRunning ? t('focusApp') : repeatCli && state?.phase === 'running' ? t('openAnotherTerminal') : t('run')}
       </Button>
-      {rtlReady && <Button disabled={rtlBlocked} loading={busy && state?.phase === 'running' && state.rtl} aria-label={t('runRtlCompact') + ' ' + name} onClick={() => run('rtl')}><AppLogo appId={id} name={name} size={24} rtl /><span>{t('runRtlCompact')}</span></Button>}
+      {rtlReady && <Button disabled={rtlBlocked} loading={busy && state?.phase === 'running' && state.rtl} aria-label={t('runRtlCompact') + ' ' + name} onClick={() => run('rtl')}>{!compact && <AppLogo appId={id} name={name} size={24} rtl />}<span>{t('runRtlCompact')}</span></Button>}
       {rtlSetupSupported && (!rtlReady || showRtlRepair) && <RtlSetup key={id} id={id} name={name} available={rtlAvailable} configured={rtlReady} onReady={() => void ctx.refresh()} />}
     </div>
     {state === undefined && !busy && <p className="text-xs text-muted" role="status">{t('stateUnknown')} <button className="ms-2 underline" aria-label={t('recheckFor', { name })} onClick={() => void ctx.checkState(id)}>{t('retry')}</button></p>}

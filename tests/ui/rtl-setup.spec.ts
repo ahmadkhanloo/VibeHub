@@ -52,8 +52,8 @@ test('a failed RTL shortcut setup remains retryable', async ({ page }) => {
 test('main navigation names the manual API store AI connections', async ({ page }) => {
   await mockNative(page);
   await page.goto('/');
-  await page.getByRole('link', { name: 'AI connections', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'AI connections', exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'API notebook', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'API notebook', exact: true })).toBeVisible();
 });
 
 test('missing bundled RTL offers the full installer without claiming setup succeeded', async ({ page }) => {

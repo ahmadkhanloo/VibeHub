@@ -16,7 +16,7 @@ test('news is the default tab and separates publication from source verification
   });
   await page.goto('/offers');
   await page.getByRole('button', { name: 'Refresh news and offers', exact: true }).click();
-  await expect(page.getByRole('button', { name: /^News/ })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.vh-news-tabs').getByRole('button', { name: /^News/ })).toHaveAttribute('aria-pressed', 'true');
   const item = page.getByRole('group').filter({ hasText: 'Fixture news' });
   await expect(item.getByText('News summary', { exact: true }).first()).toBeVisible();
   await expect(item.getByText('Qoder', { exact: true })).toBeVisible();
@@ -25,8 +25,8 @@ test('news is the default tab and separates publication from source verification
   await item.locator('summary').focus();
   await page.keyboard.press('Enter');
   await expect(item.getByText('News body', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: /^Offers/ }).click();
-  await expect(page.getByRole('button', { name: /^Current/ })).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('.vh-news-tabs').getByRole('button', { name: /^Offers/ }).click();
+  await expect(page.locator('.vh-news-filters').getByRole('button', { name: /^Current/ })).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('an offer checked outside the 48-hour window does not get a fresh verification badge', async ({ page }) => {
@@ -45,7 +45,7 @@ test('an offer checked outside the 48-hour window does not get a fresh verificat
   });
   await page.goto('/offers');
   await page.getByRole('button', { name: 'Refresh news and offers', exact: true }).click();
-  await page.getByRole('button', { name: /^Offers/ }).click();
+  await page.locator('.vh-news-tabs').getByRole('button', { name: /^Offers/ }).click();
   const offer = page.getByRole('group').filter({ hasText: 'Qwen3.8-Flash free in Qoder' });
   await expect(offer.getByText('Reported / needs verification', { exact: true })).toBeVisible();
   await expect(offer.getByText('Verified', { exact: true })).toHaveCount(0);

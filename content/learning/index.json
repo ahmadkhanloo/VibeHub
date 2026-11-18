@@ -263,6 +263,27 @@
       "contentPath": "content/learning/articles/webapp-testing"
     },
     {
+      "id": "playwright",
+      "category": "testing",
+      "kind": "guide",
+      "order": 20,
+      "title": {
+        "fa": "Playwright: آزمون مرورگری پروژه",
+        "en": "Playwright: browser testing for your project"
+      },
+      "summary": {
+        "fa": "نصب، اجرای تست مرورگری و بررسی RTL در پروژهٔ خودتان؛ مستقل از VibeHub.",
+        "en": "Install, run browser tests and check RTL in your own project — independent of VibeHub."
+      },
+      "sourceUrl": "https://playwright.dev/docs/intro",
+      "checkedAt": "2026-11-15",
+      "relatedIds": [
+        "webapp-testing",
+        "code-review"
+      ],
+      "contentPath": "content/learning/articles/playwright"
+    },
+    {
       "id": "pdf",
       "category": "documents",
       "kind": "skill",
@@ -421,6 +442,27 @@
         "skill-basics"
       ],
       "contentPath": "content/learning/articles/openai-developers"
+    },
+    {
+      "id": "repowise",
+      "category": "integrations",
+      "kind": "guide",
+      "order": 40,
+      "title": {
+        "fa": "RepoWise: هوش مخزن در کنار ایجنت",
+        "en": "RepoWise: repository intelligence for your agent"
+      },
+      "summary": {
+        "fa": "فشرده‌سازی خروجی‌های پرحجم، ارزیابی ریسک تغییر و بررسی سلامت کد — با مرزهای واقعی ابزار.",
+        "en": "Compress noisy command output, score change risk and check code health — with the tool's real limits."
+      },
+      "sourceUrl": "https://docs.repowise.dev/cli/overview",
+      "checkedAt": "2026-11-15",
+      "relatedIds": [
+        "code-review",
+        "debugging-with-agent"
+      ],
+      "contentPath": "content/learning/articles/repowise"
     },
     {
       "id": "git-first-commit",
@@ -625,6 +667,47 @@
       "sourceUrl": "https://code.claude.com/docs/en/plugins",
       "checkedAt": "2026-11-05",
       "contentPath": "content/learning/articles/claude-plugins"
+    },
+    {
+      "id": "superpowers",
+      "category": "skills",
+      "kind": "skill",
+      "order": 20,
+      "title": {
+        "fa": "Superpowers: اسکیل‌های روش کار برای ایجنت",
+        "en": "Superpowers: working-method skills for your agent"
+      },
+      "summary": {
+        "fa": "پلاگین اسکیل‌های روشِ کار: ایده‌پردازی، نوشتن و اجرای طرح، توسعهٔ تست‌محور و دیباگ نظام‌مند.",
+        "en": "A plugin of working-method skills: brainstorming, writing and executing plans, test-driven development and systematic debugging."
+      },
+      "sourceUrl": "https://github.com/obra/superpowers",
+      "checkedAt": "2026-11-17",
+      "relatedIds": [
+        "skill-basics",
+        "skill-creator"
+      ],
+      "contentPath": "content/learning/articles/superpowers"
+    },
+    {
+      "id": "find-skills",
+      "category": "skills",
+      "kind": "skill",
+      "order": 30,
+      "title": {
+        "fa": "find-skills: پیدا کردن اسکیل مناسب",
+        "en": "find-skills: finding the right skill"
+      },
+      "summary": {
+        "fa": "جست‌وجو، ارزیابی و نصب اسکیل از اکوسیستم باز اسکیل‌ها با skills CLI.",
+        "en": "Search, vet and install skills from the open skills ecosystem with the skills CLI."
+      },
+      "sourceUrl": "https://skills.sh/",
+      "checkedAt": "2026-11-17",
+      "relatedIds": [
+        "skill-basics"
+      ],
+      "contentPath": "content/learning/articles/find-skills"
     }
   ]
 }

@@ -43,6 +43,11 @@
       "note": "Official Claude app icon from Anthropic's download site; the logo is bundled unchanged."
     },
     {
+      "file": "minimax.png",
+      "source": "https://code.minimax.io/assets/logo/apple-touch_v2.png",
+      "note": "Official MiniMax Code touch icon, bundled unchanged at 1024x1024."
+    },
+    {
       "file": "chatgpt.svg",
       "source": "https://github.com/openai/openai-realtime-console/blob/main/client/assets/openai-logomark.svg",
       "note": "Unmodified official OpenAI logomark, retrieved using the GitHub contents API; brand guidance https://openai.com/brand/."

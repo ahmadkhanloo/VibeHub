@@ -221,7 +221,63 @@ export const ipc = {
     } finally { feedFlights.delete(feedBaseUrl); }
   },
   appVersion: () => invoke<string>('app_version'),
+  claudeAccounts: (action: ClaudeAccountsAction, payload: Record<string, unknown> = {}) =>
+    invoke<ClaudeAccountsSnapshot>('claude_accounts', { action, payload }),
+  appAccounts: (appId: string, action: AppAccountsAction, payload: Record<string, unknown> = {}) =>
+    invoke<AppAccountsSnapshot>('app_accounts', { appId, action, payload }),
+  appQuota: (action: QuotaAction, payload: Record<string, unknown> = {}) =>
+    invoke<AppQuotaSnapshot>('app_quota', { action, payload }),
+  toolchainStatus: () => invoke<ToolchainStatus>('toolchain_status'),
 };
+
+/** Machine-level facts about the helper tools the workspace advertises. */
+export interface ToolchainStatus {
+  repowise: { installed: boolean; version: string | null };
+  browsers: { edge: boolean; chrome: boolean };
+  plugins: { superpowers: boolean };
+  skills: { findSkills: boolean };
+}
+
+/** Apps whose session is an opaque blob that VibeHub swaps without decrypting it. */
+export type OpaqueAccountApp = 'zcode' | 'qoder';
+export type AppAccountsAction = 'list' | 'capture' | 'apply' | 'revert' | 'rename' | 'delete' | 'dismiss';
+export interface AppAccount {
+  id: string; name: string; size: number; files: string[]; active: boolean;
+  capturedAt: number | null; updatedAt: number | null;
+}
+export interface AppAccountsSnapshot {
+  app: OpaqueAccountApp;
+  accounts: AppAccount[];
+  activeId: string | null;
+  notice: string | null;
+  /** The app is running; capture and revert refuse, apply closes it first. */
+  running: boolean;
+  /** Required session files exist, i.e. the app has been signed in at least once. */
+  filesPresent: boolean;
+  /** The app rewrote its session since the last capture or switch. */
+  sessionChanged: boolean;
+  sessionPath: string;
+  managedFiles: string[];
+  backupCount: number;
+  lastBackupAt: number | null;
+  nativePreview?: boolean;
+}
+
+export type ClaudeAccountsAction = 'list' | 'save' | 'apply' | 'track' | 'rename' | 'delete' | 'dismiss';
+export interface ClaudeAccount {
+  id: string; name: string; label: string; active: boolean; updatedAt: number | null;
+}
+export interface ClaudeAccountsSnapshot {
+  app: 'claude-code';
+  accounts: ClaudeAccount[];
+  activeId: string | null;
+  notice: string | null;
+  /** True when settings.json currently holds a token, so "save" can capture it. */
+  configured: boolean;
+  current: string | null;
+  settingsPath: string | null;
+  nativePreview?: boolean;
+}
 
 export type AccountsAction = 'list' | 'login' | 'cancel' | 'import' | 'importJson' | 'refresh' | 'rename' | 'delete' | 'switch' | 'dismiss' | 'settings';
 export interface CodexAccount {
@@ -235,4 +291,38 @@ export interface AccountsSnapshot {
   accounts: CodexAccount[]; activeId: string | null; pendingId: string | null; notice: string | null;
   settings: { enabled: boolean; threshold: number }; lastSwitch: number; cliReady: boolean; nativePreview?: boolean;
   supportedVersion: string; cliVersion?: string | null; desktopRunning: boolean; desktopVerified: boolean; loginPending: boolean;
+}
+
+/** Apps that publish a daily quota that VibeHub reads from inside the app. */
+export type QuotaAppId = 'qoder' | 'minimax-code';
+export type QuotaStatus = 'ok' | 'signedOut' | 'appNotRunning' | 'notLaunchedByVibeHub' | 'unsupported' | 'error';
+export type QuotaAction = 'list' | 'refresh' | 'claim';
+export interface AppQuotaClaim {
+  /** The app itself reports that a reward is waiting to be taken. */
+  available: boolean;
+  /** Taken today, when the app says so. */
+  claimed: boolean | null;
+  points: number | null;
+  dayNo: number | null;
+}
+export interface AppQuota {
+  appId: QuotaAppId;
+  status: QuotaStatus;
+  used: number | null;
+  total: number | null;
+  remaining: number | null;
+  percent: number | null;
+  unit: string;
+  /** A second pool, shown next to the daily credits when it exists. */
+  plan: { used: number | null; total: number | null; remaining: number | null; percent: number | null; unit?: string } | null;
+  resetsAt: number | null;
+  checkedAt: number | null;
+  claim: AppQuotaClaim;
+  error: string | null;
+}
+export interface AppQuotaSnapshot {
+  nativePreview?: boolean;
+  apps: AppQuota[];
+  /** Present on the answer to a claim. */
+  claim?: { appId: QuotaAppId; ok: boolean; error: string | null; points: number | null; dayNo: number | null };
 }

@@ -4,10 +4,22 @@ import { buildIdempotentStyleSource, buildScopedTextCss, embedVazirmatnFonts } f
 const TIMELINE = '[data-testid="v4-timeline"]';
 const COMPOSER = '[data-testid="v4-composer-input"][contenteditable="true"][role="textbox"]';
 const TEXT_BLOCKS = ':is(p,li,h1,h2,h3,h4,h5,h6,blockquote,td,th,dd,dt,figcaption,summary)';
+// Message surfaces own the paragraph direction, so Persian lines start on the right.
+const DIRECTION_ROOTS = [
+  `${TIMELINE} [data-testid*="user-message" i]`,
+  `${TIMELINE} [data-testid*="message" i]`,
+  `${TIMELINE} [class*="markdown"]`,
+  `${TIMELINE} [class*="message-content"]`,
+];
 
-export const STYLE_ID = 'zcode-rtl-fix-v2';
+export const STYLE_ID = 'zcode-rtl-fix-v3';
 export const OBSERVER_KEY = '__vibehubZCodeRtlStyleObserver';
-export const AUTO_DIRECTION_SELECTOR = `${TIMELINE} ${TEXT_BLOCKS}, ${COMPOSER}, ${COMPOSER} ${TEXT_BLOCKS}`;
+export const AUTO_DIRECTION_SELECTOR = [
+  ...DIRECTION_ROOTS,
+  `${TIMELINE} ${TEXT_BLOCKS}`,
+  COMPOSER,
+  `${COMPOSER} ${TEXT_BLOCKS}`,
+].join(',');
 
 export const PROSE_SELECTORS = [`${TIMELINE} ${TEXT_BLOCKS}`];
 export const COMPOSER_SELECTORS = [COMPOSER, `${COMPOSER} ${TEXT_BLOCKS}`];

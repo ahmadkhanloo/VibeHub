@@ -1,0 +1,23 @@
+{
+  "installed": "Installed",
+  "notInstalled": "Not detected",
+  "terminalHeading": "Terminal and Persian text",
+  "terminalHint": "Font, theme and Persian rendering checks for the terminal you already use.",
+  "playwrightName": "Playwright",
+  "playwrightSummary": "Browser tests, including assertions that Persian text is right-aligned and code stays left-to-right.",
+  "repowiseName": "RepoWise",
+  "repowiseSummary": "Compress noisy test, build and git output, score change risk, and check code health.",
+  "repoInstalled": "Version {{version}} found on your PATH",
+  "repoMissing": "Not found on your PATH",
+  "repowiseHint": "The wiki index is per repository, so check it in your project with repowise status. A zero page count leaves context and search empty until you initialise it.",
+  "superpowersName": "Superpowers",
+  "superpowersSummary": "A plugin of working-method skills for your agent: brainstorming, plans, test-driven development and systematic debugging.",
+  "superpowersHint": "Superpowers installs through the agent's plugin marketplace; the status check looks at the local plugin cache.",
+  "findSkillsName": "find-skills",
+  "findSkillsSummary": "Search and install skills from the open skills ecosystem (skills.sh) with npx skills.",
+  "findSkillsHint": "Skills install per machine under .agents/skills; find-skills searches the ecosystem before you pick one.",
+  "browsersFound": "Browser available: {{list}}",
+  "browsersMissing": "No Edge or Chrome found; run npx playwright install once.",
+  "playwrightHint": "Playwright itself is installed per project (npm i -D @playwright/test).",
+  "openArticle": "Read the guide"
+}

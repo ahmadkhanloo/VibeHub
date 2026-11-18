@@ -51,6 +51,7 @@
       "../../../apps/Antigravity/": "apps/Antigravity/",
       "../../../apps/OpenCode/": "apps/OpenCode/",
       "../../../apps/Claude/": "apps/Claude/",
+      "../../../apps/MiniMax/": "apps/MiniMax/",
       "../../../apps/Qoder/start.ps1": "apps/Qoder/start.ps1",
       "../../../apps/Qoder/launch.vbs": "apps/Qoder/launch.vbs",
       "../../../apps/Qoder/injector.mjs": "apps/Qoder/injector.mjs",

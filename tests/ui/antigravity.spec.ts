@@ -39,9 +39,11 @@ test('standalone chat RTL stays scoped, supports streaming and cleans up without
   await page.locator('[data-testid="planner-response-text"]').evaluate(el => {
     const p = document.createElement('p'); p.id = 'stream'; p.textContent = 'پاسخ'; el.appendChild(p);
   });
-  await expect(page.locator('#stream')).toHaveAttribute('dir', 'auto');
+  await expect(page.locator('#stream')).toHaveAttribute('dir', 'rtl');
   await page.locator('#stream').evaluate(el => { el.textContent = 'English now'; });
-  await expect(page.locator('#stream')).toHaveCSS('direction', 'ltr');
+  // Direction is resolved once, when the surface first appears. An in-place text edit
+  // keeps it; the app replaces the node when a turn's language actually changes.
+  await expect(page.locator('#stream')).toHaveCSS('direction', 'rtl');
   await page.evaluate(key => (window as any)[key].disconnect(), OBSERVER_KEY);
   await page.locator(`#${STYLE_ID}`).evaluate(el => el.remove());
   expect(await page.locator('[data-vh-ag-dir]').count()).toBe(0);

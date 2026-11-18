@@ -26,7 +26,10 @@ export default defineConfig(() => ({
     hmr: host
       ? { protocol: 'ws', host, port: 1421 }
       : undefined,
-    watch: { ignored: ['**/src-tauri/**'] },
+    // Leading-dot temp dirs are written and removed by the Tailwind plugin while it
+    // resolves CSS imports; watching them crashes the dev server on Windows with EBUSY
+    // when a stylesheet is saved at the same moment.
+    watch: { ignored: ['**/src-tauri/**', '**/*.tmpdir/**', '**/.*.tmpdir/**'] },
   },
   build: {
     target: 'chrome110',

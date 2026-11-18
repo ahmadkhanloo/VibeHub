@@ -1,0 +1,62 @@
+/* Design tokens — the single source of truth for spacing, radius, elevation,
+   type and motion. Components consume these; only theme.css defines colour.
+
+   Rules of the system:
+   - three radii (control / surface / overlay) and one pill, nothing else;
+   - content is flat: surfaces separate with a 1px hairline border, and only
+     overlays (dialog, popover, tooltip) carry an elevation shadow;
+   - text measures are written in rem so the "Text size" preference scales
+     every component at once, including Tailwind's own rem-based utilities. */
+
+:root {
+  /* spacing (4px base) */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+
+  /* radius */
+  --r-control: 8px;
+  --r-surface: 12px;
+  --r-overlay: 16px;
+  --r-pill: 999px;
+
+  /* elevation — overlays only */
+  --shadow-overlay: 0 12px 40px #0b12201f;
+
+  /* type scale */
+  --text-xs: 0.75rem;   /* 12px — meta, badges */
+  --text-sm: 0.8125rem; /* 13px — secondary */
+  --text-md: 0.875rem;  /* 14px — body and controls */
+  --text-lg: 1rem;      /* 16px — card titles */
+  --text-xl: 1.25rem;   /* 20px — section titles */
+  --text-2xl: 1.625rem; /* 26px — page title */
+  --leading-body: 1.6;
+  --leading-relaxed: 1.8;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-strong: 600;
+
+  /* motion */
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-mode='dark'] {
+  --shadow-overlay: 0 14px 44px #00000066;
+}
+
+/* Text size preference. Percentages keep the user's own browser font-size. */
+html {
+  font-size: 100%;
+}
+[data-text-size='sm'] {
+  font-size: 93.75%;
+}
+[data-text-size='lg'] {
+  font-size: 109.375%;
+}

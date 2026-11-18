@@ -5,6 +5,8 @@ import { AppSummary } from '@/components/AppSummary';
 import { AppConnection } from '@/components/AppConnection';
 import { LearningPage } from '@/features/learning/Learning';
 import { AccountsPage } from '@/features/accounts/Accounts';
+import { ClaudeAccountsPage } from '@/features/accounts/ClaudeAccounts';
+import { OpaqueAccountsPage } from '@/features/accounts/OpaqueAccounts';
 import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -19,6 +21,14 @@ import { Badge, Button, EmptyState, ErrorNotice, PageHeader, VerificationBadge, 
 import { ToolProxy } from '@/features/proxy/ToolProxy';
 import { rtlAdapterConfigured, rtlAdapterSetupSupported } from '@core';
 
+/// Apps that manage more than one account through VibeHub.
+const ACCOUNT_APPS = ['chatgpt', 'claude-code', 'zcode', 'qoder'];
+
+/// ZCode and Qoder keep their session in an opaque blob, so they get the swap UI.
+function isOpaqueAccountApp(id: string): id is 'zcode' | 'qoder' {
+  return id === 'zcode' || id === 'qoder';
+}
+
 export function AppDetailsPage() {
   const { appId = '' } = useParams();
   const { t, i18n } = useTranslation(['ux', 'apps', 'common', 'connectionsUx']);
@@ -27,8 +37,11 @@ export function AppDetailsPage() {
   const ctx = useToolContext();
   const [error, setError] = useState<unknown>(null);
   const app = catalog.apps.find(a => a.id === appId);
+  // Only the apps below expose the accounts tab; elsewhere the query would
+  // silently select nothing, so drop it. Known tabs are left alone here.
   useEffect(() => {
-    if (appId === 'chatgpt' || params.get('tab') !== 'accounts') return;
+    if (ACCOUNT_APPS.includes(appId)) return;
+    if (params.get('tab') !== 'accounts') return;
     const next = new URLSearchParams(params);
     next.delete('tab');
     setParams(next, { replace: true });
@@ -36,7 +49,7 @@ export function AppDetailsPage() {
   if (!app) return <EmptyState title={t('ux:notFound')} action={<Link className="vh-link" to="/discover">{t('ux:backDiscover')}</Link>} />;
   const installed = ctx.apps.find(a => a.id === appId && a.installed);
   const tabs = [{ value: 'launch', label: t('ux:launchTab') }, { value: 'connections', label: t('ux:connections') }, { value: 'guide', label: t('ux:guideTab') }, { value: 'about', label: t('ux:aboutTab') }];
-  if (appId === 'chatgpt') tabs.push({ value: 'accounts', label: t('ux:accountsTab') });
+  if (ACCOUNT_APPS.includes(appId)) tabs.push({ value: 'accounts', label: t('ux:accountsTab') });
   const selectedTab = tabs.find(tab => tab.value === params.get('tab'))?.value ?? (installed ? 'launch' : 'about');
   const lang = i18n.language.startsWith('fa') ? 'fa' : 'en';
   const ready = rtlAdapterConfigured(appId, ctx.components);
@@ -106,7 +119,11 @@ export function AppDetailsPage() {
       </section>
         {selectedTab === 'guide' && <LearningPage embeddedArticleId={appId} />}
       <section hidden={selectedTab !== 'about'} className="vh-card">{access}</section>
-      {selectedTab === 'accounts' && <AccountsPage embedded />}
+      {selectedTab === 'accounts' && (appId === 'claude-code'
+        ? <ClaudeAccountsPage />
+        : isOpaqueAccountApp(appId)
+          ? <OpaqueAccountsPage appId={appId} appName={app.name} />
+          : <AccountsPage embedded />)}
     </div>
     <Link className="vh-button vh-button-ghost" to={'/doctor?tool=' + encodeURIComponent(appId) + '&kind=app'}>{t('ux:doctor')}</Link>
 

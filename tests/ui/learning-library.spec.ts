@@ -36,7 +36,8 @@ test('a new feed lesson and category appear without rebuilding the application',
   });
   await page.goto('/learning');
   await page.getByRole('button', { name: 'Refresh content', exact: true }).click();
-  await page.getByRole('button', { name: 'New topic', exact: true }).click();
+  await page.getByLabel('Learning categories').selectOption({ label: 'New topic' });
+  await expect(page).toHaveURL(/category=new-topic/);
   await expect(page.getByRole('link', { name: /New lesson/ })).toBeVisible();
   await page.getByRole('link', { name: /New lesson/ }).click();
   await expect(page.getByText('Fresh content', { exact: true })).toBeVisible();

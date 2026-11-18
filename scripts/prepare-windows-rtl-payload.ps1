@@ -34,6 +34,7 @@ try {
     OpenCode = @('rtl.ico', 'rtl-shortcut.ico', 'start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs', 'cdp-targets.mjs', 'assets/OFL.txt', 'assets/Vazirmatn-Regular.woff2', 'assets/Vazirmatn-Bold.woff2')
     DeepSeekHarness = @('rtl.ico', 'rtl-shortcut.ico', 'start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs', 'cdp-targets.mjs', 'assets/OFL.txt', 'assets/Vazirmatn-Regular.woff2', 'assets/Vazirmatn-Bold.woff2')
     Claude = @('rtl.ico', 'rtl-shortcut.ico', 'start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs', 'cdp-targets.mjs', 'compatibility.json', 'assets/OFL.txt', 'assets/Vazirmatn-Regular.woff2', 'assets/Vazirmatn-Bold.woff2')
+    MiniMax = @('rtl.ico', 'rtl-shortcut.ico', 'start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs', 'cdp-targets.mjs', 'assets/OFL.txt', 'assets/Vazirmatn-Regular.woff2', 'assets/Vazirmatn-Bold.woff2')
   }
   foreach ($id in $files.Keys) {
     $destination = Join-Path $payload $id

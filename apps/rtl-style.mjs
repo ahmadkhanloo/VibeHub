@@ -37,6 +37,9 @@ export function buildScopedTextCss({ prose = [], composers = [], guards = [], fa
   const quotedFamily = `'${String(family).replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`;
   const rules = [];
 
+  // The container direction comes from the installer's explicit dir attribute, not
+  // from a :dir() rule here: that pseudo-class stops matching once a descendant uses
+  // plaintext bidi, which silently dropped the RTL container.
   if (textSelectors.length) {
     rules.push(`${textSelectors.join(',')} { font-family:${quotedFamily},system-ui,sans-serif!important; unicode-bidi:plaintext!important; text-align:start!important; }`);
   }
@@ -93,10 +96,25 @@ export function buildIdempotentStyleSource({
       style.textContent = CSS_TEXT;
     }
   };
+  const resolveDirection = (text) => {
+    for (const character of text) {
+      const code = character.codePointAt(0);
+      if (code >= 0x0590 && code <= 0x08ff) return 'rtl';
+      if ((code >= 0x0041 && code <= 0x005a) || (code >= 0x0061 && code <= 0x007a)
+        || (code >= 0x00c0 && code <= 0x02af) || (code >= 0x0370 && code <= 0x058f)) return 'ltr';
+    }
+    return null;
+  };
   const markAutoDirections = (root) => {
     if (!AUTO_DIRECTION_SELECTOR || !root || typeof root.querySelectorAll !== 'function') return;
+    // Resolve the direction here and write it as an explicit dir value. dir="auto"
+    // relies on the same first-strong-character scan, but browsers stop resolving it
+    // as soon as a descendant uses plaintext bidi, which leaves Persian prompts on the
+    // left. An explicit value cannot be short-circuited that way.
     const mark = (element) => {
-      if (!element.hasAttribute('dir')) element.setAttribute('dir', 'auto');
+      if (element.hasAttribute('dir')) return;
+      const resolved = resolveDirection(element.textContent || '');
+      if (resolved) element.setAttribute('dir', resolved);
     };
     if (root.nodeType === 1 && root.matches(AUTO_DIRECTION_SELECTOR)) mark(root);
     for (const element of root.querySelectorAll(AUTO_DIRECTION_SELECTOR)) mark(element);

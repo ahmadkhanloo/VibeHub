@@ -34,10 +34,19 @@ test('Persian brand and tooltip support focus, Escape and touch click', async ({
   await expect(page.getByText('وایب‌هاب', { exact: true }).first()).toBeVisible();
 });
 
-test('legacy app account tab redirects to launch without exposing profile deletion', async ({ page }) => {
+test('an app without account support redirects to launch without exposing profile deletion', async ({ page }) => {
   await mockNative(page);
-  await page.goto('/app/qoder?tab=accounts');
-  await expect(page).toHaveURL(/\/app\/qoder$/);
+  await page.goto('/app/opencode?tab=accounts');
+  await expect(page).toHaveURL(/\/app\/opencode$/);
   await expect(page.getByRole('button', { name: 'Remove', exact: true })).toHaveCount(0);
   expect(await page.evaluate(() => (window as any).__mock.calls.some((call: any) => call.cmd === 'app_accounts'))).toBe(false);
+});
+
+test('an empty account list exposes no destructive control', async ({ page }) => {
+  await mockNative(page);
+  // Qoder now owns an accounts tab, but nothing captured means nothing deletable.
+  await page.goto('/app/qoder?tab=accounts');
+  await expect(page.getByRole('tab', { name: /Accounts/i })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('button', { name: 'Remove', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /Delete/i })).toHaveCount(0);
 });

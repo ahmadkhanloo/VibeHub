@@ -70,15 +70,16 @@ namespace VibeHub {
 }
 '@
     }
-    $folders = @{zcode='ZCode'; qoder='Qoder'; 'deepseek-harness'='DeepSeekHarness'; antigravity='Antigravity'; opencode='OpenCode'; 'claude-desktop'='Claude'}
-    $names = @{zcode='ZCode'; qoder='Qoder'; 'deepseek-harness'='DeepSeek Harness'; antigravity='Antigravity'; opencode='OpenCode'; 'claude-desktop'='Claude Desktop'}
+    $folders = @{zcode='ZCode'; qoder='Qoder'; 'deepseek-harness'='DeepSeekHarness'; antigravity='Antigravity'; opencode='OpenCode'; 'claude-desktop'='Claude'; 'minimax-code'='MiniMax'}
+    $names = @{zcode='ZCode'; qoder='Qoder'; 'deepseek-harness'='DeepSeek Harness'; antigravity='Antigravity'; opencode='OpenCode'; 'claude-desktop'='Claude Desktop'; 'minimax-code'='MiniMax Code'}
     if (-not $folders.ContainsKey($appId)) { throw 'RTL is unavailable for this app.' }
     $adapter = Join-Path $resourceRoot ('apps\' + $folders[$appId])
     $required = @((Join-Path $resourceRoot 'apps\rtl-paths.ps1'), (Join-Path $resourceRoot 'apps\rtl-direction.mjs'))
     $required += @('start.ps1','launch.vbs','injector.mjs','rtl.ico','rtl-shortcut.ico') | ForEach-Object { Join-Path $adapter $_ }
-    if ($appId -in @('qoder','antigravity','opencode','claude-desktop')) { $required += Join-Path $adapter 'style.mjs' }
+    if ($appId -in @('qoder','antigravity','opencode','claude-desktop','minimax-code')) { $required += Join-Path $adapter 'style.mjs' }
+    if ($appId -in @('claude-desktop','minimax-code')) { $required += Join-Path $adapter 'cdp-targets.mjs' }
     if ($appId -eq 'claude-desktop') { $required += Join-Path $adapter 'compatibility.json' }
-    if ($appId -in @('qoder','zcode','deepseek-harness','antigravity','opencode','claude-desktop')) {
+    if ($appId -in @('qoder','zcode','deepseek-harness','antigravity','opencode','claude-desktop','minimax-code')) {
         $required += @('Vazirmatn-Regular.woff2','Vazirmatn-Bold.woff2') | ForEach-Object { Join-Path $adapter ('assets\' + $_) }
     }
     foreach ($file in $required) { if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { throw 'RTL files are missing. Install the full VibeHub package first.' } }
@@ -154,6 +155,7 @@ function Find-RegisteredAppPath([string]$id) {
         'freebuff-desktop' { '^Freebuff(?: Desktop)?(?:\s+.*)?$' }
         'antigravity-ide' { '^Antigravity IDE(?:\s+.*)?$' }
         'claude-desktop' { '^Claude(?: Desktop)?(?:\s+.*)?$' }
+        'minimax-code' { '^MiniMax Code(?:\s+.*)?$' }
         default { return $null }
     }
     $exeNames = switch ($id) {
@@ -164,6 +166,7 @@ function Find-RegisteredAppPath([string]$id) {
         'freebuff-desktop' { @('Freebuff.exe') }
         'antigravity-ide' { @('Antigravity IDE.exe') }
         'claude-desktop' { @('Claude.exe') }
+        'minimax-code' { @('MiniMax Code.exe') }
     }
     $registrations = @(Read-UninstallEntries | Where-Object { $_.DisplayName -match $pattern })
     foreach ($entry in $registrations) {
@@ -420,6 +423,10 @@ function Find-App([string]$id) {
         return $candidates | Where-Object { Test-ClaudeCliPath $_ } | Select-Object -First 1
     }
     if ($id -in @('antigravity','chatgpt')) { return Find-DesktopProduct $id }
+    if ($id -eq 'minimax-code' -and (Get-Command Get-RtlExecutable -ErrorAction SilentlyContinue)) {
+        $resolved = Get-RtlExecutable $id (Join-Path $root 'apps\MiniMax')
+        if ($resolved) { return $resolved }
+    }
     if ($id -in @('qoder','zcode','deepseek-harness') -and (Get-Command Get-RtlExecutable -ErrorAction SilentlyContinue)) {
         $folder = switch ($id) { 'qoder' {'Qoder'} 'zcode' {'ZCode'} 'deepseek-harness' {'DeepSeekHarness'} }
         $resolved = Get-RtlExecutable $id (Join-Path $root "apps\$folder")
@@ -441,6 +448,7 @@ function Find-App([string]$id) {
         'deepseek-harness' { $candidates = @("$env:LOCALAPPDATA\Programs\DeepSeek Harness\DeepSeek Harness.exe") }
         'copilot-cli' { return Find-App 'copilot' }
         'opencode' { $candidates = @("$env:LOCALAPPDATA\Programs\ai.opencode.desktop\OpenCode.exe") }
+        'minimax-code' { $candidates = @("$env:LOCALAPPDATA\Programs\MiniMax Code\MiniMax Code.exe") }
         default {
             # Native file checks avoid module discovery for missing CLI commands.
             $paths = @($env:PATH, [Environment]::GetEnvironmentVariable('Path','User'), [Environment]::GetEnvironmentVariable('Path','Machine')) -join ';'
@@ -461,7 +469,7 @@ function Find-App([string]$id) {
 }
 
 function Detect-Apps {
-    @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','freebuff-desktop','copilot-cli','antigravity-ide','chatgpt','claude-code','claude-desktop') | ForEach-Object {
+    @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','freebuff-desktop','copilot-cli','antigravity-ide','chatgpt','claude-code','claude-desktop','minimax-code') | ForEach-Object {
         $path = Find-App $_
         $via = 'standard-path-or-PATH'
         $result = @{ id = $_; installed = [bool]$path; via = $via }
@@ -473,16 +481,17 @@ function Detect-Apps {
 function Detect-Editors { @() }
 
 function Get-RtlComponents([string]$resourceRoot) {
-    $names = @{zcode='ZCode';qoder='Qoder';'deepseek-harness'='DeepSeekHarness';antigravity='Antigravity';opencode='OpenCode';'claude-desktop'='Claude'}
-    $labels = @{zcode='ZCode';qoder='Qoder';'deepseek-harness'='DeepSeek Harness';antigravity='Antigravity';opencode='OpenCode';'claude-desktop'='Claude Desktop'}
+    $names = @{zcode='ZCode';qoder='Qoder';'deepseek-harness'='DeepSeekHarness';antigravity='Antigravity';opencode='OpenCode';'claude-desktop'='Claude';'minimax-code'='MiniMax'}
+    $labels = @{zcode='ZCode';qoder='Qoder';'deepseek-harness'='DeepSeek Harness';antigravity='Antigravity';opencode='OpenCode';'claude-desktop'='Claude Desktop';'minimax-code'='MiniMax Code'}
     $runtime = (Test-Path -LiteralPath (Join-Path $resourceRoot 'runtime\node.exe') -PathType Leaf) -or
         (Test-Path -LiteralPath (Join-Path $resourceRoot 'apps\desktop\src-tauri\windows\payload\node.exe') -PathType Leaf)
-    foreach ($id in @('zcode','qoder','deepseek-harness','antigravity','opencode')) {
+    foreach ($id in @('zcode','qoder','deepseek-harness','antigravity','opencode','minimax-code')) {
         $adapter = Join-Path $resourceRoot ('apps\' + $names[$id])
         $required = @((Join-Path $resourceRoot 'apps\rtl-paths.ps1'), (Join-Path $resourceRoot 'apps\rtl-launch-lib.ps1'), (Join-Path $resourceRoot 'apps\rtl-direction.mjs'))
         $required += @('start.ps1','launch.vbs','injector.mjs','rtl.ico','rtl-shortcut.ico') | ForEach-Object { Join-Path $adapter $_ }
-        if ($id -in @('qoder','antigravity','opencode')) { $required += Join-Path $adapter 'style.mjs' }
-        if ($id -in @('qoder','zcode','deepseek-harness','antigravity','opencode')) { $required += @('Vazirmatn-Regular.woff2','Vazirmatn-Bold.woff2') | ForEach-Object { Join-Path $adapter ('assets\' + $_) } }
+        if ($id -in @('qoder','antigravity','opencode','minimax-code')) { $required += Join-Path $adapter 'style.mjs' }
+        if ($id -eq 'minimax-code') { $required += Join-Path $adapter 'cdp-targets.mjs' }
+        if ($id -in @('qoder','zcode','deepseek-harness','antigravity','opencode','minimax-code')) { $required += @('Vazirmatn-Regular.woff2','Vazirmatn-Bold.woff2') | ForEach-Object { Join-Path $adapter ('assets\' + $_) } }
         $available = $runtime -and ($required | ForEach-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Where-Object { -not $_ } | Measure-Object).Count -eq 0 -and [bool](Find-App $id)
         $shortcut = Join-Path ([Environment]::GetFolderPath('Programs')) ('VibeHub\' + $labels[$id] + ' RTL.lnk')
         $configured = $false
@@ -551,6 +560,7 @@ function Get-RtlSessionBinding([string]$appId) {
         'antigravity' { @{folder='Antigravity';defaultPort=9231;portVariable='ANTIGRAVITY_RTL_PORT';processNames=@('Antigravity.exe')} }
         'opencode' { @{folder='OpenCode';defaultPort=9234;portVariable='OPENCODE_RTL_PORT';processNames=@('OpenCode.exe')} }
         'claude-desktop' { @{folder='Claude';defaultPort=9237;portVariable='CLAUDE_RTL_PORT';processNames=@('Claude.exe')} }
+        'minimax-code' { @{folder='MiniMax';defaultPort=9240;portVariable='MINIMAX_RTL_PORT';processNames=@('MiniMax Code.exe')} }
         default { return $null }
     }
     $port = [int]$binding.defaultPort
@@ -736,6 +746,51 @@ function Terminal-State {
     $result
 }
 
+if (-not ('VibeHub.ProcessWindows' -as [type])) {
+    # Per-process MainWindowHandle stays 0 for packaged Chromium hosts, so ask Win32
+    # directly. Tool windows are excluded: an app sitting in the tray has nothing to close.
+    Add-Type -TypeDefinition @'
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+namespace VibeHub {
+    public class ProcessWindows {
+        delegate bool EnumProc(IntPtr handle, IntPtr parameter);
+        [DllImport("user32.dll")] static extern bool EnumWindows(EnumProc callback, IntPtr parameter);
+        [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr handle, out uint processId);
+        [DllImport("user32.dll")] static extern IntPtr GetWindow(IntPtr handle, uint command);
+        [DllImport("user32.dll")] static extern IntPtr GetParent(IntPtr handle);
+        [DllImport("user32.dll", EntryPoint = "GetWindowLongW")] static extern int GetWindowLong(IntPtr handle, int index);
+        [DllImport("user32.dll", EntryPoint = "PostMessageW")] public static extern bool PostMessage(IntPtr handle, uint message, IntPtr wparam, IntPtr lparam);
+        public static int Close(uint processId) {
+            List<IntPtr> found = new List<IntPtr>();
+            EnumWindows(delegate (IntPtr handle, IntPtr parameter) {
+                uint owner;
+                GetWindowThreadProcessId(handle, out owner);
+                if (owner == processId
+                    && GetWindow(handle, 4) == IntPtr.Zero
+                    && GetParent(handle) == IntPtr.Zero
+                    && (GetWindowLong(handle, -20) & 0x80) == 0) {
+                    found.Add(handle);
+                }
+                return true;
+            }, IntPtr.Zero);
+            int sent = 0;
+            foreach (IntPtr handle in found) { if (PostMessage(handle, 0x0010, IntPtr.Zero, IntPtr.Zero)) { sent++; } }
+            return sent;
+        }
+    }
+}
+'@
+}
+
+# Sends WM_CLOSE to a process's real top-level windows and returns how many accepted it.
+# A return value of 0 means the app has no window to close (it is running from the tray),
+# so waiting for a graceful exit would only delay the switch.
+function Invoke-HubWindowClose([int]$ProcessId) {
+    try { return [VibeHub.ProcessWindows]::Close([uint32]$ProcessId) } catch { return 0 }
+}
+
 try {
     $result = switch ($request.operation) {
         'account-app-state' {
@@ -752,24 +807,94 @@ try {
             if ($accountId -notin @('qoder','zcode')) { throw 'Unknown account app' }
             $folder = if ($accountId -eq 'qoder') { 'Qoder' } else { 'ZCode' }
             $accountExe = Join-Path $env:LOCALAPPDATA "Programs\$folder\$folder.exe"
-            $processes = @(Get-Process -Name $folder -ErrorAction SilentlyContinue | Where-Object { try { $_.Path -ieq $accountExe } catch { $false } })
-            foreach ($proc in $processes) { if ($proc.MainWindowHandle -ne 0) { [void]$proc.CloseMainWindow() } }
+            $live = {
+                @(Get-Process -Name $folder -ErrorAction SilentlyContinue | Where-Object { try { $_.Path -ieq $accountExe } catch { $false } })
+            }
+            # Ask each window to close through Win32: Electron leaves MainWindowHandle at 0
+            # for helper processes, so the old check skipped WM_CLOSE entirely.
+            $graceful = 0
+            foreach ($proc in @(& $live)) { $graceful += (Invoke-HubWindowClose -ProcessId $proc.Id) }
             $deadline = [DateTime]::UtcNow.AddSeconds(10)
             do {
-                $remaining = @(Get-Process -Name $folder -ErrorAction SilentlyContinue | Where-Object { try { $_.Path -ieq $accountExe } catch { $false } })
-                if (-not $remaining.Count) { break }
+                if (-not @(& $live).Count) { break }
                 Start-Sleep -Milliseconds 150
             } while ([DateTime]::UtcNow -lt $deadline)
+            # These apps can sit in the tray after WM_CLOSE; a switch needs them gone, and the
+            # session files are only stable once every process has exited.
+            if (@(& $live).Count) {
+                foreach ($proc in @(& $live)) { try { Stop-Process -Id $proc.Id -Force -ErrorAction Stop } catch { } }
+                $deadline = [DateTime]::UtcNow.AddSeconds(20)
+                do {
+                    if (-not @(& $live).Count) { break }
+                    Start-Sleep -Milliseconds 150
+                } while ([DateTime]::UtcNow -lt $deadline)
+            }
+            $remaining = @(& $live)
             if ($remaining.Count) { throw 'accounts:closeRequired' }
-            @{ok=$true}
+            @{ok=$true;graceful=$graceful}
         }
         'account-app-open' {
             $accountId = [string]$request.appId
             if ($accountId -notin @('qoder','zcode')) { throw 'Unknown account app' }
             $folder = if ($accountId -eq 'qoder') { 'Qoder' } else { 'ZCode' }
             $accountExe = Join-Path $env:LOCALAPPDATA "Programs\$folder\$folder.exe"
-            Start-Process -FilePath $accountExe -WindowStyle Hidden
+            # Launch normally: a switch that leaves the app invisible is not a switch.
+            Start-Process -FilePath $accountExe
+            $deadline = [DateTime]::UtcNow.AddSeconds(20)
+            do {
+                $running = @(Get-Process -Name $folder -ErrorAction SilentlyContinue | Where-Object { try { $_.Path -ieq $accountExe } catch { $false } })
+                if ($running.Count) { break }
+                Start-Sleep -Milliseconds 200
+            } while ([DateTime]::UtcNow -lt $deadline)
+            if (-not $running.Count) { throw 'The account app did not start.' }
             @{ok=$true}
+        }
+        'toolchain-status' {
+            # Machine-level facts only. RepoWise's index state is per-repository, so it is
+            # deliberately not reported here: the app has no project context to report on.
+            $repowise = @{ installed = $false; version = $null }
+            $command = Get-Command repowise -ErrorAction SilentlyContinue
+            if ($command) {
+                $repowise.installed = $true
+                $versionText = @(& $command.Source --version 2>$null) | Select-Object -First 1
+                if ("$versionText" -match '(\d+\.\d+\.\d+)') { $repowise.version = $Matches[1] }
+            }
+            $browser = {
+                param([string]$relative)
+                $roots = @($env:ProgramFiles, ${env:ProgramFiles(x86)}, $env:LOCALAPPDATA) |
+                    Where-Object { $_ } |
+                    ForEach-Object { Join-Path $_ $relative }
+                @($roots | Where-Object { Test-Path -LiteralPath $_ }) | Select-Object -First 1
+            }
+            # Agent plugins and personal skills are per machine and per agent. A version
+            # string is not stable across marketplaces, so presence is the only fact
+            # reported here.
+            $pluginRoots = @(
+                (Join-Path $env:USERPROFILE '.claude\plugins'),
+                (Join-Path $env:USERPROFILE '.zcode\cli\plugins\cache')
+            ) | Where-Object { $_ -and (Test-Path -LiteralPath $_) }
+            $superpowers = $false
+            if ($pluginRoots) {
+                $hit = Get-ChildItem -LiteralPath $pluginRoots -Recurse -Depth 3 -Directory -Filter 'superpowers' -ErrorAction SilentlyContinue |
+                    Select-Object -First 1
+                $superpowers = [bool]$hit
+            }
+            $findSkills = @(
+                '.agents\skills\find-skills\SKILL.md',
+                '.zcode\skills\find-skills\SKILL.md'
+            ) | Where-Object { Test-Path -LiteralPath (Join-Path $env:USERPROFILE $_) } |
+                Select-Object -First 1
+            @{
+                repowise = $repowise
+                browsers = @{
+                    # Playwright's config can reuse an installed browser instead of
+                    # downloading one, so this is the only browser fact worth showing.
+                    edge = [bool](& $browser 'Microsoft\Edge\Application\msedge.exe')
+                    chrome = [bool](& $browser 'Google\Chrome\Application\chrome.exe')
+                }
+                plugins = @{ superpowers = $superpowers }
+                skills = @{ findSkills = [bool]$findSkills }
+            }
         }
         'codex-desktop' { Codex-DesktopState }
         'codex-desktop-close' {
@@ -784,17 +909,21 @@ try {
                     $path -and [IO.Path]::GetDirectoryName($path) -ieq $appDir
                 })
             }
-            foreach ($proc in @(& $guiProcesses)) { if ($proc.MainWindowHandle -ne 0) { [void]$proc.CloseMainWindow() } }
+            # Ask every GUI window to close. Win32 is used directly because the packaged
+            # app leaves MainWindowHandle at 0, which would skip WM_CLOSE entirely.
+            $graceful = 0
+            foreach ($proc in @(& $guiProcesses)) { $graceful += (Invoke-HubWindowClose -ProcessId $proc.Id) }
             # This app shuts down slowly: processes linger for a minute or two after
-            # WM_CLOSE before exiting, so grant a generous grace period first.
-            $deadline = [DateTime]::UtcNow.AddSeconds(45)
+            # WM_CLOSE before exiting, so grant a generous grace period first. When no
+            # window could be asked (tray-only), that wait is pure dead time.
+            $deadline = if ($graceful -gt 0) { [DateTime]::UtcNow.AddSeconds(45) } else { [DateTime]::UtcNow.AddSeconds(3) }
             do {
                 if (@(& $guiProcesses).Count -eq 0) { break }
                 Start-Sleep -Milliseconds 250
             } while ([DateTime]::UtcNow -lt $deadline)
-            # The 26.x app can also hide in the tray instead of exiting on WM_CLOSE;
-            # terminate it like the account-switcher extensions do so the switch
-            # completes unattended.
+            # The 26.x app also hides in the tray instead of exiting after WM_CLOSE;
+            # terminate it there, exactly as the account-switcher extensions do, so an
+            # unattended switch completes instead of waiting on a process that never exits.
             if (@(& $guiProcesses).Count -gt 0) {
                 foreach ($proc in @(& $guiProcesses)) { try { Stop-Process -Id $proc.Id -Force -ErrorAction Stop } catch { } }
                 $deadline = [DateTime]::UtcNow.AddSeconds(45)
@@ -854,12 +983,12 @@ try {
                 if (-not $component.available) { continue }
                 $folder = switch ($component.id) {
                     'zcode' {'ZCode'} 'qoder' {'Qoder'} 'deepseek-harness' {'DeepSeekHarness'}
-                    'antigravity' {'Antigravity'} 'opencode' {'OpenCode'} 'claude-desktop' {'Claude'}
+                    'antigravity' {'Antigravity'} 'opencode' {'OpenCode'} 'claude-desktop' {'Claude'} 'minimax-code' {'MiniMax'}
                     default { $null }
                 }
                 if (-not $folder) { continue }
                 $shortcutName = switch ($component.id) {
-                    'deepseek-harness' {'DeepSeek Harness RTL.lnk'} 'claude-desktop' {'Claude Desktop RTL.lnk'}
+                    'deepseek-harness' {'DeepSeek Harness RTL.lnk'} 'claude-desktop' {'Claude Desktop RTL.lnk'} 'minimax-code' {'MiniMax Code RTL.lnk'}
                     default { "$($component.id) RTL.lnk" }
                 }
                 if ($component.id -eq 'zcode') { $shortcutName = 'ZCode RTL.lnk' }
@@ -964,7 +1093,7 @@ try {
             } finally { if (Test-Path -LiteralPath $download) { Remove-Item -LiteralPath $download } }
         }
         'app-path' {
-            $names = @{qoder=@('Qoder.exe','Qoder IDE.exe','QoderAI.exe');zcode=@('ZCode.exe');'deepseek-harness'=@('DeepSeek Harness.exe','DeepSeek.exe');'antigravity-ide'=@('Antigravity IDE.exe');opencode=@('OpenCode.exe');chatgpt=@('ChatGPT.exe','Codex.exe');'claude-code'=@('claude.exe','claude.cmd','claude.bat');mimocode=@('mimocode.exe','mimocode.cmd','mimocode.bat');freebuff=@('freebuff.exe','freebuff.cmd','freebuff.bat');'freebuff-desktop'=@('Freebuff.exe')}
+            $names = @{qoder=@('Qoder.exe','Qoder IDE.exe','QoderAI.exe');zcode=@('ZCode.exe');'deepseek-harness'=@('DeepSeek Harness.exe','DeepSeek.exe');'antigravity-ide'=@('Antigravity IDE.exe');opencode=@('OpenCode.exe');chatgpt=@('ChatGPT.exe','Codex.exe');'claude-code'=@('claude.exe','claude.cmd','claude.bat');mimocode=@('mimocode.exe','mimocode.cmd','mimocode.bat');freebuff=@('freebuff.exe','freebuff.cmd','freebuff.bat');'freebuff-desktop'=@('Freebuff.exe');'minimax-code'=@('MiniMax Code.exe')}
             $id = [string]$request.appId
             $path = [string]$request.path
             if (-not $names.ContainsKey($id) -or -not [IO.Path]::IsPathRooted($path) -or -not (Test-Path -LiteralPath $path -PathType Leaf) -or [IO.Path]::GetFileName($path) -notin $names[$id]) { throw 'Select the executable belonging to this application.' }
@@ -976,7 +1105,7 @@ try {
         }
         'focus-app' {
             $id = [string]$request.appId
-            if ($id -notin @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','freebuff-desktop','copilot-cli','antigravity-ide','chatgpt','claude-code','claude-desktop')) { throw 'Unknown app' }
+            if ($id -notin @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','freebuff-desktop','copilot-cli','antigravity-ide','chatgpt','claude-code','claude-desktop','minimax-code')) { throw 'Unknown app' }
             $exe = Find-App $id
             $target = Get-Process -ErrorAction SilentlyContinue | Where-Object { try { $_.Path -ieq $exe -and $_.MainWindowHandle -ne 0 } catch { $false } } | Select-Object -First 1
             if (-not $exe -or -not $target) { throw 'No application window was found.' }
@@ -995,13 +1124,13 @@ try {
                 if ($product -eq 'chatgpt') { throw 'RTL is unavailable for ordinary ChatGPT; only Codex Desktop is eligible.' }
                 throw 'RTL is unavailable because the OpenAI executable could not be verified as Codex Desktop; ordinary ChatGPT is unsupported.'
             }
-            if ($id -notin @('zcode','qoder','deepseek-harness','antigravity','opencode')) { throw 'RTL is unavailable for this app.' }
+            if ($id -notin @('zcode','qoder','deepseek-harness','antigravity','opencode','minimax-code')) { throw 'RTL is unavailable for this app.' }
             if (-not (Find-App $id)) { throw 'Install the application first, then check again in VibeHub.' }
             Install-HubRtlShortcut $root $id ([Environment]::GetFolderPath('Programs'))
         }
         'launch' {
             $id = [string]$request.req.appId
-            if ($id -notin @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','freebuff-desktop','copilot-cli','antigravity-ide','chatgpt','claude-code','claude-desktop')) { throw 'Unknown app' }
+            if ($id -notin @('zcode','qoder','deepseek-harness','antigravity','opencode','minimax-code','mimocode','freebuff','freebuff-desktop','copilot-cli','antigravity-ide','chatgpt','claude-code','claude-desktop')) { throw 'Unknown app' }
             if ($id -in @('antigravity-ide','claude-desktop') -and $request.req.rtl) { throw 'RTL is not verified for this tool.' }
             if ($id -eq 'claude-code' -and $request.req.rtl) {
                 $claudePlugin = Join-Path $root 'apps\ClaudeRtlPlugin'
@@ -1040,6 +1169,7 @@ try {
                 $script = Join-Path $root "apps\$folder\start.ps1"
                 if ($id -eq 'antigravity') { $env:ANTIGRAVITY_RTL_EXE = $exe }
                 if ($id -eq 'opencode') { $env:OPENCODE_RTL_EXE = $exe }
+                if ($id -eq 'minimax-code') { $env:MINIMAX_RTL_EXE = $exe }
                 $alreadyRtl = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
                 Invoke-HubRtlLauncher $script
                 if ($alreadyRtl -and $request.req.cwd) { Start-Process -FilePath $exe -ArgumentList ('"' + ($cwd.TrimEnd('\') + '\.') + '"') -WorkingDirectory $cwd | Out-Null }

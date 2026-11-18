@@ -130,8 +130,11 @@ pub fn powershell(app: &tauri::AppHandle, mut request: Value) -> Result<Value> {
     let timeout = match request["operation"].as_str() {
         Some("detect" | "detect-editors") => Duration::from_secs(15),
         Some("launch-state" | "launch-states") => Duration::from_secs(15),
-        Some("account-app-state" | "account-app-open") => Duration::from_secs(10),
-        Some("account-app-close") => Duration::from_secs(20),
+        Some("account-app-state") => Duration::from_secs(10),
+        // Graceful close + forced termination + the wait for the process table to settle.
+        Some("account-app-close" | "account-app-open") => Duration::from_secs(45),
+        // Spawning the developer CLI once and probing a few known install paths.
+        Some("toolchain-status") => Duration::from_secs(20),
         _ => Duration::from_secs(150),
     };
     request["resourceRoot"] = json!(resource_root(app)?);

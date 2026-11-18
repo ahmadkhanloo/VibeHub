@@ -1,6 +1,9 @@
 mod accounts;
+mod app_accounts;
+mod claude_accounts;
 mod domain;
 mod network;
+mod quota;
 mod storage;
 mod system;
 
@@ -14,8 +17,32 @@ async fn codex_accounts(app: tauri::AppHandle, action: String, payload: Value) -
 }
 
 #[tauri::command]
-async fn app_path(app: tauri::AppHandle, app_id: String, path: String) -> Result<()> {
-    if !APP_IDS.contains(&app_id.as_str()) { return Err("Unsupported app path".into()); }
+async fn claude_accounts(app: tauri::AppHandle, action: String, payload: Value) -> Result<Value> {
+    system::blocking(move || claude_accounts::handle(&app, &action, payload)).await
+}
+
+#[tauri::command]
+async fn app_accounts(
+    app: tauri::AppHandle,
+    app_id: String,
+    action: String,
+    payload: Value,
+) -> Result<Value> {
+    system::blocking(move || app_accounts::handle(&app, &app_id, &action, payload)).await
+}
+
+#[tauri::command]
+async fn app_quota(app: tauri::AppHandle, action: String, payload: Value) -> Result<Value> {
+    quota::handle(&app, &action, payload).await
+}
+
+#[tauri::command]
+async fn toolchain_status(app: tauri::AppHandle) -> Result<Value> {
+    system::run(app, json!({"operation":"toolchain-status"})).await
+}
+
+#[tauri::command]
+async fn app_path(app: tauri::AppHandle, app_id: String, path: String) -> Result<()> {    if !APP_IDS.contains(&app_id.as_str()) { return Err("Unsupported app path".into()); }
     system::run(app, json!({"operation":"app-path", "appId":app_id, "path":path})).await?;
     Ok(())
 }
@@ -45,7 +72,7 @@ async fn focus_editor(app: tauri::AppHandle, editor_id: String) -> Result<Value>
 
 #[tauri::command]
 async fn rtl_setup(app: tauri::AppHandle, app_id: String) -> Result<Value> {
-    if !["qoder", "zcode", "deepseek-harness", "opencode"].contains(&app_id.as_str()) {
+    if !["qoder", "zcode", "deepseek-harness", "opencode", "minimax-code"].contains(&app_id.as_str()) {
         return Err("RTL is unavailable for this app".into());
     }
     system::run(app, json!({"operation":"rtl-setup", "appId":app_id})).await
@@ -752,6 +779,10 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             app_version,
             codex_accounts,
+            claude_accounts,
+            app_accounts,
+            app_quota,
+            toolchain_status,
             app_path,
             detect_apps,
             detect_editors,

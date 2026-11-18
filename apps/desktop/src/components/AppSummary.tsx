@@ -1,4 +1,4 @@
-import { Network } from 'lucide-react';
+import { Network, Plug } from 'lucide-react';
 import { preferredLaunchMode, rtlAdapterConfigured } from '@core';
 import { useCatalog } from '@/lib/catalog';
 import { useTranslation } from 'react-i18next';
@@ -6,6 +6,11 @@ import { Link } from 'react-router-dom';
 import { useSettings } from '@/app/settings';
 import { useToolContext } from '@/app/tool-context';
 
+/**
+ * The tile's single metadata strip: proxy target, launch mode and API
+ * reference. Each segment shows a short value — the full sentence the app used
+ * to print lives in the title and in screen-reader text, so nothing truncates.
+ */
 export function AppSummary({ appId }: { appId: string }) {
   const { t } = useTranslation(['ux', 'proxy', 'connectionsUx']);
   const { settings } = useSettings();
@@ -28,6 +33,11 @@ export function AppSummary({ appId }: { appId: string }) {
       : profile?.mode === 'http' || profile?.mode === 'socks5'
         ? profile.name
         : t(`proxy:mode.${proxyState}`);
+  const proxyLabel = proxyState === 'unavailable' || proxyState === 'missing'
+    ? effectiveProxy
+    : inherits
+      ? t('connectionsUx:inheritEffective', { name: effectiveProxy })
+      : effectiveProxy;
   const state = ctx.states[appId];
   const adapterReady = rtlAdapterConfigured(appId, ctx.components);
   const rtl = state?.phase === 'running' ? state.rtl : adapterReady && preferredLaunchMode(settings.launchModeByApp[appId], catalog.apps.some(app => app.id === appId && app.capabilities.rtl === 'verified'), adapterReady) === 'rtl';
@@ -38,16 +48,27 @@ export function AppSummary({ appId }: { appId: string }) {
   const apiLabel = ctx.connections === null
     ? ctx.connectionsError ? t('connectionsUx:apiReferenceUnavailable') : t('ux:accountSummary.loading')
     : apiConnectionInvalid ? t('connectionsUx:apiReferenceUnavailable') : apiConnection?.name ?? t('ux:accountSummary.noApiReference');
+  const modeLabel = rtl ? 'RTL' : t('ux:modeNormalShort');
   const detailsPath = `/app/${appId}?tab=connections`;
+  // "No API reference" is the default, so printing it on every tile only adds noise and
+  // pushes the strip onto a second line. It stays in the accessibility tree either way.
+  const apiNotable = !!apiConnection || apiConnectionInvalid || !!ctx.connectionsError;
 
-  return <div className="vh-app-summary-details">
-    <Link className="vh-connection-summary" to={detailsPath}>
-      <span className="vh-summary-line"><Network size={14} aria-hidden="true" /><span>{t('connectionsUx:nextLaunchProxy')}</span></span>
-      <span className="vh-effective-proxy" data-testid={`proxy-summary-${appId}`} data-status={proxyState}>
-        {proxyState === 'unavailable' || proxyState === 'missing' ? effectiveProxy : inherits ? t('connectionsUx:inheritEffective', { name: effectiveProxy }) : effectiveProxy}
-      </span>
-      <span className="vh-mode-chip">{rtl ? 'RTL' : t('ux:normal')}</span>
-      <span className="vh-api-reference" data-testid={`api-reference-${appId}`} dir="auto"><span>{t('connectionsUx:apiReferenceShort')}</span>: {apiLabel}</span>
-    </Link>
-  </div>;
+  return <Link className="vh-app-meta" to={detailsPath}>
+    <span className="vh-meta-item" title={proxyLabel} data-status={proxyState} data-testid={`proxy-summary-${appId}`}>
+      <Network size={13} aria-hidden="true" />
+      <span className="sr-only">{t('connectionsUx:nextLaunchProxy')}: </span>
+      <bdi className="vh-meta-value">{proxyLabel}</bdi>
+    </span>
+    <span className="vh-meta-item" title={modeLabel}>
+      <span className="vh-meta-value" data-mode={rtl ? 'rtl' : 'normal'}>{modeLabel}</span>
+    </span>
+    {apiNotable
+      ? <span className="vh-meta-item" title={apiLabel} data-testid={`api-reference-${appId}`}>
+          <Plug size={13} aria-hidden="true" />
+          <span className="sr-only">{t('connectionsUx:apiReferenceShort')}: </span>
+          <bdi className="vh-meta-value">{apiLabel}</bdi>
+        </span>
+      : <span className="sr-only" data-testid={`api-reference-${appId}`}>{t('connectionsUx:apiReferenceShort')}: {apiLabel}</span>}
+  </Link>;
 }

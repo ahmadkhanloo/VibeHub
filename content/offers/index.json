@@ -29,6 +29,7 @@
   "offers": [
     "qoder-daily-credits",
     "qoder-qwen-flash",
-    "qoder-deepseek-flash"
+    "qoder-deepseek-flash",
+    "minimax-daily-free-quota"
   ]
 }

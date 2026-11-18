@@ -6,7 +6,7 @@
    internal geometry is expressed in container-query units (1cqw = 1% of the switch width). */
 
 .vh-daynight {
-  --vh-dn-size: 92px;
+  --vh-dn-size: 64px;
   --vh-dn-sky-day: #3a77b6;
   --vh-dn-sky-night: #1c1e27;
   --vh-dn-sun: #f3c22f;
@@ -47,10 +47,11 @@
   isolation: isolate;
   border-radius: inherit;
   background: var(--vh-dn-sky-day);
+  /* One hairline bezel instead of the old triple ring + drop shadow, so the smaller
+     scene sits in the flat command bar instead of floating above it. */
   box-shadow:
-    0 0 0 2.2cqw color-mix(in srgb, var(--surface) 72%, var(--border)),
-    0 0 0 2.6cqw color-mix(in srgb, var(--border) 55%, transparent),
-    0 1.6cqw 3.5cqw color-mix(in srgb, #000 18%, transparent);
+    0 0 0 1px var(--control-border),
+    0 0 0 3px color-mix(in srgb, var(--border) 60%, transparent);
   transition: box-shadow 900ms var(--vh-dn-ease-out);
 }
 
@@ -221,7 +222,7 @@
 }
 
 @media (max-width: 575px) {
-  .vh-daynight { --vh-dn-size: 84px; }
+  .vh-daynight { --vh-dn-size: 56px; }
 }
 
 /* Reduced motion: keep the state change, drop the theatre. */

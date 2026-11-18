@@ -7,6 +7,7 @@ import mimoLogo from '@/assets/apps/mimocode.png';
 import opencodeLogo from '@/assets/apps/opencode.png';
 import antigravityLogo from '@/assets/apps/antigravity.png';
 import claudeLogo from '@/assets/apps/claude.png';
+import minimaxLogo from '@/assets/apps/minimax.png';
 import chatgptLogo from '@/assets/apps/chatgpt.svg';
 import { AppWindow } from 'lucide-react';
 
@@ -20,6 +21,7 @@ const logos: Record<string, string> = {
   'antigravity-ide': antigravityLogo,
   'claude-code': claudeLogo,
   'claude-desktop': claudeLogo,
+  'minimax-code': minimaxLogo,
   chatgpt: chatgptLogo,
 };
 

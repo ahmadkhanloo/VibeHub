@@ -176,7 +176,7 @@ test("model editor retains Persian draft when changing locale", async ({
   page,
 }) => {
   await mockNative(page);
-  await page.goto("/models");
+  await page.goto("/connections/api?view=providers");
   await page
     .getByRole("button", { name: "Try a custom URL", exact: true })
     .click();
@@ -203,7 +203,7 @@ for (const scenario of ["ready", "empty", "failed", "partial"])
   );
 test("dialogs cancel without writes and restore focus", async ({ page }) => {
   await mockNative(page);
-  await page.goto("/models");
+  await page.goto("/connections/api?view=providers");
   const button = page.getByRole("button", {
     name: "Try a custom URL",
     exact: true,
@@ -434,7 +434,7 @@ test("single model deletion cancels without touching any connection", async ({
   page,
 }) => {
   await mockNative(page);
-  await page.goto("/models");
+  await page.goto("/connections/api?view=providers");
   await page.getByTestId("provider-ollama").click();
   await page
     .getByRole("button", { name: "Delete connection Local Ollama" })
@@ -463,7 +463,7 @@ test("keyboard tabs follow RTL order and dialog Tab stays inside", async ({
   await expect(
     page.getByRole("tab", { name: "اتصال‌ها", exact: true }),
   ).toHaveAttribute("aria-selected", "true");
-  await page.goto("/models");
+  await page.goto("/connections/api?view=providers");
   await page.getByRole("button", { name: "آزمایش آدرس دلخواه", exact: true }).click();
   await expect(page.getByLabel("نام دلخواه")).toBeFocused();
   const dialog = page.getByRole("dialog");

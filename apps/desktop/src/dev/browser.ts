@@ -13,8 +13,8 @@ export function installBrowserPreview() {
     settings: { enabled: false, threshold: 1 }, lastSwitch: 0, cliReady: false, nativePreview: true,
     supportedVersion: '0.148.0', desktopRunning: false, desktopVerified: false, loginPending: false };
   host.__TAURI_INTERNALS__.invoke = async (cmd, args = {}) => {
-    if (cmd === 'detect_apps') return apps.filter(app => ['zcode','qoder','deepseek-harness','antigravity','chatgpt'].includes(app.id)).map(app => ({ id: app.id, installed: true, via: 'browser-preview' }));
-    if (cmd === 'rtl_components') return ['qoder','zcode','deepseek-harness','antigravity'].map(id => ({id,available:true,configured:true}));
+    if (cmd === 'detect_apps') return apps.filter(app => ['zcode','qoder','deepseek-harness','antigravity','minimax-code','chatgpt'].includes(app.id)).map(app => ({ id: app.id, installed: true, via: 'browser-preview' }));
+    if (cmd === 'rtl_components') return ['qoder','zcode','deepseek-harness','antigravity','minimax-code'].map(id => ({id,available:true,configured:true}));
     if (cmd === 'feed_sync') return {ok:true,updated:false,detail:'Bundled preview catalog',catalog:structuredClone(bundledCatalog),guides:Object.fromEntries([...apps.map(app => app.id), 'code-review'].flatMap(id => ['fa','en'].map(lang => [id + '/' + lang, guideText(id,lang as 'fa' | 'en') ?? ''])))};
     if (cmd === 'codex_accounts') {
       if (args.action === 'settings') accounts.settings = { enabled: args.payload.enabled, threshold: args.payload.threshold };

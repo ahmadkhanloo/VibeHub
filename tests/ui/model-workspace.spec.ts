@@ -40,7 +40,7 @@ for (const lang of ['en', 'fa']) {
 test('provider details are navigable on a narrow screen', async ({ page }) => {
   await mockNative(page);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/connections/api');
+  await page.goto('/connections/api?view=providers');
   await page.getByRole('searchbox', { name: 'Search providers and notes' }).fill('NVIDIA');
   await page.getByTestId('provider-nvidia-build').click();
   await expect(page.locator('.model-workspace-detail')).toBeVisible();
@@ -52,7 +52,7 @@ test('provider details are navigable on a narrow screen', async ({ page }) => {
 test('wide screens keep the two-panel workspace and the selection in the URL', async ({ page }) => {
   await mockNative(page);
   await page.setViewportSize({ width: 1280, height: 860 });
-  await page.goto('/connections/api');
+  await page.goto('/connections/api?view=providers');
   const list = page.locator('.model-workspace-list');
   await expect(list).toHaveCSS('display', 'grid');
   await page.getByRole('searchbox', { name: 'Search providers and notes' }).fill('NVIDIA');
@@ -66,7 +66,7 @@ test('wide screens keep the two-panel workspace and the selection in the URL', a
   await expect(page).toHaveURL(/provider=nvidia-build/);
   // Browser Back undoes the selection and restores the searched list state.
   await page.goBack();
-  await expect(page).toHaveURL(/connections\/api\?q=NVIDIA$/);
+  await expect(page).toHaveURL(/connections\/api\?view=providers&q=NVIDIA$/);
   await expect(provider).not.toHaveAttribute('aria-selected', 'true');
   // Reloading a deep link restores the same selection.
   await page.goto('/connections/api?provider=nvidia-build');
@@ -78,7 +78,7 @@ test('search covers connection names and model ids, not just provider names', as
     {id:'nvidia-1',name:'First NVIDIA gateway',providerId:'nvidia',baseUrl:'https://integrate.api.nvidia.com/v1',modelId:'model-one',hasKey:true},
   ])));
   await mockNative(page, 'model-discovery');
-  await page.goto('/connections/api');
+  await page.goto('/connections/api?view=providers');
   const search = page.getByRole('searchbox', { name: 'Search providers and notes' });
   await search.fill('First NVIDIA gateway');
   await expect(page.getByTestId('provider-nvidia-build')).toBeVisible();
@@ -111,7 +111,7 @@ test('editing a saved keyed connection reuses the vault key for its model list',
 test('empty saved and notes views get their own guidance', async ({ page }) => {
   await page.addInitScript(() => sessionStorage.setItem('vibehub.fixture.connections', JSON.stringify([])));
   await mockNative(page, 'model-discovery');
-  await page.goto('/connections/api');
+  await page.goto('/connections/api?view=providers');
   await page.getByRole('button', { name: 'Saved', exact: true }).click();
   await expect(page.getByText('No connections saved yet.')).toBeVisible();
   await expect(page.getByText(/Add a connection to keep its endpoint/)).toBeVisible();
@@ -121,7 +121,7 @@ test('empty saved and notes views get their own guidance', async ({ page }) => {
 
 test('provider tiles form a listbox with arrow-key navigation', async ({ page }) => {
   await mockNative(page);
-  await page.goto('/connections/api');
+  await page.goto('/connections/api?view=providers');
   const list = page.getByRole('listbox', { name: 'Providers' });
   await expect(list).toBeVisible();
   await page.getByTestId('provider-anthropic').focus();

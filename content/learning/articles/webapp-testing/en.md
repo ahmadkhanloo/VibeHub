@@ -13,3 +13,5 @@ Select $webapp-testing and describe your task with the relevant file or project.
 ## Getting started
 
 See [Install and manage skills](/learning/skill-basics) for host compatibility, prerequisites, removal, and troubleshooting.
+
+For the tool itself — install, configuration and RTL assertions — see [Playwright](/learning/playwright).

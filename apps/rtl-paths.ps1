@@ -70,9 +70,10 @@ function Get-RtlExecutable([string]$Id, [string]$AdapterDir) {
     'antigravity' { @('Antigravity.exe') }
     'opencode' { @('OpenCode.exe') }
     'claude-desktop' { @('Claude.exe') }
+    'minimax-code' { @('MiniMax Code.exe') }
     default { return $null }
   }
-  $envName = switch ($Id) { 'zcode' {'ZCODE_RTL_EXE'} 'qoder' {'QODER_RTL_EXE'} 'deepseek-harness' {'DEEPSEEK_HARNESS_RTL_EXE'} 'antigravity' {'ANTIGRAVITY_RTL_EXE'} 'opencode' {'OPENCODE_RTL_EXE'} 'claude-desktop' {'CLAUDE_RTL_EXE'} }
+  $envName = switch ($Id) { 'zcode' {'ZCODE_RTL_EXE'} 'qoder' {'QODER_RTL_EXE'} 'deepseek-harness' {'DEEPSEEK_HARNESS_RTL_EXE'} 'antigravity' {'ANTIGRAVITY_RTL_EXE'} 'opencode' {'OPENCODE_RTL_EXE'} 'claude-desktop' {'CLAUDE_RTL_EXE'} 'minimax-code' {'MINIMAX_RTL_EXE'} }
   $override = [Environment]::GetEnvironmentVariable($envName)
   if ($override) {
     if (Test-Path -LiteralPath $override -PathType Leaf) { return $override }
@@ -94,6 +95,7 @@ function Get-RtlExecutable([string]$Id, [string]$AdapterDir) {
     'antigravity' { @("$env:LOCALAPPDATA\Programs\antigravity") }
     'opencode' { @("$env:LOCALAPPDATA\Programs\ai.opencode.desktop") }
     'claude-desktop' { @("$env:LOCALAPPDATA\AnthropicClaude", "$env:LOCALAPPDATA\Programs\Claude", "$env:LOCALAPPDATA\Claude") }
+    'minimax-code' { @("$env:LOCALAPPDATA\Programs\MiniMax Code") }
   }
   foreach ($base in $bases) {
     if ($Id -eq 'claude-desktop') {
