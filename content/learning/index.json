@@ -457,7 +457,7 @@
         "en": "Compress noisy command output, score change risk and check code health — with the tool's real limits."
       },
       "sourceUrl": "https://docs.repowise.dev/cli/overview",
-      "checkedAt": "2026-11-15",
+      "checkedAt": "2026-11-20",
       "relatedIds": [
         "code-review",
         "debugging-with-agent"
@@ -708,6 +708,154 @@
         "skill-basics"
       ],
       "contentPath": "content/learning/articles/find-skills"
+    },
+    {
+      "id": "dsh-plugins-basics",
+      "category": "skills",
+      "kind": "guide",
+      "order": 40,
+      "title": {
+        "fa": "افزونه‌های DeepSeek Harness: نصب و مدیریت مشترک",
+        "en": "DeepSeek Harness plugins: shared install and management"
+      },
+      "summary": {
+        "fa": "دستورهای عمومی نصب، به‌روزرسانی و حذف افزونه‌های Harness که برای همهٔ افزونه‌ها یکسان است؛ مقالهٔ هر افزونه فقط بخش‌های خاص خودش را دارد.",
+        "en": "The shared install, update and remove commands every Harness plugin uses; each plugin's article only covers its own specifics."
+      },
+      "sourceUrl": "https://github.com/ahmadkhanloo/VibeHub",
+      "checkedAt": "2026-11-20",
+      "relatedIds": [
+        "skill-basics",
+        "dsh-deepseek-web-login"
+      ],
+      "contentPath": "content/learning/articles/dsh-plugins-basics"
+    },
+    {
+      "id": "dsh-context",
+      "category": "skills",
+      "kind": "guide",
+      "order": 50,
+      "title": {
+        "fa": "dsh-context: دیدن زمینهٔ گفتگو",
+        "en": "dsh-context: see the conversation context"
+      },
+      "summary": {
+        "fa": "داشبورد مصرف توکن و هزینه، ترکیب و تحول زمینه و کارت زندهٔ ایجنت‌ها؛ از آمار محلی Harness با دستور /context.",
+        "en": "Token/cost usage dashboard, context composition and evolution, and live agent cards from local Harness stats, with the /context command."
+      },
+      "sourceUrl": "https://github.com/bowenliang123/dsh-context",
+      "checkedAt": "2026-11-20",
+      "relatedIds": [
+        "dsh-plugins-basics",
+        "dsh-squeeze"
+      ],
+      "contentPath": "content/learning/articles/dsh-context"
+    },
+    {
+      "id": "dsh-squeeze",
+      "category": "skills",
+      "kind": "guide",
+      "order": 60,
+      "title": {
+        "fa": "dsh-squeeze: خواندن مطلب طولانی بدون پرشدن گفتگو",
+        "en": "dsh-squeeze: read long material without filling the chat"
+      },
+      "summary": {
+        "fa": "ابزار squeeze صفحهٔ وب طولانی، فایل متنی بزرگ یا PDF را با مدل کمکی انتخابی شما می‌خواند و فقط پاسخ را برمی‌گرداند.",
+        "en": "The squeeze tool reads a long page, big text file or PDF with a helper model you choose and returns only the answer."
+      },
+      "sourceUrl": "https://github.com/q8atnight/dsh-squeeze",
+      "checkedAt": "2026-11-20",
+      "relatedIds": [
+        "dsh-plugins-basics",
+        "dsh-context"
+      ],
+      "contentPath": "content/learning/articles/dsh-squeeze"
+    },
+    {
+      "id": "dsh-workspace-hygiene",
+      "category": "skills",
+      "kind": "guide",
+      "order": 70,
+      "title": {
+        "fa": "dsh-workspace-hygiene: نظم فضای کار ایجنت",
+        "en": "dsh-workspace-hygiene: keep the agent workspace tidy"
+      },
+      "summary": {
+        "fa": "ارزش فایل‌های میانی را می‌سنجد و پیشنهاد نگه‌داشتن، حذف، نام‌گذاری و جای درست می‌دهد؛ تصمیم نهایی با شماست.",
+        "en": "Assesses intermediate-file value and recommends keep, remove, rename and relocate; the final call is yours."
+      },
+      "sourceUrl": "https://github.com/taoshi1999/dsh-workspace-hygiene",
+      "checkedAt": "2026-11-20",
+      "relatedIds": [
+        "dsh-plugins-basics",
+        "long-running"
+      ],
+      "contentPath": "content/learning/articles/dsh-workspace-hygiene"
+    },
+    {
+      "id": "dsh-playwright",
+      "category": "testing",
+      "kind": "guide",
+      "order": 30,
+      "title": {
+        "fa": "dsh-playwright: مرورگر واقعی در دست ایجنت",
+        "en": "dsh-playwright: a real browser at the agent's hands"
+      },
+      "summary": {
+        "fa": "Playwright MCP رسمی مایکروسافت برای همهٔ ایجنت‌های پروفایل: ناوبری، کلیک، تایپ و اسنپ‌شات با درخت دسترس‌پذیری، بدون مدل بینایی.",
+        "en": "The official Microsoft Playwright MCP for every agent on the profile: navigate, click, type and snapshot via accessibility snapshots, no vision model."
+      },
+      "sourceUrl": "https://github.com/akash-digitavision/dsh-playwright",
+      "checkedAt": "2026-11-20",
+      "relatedIds": [
+        "dsh-plugins-basics",
+        "playwright",
+        "webapp-testing"
+      ],
+      "contentPath": "content/learning/articles/dsh-playwright"
+    },
+    {
+      "id": "dsh-subagent-model-router",
+      "category": "models",
+      "kind": "guide",
+      "order": 20,
+      "title": {
+        "fa": "dsh-subagent-model-router: مدل درست برای هر کار واگذارشده",
+        "en": "dsh-subagent-model-router: the right model per delegated task"
+      },
+      "summary": {
+        "fa": "یک بار مدل‌ها را با لقب تعریف کنید؛ ایجنت برای هر کار واگذارشده مدل و سطح تفکر درست را برمی‌گزیند و نتیجه‌ها جمع می‌شود.",
+        "en": "Define your models once with aliases; the agent picks the right model and reasoning effort per delegated task and joins the results."
+      },
+      "sourceUrl": "https://github.com/pumbleblock/dsh-subagent-model-router",
+      "checkedAt": "2026-11-20",
+      "relatedIds": [
+        "dsh-plugins-basics",
+        "dsh-deepseek-web-login"
+      ],
+      "contentPath": "content/learning/articles/dsh-subagent-model-router"
+    },
+    {
+      "id": "dsh-our-free-model",
+      "category": "models",
+      "kind": "guide",
+      "order": 30,
+      "title": {
+        "fa": "dsh-our-free-model: کانال مدل رایگان (غیررسمی)",
+        "en": "dsh-our-free-model: free model lanes (unofficial)"
+      },
+      "summary": {
+        "fa": "افزونهٔ غیررسمی که بدون ورود یا کلید API مدل‌هایی مثل DeepSeek V4.1 Flash و Kimi K3 را از دروازه‌های عمومی می‌آورد؛ سهمیهٔ رایگان، API نامحدود نیست.",
+        "en": "An unofficial plugin bringing models like DeepSeek V4.1 Flash and Kimi K3 from public gateways without login or API key; free quota is not unlimited API."
+      },
+      "sourceUrl": "https://github.com/Ebony-Vinyl/dsh-our-free-model",
+      "checkedAt": "2026-11-20",
+      "relatedIds": [
+        "dsh-plugins-basics",
+        "dsh-deepseek-web-login"
+      ],
+      "contentPath": "content/learning/articles/dsh-our-free-model"
     }
   ]
 }
