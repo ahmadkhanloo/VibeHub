@@ -25,6 +25,8 @@ const SKILL_TOOLS = [
 ] as const;
 
 type HelperTool = (typeof HELPER_TOOLS)[number] | (typeof SKILL_TOOLS)[number];
+export const HELPER_COUNT = HELPER_TOOLS.length;
+export const SKILL_COUNT = SKILL_TOOLS.length;
 
 function useToolchain(): ToolchainStatus | null {
   const [status, setStatus] = useState<ToolchainStatus | null>(null);
@@ -79,10 +81,10 @@ function ToolChip({ tool, status }: { tool: HelperTool; status: ToolchainStatus 
 
 export function HelperChips() {
   const status = useToolchain();
-  return <div className="vh-chip-row" role="list">{HELPER_TOOLS.map(tool => <ToolChip key={tool.id} tool={tool} status={status} />)}</div>;
+  return <div className="vh-chip-row">{HELPER_TOOLS.map(tool => <ToolChip key={tool.id} tool={tool} status={status} />)}</div>;
 }
 
 export function SkillChips() {
   const status = useToolchain();
-  return <div className="vh-chip-row" role="list">{SKILL_TOOLS.map(tool => <ToolChip key={tool.id} tool={tool} status={status} />)}</div>;
+  return <div className="vh-chip-row">{SKILL_TOOLS.map(tool => <ToolChip key={tool.id} tool={tool} status={status} />)}</div>;
 }
