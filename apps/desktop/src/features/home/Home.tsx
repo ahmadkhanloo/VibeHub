@@ -7,7 +7,7 @@ import { useCatalog } from '@/lib/catalog';
 import { AppLogo } from '@/components/AppLogo';
 import { CatalogRow } from '@/components/CatalogRow';
 import { LaunchControls } from '@/components/LaunchControls';
-import { HelperCards, TerminalCard } from '@/components/ToolCards';
+import { HelperChips, SkillChips, TerminalCard } from '@/components/ToolCards';
 import { Tooltip } from '@/components/Tooltip';
 import { Button, EmptyState, ErrorNotice, PageHeader, Spinner } from '@/components/ui';
 import { useSettings } from '@/app/settings';
@@ -102,9 +102,13 @@ export function HomePage() {
       </div>
       {group.id === 'terminal' && <div className="vh-tools-grid mt-3"><TerminalCard /></div>}
     </section>)}
-    <section aria-label={t('ux:groupHelpers')}>
-      <h2 className="vh-section-title mb-3">{t('ux:groupHelpers')}</h2>
-      <div className="vh-tools-grid"><HelperCards /></div>
+    {/* Helper tools and skills stay deliberately low-key here: two slim chip rows
+        that link to their learning articles, where the full explanation lives. */}
+    <section aria-label={t('ux:groupHelpers')} className="space-y-2">
+      <h2 className="vh-section-title mb-1">{t('ux:groupHelpers')}</h2>
+      <HelperChips />
+      <h2 className="vh-section-title mb-1 mt-4">{t('ux:groupSkills')}</h2>
+      <SkillChips />
     </section>
   </div>;
 }

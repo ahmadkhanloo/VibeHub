@@ -16,5 +16,7 @@
     "workspace": "میزکار",
     "connections": "اتصال‌ها",
     "learn": "یادگیری و ابزار"
-  }
+  },
+  "accounts": "حساب‌ها",
+  "accountsHint": "حساب‌های ChatGPT، Claude، ZCode و Qoder"
 }

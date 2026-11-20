@@ -128,5 +128,6 @@
     "nvidia-build": "رایگان برای توسعه و نمونه‌سازی",
     "anthropic": "API پولی"
   },
-  "nvidiaClaudeUnavailable": "NVIDIA NIM در اتصال عمومی مدل‌ها در دسترس است."
+  "nvidiaClaudeUnavailable": "NVIDIA NIM در اتصال عمومی مدل‌ها در دسترس است.",
+  "customPresetsHint": "حالت‌های آمادهٔ کاستوم:"
 }

@@ -13,11 +13,18 @@
   "superpowersName": "Superpowers",
   "superpowersSummary": "پلاگین اسکیل‌های روشِ کار برای ایجنت: ایده‌پردازی، طرح و اجرای آن، توسعهٔ تست‌محور و دیباگ نظام‌مند.",
   "superpowersHint": "Superpowers از مارکت‌پلیس پلاگین ایجنت نصب می‌شود؛ بررسی وضعیت به حافظهٔ محلی پلاگین‌ها نگاه می‌کند.",
-  "findSkillsName": "find-skills",
-  "findSkillsSummary": "جست‌وجو و نصب اسکیل از اکوسیستم باز اسکیل‌ها (skills.sh) با npx skills.",
-  "findSkillsHint": "اسکیل‌ها به‌ازای هر ماشین زیر .agents/skills نصب می‌شوند؛ find-skills پیش از انتخاب، اکوسیستم را جست‌وجو می‌کند.",
   "browsersFound": "مرورگر موجود: {{list}}",
   "browsersMissing": "Edge یا Chrome پیدا نشد؛ یک‌بار npx playwright install را اجرا کنید.",
   "playwrightHint": "خودِ Playwright در هر پروژه جدا نصب می‌شود (npm i -D @playwright/test).",
-  "openArticle": "خواندن راهنما"
+  "openArticle": "خواندن راهنما",
+  "hindsightName": "Hindsight",
+  "hindsightSummary": "حافظهٔ ماندگار پروژه: تصمیم‌ها و صفحه‌های دانش هر مخزن را نگه می‌دارد و موقع کار به ایجنت برمی‌گرداند.",
+  "dshName": "DSH Workspace Hygiene",
+  "dshSummary": "بهداشت فضای کار DSH: ارزش فایل‌های میانی را می‌سنجد و پیشنهاد نگه‌داشتن، حذف و جای درست می‌دهد.",
+  "ponytailName": "Ponytail",
+  "ponytailSummary": "کوتاه‌ترین راه‌حلِ درست: ایجنت را به ساده‌ترین راه‌حل واقعاً کارا مجبور می‌کند؛ ضد پیچیدگی اضافه.",
+  "uiuxName": "UI/UX Pro Max",
+  "uiuxSummary": "طراحی و بازبینی رابط با داده‌های جست‌وجوپذیر سبک، پالت، تایپوگرافی و رهنمود UX.",
+  "unslopName": "Unslop",
+  "unslopSummary": "الگوهای تکراری نوشتهٔ AI را حذف می‌کند تا متن انسانی و طبیعی به نظر برسد."
 }

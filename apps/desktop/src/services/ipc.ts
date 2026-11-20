@@ -235,7 +235,13 @@ export interface ToolchainStatus {
   repowise: { installed: boolean; version: string | null };
   browsers: { edge: boolean; chrome: boolean };
   plugins: { superpowers: boolean };
-  skills: { findSkills: boolean };
+  skills: {
+    hindsight: boolean;
+    dsh: boolean;
+    ponytail: boolean;
+    uiuxProMax: boolean;
+    unslop: boolean;
+  };
 }
 
 /** Apps whose session is an opaque blob that VibeHub swaps without decrypting it. */

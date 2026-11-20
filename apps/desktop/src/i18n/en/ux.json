@@ -212,5 +212,7 @@
   },
   "themeToggle": "Day and night",
   "dayMode": "Switch to day",
-  "nightMode": "Switch to night"
+  "nightMode": "Switch to night",
+  "accountsHub": "Accounts",
+  "groupSkills": "Skills"
 }

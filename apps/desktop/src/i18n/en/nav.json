@@ -16,5 +16,7 @@
     "workspace": "Workspace",
     "connections": "Connections",
     "learn": "Learn and tools"
-  }
+  },
+  "accounts": "Accounts",
+  "accountsHint": "ChatGPT, Claude, ZCode and Qoder accounts"
 }

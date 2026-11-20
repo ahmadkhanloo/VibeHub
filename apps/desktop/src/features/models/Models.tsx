@@ -17,20 +17,16 @@ const origin = (value: string) => { try { return new URL(value).origin; } catch 
 
 // Single source of truth: the provider catalog (content/providers/*.json). This table only adds
 // the default model ID and the display order, plus the manifest-less `custom` preset.
-const PRESET_ORDER = ['openai', 'anthropic', 'google', 'deepseek', 'mistral', 'openrouter', 'nvidia', 'radeon-cloud', 'apinex', WORKERS_AI, 'groq', 'ollama'];
+// OpenAI and Anthropic are deliberately not first-class presets: they surface only as
+// ready-made fills of the `custom` endpoint (and Anthropic stays a Claude-native preset).
+const PRESET_ORDER = ['google', 'openrouter', 'nvidia', 'radeon-cloud', WORKERS_AI, 'groq'];
 const DEFAULT_MODELS: Record<string, string> = {
-  openai: 'gpt-4o-mini',
-  anthropic: 'claude-sonnet-4-5-20250929',
   google: 'gemini-2.5-flash',
-  deepseek: 'deepseek-flash',
-  mistral: 'mistral-small-latest',
   openrouter: 'openai/gpt-oss-20b:free',
   nvidia: 'meta/llama-3.3-70b-instruct',
   'radeon-cloud': 'DeepSeek-V4-Flash',
-  apinex: 'free/jev-1.13',
   [WORKERS_AI]: '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
   groq: 'openai/gpt-oss-20b',
-  ollama: 'qwen2.5-coder:7b',
 };
 const CUSTOM_PRESET: Preset = { providerId: 'custom', name: 'OpenAI-compatible', baseUrl: 'https://', modelId: '', requiresKey: true };
 const PRESETS: Preset[] = PRESET_ORDER.flatMap((providerId) => {
@@ -41,17 +37,19 @@ const PRESETS: Preset[] = PRESET_ORDER.flatMap((providerId) => {
 
 const makeConnection = (preset: Preset): ProviderConnection => ({ id: `connection-${crypto.randomUUID()}`, providerId: preset.providerId, name: preset.name, baseUrl: preset.baseUrl, modelId: preset.modelId, hasKey: false });
 
-const costProviders = ['openrouter', 'radeon-cloud', 'nvidia-build', 'anthropic'];
+const costProviders = ['openrouter', 'radeon-cloud', 'nvidia-build'];
 const priority = (id: string) => { const index = ['openrouter', 'radeon-cloud', 'nvidia-build'].indexOf(id); return index < 0 ? 3 : index; };
 PRESETS.sort((a, b) => priority(catalogId(a.providerId)) - priority(catalogId(b.providerId)));
 
+// Claude connections keep the native Anthropic endpoint (its protocol is what
+// Claude Code speaks) alongside the generic presets; the retired providers stay
+// retired for Claude too. Anthropic never returns to the general API notebook.
+const ANTHROPIC_ONLY: Preset[] = bundledProviders
+  .filter(manifest => manifest.id === 'anthropic')
+  .map(manifest => ({ providerId: 'anthropic', name: manifest.name, baseUrl: 'https://api.anthropic.com', modelId: '', requiresKey: manifest.requiresApiKey !== false }));
 const CLAUDE_PRESETS = PRESETS
-  .filter(preset => ['openrouter', 'anthropic', 'radeon-cloud', 'custom'].includes(preset.providerId))
-  .map(preset => {
-    if (preset.providerId === 'anthropic') return { ...preset, baseUrl: 'https://api.anthropic.com', modelId: '' };
-
-    return preset;
-  });
+  .filter(preset => ['openrouter', 'radeon-cloud', 'custom'].includes(preset.providerId))
+  .concat(ANTHROPIC_ONLY);
 
 export const newClaudeConnection = () => makeConnection(CLAUDE_PRESETS[0]!);
 
@@ -197,6 +195,9 @@ export function ConnectionEditor({ connection, existing, otherNames = [], onClos
         {forClaude && <p className="text-sm text-muted sm:col-span-2">{t('models:nvidiaClaudeUnavailable')} <Link className="vh-link" to="/connections/api?provider=nvidia-build">NVIDIA NIM</Link></p>}
         <label className="block space-y-2 text-sm" htmlFor={`${id}-name`}><span className="block font-medium">{t('models:connectionName')}</span><Input id={`${id}-name`} data-autofocus dir="auto" value={draft.name} maxLength={120} onChange={(e) => setDraft({ ...draft, name: e.target.value })} {...errorProps('name')} />{fieldError('name')}{duplicateName && <p role="status" className="text-sm text-warning">{t('models:duplicateNameWarning')}</p>}</label>
         <label className="block space-y-2 text-sm sm:col-span-2" htmlFor={`${id}-url`}><span className="block font-medium">{t('models:baseUrl')}</span><Input id={`${id}-url`} dir="ltr" className="ltr-tech" value={draft.baseUrl} onChange={(e) => { const baseUrl = e.target.value; resetLookup(); const changed = origin(draft.baseUrl) !== origin(baseUrl); if (changed) setKey(''); setDraft({ ...draft, baseUrl, hasKey: changed ? false : draft.hasKey }); }} {...errorProps('url')} />{fieldError('url')}</label>
+        {draft.providerId === 'custom' && <div className="flex flex-wrap items-center gap-2 sm:col-span-2 text-sm"><span className="text-muted">{t('models:customPresetsHint')}</span>
+          {[{ id: 'anthropic', baseUrl: 'https://api.anthropic.com' }, { id: 'openai', baseUrl: 'https://api.openai.com/v1' }].map(fill => <Button key={fill.id} size="sm" variant="ghost" type="button" onClick={() => setDraft(current => ({ ...current, baseUrl: fill.baseUrl }))}>{fill.id === 'anthropic' ? 'Anthropic' : 'OpenAI'}</Button>)}
+        </div>}
         {needsWorkersAccountId && !errors.url && <p className="text-sm text-muted sm:col-span-2">{t('models:workersAccountId')}</p>}
         <label className="block space-y-2 text-sm" htmlFor={`${id}-model`}><span className="block font-medium">{t(forClaude ? 'models:modelId' : 'models:optionalModelId')}</span><Input id={`${id}-model`} dir="ltr" className="ltr-tech" value={draft.modelId} maxLength={256} onChange={(e) => { setPreviewReport(null); setDraft({ ...draft, modelId: e.target.value }); }} {...errorProps('model')} />{fieldError('model')}</label>
         {preset?.requiresKey !== false && <div className="space-y-2 text-sm"><span className="flex items-center gap-2 font-medium" id={`${id}-key-label`}><KeyRound size={16} aria-hidden="true" />{t(existing ? 'models:replaceApiKey' : 'models:apiKey')}</span><span className="relative block"><Input id={`${id}-key`} aria-labelledby={`${id}-key-label`} type={showKey ? 'text' : 'password'} dir="ltr" className="ltr-tech pe-20" autoComplete="new-password" value={key} onChange={(e) => { resetLookup(); setKey(e.target.value); }} {...errorProps('key')} placeholder={existing && draft.hasKey ? t('models:leaveBlankToKeep') : ''} /><Button size="sm" variant="ghost" type="button" className="absolute top-1/2 -translate-y-1/2" style={{ insetInlineEnd: 6 }} aria-label={t(showKey ? 'models:hideKey' : 'models:showKey')} aria-pressed={showKey} onClick={() => setShowKey(value => !value)}>{showKey ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}</Button></span>{fieldError('key')}</div>}
@@ -304,7 +305,9 @@ export function ModelsPage() {
   const rows = useMemo(() => {
     const map = new Map<string, ProviderRow>();
     for (const provider of providers) {
-      if (provider.id === 'custom-openai-compatible') continue;
+      // Anthropic and OpenAI manifests back the custom fills and the Claude presets;
+      // they are not catalogue rows of their own any more.
+      if (provider.id === 'custom-openai-compatible' || provider.id === 'anthropic' || provider.id === 'openai') continue;
       map.set(provider.id, { id: provider.id, name: provider.name, provider, connections: [] });
     }
     for (const connection of connections) {

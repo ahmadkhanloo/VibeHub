@@ -16,6 +16,7 @@ import {
   Shield,
   Stethoscope,
   Terminal,
+  UsersRound,
   type LucideIcon,
 } from 'lucide-react';
 import { useSettings } from './settings';
@@ -95,6 +96,7 @@ export function AppShell() {
           id: 'workspace',
           items: [
             { to: '/', icon: House, label: t('ux:workspace'), hint: t('ux:workspace') },
+            { to: '/accounts', icon: UsersRound, label: t('nav:accounts'), hint: t('nav:accountsHint') },
           ],
         },
         {

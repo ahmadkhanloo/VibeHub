@@ -1,29 +1,23 @@
 import { useEffect, useState } from 'react';
 import anthropic from '@/assets/providers/anthropic.png';
-import apinex from '@/assets/providers/apinex.jpg';
 import cloudflareWorkersAi from '@/assets/providers/cloudflare-workers-ai.png';
 import custom from '@/assets/providers/custom-openai-compatible.png';
-import deepseek from '@/assets/providers/deepseek.png';
 import google from '@/assets/providers/google.png';
 import groq from '@/assets/providers/groq.ico';
-import mistral from '@/assets/providers/mistral.png';
 import nvidia from '@/assets/providers/nvidia-build.ico';
-import ollama from '@/assets/providers/ollama.png';
 import openai from '@/assets/providers/openai.png';
 import openrouter from '@/assets/providers/openrouter.ico';
 import radeon from '@/assets/providers/radeon-cloud.ico';
 
+// Anthropic and OpenAI keep logos: their manifests still back the Claude presets
+// and the custom fills, even though they are no longer catalogue rows.
 const logos: Record<string, string> = {
   anthropic,
-  apinex,
   'cloudflare-workers-ai': cloudflareWorkersAi,
   'custom-openai-compatible': custom,
-  deepseek,
   google,
   groq,
-  mistral,
   'nvidia-build': nvidia,
-  ollama,
   openai,
   openrouter,
   'radeon-cloud': radeon,

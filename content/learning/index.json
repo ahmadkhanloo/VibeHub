@@ -856,6 +856,89 @@
         "dsh-deepseek-web-login"
       ],
       "contentPath": "content/learning/articles/dsh-our-free-model"
+    },
+    {
+      "id": "hindsight",
+      "category": "skills",
+      "kind": "guide",
+      "order": 30,
+      "title": {
+        "fa": "Hindsight: حافظهٔ ماندگار پروژه",
+        "en": "Hindsight: persistent project memory"
+      },
+      "summary": {
+        "fa": "تصمیم‌ها و دانش پروژه را برای همیشه نگه می‌دارد و موقع کار، ایجنت را از گذشته باخبر می‌کند.",
+        "en": "Keeps project decisions and knowledge alive and feeds them back to the agent while it works."
+      },
+      "checkedAt": "2026-11-21",
+      "relatedIds": [
+        "skill-basics",
+        "claude-memory"
+      ],
+      "contentPath": "content/learning/articles/hindsight",
+      "sourceUrl": "https://hindsight.vectorize.io"
+    },
+    {
+      "id": "ponytail",
+      "category": "skills",
+      "kind": "skill",
+      "order": 40,
+      "title": {
+        "fa": "Ponytail: کوتاه‌ترین راه‌حل درست",
+        "en": "Ponytail: the shortest solution that works"
+      },
+      "summary": {
+        "fa": "ایجنت را به ساده‌ترین و کوتاه‌ترین راه‌حلِ واقعاً کارا مجبور می‌کند؛ ضد پیچیدگی و بloat.",
+        "en": "Forces the agent to the simplest, shortest solution that actually works; anti-complexity and anti-bloat."
+      },
+      "checkedAt": "2026-11-21",
+      "relatedIds": [
+        "superpowers",
+        "skill-creator"
+      ],
+      "contentPath": "content/learning/articles/ponytail",
+      "sourceUrl": "https://skills.sh"
+    },
+    {
+      "id": "ui-ux-pro-max",
+      "category": "skills",
+      "kind": "skill",
+      "order": 50,
+      "title": {
+        "fa": "UI/UX Pro Max: طراحی و بازبینی رابط",
+        "en": "UI/UX Pro Max: design and review interfaces"
+      },
+      "summary": {
+        "fa": "داده‌های جست‌وجوپذیر استایل، پالت، تایپوگرافی و رهنمود UX برای طراحی و بازبینی رابط کاربری.",
+        "en": "Searchable styles, palettes, typography and UX guidelines for designing and reviewing interfaces."
+      },
+      "checkedAt": "2026-11-21",
+      "relatedIds": [
+        "frontend-design",
+        "skill-basics"
+      ],
+      "contentPath": "content/learning/articles/ui-ux-pro-max",
+      "sourceUrl": "https://skills.sh"
+    },
+    {
+      "id": "unslop",
+      "category": "skills",
+      "kind": "skill",
+      "order": 60,
+      "title": {
+        "fa": "Unslop: نوشتن انسانی به‌جای لحن رباتیک",
+        "en": "Unslop: human writing instead of robotic tone"
+      },
+      "summary": {
+        "fa": "الگوهای تکراری نوشتهٔ AI را پیدا و حذف می‌کند تا متن انسانی و طبیعی به نظر برسد.",
+        "en": "Finds and removes repetitive AI writing patterns so text reads human and natural."
+      },
+      "checkedAt": "2026-11-21",
+      "relatedIds": [
+        "skill-basics"
+      ],
+      "contentPath": "content/learning/articles/unslop",
+      "sourceUrl": "https://skills.sh"
     }
   ]
 }

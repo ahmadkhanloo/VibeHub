@@ -154,6 +154,14 @@
 .vh-tool-card>div{min-width:0;flex:1;}
 .vh-tool-arrow{flex-shrink:0;color:var(--muted);margin-top:3px;}
 [dir='ltr'] .vh-tool-arrow{transform:rotate(90deg);}
+/* Low-key helper/skill chips: slim pills that stay out of the way of the app grid. */
+.vh-chip-row{display:flex;flex-wrap:wrap;gap:8px;}
+.vh-tool-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border:1px solid var(--border);border-radius:999px;background:var(--surface);color:var(--muted);font-size:0.8125rem;line-height:1.6;transition:border-color 150ms,color 150ms;}
+.vh-tool-chip:hover{border-color:color-mix(in srgb,var(--primary) 45%,var(--border));color:var(--fg);}
+.vh-tool-chip span{max-width:22ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.vh-chip-dot{width:7px;height:7px;border-radius:999px;flex-shrink:0;}
+.vh-chip-dot.is-ok{background:var(--success);}
+.vh-chip-dot.is-missing{background:color-mix(in srgb,var(--muted) 55%,transparent);}
 .vh-tabs{gap:4px;padding-bottom:5px;}
 .vh-tabs button{padding:10px 15px;border-radius:var(--r-control);border-bottom:0;}
 .vh-tabs button[aria-selected='true']{background:color-mix(in srgb,var(--primary) 10%,var(--surface));}

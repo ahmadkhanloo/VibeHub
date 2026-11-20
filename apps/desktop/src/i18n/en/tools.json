@@ -13,11 +13,18 @@
   "superpowersName": "Superpowers",
   "superpowersSummary": "A plugin of working-method skills for your agent: brainstorming, plans, test-driven development and systematic debugging.",
   "superpowersHint": "Superpowers installs through the agent's plugin marketplace; the status check looks at the local plugin cache.",
-  "findSkillsName": "find-skills",
-  "findSkillsSummary": "Search and install skills from the open skills ecosystem (skills.sh) with npx skills.",
-  "findSkillsHint": "Skills install per machine under .agents/skills; find-skills searches the ecosystem before you pick one.",
   "browsersFound": "Browser available: {{list}}",
   "browsersMissing": "No Edge or Chrome found; run npx playwright install once.",
   "playwrightHint": "Playwright itself is installed per project (npm i -D @playwright/test).",
-  "openArticle": "Read the guide"
+  "openArticle": "Read the guide",
+  "hindsightName": "Hindsight",
+  "hindsightSummary": "Persistent project memory: keeps per-repo decisions and knowledge pages and feeds them back while the agent works.",
+  "dshName": "DSH Workspace Hygiene",
+  "dshSummary": "DSH workspace hygiene: assesses intermediate-file value and recommends keep, remove and relocate.",
+  "ponytailName": "Ponytail",
+  "ponytailSummary": "The shortest solution that works: forces the agent to the simplest viable answer; anti-bloat.",
+  "uiuxName": "UI/UX Pro Max",
+  "uiuxSummary": "Design and review interfaces with searchable styles, palettes, typography and UX guidelines.",
+  "unslopName": "Unslop",
+  "unslopSummary": "Removes repetitive AI writing patterns so text reads human and natural."
 }

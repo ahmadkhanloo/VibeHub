@@ -469,7 +469,7 @@ function Find-App([string]$id) {
 }
 
 function Detect-Apps {
-    @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','freebuff-desktop','copilot-cli','antigravity-ide','chatgpt','claude-code','claude-desktop','minimax-code') | ForEach-Object {
+    @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','freebuff-desktop','copilot-cli','antigravity-ide','chatgpt','claude-code','claude-desktop','minimax-code','pi') | ForEach-Object {
         $path = Find-App $_
         $via = 'standard-path-or-PATH'
         $result = @{ id = $_; installed = [bool]$path; via = $via }
@@ -879,11 +879,20 @@ try {
                     Select-Object -First 1
                 $superpowers = [bool]$hit
             }
-            $findSkills = @(
-                '.agents\skills\find-skills\SKILL.md',
-                '.zcode\skills\find-skills\SKILL.md'
-            ) | Where-Object { Test-Path -LiteralPath (Join-Path $env:USERPROFILE $_) } |
-                Select-Object -First 1
+            # Personal skills are per machine and per agent; presence of the skill
+            # folder is the only stable fact across marketplaces.
+            $skillPresent = {
+                param([string]$id)
+                @(".agents\skills\$id\SKILL.md", ".zcode\skills\$id\SKILL.md") |
+                    Where-Object { Test-Path -LiteralPath (Join-Path $env:USERPROFILE $_) } |
+                    Select-Object -First 1
+            }
+            $hindsight = [bool](& $skillPresent 'hindsight-coding-agent')
+            $ponytail = [bool](& $skillPresent 'ponytail')
+            $uiuxProMax = [bool](& $skillPresent 'ui-ux-pro-max')
+            $unslop = [bool](& $skillPresent 'unslop')
+            # DSH counts as present when either its profile home or its CLI exists.
+            $dsh = (Test-Path -LiteralPath (Join-Path $env:USERPROFILE '.dsh')) -or [bool](Get-Command dsh -ErrorAction SilentlyContinue)
             @{
                 repowise = $repowise
                 browsers = @{
@@ -893,7 +902,7 @@ try {
                     chrome = [bool](& $browser 'Google\Chrome\Application\chrome.exe')
                 }
                 plugins = @{ superpowers = $superpowers }
-                skills = @{ findSkills = [bool]$findSkills }
+                skills = @{ hindsight = $hindsight; dsh = $dsh; ponytail = $ponytail; uiuxProMax = $uiuxProMax; unslop = $unslop }
             }
         }
         'codex-desktop' { Codex-DesktopState }
@@ -1105,7 +1114,7 @@ try {
         }
         'focus-app' {
             $id = [string]$request.appId
-            if ($id -notin @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','freebuff-desktop','copilot-cli','antigravity-ide','chatgpt','claude-code','claude-desktop','minimax-code')) { throw 'Unknown app' }
+            if ($id -notin @('zcode','qoder','deepseek-harness','opencode','mimocode','freebuff','freebuff-desktop','copilot-cli','antigravity-ide','chatgpt','claude-code','claude-desktop','minimax-code','pi')) { throw 'Unknown app' }
             $exe = Find-App $id
             $target = Get-Process -ErrorAction SilentlyContinue | Where-Object { try { $_.Path -ieq $exe -and $_.MainWindowHandle -ne 0 } catch { $false } } | Select-Object -First 1
             if (-not $exe -or -not $target) { throw 'No application window was found.' }
@@ -1155,7 +1164,7 @@ try {
             if (-not $request.req.rtl -and $request.previousState -and $request.previousState.rtl) {
                 $null = Stop-ManagedRtlInjector -appId $id -state $request.previousState
             }
-            if ($id -in @('mimocode','freebuff','claude-code','copilot-cli')) {
+            if ($id -in @('mimocode','freebuff','claude-code','copilot-cli','pi')) {
                 $env:PATH = (@($env:PATH, [Environment]::GetEnvironmentVariable('Path','User'), [Environment]::GetEnvironmentVariable('Path','Machine')) -join ';')
             }
             $env:VIBEHUB_PROJECT = if ($request.req.cwd) { $cwd } else { '' }
@@ -1183,7 +1192,7 @@ try {
             } elseif ($package) {
                 Start-Process -FilePath explorer.exe -ArgumentList ('shell:AppsFolder\' + $package.appUserModelId) | Out-Null
                 @{ok=$true;rtl=$false;detail='Requested Claude Desktop activation; its process status is not verified.'}
-            } elseif ($id -in @('mimocode','freebuff','claude-code','copilot-cli')) {
+            } elseif ($id -in @('mimocode','freebuff','claude-code','copilot-cli','pi')) {
                 # Visible shell is the requested product UI. No user text is parsed as code.
                 $quotedExe = $exe.Replace("'", "''")
                 $code = "& '$quotedExe'"

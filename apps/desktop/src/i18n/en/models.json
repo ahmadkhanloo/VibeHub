@@ -128,5 +128,6 @@
     "nvidia-build": "Free development and prototyping",
     "anthropic": "Paid API"
   },
-  "nvidiaClaudeUnavailable": "NVIDIA NIM is available in general model connections."
+  "nvidiaClaudeUnavailable": "NVIDIA NIM is available in general model connections.",
+  "customPresetsHint": "Custom presets:"
 }
