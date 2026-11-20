@@ -37,6 +37,31 @@ fn error_code(reason: &str) -> String {
         _ => "requestFailed".to_owned(),
     }
 }
+/// Maps an app-server error to the closest actionable account error code. The
+/// message itself is never surfaced: only these fixed codes reach the UI, so
+/// response text (which may quote credentials or URLs) stays out of the webview.
+fn app_server_error_code(message: &str) -> &'static str {
+    let lower = message.to_lowercase();
+    if lower.contains("401")
+        || lower.contains("unauthorized")
+        || lower.contains("oauth")
+        || lower.contains("login")
+    {
+        "loginRequired"
+    } else if lower.contains("timed out") || lower.contains("timeout") {
+        "timeout"
+    } else if lower.contains("connection")
+        || lower.contains("network")
+        || lower.contains("dns")
+        || lower.contains("unreachable")
+        || lower.contains("stream disconnected")
+        || lower.contains("error sending request")
+    {
+        "network"
+    } else {
+        "requestFailed"
+    }
+}
 fn now() -> i64 {
     chrono::Utc::now().timestamp()
 }
@@ -151,8 +176,8 @@ impl Rpc {
                 .recv_timeout(deadline.saturating_duration_since(Instant::now()))
                 .map_err(|_| err("timeout"))?;
             if value["id"] == id {
-                if value.get("error").is_some() {
-                    return Err(err("requestFailed"));
+                if let Some(message) = value["error"]["message"].as_str() {
+                    return Err(err(app_server_error_code(message)));
                 }
                 return Ok(value["result"].clone());
             }
@@ -688,10 +713,14 @@ impl Broker {
         };
         self.state["accounts"][i]["errorCode"] = Value::Null;
         self.state["accounts"][i]["quotaErrorCode"] = Value::Null;
-        let mut quota_failed = false;
+        // refreshToken: true lets the CLI heal a stale or expired access token from
+        // the stored refresh token before anything reads it. A token the server no
+        // longer accepts (revoked) comes back as account: null, which maps to
+        // loginRequired below; the stored credentials themselves stay untouched.
+        let mut quota_error: Option<String> = None;
         let result = (|| {
             let mut rpc = self.rpc(&home, !active)?;
-            let account = rpc.call("account/read", json!({"refreshToken":false}))?;
+            let account = rpc.call("account/read", json!({"refreshToken":true}))?;
             if account["account"]["type"] != "chatgpt" {
                 return Err(err("loginRequired"));
             }
@@ -709,28 +738,31 @@ impl Broker {
                 self.state["fingerprint"] = json!(fingerprint(&auth));
                 write_vault(&self.home(id)?, &auth)?;
             }
-            let quotas = match rpc.call("account/rateLimits/read", json!({})) {
-                Ok(value) => value,
-                Err(reason) => { quota_failed = true; return Err(reason); }
-            };
-            self.state["accounts"][i]["windows"] = json!(quota_windows(&quotas));
-            self.state["accounts"][i]["checkedAt"] = json!(now());
+            // Quota is supplementary: account/read already proved the login and the
+            // identity, so a failed rate-limit read only marks the quota stale
+            // instead of branding the whole account broken.
+            match rpc.call("account/rateLimits/read", json!({})) {
+                Ok(quotas) => {
+                    self.state["accounts"][i]["windows"] = json!(quota_windows(&quotas));
+                    self.state["accounts"][i]["checkedAt"] = json!(now());
+                }
+                Err(reason) => quota_error = Some(error_code(&reason)),
+            }
             Ok(())
         })();
         match &result {
-            Ok(()) => {
-                self.state["accounts"][i]["error"] = Value::Null;
-                self.state["accounts"][i]["errorCode"] = Value::Null;
-                self.state["accounts"][i]["quotaErrorCode"] = Value::Null;
-            }
             Err(reason) => {
                 let code = error_code(reason);
                 self.state["accounts"][i]["error"] = json!(code);
-                if quota_failed {
-                    self.state["accounts"][i]["quotaErrorCode"] = json!(code);
-                } else {
-                    self.state["accounts"][i]["errorCode"] = json!(code);
-                }
+                self.state["accounts"][i]["errorCode"] = json!(code);
+            }
+            Ok(()) => {
+                self.state["accounts"][i]["error"] = Value::Null;
+                self.state["accounts"][i]["errorCode"] = Value::Null;
+                self.state["accounts"][i]["quotaErrorCode"] = match quota_error {
+                    Some(code) => json!(code),
+                    None => Value::Null,
+                };
             }
         }
         self.save()?;
@@ -1174,7 +1206,10 @@ pub fn handle(app: &tauri::AppHandle, action: &str, payload: Value) -> Result<Va
         action,
         "login" | "import" | "importJson" | "refresh" | "switch"
     ) {
-        broker.proxy = super::launch_request(app, "chatgpt", None)?;
+        // A broken proxy profile for this app is a configuration problem, not a
+        // generic failure; give it a translated, specific error.
+        broker.proxy = super::launch_request(app, "chatgpt", None)
+            .map_err(|_| err("configuration"))?;
     }
     if let Err(error) = broker.poll_login() {
         broker.state["notice"] = json!(error.strip_prefix("accounts:").unwrap_or("loginFailed"));
@@ -1367,7 +1402,7 @@ pub fn start_monitor(app: tauri::AppHandle) {
                         broker.proxy = proxy;
                         let _ = broker.process_pending(&app);
                     }
-                    Err(_) => broker.state["notice"] = json!("requestFailed"),
+                    Err(_) => broker.state["notice"] = json!("configuration"),
                 }
             }
             if Instant::now() >= next {
@@ -1588,6 +1623,24 @@ mod tests {
             .unwrap_err();
         assert_eq!(error, err("requestFailed"));
         assert!(!error.contains("synthetic-secret"));
+    }
+    #[test]
+    fn app_server_errors_map_to_actionable_codes_without_echoing_text() {
+        for login in [
+            "unexpected status 401 Unauthorized: Encountered invalidated oauth token for user, failing request",
+            "stream error: login required",
+        ] {
+            assert_eq!(app_server_error_code(login), "loginRequired");
+        }
+        for network in [
+            "error sending request for url (https://chatgpt.com/backend-api/)",
+            "stream disconnected before completion: connection reset",
+            "dns lookup failed for chatgpt.com",
+        ] {
+            assert_eq!(app_server_error_code(network), "network");
+        }
+        assert_eq!(app_server_error_code("request timed out after 25s"), "timeout");
+        assert_eq!(app_server_error_code("synthetic-secret"), "requestFailed");
     }
     #[test]
     #[ignore = "Opt-in installed Codex CLI compatibility check, using isolated synthetic credentials and loopback-only endpoints"]
