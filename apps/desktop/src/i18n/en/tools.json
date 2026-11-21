@@ -23,5 +23,7 @@
   "uiuxName": "UI/UX Pro Max",
   "uiuxSummary": "Design and review interfaces with searchable styles, palettes, typography and UX guidelines.",
   "unslopName": "Unslop",
-  "unslopSummary": "Removes repetitive AI writing patterns so text reads human and natural."
+  "unslopSummary": "Removes repetitive AI writing patterns so text reads human and natural.",
+  "stageshowName": "Stageshow",
+  "stageshowSummary": "Believable faux product UI: a still or animated cursor demo, framed for heroes and feature cards."
 }

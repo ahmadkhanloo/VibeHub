@@ -241,6 +241,7 @@ export interface ToolchainStatus {
     ponytail: boolean;
     uiuxProMax: boolean;
     unslop: boolean;
+    stageshow: boolean;
   };
 }
 

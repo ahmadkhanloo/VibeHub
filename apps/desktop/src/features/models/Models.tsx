@@ -3,7 +3,7 @@ import { Tooltip } from '@/components/Tooltip';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ExternalLink, Eye, EyeOff, KeyRound, Plus, Save, Search, StickyNote, Trash2, Zap } from 'lucide-react';
+import { ExternalLink, Eye, EyeOff, KeyRound, MousePointerClick, Plus, Save, Search, StickyNote, Trash2, Zap } from 'lucide-react';
 import { Badge, Button, Card, CopyButton, EmptyState, ErrorNotice, Input, Modal, PageHeader } from '@/components/ui';
 import { useCatalog, providers as bundledProviders } from '@/lib/catalog';
 import { ProviderLogo } from '@/components/ProviderLogo';
@@ -461,7 +461,7 @@ export function ModelsPage() {
           {reports[connection.id] && <ConnectionReport report={reports[connection.id]!} />}
         </Card>;
       })}</div></section>}
-          </div> : visible.length > 0 ? <p className="text-muted">{t('models:selectProvider')}</p> : null}</div>
+          </div> : <EmptyState icon={<MousePointerClick size={22} aria-hidden="true" />} title={t('models:selectProvider')} />}</div>
         </div>}
     </div>
     {draft && <ConnectionEditor key={draft.id} connection={draft} existing={editing} otherNames={connections.filter(item => item.id !== draft.id).map(item => item.name.trim())} onClose={() => setDraft(null)} onSaved={(saved, lookupChanged) => {

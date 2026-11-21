@@ -139,11 +139,13 @@ export function QuotaPanel({ apps }: { apps?: QuotaAppId[] }) {
             <dl className="grid gap-3 md:grid-cols-2">
               <div className="rounded-lg border border-border p-3">
                 <dt className="text-sm">{t('quota.resets')}</dt>
-                <dd className="mt-2 text-sm" dir="ltr">{singapore(entry.resetsAt)}</dd>
+                {/* The isolate sits on the span, not the dd: digits keep their LTR
+                    order while the block stays on the card's start edge. */}
+                <dd className="mt-2 text-sm"><span dir="ltr">{singapore(entry.resetsAt)}</span></dd>
               </div>
               <div className="rounded-lg border border-border p-3">
                 <dt className="text-sm">{t('quota.checked')}</dt>
-                <dd className="mt-2 text-sm" dir="ltr">{date(entry.checkedAt)}</dd>
+                <dd className="mt-2 text-sm"><span dir="ltr">{date(entry.checkedAt)}</span></dd>
               </div>
             </dl>
             <p className="text-xs text-muted">{t(`ux:accountSummary.source.${appId}`)}</p>

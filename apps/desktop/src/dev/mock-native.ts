@@ -156,7 +156,7 @@ export function installMockNative({ scenario, language, onboardingDone }: { scen
               }
             case "toolchain_status":
               // Preview values: the browser has no PATH or Program Files to inspect.
-              return { repowise: { installed: true, version: '0.45.0' }, browsers: { edge: true, chrome: false }, plugins: { superpowers: true }, skills: { hindsight: true, dsh: true, ponytail: true, uiuxProMax: true, unslop: true } };
+              return { repowise: { installed: true, version: '0.45.0' }, browsers: { edge: true, chrome: false }, plugins: { superpowers: true }, skills: { hindsight: true, dsh: true, ponytail: true, uiuxProMax: true, unslop: true, stageshow: true } };
             case "app_version":
               return "0.1.0";
             case "detect_apps":

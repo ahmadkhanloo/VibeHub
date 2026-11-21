@@ -520,6 +520,27 @@
       "sourceUrl": "https://skills.sh"
     },
     {
+      "id": "stageshow",
+      "category": "skills",
+      "kind": "skill",
+      "order": 80,
+      "title": {
+        "fa": "Stageshow: دموی و تصویر ساختگی محصول",
+        "en": "Stageshow: faux product demos and illustrations"
+      },
+      "summary": {
+        "fa": "ساخت رابط ساختگیِ باورپذیر به‌شکل تصویر ثابت یا دموی متحرک با مکان‌نما؛ برای هیرو، کارت ویژگی و صفحهٔ بازاریابی.",
+        "en": "Build believable faux product UI as a still or an animated cursor demo, framed for heroes and feature cards."
+      },
+      "checkedAt": "2026-11-21",
+      "relatedIds": [
+        "skill-basics",
+        "frontend-design"
+      ],
+      "contentPath": "content/learning/articles/stageshow",
+      "sourceUrl": "https://github.com/benjitaylor/skills/tree/main/stageshow"
+    },
+    {
       "id": "claude-code-handbook",
       "category": "applications",
       "kind": "guide",
