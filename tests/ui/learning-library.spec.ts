@@ -90,6 +90,7 @@ test('official VS Code screenshots render in English in light and dark mode', as
   await page.goto('/learning/claude-code-handbook');
   // The handbook is a heavy bundled article; wait for its heading before counting figures.
   await expect(page.getByRole('heading', { name: /Claude Code: the complete CLI handbook/i })).toBeVisible();
+  await expect(page.locator('.guide')).toBeVisible();
   const images = page.locator('.guide figure > button img');
   // The handbook bundles every Claude Code section, so it carries all official screenshots.
   expect(await images.count()).toBeGreaterThanOrEqual(8);
@@ -114,6 +115,7 @@ for (const language of ['fa', 'en']) {
     await mockNative(page, 'ready', language);
     // The nine feature lessons were merged into one CLI handbook.
     await page.goto('/learning/claude-code-handbook');
+    await expect(page.locator('.guide')).toBeVisible();
     const images = page.locator('.guide figure > button img');
     await expect(images.first()).toBeVisible();
     expect(await images.count()).toBeGreaterThanOrEqual(8);

@@ -36,9 +36,9 @@ export const providers: ProviderManifest[] = bundledCatalog.providers;
 const remoteGuides: Record<string, string> = {};
 const initialLearningIndex = parseLearningIndex(bundledLearningIndex);
 const initialLearningCategories: LearningCategory[] = initialLearningIndex.categories;
-// Bundled articles ship placeholder bodies: the schema requires one character,
-// the real Markdown loads on demand from the globs above.
-const PENDING_BODY = ' ';
+// The feed schema trims body text before validation, and the catalog cache
+// can contain bundled articles. Keep their loading marker valid in both places.
+const PENDING_BODY = '<!-- Bundled Markdown loads on demand. -->';
 const bodyCache = new Map<string, string>();
 function bodyModule(id: string, path: string | undefined, lang: 'fa' | 'en'): (() => Promise<string>) | null {
   const folder = path ?? `docs/tutorials/${id}`;
@@ -50,7 +50,7 @@ function bodyModule(id: string, path: string | undefined, lang: 'fa' | 'en'): ((
  * carry their bodies inline; bundled ones stream from the lazy module graph. */
 export async function articleBody(article: LearningArticle, lang: 'fa' | 'en'): Promise<string> {
   const inline = article.body[lang] || article.body[lang === 'fa' ? 'en' : 'fa'];
-  if (inline && inline.trim()) return inline;
+  if (inline && inline !== PENDING_BODY) return inline;
   const cacheKey = `${article.id}.${lang}`;
   const cached = bodyCache.get(cacheKey);
   if (cached !== undefined) return cached;
