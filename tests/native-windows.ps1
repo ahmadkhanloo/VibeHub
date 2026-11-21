@@ -64,7 +64,7 @@ try {
     $initial = "# original فارسی`r`n"
     [IO.File]::WriteAllText($profileFile, $initial, [Text.UTF8Encoding]::new($true))
     $detected = @(Run-Adapter @{operation='detect'})
-    Assert ($detected.Count -eq 13) 'Detection must return the thirteen current app records (including Pi CLI)'
+    Assert ($detected.Count -eq 14) 'Detection must return the fourteen current app records (Pi CLI included)'
     Assert (@($detected | Where-Object { $_.installed -isnot [bool] }).Count -eq 0) 'Detection installed flags must be booleans'
     $editors = @(Run-Adapter @{operation='detect-editors'})
     Assert ($editors.Count -eq 0) 'General IDE discovery must stay retired'
