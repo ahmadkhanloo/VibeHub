@@ -10,9 +10,15 @@ test('the workspace groups terminal tools and helper tools', async ({ page }) =>
   await page.goto('/?view=available');
   await expect(page.getByRole('heading', { name: /Terminal tools \(/ })).toBeVisible();
   await expect(page.getByRole('link', { name: /Terminal and Persian text/ })).toHaveAttribute('href', '/terminal');
+});
+
+test('helper and skill chips follow the installed/available split', async ({ page }) => {
+  await mockNative(page);
+  // The fixture reports every helper and skill as present, so the installed view
+  // shows all chips and the available view shows none of them.
+  await page.goto('/');
   const helpers = page.getByRole('region', { name: 'Helper tools' });
   await expect(helpers).toBeVisible();
-  // Helper chips stay low-key: slim links to their learning articles, status as a dot.
   for (const [label, href] of [
     ['Playwright', '/learning/playwright'],
     ['RepoWise', '/learning/repowise'],
@@ -30,6 +36,9 @@ test('the workspace groups terminal tools and helper tools', async ({ page }) =>
   const dots = helpers.locator('.vh-chip-dot');
   await expect(dots.first()).toBeVisible();
   expect(await dots.count()).toBeGreaterThanOrEqual(6);
+
+  await page.goto('/?view=available');
+  await expect(page.getByRole('region', { name: 'Helper tools' })).toHaveCount(0);
 });
 
 test('a developer tool card opens its learning article', async ({ page }) => {

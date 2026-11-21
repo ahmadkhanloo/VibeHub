@@ -96,13 +96,13 @@ export function AppShell() {
           id: 'workspace',
           items: [
             { to: '/', icon: House, label: t('ux:workspace'), hint: t('ux:workspace') },
-            { to: '/accounts', icon: UsersRound, label: t('nav:accounts'), hint: t('nav:accountsHint') },
           ],
         },
         {
           id: 'connections',
           caption: t('nav:groups.connections'),
           items: [
+            { to: '/accounts', icon: UsersRound, label: t('nav:accounts'), hint: t('nav:accountsHint') },
             { to: '/connections/api', icon: Network, label: t('ux:apiNotebook'), hint: t('ux:apiNotebook') },
             { to: '/connections/proxy', icon: Shield, label: t('nav:proxy') },
           ],

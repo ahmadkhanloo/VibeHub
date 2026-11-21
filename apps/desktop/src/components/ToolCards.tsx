@@ -25,10 +25,8 @@ const SKILL_TOOLS = [
 ] as const;
 
 type HelperTool = (typeof HELPER_TOOLS)[number] | (typeof SKILL_TOOLS)[number];
-export const HELPER_COUNT = HELPER_TOOLS.length;
-export const SKILL_COUNT = SKILL_TOOLS.length;
 
-function useToolchain(): ToolchainStatus | null {
+export function useToolchainStatus(): ToolchainStatus | null {
   const [status, setStatus] = useState<ToolchainStatus | null>(null);
   useEffect(() => { void ipc.toolchainStatus().then(setStatus).catch(() => setStatus(null)); }, []);
   return status;
@@ -48,21 +46,37 @@ export function TerminalCard() {
   );
 }
 
-function chipStatus(tool: HelperTool, status: ToolchainStatus | null, t: (key: string, vars?: Record<string, unknown>) => string): { ok: boolean | null; label: string } {
-  if (!status) return { ok: null, label: '' };
+function chipOk(tool: HelperTool, status: ToolchainStatus | null): boolean | null {
+  if (!status) return null;
   switch (tool.key) {
     case 'repowise':
-      return status.repowise.installed
-        ? { ok: true, label: t('repoInstalled', { version: status.repowise.version ?? '?' }) }
+      return status.repowise.installed;
+    case 'playwright':
+      return Boolean(status.browsers.edge || status.browsers.chrome);
+    case 'superpowers':
+      return status.plugins.superpowers;
+    // The skill entry key ('uiux') is its i18n prefix; the status field is longer.
+    case 'uiux':
+      return status.skills.uiuxProMax;
+    default:
+      return status.skills[tool.key as keyof ToolchainStatus['skills']];
+  }
+}
+
+function chipStatus(tool: HelperTool, status: ToolchainStatus | null, t: (key: string, vars?: Record<string, unknown>) => string): { ok: boolean | null; label: string } {
+  const ok = chipOk(tool, status);
+  if (ok === null) return { ok: null, label: '' };
+  switch (tool.key) {
+    case 'repowise':
+      return ok
+        ? { ok: true, label: t('repoInstalled', { version: status!.repowise.version ?? '?' }) }
         : { ok: false, label: t('repoMissing') };
     case 'playwright': {
-      const list = [status.browsers.edge && 'Edge', status.browsers.chrome && 'Chrome'].filter(Boolean).join(', ');
+      const list = [status!.browsers.edge && 'Edge', status!.browsers.chrome && 'Chrome'].filter(Boolean).join(', ');
       return list ? { ok: true, label: t('browsersFound', { list }) } : { ok: false, label: t('browsersMissing') };
     }
-    case 'superpowers':
-      return { ok: status.plugins.superpowers, label: t(status.plugins.superpowers ? 'installed' : 'notInstalled') };
     default:
-      return { ok: status.skills[tool.key as keyof ToolchainStatus['skills']], label: t(status.skills[tool.key as keyof ToolchainStatus['skills']] ? 'installed' : 'notInstalled') };
+      return { ok, label: t(ok ? 'installed' : 'notInstalled') };
   }
 }
 
@@ -79,12 +93,27 @@ function ToolChip({ tool, status }: { tool: HelperTool; status: ToolchainStatus 
   );
 }
 
-export function HelperChips() {
-  const status = useToolchain();
-  return <div className="vh-chip-row">{HELPER_TOOLS.map(tool => <ToolChip key={tool.id} tool={tool} status={status} />)}</div>;
-}
-
-export function SkillChips() {
-  const status = useToolchain();
-  return <div className="vh-chip-row">{SKILL_TOOLS.map(tool => <ToolChip key={tool.id} tool={tool} status={status} />)}</div>;
+/**
+ * The chip rows follow the workspace's installed/available split: installed-view
+ * shows the detected ones, available-view the missing ones. With a null status
+ * (detection failed) nothing is hidden, so the facts stay visible.
+ */
+export function ToolChipSection({ status, filter }: { status: ToolchainStatus | null; filter?: 'installed' | 'missing' }) {
+  const { t } = useTranslation(['tools', 'ux']);
+  const pick = (tools: readonly HelperTool[]) => tools.filter(tool => {
+    if (!filter) return true;
+    const ok = chipOk(tool, status);
+    return ok !== null && (filter === 'installed' ? ok : !ok);
+  });
+  const helpers = pick(HELPER_TOOLS);
+  const skills = pick(SKILL_TOOLS);
+  if (!helpers.length && !skills.length) return null;
+  const row = (title: string, tools: readonly HelperTool[]) => tools.length > 0 && <div className="space-y-2">
+    <h2 className="vh-section-title mb-1">{title} <span className="vh-section-count">({tools.length})</span></h2>
+    <div className="vh-chip-row">{tools.map(tool => <ToolChip key={tool.id} tool={tool} status={status} />)}</div>
+  </div>;
+  return <section aria-label={t('ux:groupHelpers')} className="space-y-3">
+    {row(t('ux:groupHelpers'), helpers)}
+    {row(t('ux:groupSkills'), skills)}
+  </section>;
 }
