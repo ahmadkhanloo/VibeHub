@@ -18,5 +18,7 @@
     "learn": "یادگیری و ابزار"
   },
   "accounts": "حساب‌ها",
-  "accountsHint": "حساب‌های ChatGPT، Claude، ZCode و Qoder"
+  "accountsHint": "حساب‌های ChatGPT، Claude، ZCode و Qoder",
+  "helpers": "ابزارهای کمکی",
+  "helpersHint": "ابزارهای کمکی، اسکیل‌ها و پیشنهادی‌ها"
 }

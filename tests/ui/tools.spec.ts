@@ -50,6 +50,19 @@ test('a developer tool card opens its learning article', async ({ page }) => {
   await expect(page.getByRole('heading', { name: /browser testing for your project/i })).toBeVisible();
 });
 
+test('the helper tools page lists chips and suggested library entries', async ({ page }) => {
+  await mockNative(page);
+  await page.goto('/helpers');
+  const helpers = page.getByRole('region', { name: 'Helper tools' });
+  await expect(helpers).toBeVisible();
+  await expect(helpers.getByRole('link', { name: 'Hindsight' })).toHaveAttribute('href', '/learning/hindsight');
+  await expect(helpers.getByRole('link', { name: 'Ponytail' })).toHaveAttribute('href', '/learning/ponytail');
+  // Suggestions come from the bundled library only.
+  await expect(page.locator('a[href="/learning/skill-creator"]')).toBeVisible();
+  await expect(page.locator('a[href="/learning/document-formats"]')).toBeVisible();
+  await expect(page.getByRole('link', { name: /Terminal and Persian text/ })).toHaveAttribute('href', '/terminal');
+});
+
 test('the old tools route redirects to the workspace and the rail no longer lists it', async ({ page }) => {
   await mockNative(page);
   await page.goto('/tools');

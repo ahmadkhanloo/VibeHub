@@ -43,6 +43,7 @@ const LearningPage = lazy(async () => ({default: (await import('@/features/learn
 const WorkshopPage = lazy(async () => ({default: (await import('@/features/workshop/Workshop')).WorkshopPage}));
 const Onboarding = lazy(async () => ({default: (await import('@/features/onboarding/Onboarding')).Onboarding}));
 const AccountsHubPage = lazy(async () => ({default: (await import('@/features/accounts/AccountsHub')).AccountsHubPage}));
+const HelpersPage = lazy(async () => ({default: (await import('@/features/helpers/Helpers')).HelpersPage}));
 
 function LegacyModels() { const { search } = useLocation(); return <Navigate to={"/connections/api" + search} replace />; }
 function LegacyGuide() { const { appId } = useParams(); return <Navigate to={`/learning/${appId ?? ''}`} replace />; }
@@ -83,6 +84,7 @@ function Gate() {
         <Route path="/guides" element={<Navigate to="/learning?category=applications" replace />} />
         <Route path="/guides/extensions" element={<Navigate to="/learning?category=skills" replace />} />
         <Route path="/accounts" element={<AccountsHubPage />} />
+        <Route path="/helpers" element={<HelpersPage />} />
         <Route path="/guides/:appId" element={<LegacyGuide />} />
         <Route path="/learning" element={<LearningPage />} />
         <Route path="/learning/:articleId" element={<LearningPage />} />

@@ -18,5 +18,7 @@
     "learn": "Learn and tools"
   },
   "accounts": "Accounts",
-  "accountsHint": "ChatGPT, Claude, ZCode and Qoder accounts"
+  "accountsHint": "ChatGPT, Claude, ZCode and Qoder accounts",
+  "helpers": "Helper tools",
+  "helpersHint": "Helper tools, skills and suggestions"
 }

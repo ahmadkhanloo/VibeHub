@@ -27,6 +27,7 @@
     "qoder-daily-credits",
     "qoder-qwen-flash",
     "qoder-deepseek-flash",
-    "minimax-daily-free-quota"
+    "minimax-daily-free-quota",
+    "glm-coding-offpeak"
   ]
 }

@@ -214,5 +214,7 @@
   "dayMode": "Switch to day",
   "nightMode": "Switch to night",
   "accountsHub": "Accounts",
-  "groupSkills": "Skills"
+  "groupSkills": "Skills",
+  "suggested": "Suggested",
+  "helpersIntro": "Helper tools and skills detected on this machine, with suggested next steps from the learning library."
 }

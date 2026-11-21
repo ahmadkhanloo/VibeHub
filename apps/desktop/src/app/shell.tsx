@@ -15,8 +15,8 @@ import {
   Settings,
   Shield,
   Stethoscope,
-  Terminal,
   UsersRound,
+  Wrench,
   type LucideIcon,
 } from 'lucide-react';
 import { useSettings } from './settings';
@@ -96,6 +96,7 @@ export function AppShell() {
           id: 'workspace',
           items: [
             { to: '/', icon: House, label: t('ux:workspace'), hint: t('ux:workspace') },
+            { to: '/helpers', icon: Wrench, label: t('nav:helpers'), hint: t('nav:helpersHint') },
           ],
         },
         {
@@ -112,7 +113,6 @@ export function AppShell() {
           caption: t('nav:groups.learn'),
           items: [
             { to: '/learning', icon: GraduationCap, label: t('nav:learning') },
-            { to: '/terminal', icon: Terminal, label: t('nav:terminal'), hint: t('nav:terminalHint') },
             { to: '/doctor', icon: Stethoscope, label: t('nav:doctor') },
           ],
         },
