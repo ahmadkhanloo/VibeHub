@@ -74,11 +74,18 @@ export function AccountsPage({ embedded = false }: { embedded?: boolean }) {
     {error && !adding && <ErrorNotice error={error} message={error} />}
     {!data ? <p role="status">{t('loading')}</p> : data.nativePreview ? <Card className="space-y-3"><h2 className="font-bold">{t('browserAccountsTitle')}</h2><p role="status" className="text-sm leading-7">{t('browserAccountsHint')}</p><code dir="ltr" className="block">pnpm dev:desktop</code></Card> : <>
       {!data.cliReady && <Card className="space-y-3"><p role="status">{cliState}</p><Link className="vh-link" to="/guides/chatgpt">{t('setup')}</Link></Card>}
-      {data.notice && <Card className="space-y-3" as="section"><p role="status">{t(`notices.${data.notice}`, { defaultValue: t(`errors.${data.notice}`, { defaultValue: t('errors.requestFailed') }) })}</p>
-        {pending && <p><bdi>{pending.name}</bdi></p>}
-        <div className="flex flex-wrap gap-2">{pending && <Button disabled={busy} onClick={() => setDialog({ kind: 'switch', account: pending })}>{t('restartAndSwitch')}</Button>}
-          <Button variant="ghost" disabled={busy} onClick={() => void act('dismiss')}>{t('dismiss')}</Button></div>
-      </Card>}
+      {/* The one place that asks for an action — a pending switch confirmation, a sign-in
+          to cancel — stays pinned while the account list scrolls, so it is visible from
+          wherever the user currently is, not only at the top of the page. */}
+      {(data.notice || (!adding && data.loginPending)) && <div className="vh-accounts-alert">
+        {data.notice && <>
+          <p role="status" className="text-sm leading-7">{t(`notices.${data.notice}`, { defaultValue: t(`errors.${data.notice}`, { defaultValue: t('errors.requestFailed') }) })}</p>
+          {pending && <p className="text-sm"><bdi>{pending.name}</bdi></p>}
+          <div className="flex flex-wrap gap-2">{pending && <Button size="sm" variant="primary" disabled={busy} onClick={() => setDialog({ kind: 'switch', account: pending })}>{t('restartAndSwitch')}</Button>}
+            <Button size="sm" variant="ghost" disabled={busy} onClick={() => void act('dismiss')}>{t('dismiss')}</Button></div>
+        </>}
+        {!adding && pendingLogin}
+      </div>}
       {adding && <Modal open title={t('add')} onClose={() => setAdding(false)} busy={busy}><div className="space-y-4">{error && <ErrorNotice error={error} message={error} />}<label className="block space-y-2 text-sm"><span>{t('accountName')}</span><Input value={name} maxLength={120} dir="auto" onChange={e => setName(e.target.value)} /></label>
         {pendingLogin}
         <div className="flex flex-wrap gap-2">
@@ -88,7 +95,6 @@ export function AccountsPage({ embedded = false }: { embedded?: boolean }) {
         </div>
         <p className="text-xs leading-6 text-muted">{t('jsonHint')}</p>
       </div></Modal>}
-      {!adding && pendingLogin}
       <Disclosure title={t('automation')}>
         <Toggle label={t('enableAutomation')} checked={data.settings.enabled} disabled={busy || !data.cliReady} onChange={enabled => void act('settings', { enabled, threshold })} />
         <label className="block max-w-xs space-y-2 text-sm"><span>{t('threshold')}</span><Input type="number" min={0} max={90} value={threshold} onChange={e => setThreshold(Number(e.target.value))} /></label>
@@ -99,15 +105,28 @@ export function AccountsPage({ embedded = false }: { embedded?: boolean }) {
       <section className="space-y-4" aria-label={t('saved')}>
         <h2 className="text-lg font-bold">{t('saved')}</h2>
         {!data.accounts.length && <EmptyState title={t('empty')} sub={t('emptyHint')} />}
-        {data.accounts.map(account => <Card key={account.id} className="space-y-4" as="section">
-          <div className="flex flex-wrap items-center gap-3"><h3 className="text-base font-bold" dir="auto">{account.name}</h3>
+        {data.accounts.map(account => <Card key={account.id} className="space-y-3" as="section" data-testid={`account-${account.id}`}>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <h3 className="text-base font-bold" dir="auto">{account.name}</h3>
             {account.id === data.activeId && <Badge tone="primary">{t('active')}</Badge>}
-            <Badge tone={account.error ? 'warning' : 'muted'}>{account.plan ?? t('unknown')}</Badge></div>
-          <p className="break-all text-sm" dir="auto">{account.email}</p>
+            {account.plan && <Badge>{account.plan}</Badge>}
+          </div>
+          {/* Identity and freshness share one quiet line; the card's story is its status. */}
+          <p className="vh-account-meta">
+            <bdi dir="auto">{account.email}</bdi>
+            <span aria-hidden="true"> · </span>
+            <span>{t('checked', { date: date(account.checkedAt) })}</span>
+          </p>
           {(account.errorCode || account.error) && <div className="flex flex-wrap items-center gap-2">
             <p role="status" className="text-sm text-danger">{t(`errors.${account.errorCode || account.error}`, { defaultValue: t('errors.readFailed') })}</p>
             {(account.errorCode || account.error) === 'loginRequired' &&
               <Button variant="primary" disabled={busy || !data.cliReady || data.loginPending} onClick={() => void act('login', { id: account.id })}>{t('ux:accountSummary.reauthAction')}</Button>}
+          </div>}
+          {/* The account the backend waits on carries its own confirmation, so the
+              action sits on the card instead of only in the pinned notice above. */}
+          {account.id === data.pendingId && data.notice && <div className="flex flex-wrap items-center gap-2">
+            <p role="status" className="text-sm text-warning">{t(`notices.${data.notice}`, { defaultValue: t('errors.requestFailed') })}</p>
+            <Button size="sm" variant="primary" disabled={busy} onClick={() => setDialog({ kind: 'switch', account })}>{t('restartAndSwitch')}</Button>
           </div>}
           {account.recoveredLogin && <p role="status" className="text-sm text-muted">{t('applyRecoveredLogin')}</p>}
           {account.quotaErrorCode && <p role="status" className="text-sm text-warning">{t(account.quotaErrorCode === 'balanceUnavailable' ? 'errors.balanceUnavailable' : 'errors.quotaReadFailed')}</p>}
@@ -117,12 +136,11 @@ export function AccountsPage({ embedded = false }: { embedded?: boolean }) {
             <dd className="mt-2 font-bold">{window.remaining === null ? t('unknown') : t('remaining', { percent: Math.round(window.remaining) })}</dd>
             <dd className="mt-1 text-xs text-muted">{t('resets', { date: date(window.resetsAt) })}</dd>
           </div>)}</dl>
-          <p className="text-xs text-muted">{t('checked', { date: date(account.checkedAt) })}</p>
           <div className="flex flex-wrap gap-2">
-            <Button disabled={busy || !data.cliReady} onClick={() => void act('refresh', { id: account.id })}>{t('refresh')}</Button>
+            <Button size="sm" disabled={busy || !data.cliReady} onClick={() => void act('refresh', { id: account.id })}>{t('refresh')}</Button>
             <Button variant="primary" disabled={busy || !data.cliReady} onClick={() => void act('switch', { id: account.id })}>{t(account.id === data.activeId ? 'applyAccount' : 'switch')}</Button>
-            <Button variant="ghost" disabled={busy} onClick={() => { setRename(account.name); setDialog({ kind: 'rename', account }); }}>{t('rename')}</Button>
-            <Button variant="ghost" disabled={busy} onClick={() => setDialog({ kind: 'delete', account })}>{t('delete')}</Button>
+            <Button size="sm" variant="ghost" disabled={busy} onClick={() => { setRename(account.name); setDialog({ kind: 'rename', account }); }}>{t('rename')}</Button>
+            <Button size="sm" variant="ghost" disabled={busy} onClick={() => setDialog({ kind: 'delete', account })}>{t('delete')}</Button>
           </div>
         </Card>)}
       </section>
