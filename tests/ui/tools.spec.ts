@@ -12,13 +12,24 @@ test('the workspace groups terminal tools and helper tools', async ({ page }) =>
   await expect(page.getByRole('link', { name: /Terminal and Persian text/ })).toHaveAttribute('href', '/terminal');
   const helpers = page.getByRole('region', { name: 'Helper tools' });
   await expect(helpers).toBeVisible();
-  await expect(helpers.getByRole('link', { name: /Playwright/ })).toHaveAttribute('href', '/learning/playwright');
-  await expect(helpers.getByRole('link', { name: /RepoWise/ })).toHaveAttribute('href', '/learning/repowise');
-  await expect(helpers.getByRole('link', { name: /Superpowers/ })).toHaveAttribute('href', '/learning/superpowers');
-  await expect(helpers.getByRole('link', { name: /find-skills/ })).toHaveAttribute('href', '/learning/find-skills');
-  // Machine-level status stays a fact, not a claim: the fixture reports both.
-  await expect(helpers.getByRole('status').filter({ hasText: /Version 0\.45\.0/ })).toBeVisible();
-  await expect(helpers.getByRole('status').filter({ hasText: /Browser available: Edge/ })).toBeVisible();
+  // Helper chips stay low-key: slim links to their learning articles, status as a dot.
+  for (const [label, href] of [
+    ['Playwright', '/learning/playwright'],
+    ['RepoWise', '/learning/repowise'],
+    ['Superpowers', '/learning/superpowers'],
+    ['Hindsight', '/learning/hindsight'],
+    ['DSH Workspace Hygiene', '/learning/dsh-workspace-hygiene'],
+  ] as const) {
+    await expect(helpers.getByRole('link', { name: label })).toHaveAttribute('href', href);
+  }
+  await expect(helpers.getByRole('link', { name: /find-skills/ })).toHaveCount(0);
+  await expect(helpers.getByRole('link', { name: 'Ponytail' })).toHaveAttribute('href', '/learning/ponytail');
+  await expect(helpers.getByRole('link', { name: 'UI/UX Pro Max' })).toHaveAttribute('href', '/learning/ui-ux-pro-max');
+  await expect(helpers.getByRole('link', { name: 'Unslop' })).toHaveAttribute('href', '/learning/unslop');
+  // Machine-level status stays a fact, not a claim: dots only, wording lives in the tooltip.
+  const dots = helpers.locator('.vh-chip-dot');
+  await expect(dots.first()).toBeVisible();
+  expect(await dots.count()).toBeGreaterThanOrEqual(6);
 });
 
 test('a developer tool card opens its learning article', async ({ page }) => {

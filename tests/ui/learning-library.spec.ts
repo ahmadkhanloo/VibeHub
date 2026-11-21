@@ -66,7 +66,7 @@ test('app guides show the Claude Code path and inline official screenshots in Pe
 test('tutorial screenshot zoom restores focus and works offline on a narrow Persian screen', async ({ page, context }) => {
   await mockNative(page, 'ready', 'fa');
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/learning/claude-permissions');
+  await page.goto('/learning/claude-code-handbook');
   const figure = page.locator('.guide figure').first();
   const image = figure.locator('button img');
   await expect(image).toBeVisible();
@@ -82,14 +82,17 @@ test('tutorial screenshot zoom restores focus and works offline on a narrow Pers
   await expect(enlarge).toBeFocused();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await context.setOffline(false);
-  await page.screenshot({ path: 'output/tutorials/claude-permissions-fa-narrow.png', fullPage: true });
+  await page.screenshot({ path: 'output/tutorials/claude-handbook-fa-narrow.png', fullPage: true });
 });
 
 test('official VS Code screenshots render in English in light and dark mode', async ({ page }) => {
   await mockNative(page);
-  await page.goto('/learning/claude-vscode');
+  await page.goto('/learning/claude-code-handbook');
+  // The handbook is a heavy bundled article; wait for its heading before counting figures.
+  await expect(page.getByRole('heading', { name: /Claude Code: the complete CLI handbook/i })).toBeVisible();
   const images = page.locator('.guide figure > button img');
-  await expect(images).toHaveCount(2);
+  // The handbook bundles every Claude Code section, so it carries all official screenshots.
+  expect(await images.count()).toBeGreaterThanOrEqual(8);
   for (const image of await images.all()) {
     await image.scrollIntoViewIfNeeded();
     await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
@@ -98,7 +101,7 @@ test('official VS Code screenshots render in English in light and dark mode', as
     await page.emulateMedia({ colorScheme: mode });
     await page.evaluate(mode => document.documentElement.dataset.mode = mode, mode);
     await images.first().scrollIntoViewIfNeeded();
-    await page.screenshot({ path: `output/tutorials/claude-vscode-en-${mode}.png`, fullPage: true });
+    await page.screenshot({ path: `output/tutorials/claude-handbook-en-${mode}.png`, fullPage: true });
     await page.locator('.guide figure').first().getByRole('button', { name: /^Enlarge:/ }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
     await page.getByRole('button', { name: 'Close ×', exact: true }).click();
@@ -109,20 +112,18 @@ test('official VS Code screenshots render in English in light and dark mode', as
 for (const language of ['fa', 'en']) {
   test(`all Claude feature lessons decode their inline screenshots in ${language}`, async ({ page }) => {
     await mockNative(page, 'ready', language);
-    for (const slug of ['workflow', 'permissions', 'memory', 'skills', 'mcp', 'agents', 'sessions', 'plugins', 'vscode']) {
-      await page.goto(`/learning/claude-${slug}`);
-      const images = page.locator('.guide figure > button img');
-      await expect(images.first()).toBeVisible();
-      for (const image of await images.all()) {
-        await image.scrollIntoViewIfNeeded();
-        await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
-      }
-      if (slug === 'mcp' || slug === 'agents') {
-        await images.first().scrollIntoViewIfNeeded();
-        await page.screenshot({ path: `output/tutorials/claude-${slug}-${language}.png` });
-      }
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    // The nine feature lessons were merged into one CLI handbook.
+    await page.goto('/learning/claude-code-handbook');
+    const images = page.locator('.guide figure > button img');
+    await expect(images.first()).toBeVisible();
+    expect(await images.count()).toBeGreaterThanOrEqual(8);
+    for (const image of await images.all()) {
+      await image.scrollIntoViewIfNeeded();
+      await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
     }
+    await images.first().scrollIntoViewIfNeeded();
+    await page.screenshot({ path: `output/tutorials/claude-handbook-${language}.png` });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   });
 }
 

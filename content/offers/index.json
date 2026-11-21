@@ -17,12 +17,9 @@
   "providers": [
     "nvidia-build",
     "openrouter",
-    "ollama",
     "custom-openai-compatible",
     "radeon-cloud",
-    "apinex",
     "google",
-    "mistral",
     "cloudflare-workers-ai",
     "groq"
   ],

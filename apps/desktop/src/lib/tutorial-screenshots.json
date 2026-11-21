@@ -407,5 +407,17 @@
     "height": 630,
     "sourceVersion": "3.1.15.221",
     "captureDescription": "Windows MiniMax Code answer to a Persian prompt with VibeHub RTL enabled, cropped to exclude the account sidebar and the right-side panels; Persian prose is right-to-left with Vazirmatn and the TypeScript block stays left-to-right."
+  },
+  {
+    "id": "pi-vibehub",
+    "file": "screenshots/pi-vibehub.webp",
+    "sourcePage": "https://github.com/badlogic/pi-mono",
+    "sourceImage": null,
+    "retrievedAt": "2026-11-21",
+    "kind": "local-screenshot",
+    "width": 1280,
+    "height": 860,
+    "sourceVersion": null,
+    "captureDescription": "VibeHub browser-mode preview showing the Pi CLI catalogue tile in the available apps list."
   }
 ]

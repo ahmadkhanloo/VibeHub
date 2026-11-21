@@ -125,8 +125,7 @@
   "providerCost": {
     "openrouter": "مدل‌های رایگان مشخص",
     "radeon-cloud": "سهمیهٔ محدود رایگان",
-    "nvidia-build": "رایگان برای توسعه و نمونه‌سازی",
-    "anthropic": "API پولی"
+    "nvidia-build": "رایگان برای توسعه و نمونه‌سازی"
   },
   "nvidiaClaudeUnavailable": "NVIDIA NIM در اتصال عمومی مدل‌ها در دسترس است.",
   "customPresetsHint": "حالت‌های آمادهٔ کاستوم:"

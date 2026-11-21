@@ -8,4 +8,6 @@ Make sure Node.js is available, then run:
 
 In VibeHub, refresh the app list so Pi appears in the terminal tools group; launching it opens a terminal window.
 
+![The Pi CLI tile in the VibeHub browser-preview list of available apps.](../../../apps/desktop/public/tutorials/screenshots/pi-vibehub.webp)
+
 [Official repository and docs](https://github.com/badlogic/pi-mono)

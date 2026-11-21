@@ -44,16 +44,17 @@ test('tutorial screenshots have packaged WebP assets, source provenance and vali
   assert.deepEqual(referenced, files, 'Every packaged screenshot should be used in a lesson');
 });
 
-test('every Claude feature lesson includes bilingual feature screenshots and official sources', async () => {
+test('the Claude Code handbook includes bilingual feature screenshots and official sources', async () => {
   const index = JSON.parse(await readFile(join(root, 'content/learning/index.json'), 'utf8'));
+  // The nine feature lessons were merged into one CLI handbook at the user's request.
   const lessons = index.articles.filter(item => item.id.startsWith('claude-'));
-  assert.ok(lessons.length >= 9);
+  assert.deepEqual(lessons.map(item => item.id), ['claude-code-handbook']);
   for (const lesson of lessons) {
     const counts = [];
     for (const language of ['fa', 'en']) {
       const text = await readFile(join(root, lesson.contentPath, `${language}.md`), 'utf8');
       const images = [...text.matchAll(/!\[[^\]]+\]\([^\n]+\/screenshots\/[^)]+\.webp\)/g)];
-      assert.ok(images.length, `${lesson.id}/${language} has no feature screenshot`);
+      assert.ok(images.length >= 8, `${lesson.id}/${language} has no feature screenshot`);
       assert.match(text, /https:\/\/(?:code|academy)\.claude\.com\//);
       counts.push(images.length);
     }

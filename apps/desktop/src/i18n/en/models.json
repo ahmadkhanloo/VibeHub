@@ -125,8 +125,7 @@
   "providerCost": {
     "openrouter": "Selected free models",
     "radeon-cloud": "Limited free allowance",
-    "nvidia-build": "Free development and prototyping",
-    "anthropic": "Paid API"
+    "nvidia-build": "Free development and prototyping"
   },
   "nvidiaClaudeUnavailable": "NVIDIA NIM is available in general model connections.",
   "customPresetsHint": "Custom presets:"
