@@ -9,6 +9,10 @@
 
 After publication of `v0.2.3-beta.1`, the owner explicitly requested the final release instead of beta. This authorizes the tag-specific `v0.2.3` stable publication with the existing limitations disclosed. Gate 18 remains unverified; no acceptance result is promoted to PASS and no future stable tag is authorized by this exception.
 
+## Owner authorization for 0.2.6 stable — 2026-11-21
+
+After `v0.2.6-beta.6` was published and the outstanding acceptance scenarios were disclosed, the owner requested stable `v0.2.6`. The stable installer is built from the integrated 0.2.6 application and includes its updates. The clean Windows 10 and 11 install, upgrade, and removal scenarios and the other open Gate 18 scenarios retain their recorded status. This exception applies only to `v0.2.6`.
+
 ## Status meanings
 
 - `PASS` — the stated scenario ran in its recorded environment and its evidence is linked.
