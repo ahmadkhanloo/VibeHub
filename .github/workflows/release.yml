@@ -505,3 +505,25 @@ jobs:
           }
 
           "Public tagged manifest, updater archive, signature, and latest-release manifest verified for $tag." | Add-Content $env:GITHUB_STEP_SUMMARY
+
+      - name: Trim the public downloads to the installer and updater plumbing
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          $release = gh release view $tag --json assets --repo $env:GITHUB_REPOSITORY | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { throw 'Could not list Release assets for the download trim' }
+          $keep = @('VibeHub-Setup.exe', 'latest.json')
+          $removed = @()
+          foreach ($asset in $release.assets) {
+            if ($keep -ccontains $asset.name -or $asset.name -like '*.nsis.zip' -or $asset.name -like '*.nsis.zip.sig') { continue }
+            gh release delete-asset $tag $asset.name --yes --repo $env:GITHUB_REPOSITORY
+            if ($LASTEXITCODE -ne 0) { throw "Could not remove the non-installer asset $($asset.Name)" }
+            $removed += $asset.name
+          }
+          if ($removed.Count) {
+            "Trimmed from the public downloads: $($removed -join ', ')" | Add-Content $env:GITHUB_STEP_SUMMARY
+          } else {
+            'Public downloads already contain only the installer and updater plumbing.' | Add-Content $env:GITHUB_STEP_SUMMARY
+          }
