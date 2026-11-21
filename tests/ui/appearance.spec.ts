@@ -20,9 +20,11 @@ test('the shell is one command bar with a grouped sidebar', async ({ page }) => 
   await expect(bar).toHaveCount(1);
   expect((await bar.boundingBox())!.height).toBeLessThanOrEqual(56);
 
-  // Group captions exist only while the rail is expanded.
+  // Group captions stay for screen readers only; visually the groups split by
+  // one fading hairline per captioned group (workbench.css vh-nav-sep).
   const sidebar = page.getByRole('navigation', { name: 'Main navigation' });
-  await expect(page.locator('.vh-nav-caption')).toHaveCount(2);
+  await expect(page.locator('.vh-nav .sr-only')).toHaveCount(2);
+  await expect(page.locator('.vh-nav-sep')).toHaveCount(2);
   for (const label of ['Apps', 'Helper tools', 'Accounts', 'API notebook', 'Proxy', 'Learn', 'Diagnostics']) {
     await expect(sidebar.getByRole('link', { name: label, exact: true })).toBeVisible();
   }
