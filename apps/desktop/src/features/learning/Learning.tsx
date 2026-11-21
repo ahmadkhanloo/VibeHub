@@ -5,6 +5,7 @@ import { BookOpen, CheckCircle2, Circle, RefreshCw, Search } from 'lucide-react'
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { groupArticles } from '@core';
 import type { LearningArticle } from '@core';
+import { articleBody } from '@/lib/catalog';
 import { Button, EmptyState, ErrorNotice, Input, PageHeader } from '@/components/ui';
 import { MarkdownContent } from '@/components/MarkdownContent';
 import { NewsAndOffers } from '@/features/offers/Offers';
@@ -40,6 +41,20 @@ export function LearningPage({ embeddedArticleId }: { embeddedArticleId?: string
   // Guides and news share one destination: the second view is the offers/announcement feed.
   const view: 'guides' | 'news' = params.get('view') === 'news' ? 'news' : 'guides';
   const article = articles.find(item => item.id === articleId);
+  // Bundled bodies stream on demand (they are not in the entry chunk); remote-feed
+  // bodies arrive inline. One load per article + language.
+  const [body, setBody] = useState<string | null>(null);
+  useEffect(() => {
+    if (!article) { setBody(null); return; }
+    let live = true;
+    setBody(null); setError(null);
+    void articleBody(article, lang)
+      .then(text => { if (live) setBody(text || null); })
+      .catch(cause => { if (live) setError(cause); });
+    return () => { live = false; };
+    // The article object identity changes on every catalog revision; the id is the stable key.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [article?.id, lang]);
   const groups = useMemo(() => groupArticles(articles, categories, { category: categoryId, query, lang }), [articles, categories, categoryId, query, lang]);
   const count = groups.reduce((total, group) => total + group.items.length, 0);
 
@@ -53,14 +68,13 @@ export function LearningPage({ embeddedArticleId }: { embeddedArticleId?: string
   const back = <Link to={article?.appId ? `/app/${article.appId}?tab=guide` : `/learning${categoryId !== 'all' ? `?category=${encodeURIComponent(categoryId)}` : ''}`} className="inline-flex min-h-11 items-center text-sm text-primary hover:underline">{t('back')}</Link>;
 
   if (article) {
-    const body = article.body[lang] || article.body[lang === 'fa' ? 'en' : 'fa'];
     return <div ref={readerRef} className={embeddedArticleId ? 'space-y-4' : 'mx-auto max-w-4xl space-y-5'}>
       {!embeddedArticleId && back}
       {embeddedArticleId ? <header><h2 className="text-xl font-bold">{article.title[lang]}</h2><p className="text-sm text-muted">{article.summary[lang]}</p></header> : <PageHeader title={article.title[lang]} description={article.summary[lang]} />}
       {fromApp && <p className="text-sm text-muted">{fromApp.name}</p>}
       {error != null && <ErrorNotice error={error} />}
       <article lang={lang === 'fa' ? 'fa-IR' : 'en-US'} dir={lang === 'fa' ? 'rtl' : 'ltr'} className="vh-article-reader rounded-xl border border-border bg-surface p-5 sm:p-7">
-        <MarkdownContent source={body} onError={setError} />
+        {body ? <MarkdownContent source={body} onError={setError} /> : <p role="status" className="text-sm text-muted">{t('common:loading')}</p>}
         <footer className="mt-7 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-4 text-xs text-muted">
           <span>{t('reviewed')}: {reviewedDate(article.checkedAt, lang)}</span>
           <button type="button" className="text-primary hover:underline" onClick={() => void openUrl(article.sourceUrl).catch(setError)}>{t('source')}</button>

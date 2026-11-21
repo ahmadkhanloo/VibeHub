@@ -18,3 +18,7 @@ apps/desktop/src-tauri/windows/payload/
 /.superpowers/
 /Microsoft/
 /.migration-preserved/
+
+# Playwright artifacts
+/apps/desktop/test-results/
+/apps/desktop/playwright-report/

@@ -23,6 +23,25 @@ use tauri_plugin_notification::NotificationExt;
 const SUPPORTED: &str = "0.148.0";
 const DEFAULT_THRESHOLD: f64 = 1.0;
 static BROKER: Mutex<Option<Broker>> = Mutex::new(None);
+// The accounts page polls `list` every 15s and each poll used to re-probe the
+// Codex desktop package through a fresh PowerShell. A short TTL keeps that list
+// cheap; switch() still probes freshly because it acts on the real state.
+static DESKTOP_PROBE: Mutex<Option<(Instant, Value)>> = Mutex::new(None);
+const DESKTOP_PROBE_TTL: Duration = Duration::from_secs(45);
+fn desktop_probe(app: &tauri::AppHandle) -> Result<Value> {
+    if let Ok(guard) = DESKTOP_PROBE.lock() {
+        if let Some((at, value)) = guard.as_ref() {
+            if at.elapsed() < DESKTOP_PROBE_TTL {
+                return Ok(value.clone());
+            }
+        }
+    }
+    let value = system::powershell(app, json!({"operation":"codex-desktop"}))?;
+    if let Ok(mut guard) = DESKTOP_PROBE.lock() {
+        *guard = Some((Instant::now(), value.clone()));
+    }
+    Ok(value)
+}
 fn err(key: &str) -> String {
     format!("accounts:{key}")
 }
@@ -1217,7 +1236,7 @@ pub fn handle(app: &tauri::AppHandle, action: &str, payload: Value) -> Result<Va
     match action {
         "list" => {
             broker.cli = broker.cli.take().or_else(find_cli);
-            broker.desktop = system::powershell(app, json!({"operation":"codex-desktop"}))?;
+            broker.desktop = desktop_probe(app)?;
             if let Err(error) = broker
                 .read_initial_account()
                 .and_then(|_| broker.reconcile())
