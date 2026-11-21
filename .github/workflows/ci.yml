@@ -99,6 +99,9 @@ jobs:
       - name: Native Windows behavior and isolated profile rollback
         shell: pwsh
         run: |
+          ./tests/codex-discovery.ps1
+          ./tests/launch-state-lifecycle.ps1
+          ./tests/resource-root.ps1
           ./tests/native-array-results.ps1
           ./tests/updater-signature-exit.ps1
           ./tests/updater-response.ps1
