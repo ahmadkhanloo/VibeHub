@@ -104,6 +104,8 @@ The interactive `/agents` builder was removed in 2.1.198; newer versions only pr
 
 ![Typing /compact in the CLI; it compresses the conversation and differs from /clear.](../../../../apps/desktop/public/tutorials/screenshots/claude-compact-command.webp)
 
+![A Claude Code Compact summary showing the goal, technical context and file references for continuing work.](../../../../apps/desktop/public/tutorials/screenshots/claude-compact-summary.webp)
+
 ## 8. Working in VS Code
 
 The official VS Code extension is the same engine behind a UI: select a few lines in an open file to reference exactly that range, and read the diff before accepting any edit — green means added text.

@@ -24,9 +24,9 @@ test('workspace distinguishes the next-launch proxy from a manual API reference 
   await page.goto('/');
 
   await expect(page.getByTestId('proxy-summary-qoder')).toHaveAttribute('data-status', 'missing');
-  await expect(page.getByTestId('proxy-summary-qoder')).toContainText('The saved proxy profile is unavailable.');
-  await expect(page.getByTestId('proxy-summary-qoder')).not.toContainText('Inherit global');
-  await expect(page.getByTestId('proxy-summary-zcode')).toContainText('Inherit global · Local route');
+  await expect(page.getByTestId('proxy-summary-qoder')).toContainText('Profile unavailable');
+  await expect(page.getByTestId('proxy-summary-qoder')).not.toContainText('Global proxy');
+  await expect(page.getByTestId('proxy-summary-zcode')).toContainText('Global proxy');
   await expect(page.getByTestId('api-reference-qoder')).toContainText('API reference; manual setup');
   await expect(page.getByTestId('api-reference-qoder')).toContainText('The saved API reference is unavailable.');
   await expect(page.getByTestId('api-reference-zcode')).toContainText('Local Ollama');

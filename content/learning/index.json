@@ -243,26 +243,6 @@
       "contentPath": "content/learning/articles/frontend-design"
     },
     {
-      "id": "webapp-testing",
-      "category": "testing",
-      "kind": "skill",
-      "order": 10,
-      "title": {
-        "fa": "webapp-testing",
-        "en": "webapp-testing"
-      },
-      "summary": {
-        "fa": "آزمون اپ وب محلی با Playwright.",
-        "en": "Test a local web app with Playwright."
-      },
-      "sourceUrl": "https://github.com/anthropics/skills/tree/main/skills/webapp-testing",
-      "checkedAt": "2026-10-27",
-      "relatedIds": [
-        "skill-basics"
-      ],
-      "contentPath": "content/learning/articles/webapp-testing"
-    },
-    {
       "id": "playwright",
       "category": "testing",
       "kind": "guide",
@@ -278,7 +258,6 @@
       "sourceUrl": "https://playwright.dev/docs/intro",
       "checkedAt": "2026-11-15",
       "relatedIds": [
-        "webapp-testing",
         "code-review"
       ],
       "contentPath": "content/learning/articles/playwright"
@@ -302,26 +281,6 @@
         "skill-basics"
       ],
       "contentPath": "content/learning/articles/skill-creator"
-    },
-    {
-      "id": "github",
-      "category": "integrations",
-      "kind": "guide",
-      "order": 10,
-      "title": {
-        "fa": "GitHub",
-        "en": "GitHub"
-      },
-      "summary": {
-        "fa": "مخزن محلی را به گیت‌هاب وصل کن، کار دستیار را کامیت و push کن و با پلاگین GitHub آشنا شو.",
-        "en": "Connect your local repository to GitHub, commit and push the assistant's work, and meet the GitHub plugin."
-      },
-      "sourceUrl": "https://github.com/github/github-mcp-server",
-      "checkedAt": "2026-11-03",
-      "relatedIds": [
-        "skill-basics"
-      ],
-      "contentPath": "content/learning/articles/github"
     },
     {
       "id": "figma",

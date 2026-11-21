@@ -1,4 +1,5 @@
 import { Disclosure } from '@/components/Disclosure';
+import { Tooltip } from '@/components/Tooltip';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -389,8 +390,7 @@ export function ModelsPage() {
     tileRefs.current.get(target.id)?.focus({ preventScroll: true });
   };
   return <div className="mx-auto w-full max-w-[1200px] space-y-8">
-    <PageHeader title={t('models:title')} actions={<><Button variant="ghost" onClick={() => startNew()}>{t('models:tryCustom')}</Button><Button variant="primary" onClick={() => setPicker(true)}><Plus size={16} aria-hidden="true" />{t('models:addConnection')}</Button></>} />
-    <p className="max-w-[70ch] text-sm leading-7 text-muted">{t('models:connectionIntro')}</p>
+    <PageHeader title={t('models:title')} titleAside={<Tooltip text={t('models:noAutomaticInjection')} />} actions={<><Button variant="ghost" onClick={() => startNew()}>{t('models:tryCustom')}</Button><Button variant="primary" onClick={() => setPicker(true)}><Plus size={16} aria-hidden="true" />{t('models:addConnection')}</Button></>} />
     {error != null && !deleting && !testing && <ErrorNotice error={error} onRetry={() => void reload()} />}{message && <p role="status" className="text-sm text-success">{message}</p>}
     <div className="space-y-4">
       <div className="model-toolbar">
@@ -464,7 +464,6 @@ export function ModelsPage() {
           </div> : visible.length > 0 ? <p className="text-muted">{t('models:selectProvider')}</p> : null}</div>
         </div>}
     </div>
-    <Disclosure title={t('ux:help')}><p className="text-sm text-muted">{t('models:noAutomaticInjection')}</p></Disclosure>
     {draft && <ConnectionEditor key={draft.id} connection={draft} existing={editing} otherNames={connections.filter(item => item.id !== draft.id).map(item => item.name.trim())} onClose={() => setDraft(null)} onSaved={(saved, lookupChanged) => {
       setConnections(saved);
       const savedConnection = saved.find(item => item.id === draft.id);

@@ -1,15 +1,15 @@
 import { test, expect } from '@playwright/test';
 import { mockNative } from './mock';
 
-// The tools destination folded into the workspace: three plain groups — apps, the
-// terminal tools the CLI agents share, and the helper tools documented beside them.
-// The fixture reports no installed CLI agents, so the terminal card is checked in the
-// available view where the terminal group exists.
+// The tools destination folded into the workspace: plain groups — apps and the
+// terminal tools the CLI agents share, with helper chips documented beside them.
+// The fixture reports no installed CLI agents, so the terminal group is checked in
+// the available view; the terminal card itself lives on /helpers, not the workspace.
 test('the workspace groups terminal tools and helper tools', async ({ page }) => {
   await mockNative(page);
   await page.goto('/?view=available');
   await expect(page.getByRole('heading', { name: /Terminal tools \(/ })).toBeVisible();
-  await expect(page.getByRole('link', { name: /Terminal and Persian text/ })).toHaveAttribute('href', '/terminal');
+  await expect(page.getByRole('link', { name: /Terminal and Persian text/ })).toHaveCount(0);
 });
 
 test('helper and skill chips follow the installed/available split', async ({ page }) => {

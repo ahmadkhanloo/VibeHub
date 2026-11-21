@@ -19,6 +19,12 @@ function reviewedDate(value: string, lang: 'fa' | 'en') {
   return Number.isNaN(+date) ? value : date.toLocaleDateString(lang === 'fa' ? 'fa-IR' : 'en-US');
 }
 
+// Every catalog app still gets its guide article — readable from the app page's
+// guide tab and by direct URL — but the Learning list stays curated: only tools
+// people actually work with are surfaced here. claude-code is covered by the
+// richer handbook; the rest are niche builds whose guides live on their app page.
+const LIST_HIDDEN = new Set(['claude-code', 'freebuff', 'freebuff-desktop', 'mimocode', 'pi']);
+
 export function LearningPage({ embeddedArticleId }: { embeddedArticleId?: string }) {
   const { articleId: routeArticleId } = useParams();
   const articleId = embeddedArticleId ?? routeArticleId;
@@ -55,7 +61,8 @@ export function LearningPage({ embeddedArticleId }: { embeddedArticleId?: string
     // The article object identity changes on every catalog revision; the id is the stable key.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [article?.id, lang]);
-  const groups = useMemo(() => groupArticles(articles, categories, { category: categoryId, query, lang }), [articles, categories, categoryId, query, lang]);
+  const listed = useMemo(() => articles.filter(item => item.category !== 'applications' || !LIST_HIDDEN.has(item.id)), [articles]);
+  const groups = useMemo(() => groupArticles(listed, categories, { category: categoryId, query, lang }), [listed, categories, categoryId, query, lang]);
   const count = groups.reduce((total, group) => total + group.items.length, 0);
 
   const refresh = async () => {

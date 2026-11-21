@@ -55,4 +55,4 @@ Do not rely on `dir="auto"` for generated content: if any descendant uses `unico
 
 ## Next step
 
-[Test a web app with an agent](/learning/webapp-testing) shows how to hand this work to a coding assistant.
+Once tests are green, [review code with an agent](/learning/code-review) shows how to hold the same changes to a matching standard.

@@ -104,6 +104,8 @@ Explain the failure scenario and any uncertainty. Do not modify files.
 
 ![ورود /compact در CLI؛ این فرمان گفتگو را فشرده می‌کند و با پاک‌کردن گفتگو توسط /clear تفاوت دارد.](../../../../apps/desktop/public/tutorials/screenshots/claude-compact-command.webp)
 
+![خلاصهٔ Compact در Claude Code: هدف، زمینهٔ فنی و ارجاع فایل‌ها برای ادامهٔ کار.](../../../../apps/desktop/public/tutorials/screenshots/claude-compact-summary.webp)
+
 ## ۸. کار در VS Code
 
 افزونهٔ رسمی Claude Code برای VS Code رابط گرافیکی همان موتور است: با انتخاب چند خط در فایل باز، فقط همان محدوده را به Claude ارجاع دهید و پیش از پذیرش هر ویرایش، diff را بخوانید — بخش سبز متن اضافه‌شده است.

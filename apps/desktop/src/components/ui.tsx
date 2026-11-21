@@ -250,29 +250,39 @@ export function PageHeader({
   title,
   description,
   actions,
+  center,
+  titleAside,
 }: {
   title: string;
   description?: ReactNode;
   actions?: ReactNode;
+  /** Rendered in the middle of the header row (e.g. the workspace view filter). */
+  center?: ReactNode;
+  /** Rendered inline beside the title, e.g. quiet status chips. */
+  titleAside?: ReactNode;
 }) {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     heading.current?.focus({ preventScroll: true });
   }, []);
   return (
-    <header className="vh-page-header">
-      <div className="min-w-0">
+    <header className={"vh-page-header" + (center ? " has-center" : "")}>
+      <div className="vh-page-title-row min-w-0">
         <h1 ref={heading} tabIndex={-1}>
           {title}
         </h1>
-        {description && (
-          <div className="mt-2 max-w-3xl text-sm leading-7 text-muted">
-            {description}
-          </div>
-        )}
+        {titleAside}
       </div>
+      {center && <div className="vh-page-center">{center}</div>}
+      {description && (
+        <div className="vh-page-description mt-2 max-w-3xl text-sm leading-7 text-muted">
+          {description}
+        </div>
+      )}
       {actions && (
-        <div className="flex flex-wrap items-center gap-2">{actions}</div>
+        <div className="vh-page-actions flex flex-wrap items-center gap-2">
+          {actions}
+        </div>
       )}
     </header>
   );

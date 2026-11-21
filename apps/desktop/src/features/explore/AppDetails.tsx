@@ -1,4 +1,5 @@
 import { AppPath } from '@/components/AppPath';
+import { Tooltip } from '@/components/Tooltip';
 import { ClaudePersianTerminal } from '@/components/ClaudePersianTerminal';
 import { Projects } from '@/components/Projects';
 import { AppSummary } from '@/components/AppSummary';
@@ -86,7 +87,7 @@ export function AppDetailsPage() {
     <Link className="vh-link" to="/discover">{t('ux:backDiscover')}</Link>
     <div className="vh-details-heading">
       <AppLogo appId={appId} name={app.name} size={48} />
-      <PageHeader title={app.name} actions={installed ? <LaunchControls compact id={appId} name={app.name} showRtlRepair /> : <Button variant="primary" onClick={() => void source(app.installMethods?.find(method => method.method === 'official-installer')?.idOrUrl ?? app.websiteUrl)}><ExternalLink size={16} aria-hidden="true" />{t('apps:officialDownload')}</Button>} />
+      <PageHeader title={app.name} titleAside={selectedTab === 'accounts' && appId === 'chatgpt' && <Tooltip text={t('accounts:initialRead')} />} actions={installed ? <LaunchControls compact id={appId} name={app.name} showRtlRepair /> : <Button variant="primary" onClick={() => void source(app.installMethods?.find(method => method.method === 'official-installer')?.idOrUrl ?? app.websiteUrl)}><ExternalLink size={16} aria-hidden="true" />{t('apps:officialDownload')}</Button>} />
     </div>
     <AppSummary key={appId} appId={appId} />
     {error != null && <ErrorNotice error={error} />}

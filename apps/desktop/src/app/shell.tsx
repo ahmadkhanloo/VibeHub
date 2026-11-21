@@ -244,7 +244,12 @@ export function AppShell() {
           <nav aria-label={t('ux:mainNav')} className="vh-nav">
             {groups.map((group) => (
               <div key={group.id} className="vh-nav-group">
-                {group.caption && !collapsed && <p className="vh-nav-caption">{group.caption}</p>}
+                {group.caption && !collapsed && (
+                  <>
+                    <span className="sr-only">{group.caption}</span>
+                    <hr className="vh-nav-sep" aria-hidden="true" />
+                  </>
+                )}
                 {group.items.map(link)}
               </div>
             ))}
