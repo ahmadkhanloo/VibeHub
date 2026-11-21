@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Brain, FlaskConical, Palette, PenLine, Radar, Ribbon, Sparkles, Terminal, Wrench } from 'lucide-react';
+import { Brain, Drama, FlaskConical, Palette, PenLine, Radar, Ribbon, Sparkles, Terminal, Wrench } from 'lucide-react';
 import { ipc, type ToolchainStatus } from '@/services/ipc';
 
 /**
@@ -22,6 +22,7 @@ const SKILL_TOOLS = [
   { id: 'ponytail', key: 'ponytail', Icon: Ribbon },
   { id: 'ui-ux-pro-max', key: 'uiux', Icon: Palette },
   { id: 'unslop', key: 'unslop', Icon: PenLine },
+  { id: 'stageshow', key: 'stageshow', Icon: Drama },
 ] as const;
 
 type HelperTool = (typeof HELPER_TOOLS)[number] | (typeof SKILL_TOOLS)[number];

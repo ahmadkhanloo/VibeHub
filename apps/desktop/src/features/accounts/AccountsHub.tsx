@@ -1,6 +1,7 @@
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { PageHeader, Tabs } from '@/components/ui';
+import { Tooltip } from '@/components/Tooltip';
 import { useCatalog } from '@/lib/catalog';
 import { AccountsPage } from './Accounts';
 import { ClaudeAccountsPage } from './ClaudeAccounts';
@@ -24,7 +25,9 @@ export function AccountsHubPage() {
   const name = (id: string) => catalog.apps.find(a => a.id === id)?.name ?? id;
   const tabs = HUB_APPS.map(id => ({ value: id, label: name(id) }));
   return <div className="space-y-5">
-    <PageHeader title={t('ux:accountsHub')} />
+    {/* The first-read note belongs to the ChatGPT tab, so its tooltip only sits beside
+        the title while that tab is active. */}
+    <PageHeader title={t('ux:accountsHub')} titleAside={app === 'chatgpt' && <Tooltip text={t('accounts:initialRead')} />} />
     <Tabs panelId="accounts-hub" label={t('ux:accountsHub')} value={app} onChange={value => setParams(value === 'chatgpt' ? {} : { app: value })} items={tabs} />
     <div id="accounts-hub" role="tabpanel" aria-labelledby={'accounts-hub-tab-' + app}>
       {app === 'chatgpt' && <AccountsPage embedded />}

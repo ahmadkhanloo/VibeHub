@@ -7,7 +7,7 @@ import { useCatalog } from '@/lib/catalog';
 import { AppLogo } from '@/components/AppLogo';
 import { CatalogRow } from '@/components/CatalogRow';
 import { LaunchControls } from '@/components/LaunchControls';
-import { ToolChipSection, TerminalCard, useToolchainStatus } from '@/components/ToolCards';
+import { ToolChipSection, useToolchainStatus } from '@/components/ToolCards';
 import { Tooltip } from '@/components/Tooltip';
 import { Button, EmptyState, ErrorNotice, PageHeader, Spinner } from '@/components/ui';
 import { useSettings } from '@/app/settings';
@@ -52,23 +52,28 @@ export function HomePage() {
   const groupHeading = (group: { id: HomeGroup; items: unknown[] }) =>
     <h2 className="vh-section-title mb-3">{t(groupKey(group.id))} <span className="vh-section-count">({group.items.length})</span></h2>;
 
+  // The workspace status sits beside the page title: what is installed and what
+  // is running right now (or, in the available view, how many results matched).
+  const workspaceMeta = view === 'installed'
+    ? <>
+        <span><i className="vh-count-dot" aria-hidden="true" />{t('workbench:installedCount', { count: tools.length })}</span>
+        {running > 0 && <span><i className="vh-count-dot is-running" aria-hidden="true" />{t('workbench:runningCount', { count: running })}</span>}
+        <Tooltip text={t('launchNote')} />
+      </>
+    : <span role="status"><i className="vh-count-dot" aria-hidden="true" />{t('ux:searchCount', { count: available.length })}</span>;
+
   return <div className={`vh-workspace ${settings.density === 'compact' ? 'space-y-1' : 'space-y-6'}`}>
-    <PageHeader title={t('ux:workspace')} actions={<>
-      <Button variant="ghost" loading={ctx.loading} onClick={() => void ctx.refresh()} aria-label={t('refresh')} title={t('refresh')}><RefreshCw size={18} aria-hidden="true" /></Button>
-      <Button variant="primary" onClick={() => setView('available')}><Plus size={16} aria-hidden="true" />{t('addApp')}</Button>
-    </>} />
-    <nav className="vh-choice-group" aria-label={t('ux:workspace')}>
-      {(['installed', 'available'] as const).map(value => <button key={value} type="button" aria-pressed={view === value} onClick={() => setView(value)}>{t(value === 'installed' ? 'ux:installed' : 'ux:available')}</button>)}
-    </nav>
-    <div className="vh-workspace-meta">
-      {view === 'installed'
-        ? <>
-            <span><i className="vh-count-dot" aria-hidden="true" />{t('workbench:installedCount', { count: tools.length })}</span>
-            {running > 0 && <span><i className="vh-count-dot is-running" aria-hidden="true" />{t('workbench:runningCount', { count: running })}</span>}
-            <Tooltip text={t('launchNote')} />
-          </>
-        : <span role="status"><i className="vh-count-dot" aria-hidden="true" />{t('ux:searchCount', { count: available.length })}</span>}
-    </div>
+    <PageHeader
+      title={t('ux:workspace')}
+      titleAside={<div className="vh-workspace-meta">{workspaceMeta}</div>}
+      center={<nav className="vh-choice-group" data-view={view} aria-label={t('ux:workspace')}>
+        {(['installed', 'available'] as const).map(value => <button key={value} type="button" aria-pressed={view === value} onClick={() => setView(value)}>{t(value === 'installed' ? 'ux:installed' : 'ux:available')}</button>)}
+      </nav>}
+      actions={<>
+        <Button variant="ghost" loading={ctx.loading} onClick={() => void ctx.refresh()} aria-label={t('refresh')} title={t('refresh')}><RefreshCw size={18} aria-hidden="true" /></Button>
+        <Button variant="primary" onClick={() => setView('available')}><Plus size={16} aria-hidden="true" />{t('addApp')}</Button>
+      </>}
+    />
     {ctx.errors.length > 0 && <ErrorNotice error={ctx.errors.join('\n')} message={ctx.detectionFailed ? undefined : t('partial')} onRetry={() => void ctx.refresh()} />}
     {ctx.loading && !tools.length && view === 'installed' ? <Spinner /> : view === 'available' ? (
       ctx.detectionFailed
@@ -78,7 +83,6 @@ export function HomePage() {
               ? availableGroups.map(group => <section key={group.id} aria-label={t(groupKey(group.id))}>
                   {groupHeading(group)}
                   <div className="vh-app-grid">{group.items.map(app => <CatalogRow key={app.id} app={app} />)}</div>
-                  {group.id === 'terminal' && <div className="vh-tools-grid mt-3"><TerminalCard /></div>}
                 </section>)
               : <EmptyState title={t('ux:noResults')} sub={t('ux:trySearch')} action={<Button onClick={() => setView('installed')}>{t('ux:installed')}</Button>} />}
             {/* Missing helpers and skills belong in the available view, next to the apps. */}
@@ -106,7 +110,6 @@ export function HomePage() {
           </article>;
         })}
       </div>
-      {group.id === 'terminal' && <div className="vh-tools-grid mt-3"><TerminalCard /></div>}
     </section>)}
       {/* Detected helpers and skills stay deliberately low-key: slim chip rows that
           link to their learning articles, where the full explanation lives. */}

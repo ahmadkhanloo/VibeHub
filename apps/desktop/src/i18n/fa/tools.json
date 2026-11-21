@@ -9,13 +9,10 @@
   "repowiseSummary": "فشرده‌سازی خروجی پرحجم تست و build و git، ارزیابی ریسک تغییر و بررسی سلامت کد.",
   "repoInstalled": "نسخهٔ {{version}} روی PATH پیدا شد",
   "repoMissing": "روی PATH پیدا نشد",
-  "repowiseHint": "ایندکس هر مخزن جداست؛ در پوشهٔ پروژهٔ خودتان با repowise status بررسی کنید. با صفر صفحه، context و search خالی می‌مانند تا ایندکس ساخته شود.",
   "superpowersName": "Superpowers",
   "superpowersSummary": "پلاگین اسکیل‌های روشِ کار برای ایجنت: ایده‌پردازی، طرح و اجرای آن، توسعهٔ تست‌محور و دیباگ نظام‌مند.",
-  "superpowersHint": "Superpowers از مارکت‌پلیس پلاگین ایجنت نصب می‌شود؛ بررسی وضعیت به حافظهٔ محلی پلاگین‌ها نگاه می‌کند.",
   "browsersFound": "مرورگر موجود: {{list}}",
   "browsersMissing": "Edge یا Chrome پیدا نشد؛ یک‌بار npx playwright install را اجرا کنید.",
-  "playwrightHint": "خودِ Playwright در هر پروژه جدا نصب می‌شود (npm i -D @playwright/test).",
   "openArticle": "خواندن راهنما",
   "hindsightName": "Hindsight",
   "hindsightSummary": "حافظهٔ ماندگار پروژه: تصمیم‌ها و صفحه‌های دانش هر مخزن را نگه می‌دارد و موقع کار به ایجنت برمی‌گرداند.",
@@ -26,5 +23,7 @@
   "uiuxName": "UI/UX Pro Max",
   "uiuxSummary": "طراحی و بازبینی رابط با داده‌های جست‌وجوپذیر سبک، پالت، تایپوگرافی و رهنمود UX.",
   "unslopName": "Unslop",
-  "unslopSummary": "الگوهای تکراری نوشتهٔ AI را حذف می‌کند تا متن انسانی و طبیعی به نظر برسد."
+  "unslopSummary": "الگوهای تکراری نوشتهٔ AI را حذف می‌کند تا متن انسانی و طبیعی به نظر برسد.",
+  "stageshowName": "Stageshow",
+  "stageshowSummary": "رابط ساختگیِ باورپذیر: تصویر ثابت یا دموی متحرک محصول با مکان‌نما، برای هیرو و کارت ویژگی."
 }

@@ -44,11 +44,19 @@
 .vh-launch-compact .vh-launch-actions>button{min-width:0;min-height:36px;padding:6px 9px;font-size:0.75rem;}
 .vh-launch-compact .vh-launch-actions>.vh-button-primary{flex:1;}
 .vh-launch-compact .vh-rtl-setup-button{flex:none;}
-.vh-choice-group{display:inline-flex;gap:3px;padding:3px;border:1px solid var(--border);border-radius:var(--r-control);background:var(--surface);}
-.vh-choice-group button,.vh-choice-group a{min-width:88px;min-height:38px;padding:6px 12px;border-radius:var(--r-control);color:var(--muted);}
+.vh-choice-group{position:relative;display:inline-flex;gap:3px;padding:3px;border:1px solid var(--border);border-radius:999px;background:var(--surface-alt);}
+.vh-choice-group button,.vh-choice-group a{min-width:88px;min-height:32px;padding:5px 14px;border-radius:999px;color:var(--muted);background:transparent;white-space:nowrap;}
+/* The workspace pair slides one raised thumb across the tray; every other usage
+   keeps a static raised pill on the pressed control. */
+.vh-choice-group[data-view]{gap:0;isolation:isolate;}
+.vh-choice-group[data-view]::before{content:"";position:absolute;z-index:0;top:3px;bottom:3px;inset-inline-start:3px;width:calc(50% - 3px);border-radius:999px;background:var(--surface);box-shadow:0 1px 2px color-mix(in srgb,var(--text) 10%,transparent),0 3px 10px color-mix(in srgb,var(--text) 8%,transparent);transition:transform 340ms cubic-bezier(.3,1.3,.4,1);}
+.vh-choice-group[data-view] button,.vh-choice-group[data-view] a{position:relative;z-index:1;flex:1 1 0;}
+.vh-choice-group[data-view='available']::before{transform:translateX(-100%);}
+[dir='ltr'] .vh-choice-group[data-view='available']::before{transform:translateX(100%);}
 /* Narrow windows: the segmented control shrinks instead of overflowing the panel. */
 @media(max-width:575px){.vh-choice-group{display:flex;max-width:100%;}.vh-choice-group button,.vh-choice-group a{min-width:0;flex:1 1 auto;padding-inline:8px;}}
-.vh-choice-group button[aria-pressed='true'],.vh-choice-group a[aria-current='page']{background:var(--primary);color:var(--primary-foreground);font-weight:var(--weight-strong);}
+.vh-choice-group button[aria-pressed='true'],.vh-choice-group a[aria-current='page']{background:var(--surface);color:var(--text);font-weight:var(--weight-strong);box-shadow:0 1px 2px color-mix(in srgb,var(--text) 10%,transparent),0 3px 10px color-mix(in srgb,var(--text) 8%,transparent);}
+.vh-choice-group[data-view] button[aria-pressed='true'],.vh-choice-group[data-view] a[aria-current='page']{background:transparent;box-shadow:none;}
 .vh-accent-choices{display:flex;flex-wrap:wrap;gap:8px;}
 .vh-accent-choices button{display:flex;align-items:center;gap:8px;min-height:40px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--r-control);font-size:0.8125rem;}
 .vh-accent-choices button[aria-pressed='true']{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary);}
@@ -68,7 +76,9 @@
 .vh-nav-link svg{stroke-width:1.75;}
 .vh-nav{display:flex;flex-direction:column;gap:var(--s-3);flex:1;overflow-y:auto;}
 .vh-nav-group{display:flex;flex-direction:column;gap:2px;}
-.vh-nav-caption{margin:0;padding:0 var(--s-3) var(--s-1);font-size:0.6875rem;font-weight:var(--weight-strong);letter-spacing:.04em;text-transform:uppercase;color:var(--muted);}
+/* Group captions stay for screen readers only; visually the groups are split by
+   a hairline whose two ends fade out. */
+.vh-nav-sep{width:auto;height:1px;margin:var(--s-1) var(--s-3) var(--s-2);border:0;background:linear-gradient(to right,transparent,var(--border) 28%,var(--border) 72%,transparent);}
 .vh-sidebar.collapsed .vh-nav{gap:var(--s-2);}
 .vh-sidebar.collapsed .vh-nav-group{gap:var(--s-2);}
 /* Collapsed rail: the mark and the icons share one optical centre. */
@@ -85,8 +95,11 @@
 .vh-page-header h1{font-size:var(--text-2xl);letter-spacing:-.4px;line-height:1.35;}
 .vh-page-header p{font-size:0.875rem;line-height:1.8;max-width:65ch;}
 .vh-workspace>.vh-page-header{margin-bottom:0;}
+/* The header controls share one visual family with the segmented filter tray. */
+.vh-workspace>.vh-page-header .vh-button{border-radius:999px;}
 .vh-workspace-meta{display:flex;flex-wrap:wrap;gap:8px 22px;color:var(--muted);font-size:0.75rem;margin-top:14px;}
 .vh-workspace-meta>span{display:flex;align-items:center;gap:7px;}
+.vh-page-title-row .vh-workspace-meta{margin-top:0;}
 .vh-count-dot,.vh-app-status>i{display:inline-block;width:6px;height:6px;background:var(--muted);border-radius:50%;flex-shrink:0;}
 .vh-count-dot.is-running{background:var(--success);box-shadow:0 0 0 3px color-mix(in srgb,var(--success) 12%,transparent);}
 .vh-card,.vh-disclosure,.vh-record-list{border-radius:var(--vh-radius);box-shadow:var(--vh-shadow);}
@@ -123,11 +136,18 @@
 .vh-app-description{color:var(--muted);font-size:var(--text-xs);line-height:1.7;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 /* Catalog tiles wrap their summary onto two lines instead of clipping mid-word. */
 .vh-catalog-tile .vh-app-summary{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.7;}
+/* Tiles stretch to equal row height; anchor the access line to the bottom so
+   the row's alignment never depends on the summary's line count. */
+.vh-catalog-tile .vh-app-status{margin-top:auto;}
 /* One metadata strip per tile: icon + short value, full sentence on hover. */
 .vh-app-meta{display:flex;flex-wrap:wrap;align-items:center;gap:2px var(--s-3);min-width:0;font-size:var(--text-xs);line-height:1.9;color:var(--muted);text-decoration:none;}
 .vh-app-meta:hover{color:var(--text);}
 .vh-meta-item{display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:100%;}
 .vh-meta-item>svg{flex:none;opacity:.75;}
+.vh-meta-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+.vh-meta-dot.is-ok{background:var(--success);}
+.vh-meta-dot.is-primary{background:var(--primary);}
+.vh-meta-dot.is-warning{background:var(--warning);}
 .vh-meta-value{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .vh-meta-value[data-mode='rtl']{font-weight:var(--weight-strong);color:var(--primary);}
 .vh-meta-item[data-status='missing'],.vh-meta-item[data-status='unavailable']{color:var(--warning);}
@@ -307,6 +327,16 @@
 
 /* Model connections: a single two-panel system â€” list and detail side by side on
    wide screens, swapped panels below 960px. Exactly one layout system, no overrides. */
+/* Codex accounts: the one region that asks for an action stays pinned while the
+   account list scrolls under it, so a pending switch or sign-in never requires
+   scrolling back to the top of the page. */
+.vh-accounts-alert{position:sticky;top:0;z-index:6;display:grid;gap:10px;padding:14px 16px;border:1px solid var(--border);border-radius:var(--vh-radius);background:color-mix(in srgb,var(--surface) 94%,transparent);backdrop-filter:blur(8px);box-shadow:0 10px 28px color-mix(in srgb,var(--text) 9%,transparent);}
+.vh-accounts-alert p{margin:0;}
+/* Account cards keep one quiet identity line: email and last check together. */
+.vh-account-meta{display:flex;align-items:center;gap:6px;min-width:0;font-size:var(--text-xs);color:var(--muted);}
+.vh-account-meta>bdi{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.vh-account-meta>span{flex:none;}
+
 .model-workspace{display:grid;grid-template-columns:minmax(250px,340px) minmax(0,1fr);gap:20px;align-items:start}
 .model-workspace-side{min-width:0}
 .model-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px}

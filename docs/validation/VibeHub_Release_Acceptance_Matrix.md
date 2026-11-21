@@ -13,6 +13,10 @@ After publication of `v0.2.3-beta.1`, the owner explicitly requested the final r
 
 After `v0.2.6-beta.6` was published and the outstanding acceptance scenarios were disclosed, the owner requested stable `v0.2.6`. The stable installer is built from the integrated 0.2.6 application and includes its updates. The clean Windows 10 and 11 install, upgrade, and removal scenarios and the other open Gate 18 scenarios retain their recorded status. This exception applies only to `v0.2.6`.
 
+## Owner authorization for 0.2.7 stable — 2026-11-22
+
+The owner requested stable `v0.2.7` after reviewing the accounts hub changes (pinned action notice, compact Codex account cards). Verification in this session: `pnpm check`, `pnpm test` (105 passed), `pnpm i18n:check`, targeted Playwright account specs (13 passed), and `cargo test --lib` (62 passed twice; one unrelated flake in the first run). The clean Windows 10 and 11 install, upgrade, and removal scenarios and the other open Gate 18 scenarios retain their recorded status. This exception applies only to `v0.2.7`.
+
 ## Status meanings
 
 - `PASS` — the stated scenario ran in its recorded environment and its evidence is linked.

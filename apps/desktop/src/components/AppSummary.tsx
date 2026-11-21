@@ -1,4 +1,4 @@
-import { Network, Plug } from 'lucide-react';
+import { Plug } from 'lucide-react';
 import { preferredLaunchMode, rtlAdapterConfigured } from '@core';
 import { useCatalog } from '@/lib/catalog';
 import { useTranslation } from 'react-i18next';
@@ -26,11 +26,12 @@ export function AppSummary({ appId }: { appId: string }) {
     : effectiveId && !profile
       ? 'missing'
       : profile?.mode ?? 'direct';
+  const proxied = profile?.mode === 'http' || profile?.mode === 'socks5';
   const effectiveProxy = proxyState === 'unavailable'
     ? t('connectionsUx:proxyReadFailed')
     : proxyState === 'missing'
       ? t('connectionsUx:proxyProfileUnavailable')
-      : profile?.mode === 'http' || profile?.mode === 'socks5'
+      : proxied
         ? profile.name
         : t(`proxy:mode.${proxyState}`);
   const proxyLabel = proxyState === 'unavailable' || proxyState === 'missing'
@@ -38,6 +39,18 @@ export function AppSummary({ appId }: { appId: string }) {
     : inherits
       ? t('connectionsUx:inheritEffective', { name: effectiveProxy })
       : effectiveProxy;
+  // The strip shows a dot plus one short word; the sentence above stays in the
+  // title and the screen-reader text, so nothing is lost to the shortening.
+  const proxyTone = proxyState === 'unavailable' || proxyState === 'missing'
+    ? 'is-warning'
+    : proxied ? 'is-primary' : proxyState === 'system' ? '' : 'is-ok';
+  const proxyShort = proxyState === 'unavailable'
+    ? t('connectionsUx:proxyReadFailedShort')
+    : proxyState === 'missing'
+      ? t('connectionsUx:proxyProfileUnavailableShort')
+      : inherits
+        ? proxied ? t('connectionsUx:inheritShort') : t(`proxy:mode.${proxyState}`)
+        : proxied ? profile.name : t(`proxy:mode.${proxyState}`);
   const state = ctx.states[appId];
   const adapterReady = rtlAdapterConfigured(appId, ctx.components);
   const rtl = state?.phase === 'running' ? state.rtl : adapterReady && preferredLaunchMode(settings.launchModeByApp[appId], catalog.apps.some(app => app.id === appId && app.capabilities.rtl === 'verified'), adapterReady) === 'rtl';
@@ -56,11 +69,12 @@ export function AppSummary({ appId }: { appId: string }) {
 
   return <Link className="vh-app-meta" to={detailsPath}>
     <span className="vh-meta-item" title={proxyLabel} data-status={proxyState} data-testid={`proxy-summary-${appId}`}>
-      <Network size={13} aria-hidden="true" />
+      <i className={'vh-meta-dot ' + proxyTone} aria-hidden="true" />
       <span className="sr-only">{t('connectionsUx:nextLaunchProxy')}: </span>
-      <bdi className="vh-meta-value">{proxyLabel}</bdi>
+      <bdi className="vh-meta-value">{proxyShort}</bdi>
     </span>
     <span className="vh-meta-item" title={modeLabel}>
+      <i className={'vh-meta-dot' + (rtl ? ' is-primary' : '')} aria-hidden="true" />
       <span className="vh-meta-value" data-mode={rtl ? 'rtl' : 'normal'}>{modeLabel}</span>
     </span>
     {apiNotable

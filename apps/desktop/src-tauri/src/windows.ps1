@@ -891,6 +891,7 @@ try {
             $ponytail = [bool](& $skillPresent 'ponytail')
             $uiuxProMax = [bool](& $skillPresent 'ui-ux-pro-max')
             $unslop = [bool](& $skillPresent 'unslop')
+            $stageshow = [bool](& $skillPresent 'stageshow')
             # DSH counts as present when either its profile home or its CLI exists.
             $dsh = (Test-Path -LiteralPath (Join-Path $env:USERPROFILE '.dsh')) -or [bool](Get-Command dsh -ErrorAction SilentlyContinue)
             @{
@@ -902,7 +903,7 @@ try {
                     chrome = [bool](& $browser 'Google\Chrome\Application\chrome.exe')
                 }
                 plugins = @{ superpowers = $superpowers }
-                skills = @{ hindsight = $hindsight; dsh = $dsh; ponytail = $ponytail; uiuxProMax = $uiuxProMax; unslop = $unslop }
+                skills = @{ hindsight = $hindsight; dsh = $dsh; ponytail = $ponytail; uiuxProMax = $uiuxProMax; unslop = $unslop; stageshow = $stageshow }
             }
         }
         'codex-desktop' { Codex-DesktopState }

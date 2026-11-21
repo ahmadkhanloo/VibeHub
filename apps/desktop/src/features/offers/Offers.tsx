@@ -38,6 +38,9 @@ export function NewsAndOffers({ embedded = false }: { embedded?: boolean }) {
   const catalog = useCatalog();
   const offers = useMemo(() => classifyOffers(catalog.offers), [catalog.offers]);
   const [tab, setTab] = useState<Tab>('news');
+  // An empty news feed gets no tab: the toggle would only advertise a (0) badge.
+  const showNewsTab = catalog.news.length > 0;
+  const activeTab: Tab = tab === 'news' && !showNewsTab ? 'offers' : tab;
   const [offerFilter, setOfferFilter] = useState<OfferState>('active');
   const [readOffers, setReadOffers] = useState<string[]>(() => readIds('vibehub.readOffers'));
   const [readNews, setReadNews] = useState<string[]>(() => readIds('vibehub.readNews.v1'));
@@ -114,11 +117,11 @@ export function NewsAndOffers({ embedded = false }: { embedded?: boolean }) {
       </div>
     </div>
     <nav className="vh-news-tabs" aria-label={t('sections')}>
-      <button type="button" aria-pressed={tab === 'news'} onClick={() => setTab('news')}>{t('newsTab')}<Badge tone="muted">{unreadNews.length}</Badge></button>
-      <button type="button" aria-pressed={tab === 'offers'} onClick={() => setTab('offers')}>{t('offersTab')}<Badge tone="muted">{offers.length}</Badge></button>
+      {showNewsTab && <button type="button" aria-pressed={activeTab === 'news'} onClick={() => setTab('news')}>{t('newsTab')}<Badge tone="muted">{unreadNews.length}</Badge></button>}
+      <button type="button" aria-pressed={activeTab === 'offers'} onClick={() => setTab('offers')}>{t('offersTab')}<Badge tone="muted">{offers.length}</Badge></button>
     </nav>
 
-    {tab === 'news' ? <section className="space-y-3" aria-label={t('newsTab')}>
+    {activeTab === 'news' ? <section className="space-y-3" aria-label={t('newsTab')}>
       <div className="flex justify-end"><Button size="sm" variant="ghost" disabled={!unreadNews.length} onClick={markAllNewsRead}><CheckCheck size={15} aria-hidden="true" />{t('markAllRead')}</Button></div>
       {catalog.news.length ? <div className="vh-news-list">{catalog.news.map(item => {
         const key = `${item.id}:${item.checkedAt}`;
