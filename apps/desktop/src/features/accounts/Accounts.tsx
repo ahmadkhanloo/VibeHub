@@ -6,7 +6,7 @@ import { Badge, Button, Card, EmptyState, ErrorNotice, Input, Modal, PageHeader,
 import { ipc, type AccountsAction, type AccountsSnapshot, type CodexAccount } from '@/services/ipc';
 
 export function AccountsPage({ embedded = false }: { embedded?: boolean }) {
-  const { t, i18n } = useTranslation(['accounts', 'common']);
+  const { t, i18n } = useTranslation(['accounts', 'common', 'ux']);
   const [adding, setAdding] = useState(false);
 
   const [data, setData] = useState<AccountsSnapshot | null>(null);
@@ -74,8 +74,6 @@ export function AccountsPage({ embedded = false }: { embedded?: boolean }) {
     {error && !adding && <ErrorNotice error={error} message={error} />}
     {!data ? <p role="status">{t('loading')}</p> : data.nativePreview ? <Card className="space-y-3"><h2 className="font-bold">{t('browserAccountsTitle')}</h2><p role="status" className="text-sm leading-7">{t('browserAccountsHint')}</p><code dir="ltr" className="block">pnpm dev:desktop</code></Card> : <>
       {!data.cliReady && <Card className="space-y-3"><p role="status">{cliState}</p><Link className="vh-link" to="/guides/chatgpt">{t('setup')}</Link></Card>}
-      {!data.desktopVerified && <p className="text-sm text-muted">{t('desktopUnverified')}</p>}
-      <Disclosure title={t('ux:help')}><p className="text-sm text-muted">{t('initialRead')}</p></Disclosure>
       {data.notice && <Card className="space-y-3" as="section"><p role="status">{t(`notices.${data.notice}`, { defaultValue: t(`errors.${data.notice}`, { defaultValue: t('errors.requestFailed') }) })}</p>
         {pending && <p><bdi>{pending.name}</bdi></p>}
         <div className="flex flex-wrap gap-2">{pending && <Button disabled={busy} onClick={() => setDialog({ kind: 'switch', account: pending })}>{t('restartAndSwitch')}</Button>}
@@ -106,8 +104,12 @@ export function AccountsPage({ embedded = false }: { embedded?: boolean }) {
             {account.id === data.activeId && <Badge tone="primary">{t('active')}</Badge>}
             <Badge tone={account.error ? 'warning' : 'muted'}>{account.plan ?? t('unknown')}</Badge></div>
           <p className="break-all text-sm" dir="auto">{account.email}</p>
-          {account.errorCode && <p role="status" className="text-sm text-danger">{t(`errors.${account.errorCode}`, { defaultValue: t('errors.readFailed') })}</p>}
-          {!account.errorCode && account.error && <p role="status" className="text-sm text-danger">{t(`errors.${account.error}`, { defaultValue: t('errors.readFailed') })}</p>}
+          {(account.errorCode || account.error) && <div className="flex flex-wrap items-center gap-2">
+            <p role="status" className="text-sm text-danger">{t(`errors.${account.errorCode || account.error}`, { defaultValue: t('errors.readFailed') })}</p>
+            {(account.errorCode || account.error) === 'loginRequired' &&
+              <Button variant="primary" disabled={busy || !data.cliReady || data.loginPending} onClick={() => void act('login', { id: account.id })}>{t('ux:accountSummary.reauthAction')}</Button>}
+          </div>}
+          {account.recoveredLogin && <p role="status" className="text-sm text-muted">{t('applyRecoveredLogin')}</p>}
           {account.quotaErrorCode && <p role="status" className="text-sm text-warning">{t(account.quotaErrorCode === 'balanceUnavailable' ? 'errors.balanceUnavailable' : 'errors.quotaReadFailed')}</p>}
           {!account.windows.length && <p className="text-sm text-muted">{t('quotaUnknown')}</p>}
           <dl className="grid gap-3 md:grid-cols-2">{account.windows.map(window => <div key={`${window.bucket}-${window.name}`} className="rounded-lg border border-border p-3">

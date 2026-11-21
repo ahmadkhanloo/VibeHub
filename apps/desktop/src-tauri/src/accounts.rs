@@ -495,7 +495,8 @@ fn migrate_threshold(state: &mut Value) -> bool {
 }
 
 struct Login {
-    id: String,
+    name: String,
+    target_id: Option<String>,
     home: PathBuf,
     rpc: Rpc,
     login_id: String,
@@ -614,9 +615,12 @@ impl Broker {
             .filter(|id| self.index(id).is_ok())
             .map_or(Value::Null, |id| json!(id));
         if let Some(id) = self.state["activeId"].as_str() {
-            let home = self.home(id)?;
-            fs::create_dir_all(&home).map_err(|_| err("storage"))?;
-            write_vault(&home, &auth)?;
+            let i = self.index(id)?;
+            if self.state["accounts"][i]["recoveredLogin"] != true {
+                let home = self.home(id)?;
+                fs::create_dir_all(&home).map_err(|_| err("storage"))?;
+                write_vault(&home, &auth)?;
+            }
         }
         if !self.state["fingerprint"].is_null() && !same_account {
             self.state["notice"] = json!("externalChanged");
@@ -627,7 +631,16 @@ impl Broker {
         Ok(true)
     }
     fn add(&mut self, auth: Value, name: &str) -> Result<String> {
+        self.save_login(auth, name, None)
+    }
+    fn save_login(&mut self, auth: Value, name: &str, target_id: Option<&str>) -> Result<String> {
         let (id, email) = identity(&auth)?;
+        if let Some(target) = target_id {
+            if id != target {
+                return Err(err("reauthMismatch"));
+            }
+            self.index(target)?;
+        }
         if self.index(&id).is_err() && self.state["accounts"].as_array().unwrap().len() >= 16 {
             return Err(err("tooMany"));
         }
@@ -652,6 +665,10 @@ impl Broker {
                 "error":null,"errorCode":null,"quotaErrorCode":null}));
         } else {
             let i = self.index(&id)?;
+            if target_id.is_some() && self.state["activeId"] == id {
+                // Keep the recovered credentials isolated until the user applies them.
+                self.state["accounts"][i]["recoveredLogin"] = json!(true);
+            }
             self.state["accounts"][i]["windows"] = json!([]);
             self.state["accounts"][i]["checkedAt"] = Value::Null;
             self.state["accounts"][i]["error"] = Value::Null;
@@ -706,13 +723,14 @@ impl Broker {
                     None
                 };
                 if let Some(auth) = auth {
-                    self.add(auth, &login.id).map(|_| ())
+                    self.save_login(auth, &login.name, login.target_id.as_deref())
+                        .map(|_| ())
                 } else {
                     Err(err("loginFailed"))
                 }
             })();
             // Preserve a completed login if reading it or saving the profile fails.
-            if success {
+            if success && !result.as_ref().is_err_and(|e| e == "accounts:reauthMismatch") {
                 result.as_ref().map_err(Clone::clone)?;
             }
             let cleanup = delete_vault(&login.home);
@@ -724,7 +742,8 @@ impl Broker {
     }
     fn refresh(&mut self, id: &str) -> Result<()> {
         let i = self.index(id)?;
-        let active = self.state["activeId"] == id;
+        let active =
+            self.state["activeId"] == id && self.state["accounts"][i]["recoveredLogin"] != true;
         let home = if active {
             self.global.clone()
         } else {
@@ -788,7 +807,7 @@ impl Broker {
         result
     }
     fn switch(&mut self, app: &tauri::AppHandle, id: &str, confirmed: bool) -> Result<()> {
-        self.index(id)?;
+        let index = self.index(id)?;
         if self.cli.is_none() {
             return Err(err("cliMissing"));
         }
@@ -807,6 +826,7 @@ impl Broker {
         }
         let next = read_vault(&self.home(id)?)?.ok_or_else(|| err("loginRequired"))?;
         identity(&next)?;
+        let recovered = self.state["accounts"][index]["recoveredLogin"] == true;
         let before = read_global(&self.global)?;
         let cfg = config(&self.global)?;
         if cfg
@@ -848,10 +868,14 @@ impl Broker {
                 return Err(err("externalChanged"));
             }
             if let Some(outgoing_id) = outgoing_id.as_deref() {
-                if self.index(outgoing_id).is_err() {
-                    self.add(outgoing.clone(), "")?;
-                } else {
-                    write_vault(&self.home(outgoing_id)?, &outgoing)?;
+                match self.index(outgoing_id) {
+                    Ok(i) if self.state["accounts"][i]["recoveredLogin"] != true => {
+                        write_vault(&self.home(outgoing_id)?, &outgoing)?;
+                    }
+                    Ok(_) => {}
+                    Err(_) => {
+                        self.add(outgoing.clone(), "")?;
+                    }
                 }
             }
             committed = self.state.clone();
@@ -865,7 +889,12 @@ impl Broker {
             committed["pendingId"] = Value::Null;
             committed["lastSwitch"] = json!(now());
             committed["notice"] = json!("switched");
-            let selected = if outgoing_id.as_deref() == Some(id) { &outgoing } else { &next };
+            committed["accounts"][index]["recoveredLogin"] = Value::Null;
+            let selected = if !recovered && outgoing_id.as_deref() == Some(id) {
+                &outgoing
+            } else {
+                &next
+            };
             replace_global(&self.global, selected, &outgoing, || {
                 // Verify using Codex itself: its policy/config layers remain authoritative.
                 let mut rpc = self.rpc(&self.global, false)?;
@@ -994,7 +1023,8 @@ impl Broker {
                 json!({
             "id":a["id"],"name":a["name"],"email":a["email"],"plan":a["plan"],
             "windows":a["windows"],"checkedAt":a["checkedAt"],"accountCheckedAt":a["accountCheckedAt"],
-            "error":a["error"],"errorCode":a["errorCode"],"quotaErrorCode":a["quotaErrorCode"]})
+            "error":a["error"],"errorCode":a["errorCode"],"quotaErrorCode":a["quotaErrorCode"],
+            "recoveredLogin":a["recoveredLogin"] == true})
             })
             .collect();
         let mut value = json!({"accounts":accounts,"activeId":self.state["activeId"],"pendingId":self.state["pendingId"],
@@ -1147,7 +1177,11 @@ fn quota_windows(raw: &Value) -> Vec<Value> {
 }
 fn headroom(account: &Value, timestamp: i64) -> Option<f64> {
     let checked = account["checkedAt"].as_i64()?;
-    if !account["error"].is_null() || timestamp < checked || timestamp - checked > 360 {
+    if account["recoveredLogin"] == true
+        || !account["error"].is_null()
+        || timestamp < checked
+        || timestamp - checked > 360
+    {
         return None;
     }
     let windows = account["windows"].as_array()?;
@@ -1252,10 +1286,19 @@ pub fn handle(app: &tauri::AppHandle, action: &str, payload: Value) -> Result<Va
             if broker.login.is_some() {
                 return Err(err("busy"));
             }
-            if broker.state["accounts"].as_array().unwrap().len() >= 16 {
+            let target_id = if let Some(id) = payload["id"].as_str() {
+                broker.index(id)?;
+                Some(id.to_owned())
+            } else if broker.state["accounts"].as_array().unwrap().len() >= 16 {
                 return Err(err("tooMany"));
-            }
-            let home = broker.root.join(format!("login-{}", now()));
+            } else {
+                None
+            };
+            let mut nonce = [0; 12];
+            rand::rngs::OsRng
+                .try_fill_bytes(&mut nonce)
+                .map_err(|_| err("storage"))?;
+            let home = broker.root.join(format!("login-{}", URL_SAFE_NO_PAD.encode(nonce)));
             let mut rpc = broker.rpc(&home, true)?;
             let response = rpc.call("account/login/start", json!({"type":"chatgpt"}))?;
             let url = response["authUrl"]
@@ -1272,13 +1315,17 @@ pub fn handle(app: &tauri::AppHandle, action: &str, payload: Value) -> Result<Va
             app.opener()
                 .open_url(url, None::<&str>)
                 .map_err(|_| err("browser"))?;
+            if matches!(broker.state["notice"].as_str(), Some("reauthMismatch" | "loginFailed")) {
+                broker.state["notice"] = Value::Null;
+            }
             broker.login = Some(Login {
-                id: payload["name"]
+                name: payload["name"]
                     .as_str()
                     .unwrap_or("")
                     .chars()
                     .take(120)
                     .collect(),
+                target_id,
                 home,
                 rpc,
                 login_id: response["loginId"]
@@ -1322,11 +1369,14 @@ pub fn handle(app: &tauri::AppHandle, action: &str, payload: Value) -> Result<Va
         }
         "refresh" => {
             broker.reconcile()?;
-            broker.refresh(
+            let result = broker.refresh(
                 payload["id"]
                     .as_str()
                     .ok_or_else(|| err("unknownAccount"))?,
-            )?;
+            );
+            if !result.as_ref().is_err_and(|e| e == "accounts:loginRequired") {
+                result?;
+            }
         }
         "rename" => {
             let i = broker.index(payload["id"].as_str().unwrap_or(""))?;
@@ -1769,6 +1819,45 @@ mod tests {
         broker.reconcile().unwrap();
         assert_eq!(broker.state["notice"], json!("externalChanged"));
         assert_eq!(broker.state["activeId"], Value::Null);
+    }
+    #[test]
+    fn targeted_login_recovers_only_the_selected_profile() {
+        let global = Sandbox::new();
+        let profiles = Sandbox::new();
+        let expired = synthetic_auth("current");
+        storage::write(&global.0.join("auth.json"), &expired).unwrap();
+        let mut broker = Broker {
+            path: profiles.0.join("accounts.json"),
+            root: profiles.0.clone(),
+            global: global.0.clone(),
+            cli: None,
+            state: json!({"accounts":[]}),
+            login: None,
+            proxy: json!({}),
+            desktop: json!({}),
+        };
+        let id = broker.add(expired.clone(), "Primary").unwrap();
+        broker.reconcile().unwrap();
+        let home = broker.home(&id).unwrap();
+        broker.state["accounts"][0]["errorCode"] = json!("loginRequired");
+
+        let wrong = synthetic_auth("other");
+        assert_eq!(
+            broker.save_login(wrong, "", Some(&id)),
+            Err(err("reauthMismatch"))
+        );
+        assert_eq!(broker.state["accounts"].as_array().unwrap().len(), 1);
+        assert_eq!(read_vault(&home).unwrap().as_ref(), Some(&expired));
+
+        let mut recovered = expired.clone();
+        recovered["tokens"]["access_token"] = json!("new-access");
+        broker.save_login(recovered.clone(), "", Some(&id)).unwrap();
+        assert_eq!(broker.state["accounts"][0]["name"], "Primary");
+        assert!(broker.state["accounts"][0]["errorCode"].is_null());
+        assert_eq!(broker.snapshot()["accounts"][0]["recoveredLogin"], true);
+        assert_eq!(read_vault(&home).unwrap(), Some(recovered));
+        assert_eq!(read_global(&global.0).unwrap(), expired);
+        delete_vault(&home).unwrap();
     }
     #[test]
     fn version_floor_accepts_newer_cli_and_rejects_older() {

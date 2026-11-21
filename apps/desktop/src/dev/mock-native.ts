@@ -70,6 +70,14 @@ export function installMockNative({ scenario, language, onboardingDone }: { scen
             throw Error("Simulated native failure");
           switch (cmd) {
             case "codex_accounts":
+              if (scenario === 'codex-expired-account') {
+                if (args.action === 'login') state.loginPending = true;
+                if (args.action === 'cancel') state.loginPending = false;
+                return {
+                  cliReady: true, loginPending: !!state.loginPending, settings: { enabled: false, threshold: 1 },
+                  accounts: [{ id: 'account-expired', name: 'Work', email: 'work@example.invalid', errorCode: 'loginRequired', windows: [] }],
+                };
+              }
               if (scenario === 'codex-login-pending') {
                 if (args.action === 'cancel') state.loginCancelled = true;
                 return { cliReady: true, loginPending: !state.loginCancelled, settings: { enabled: false, threshold: 1 }, accounts: [] };

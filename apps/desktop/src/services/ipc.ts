@@ -288,6 +288,7 @@ export interface ClaudeAccountsSnapshot {
 export type AccountsAction = 'list' | 'login' | 'cancel' | 'import' | 'importJson' | 'refresh' | 'rename' | 'delete' | 'switch' | 'dismiss' | 'settings';
 export interface CodexAccount {
   id: string; name: string; email: string; plan: string | null; checkedAt: number | null; error: string | null;
+  recoveredLogin?: boolean;
   errorCode?: string | null; quotaErrorCode?: string | null; accountCheckedAt?: number | null;
   windows: { bucket: string; name: string; remaining: number | null; minutes: number | null; resetsAt: number | null }[];
 }
