@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Badge, Button, Card, EmptyState, ErrorNotice, Input, Modal, PageHeader, Spinner, Toggle, Select } from '@/components/ui';
 import { ipc, type AccountsAction, type AccountsSnapshot, type CodexAccount } from '@/services/ipc';
-import { QuotaPanel } from '@/features/accounts/QuotaPanel';
 
 export function AccountsPage({ embedded = false }: { embedded?: boolean }) {
   const { t, i18n } = useTranslation(['accounts', 'common']);
@@ -73,7 +72,6 @@ export function AccountsPage({ embedded = false }: { embedded?: boolean }) {
       <div className="ms-auto flex flex-wrap gap-3"><Button disabled={busy} onClick={() => void act('list')}>{t('reload')}</Button><Button variant="primary" disabled={busy || !data || data.nativePreview} onClick={() => setAdding(true)}>{t('add')}</Button></div></div>
     {restarting && <div role="status" className="flex items-center gap-3 text-sm"><Spinner />{t('switching')}</div>}
     {error && !adding && <ErrorNotice error={error} message={error} />}
-    <QuotaPanel />
     {!data ? <p role="status">{t('loading')}</p> : data.nativePreview ? <Card className="space-y-3"><h2 className="font-bold">{t('browserAccountsTitle')}</h2><p role="status" className="text-sm leading-7">{t('browserAccountsHint')}</p><code dir="ltr" className="block">pnpm dev:desktop</code></Card> : <>
       {!data.cliReady && <Card className="space-y-3"><p role="status">{cliState}</p><Link className="vh-link" to="/guides/chatgpt">{t('setup')}</Link></Card>}
       {!data.desktopVerified && <p className="text-sm text-muted">{t('desktopUnverified')}</p>}

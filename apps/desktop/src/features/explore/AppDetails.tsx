@@ -7,6 +7,8 @@ import { LearningPage } from '@/features/learning/Learning';
 import { AccountsPage } from '@/features/accounts/Accounts';
 import { ClaudeAccountsPage } from '@/features/accounts/ClaudeAccounts';
 import { OpaqueAccountsPage } from '@/features/accounts/OpaqueAccounts';
+import { QuotaPanel } from '@/features/accounts/QuotaPanel';
+import type { QuotaAppId } from '@/services/ipc';
 import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -23,6 +25,9 @@ import { rtlAdapterConfigured, rtlAdapterSetupSupported } from '@core';
 
 /// Apps that manage more than one account through VibeHub.
 const ACCOUNT_APPS = ['chatgpt', 'claude-code', 'zcode', 'qoder'];
+// Apps that publish a daily quota get their own quota tab; the Codex accounts
+// tab stays about accounts only.
+const QUOTA_APPS = ['qoder', 'minimax-code'];
 
 /// ZCode and Qoder keep their session in an opaque blob, so they get the swap UI.
 function isOpaqueAccountApp(id: string): id is 'zcode' | 'qoder' {
@@ -31,7 +36,7 @@ function isOpaqueAccountApp(id: string): id is 'zcode' | 'qoder' {
 
 export function AppDetailsPage() {
   const { appId = '' } = useParams();
-  const { t, i18n } = useTranslation(['ux', 'apps', 'common', 'connectionsUx']);
+  const { t, i18n } = useTranslation(['ux', 'apps', 'common', 'connectionsUx', 'accounts']);
   const catalog = useCatalog();
   const [params, setParams] = useSearchParams();
   const ctx = useToolContext();
@@ -50,6 +55,7 @@ export function AppDetailsPage() {
   const installed = ctx.apps.find(a => a.id === appId && a.installed);
   const tabs = [{ value: 'launch', label: t('ux:launchTab') }, { value: 'connections', label: t('ux:connections') }, { value: 'guide', label: t('ux:guideTab') }, { value: 'about', label: t('ux:aboutTab') }];
   if (ACCOUNT_APPS.includes(appId)) tabs.push({ value: 'accounts', label: t('ux:accountsTab') });
+  if (QUOTA_APPS.includes(appId)) tabs.push({ value: 'quota', label: t('accounts:quota.title') });
   const selectedTab = tabs.find(tab => tab.value === params.get('tab'))?.value ?? (installed ? 'launch' : 'about');
   const lang = i18n.language.startsWith('fa') ? 'fa' : 'en';
   const ready = rtlAdapterConfigured(appId, ctx.components);
@@ -124,6 +130,7 @@ export function AppDetailsPage() {
         : isOpaqueAccountApp(appId)
           ? <OpaqueAccountsPage appId={appId} appName={app.name} />
           : <AccountsPage embedded />)}
+      {selectedTab === 'quota' && <QuotaPanel apps={[appId as QuotaAppId]} />}
     </div>
     <Link className="vh-button vh-button-ghost" to={'/doctor?tool=' + encodeURIComponent(appId) + '&kind=app'}>{t('ux:doctor')}</Link>
 

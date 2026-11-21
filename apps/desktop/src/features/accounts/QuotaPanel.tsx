@@ -16,12 +16,14 @@ const APPS: QuotaAppId[] = ['qoder', 'minimax-code'];
 const STALE_AFTER_SECONDS = 300;
 const POLL_MS = 60_000;
 
-export function QuotaPanel() {
+/** Without `apps` both quota publishers render; a scoped page passes one id. */
+export function QuotaPanel({ apps }: { apps?: QuotaAppId[] }) {
   const { t, i18n } = useTranslation(['accounts', 'common', 'ux']);
   const [data, setData] = useState<AppQuotaSnapshot | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const flight = useRef(false);
+  const shown = apps ?? APPS;
 
   const number = useCallback(
     (value: number | null) => (value === null ? t('quota.unknown') : new Intl.NumberFormat(i18n.language).format(value)),
@@ -109,7 +111,7 @@ export function QuotaPanel() {
     <p className="text-sm leading-7 text-muted">{t('quota.intro')}</p>
     {notice && <p role="status" className="text-sm text-warning">{notice}</p>}
     <div className="grid gap-4 md:grid-cols-2">
-      {APPS.map(appId => {
+      {shown.map(appId => {
         const entry = data?.apps.find(item => item.appId === appId);
         const stale = !!entry?.checkedAt && Math.floor(Date.now() / 1000) - entry.checkedAt > STALE_AFTER_SECONDS;
         const claimable = entry?.status === 'ok' && entry.claim.available === true;
