@@ -124,7 +124,7 @@ test('provider tiles form a listbox with arrow-key navigation', async ({ page })
   await page.goto('/connections/api?view=providers');
   const list = page.getByRole('listbox', { name: 'Providers' });
   await expect(list).toBeVisible();
-  await page.getByTestId('provider-anthropic').focus();
+  await list.getByTestId('provider-google').focus();
   await page.keyboard.press('Home');
   // Priority providers lead the list, so Home lands on OpenRouter rather than the alphabetical first row.
   await expect(page.getByTestId('provider-openrouter')).toHaveAttribute('aria-selected', 'true');

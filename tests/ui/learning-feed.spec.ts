@@ -14,7 +14,8 @@ test('new tutorials arrive from the feed, survive offline reload and reject malf
       const item = { id: 'fixture-extension', category: 'skills', kind: 'guide', order: 1, title: {fa:'Fixture Extension',en:'Fixture Extension'}, summary:{fa:'Summary',en:'Summary'}, body:{fa:'Body',en:'Body'}, sourceUrl:'https://example.com', checkedAt:'2026-11-02' };
       if (host.__mock.badLearning) item.sourceUrl = 'javascript:alert(1)';
       const catalog = structuredClone({ apps: data.apps, providers: data.providers, offers: data.bundledCatalog.offers });
-      const guides = Object.fromEntries(catalog.apps.flatMap(app => ['fa', 'en'].map(lang => [`${app.id}/${lang}`, data.guideText(app.id, lang as 'fa' | 'en')!])));
+      const guides: Record<string, string> = {};
+      for (const app of catalog.apps) for (const lang of ['fa', 'en'] as const) guides[`${app.id}/${lang}`] = (await data.guideText(app.id, lang))!;
       return { ok: true, updated: true, detail: 'Fixture', catalog, guides,
         ...(host.__mock.oldFeed ? {} : { learningArticles: { schemaVersion: 1, categories: [{id:'skills',title:{fa:'Skills',en:'Skills'}}], articles: host.__mock.emptyLearning ? [] : [item] } }) };
     };

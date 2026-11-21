@@ -10,7 +10,8 @@ test('release body template renders a future tag without hardcoded release data'
   assert.match(body, /VibeHub 0\.3\.0/);
   assert.match(body, /Settings → Updates/);
   assert.match(body, /VibeHub_\*_x64-setup\.nsis\.zip/);
-  assert.doesNotMatch(body, /checksums-sha256|SBOM|source\.zip/);
+  assert.match(body, /checksums-sha256\.txt.*VibeHub-SBOM\.cdx\.json.*THIRD_PARTY_LICENSES\.md/);
+  assert.doesNotMatch(body, /source\.zip/);
   assert.match(body, /What's Changed/);
   assert.doesNotMatch(body, /0\.2\.1/);
   assert.doesNotMatch(body, /\.msi/);

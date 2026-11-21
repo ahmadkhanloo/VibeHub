@@ -14,7 +14,7 @@ test('startup refresh, concurrent manual requests and failed refresh retain vali
       const data = await import('/src/lib/catalog.ts');
       const catalog = structuredClone({ apps: data.apps, providers: data.providers, offers: data.bundledCatalog.offers });
       const guides: Record<string, string> = {};
-      for (const app of catalog.apps) for (const lang of ['fa', 'en']) guides[`${app.id}/${lang}`] = data.guideText(app.id, lang)!;
+      for (const app of catalog.apps) for (const lang of ['fa', 'en'] as const) guides[`${app.id}/${lang}`] = (await data.guideText(app.id, lang))!;
       return { ok: true, updated: true, detail: 'Fixture feed', catalog, guides };
     };
   });

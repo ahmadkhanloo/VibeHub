@@ -9,7 +9,8 @@ test('news is the default tab and separates publication from source verification
       if (command !== 'feed_sync') return original(command, args);
       const data = await import('/src/lib/catalog.ts');
       const catalog = structuredClone(data.bundledCatalog);
-      const guides = Object.fromEntries(catalog.apps.flatMap((app: any) => ['fa', 'en'].map(lang => [`${app.id}/${lang}`, data.guideText(app.id, lang)!])));
+      const guides: Record<string, string> = {};
+      for (const app of catalog.apps) for (const lang of ['fa', 'en'] as const) guides[`${app.id}/${lang}`] = (await data.guideText(app.id, lang))!;
       return { ok: true, updated: true, detail: 'Fixture', catalog, guides,
         news: { schemaVersion: 1, news: [{ id: 'fixture-news', appId: 'qoder', title: { fa: 'خبر آزمایشی', en: 'Fixture news' }, summary: { fa: 'خلاصهٔ خبر', en: 'News summary' }, body: { fa: 'متن خبر', en: 'News body' }, publishedAt: '2026-11-02', checkedAt: '2026-11-02', sourceUrl: 'https://example.com' }] } };
     };
@@ -39,7 +40,8 @@ test('an offer checked outside the 48-hour window does not get a fresh verificat
       const catalog = structuredClone(data.bundledCatalog);
       catalog.offers = catalog.offers.filter((offer: any) => offer.offerId === 'qoder-qwen-flash');
       catalog.offers[0].checkedAt = new Date(Date.now() - 49 * 60 * 60 * 1000).toISOString();
-      const guides = Object.fromEntries(catalog.apps.flatMap((app: any) => ['fa', 'en'].map(lang => [`${app.id}/${lang}`, data.guideText(app.id, lang)!])));
+      const guides: Record<string, string> = {};
+      for (const app of catalog.apps) for (const lang of ['fa', 'en'] as const) guides[`${app.id}/${lang}`] = (await data.guideText(app.id, lang))!;
       return { ok: true, updated: true, detail: 'Fixture', catalog, guides, news: { schemaVersion: 1, news: [] } };
     };
   });

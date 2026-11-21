@@ -36,7 +36,7 @@ Choose **Try a custom URL** to list models or test a selected model before savin
 
 Closing the window hides VibeHub in the Windows notification area. Select its tray icon to reopen it, or choose **Quit / خروج** from the tray menu to exit completely. The tray menu also lists one **· RTL** entry for every detected app that has an RTL launcher, so a Persian-text run is one click away without reopening the window; running apps are marked with a dot. VibeHub runs as a single instance — launching it again focuses the existing window. Tray interaction in the installed beta has not yet been independently verified.
 
-The current prerelease is [v0.2.6-beta.2](https://github.com/ahmadkhanloo/VibeHub/releases/tag/v0.2.6-beta.2) ([Windows installer](https://github.com/ahmadkhanloo/VibeHub/releases/download/v0.2.6-beta.2/VibeHub-Setup.exe)). It is separate from the latest stable release. The existing screenshot below predates the redesigned connections screen.
+The current prerelease is [v0.2.6-beta.6](https://github.com/ahmadkhanloo/VibeHub/releases/tag/v0.2.6-beta.6) ([Windows installer](https://github.com/ahmadkhanloo/VibeHub/releases/download/v0.2.6-beta.6/VibeHub-Setup.exe)). The existing screenshot below predates the redesigned connections screen.
 
 ## Screenshots
 

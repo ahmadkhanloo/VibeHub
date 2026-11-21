@@ -23,7 +23,7 @@ test('the shell is one command bar with a grouped sidebar', async ({ page }) => 
   // Group captions exist only while the rail is expanded.
   const sidebar = page.getByRole('navigation', { name: 'Main navigation' });
   await expect(page.locator('.vh-nav-caption')).toHaveCount(2);
-  for (const label of ['Apps', 'API notebook', 'Proxy', 'Learn', 'Terminal', 'Diagnostics']) {
+  for (const label of ['Apps', 'Helper tools', 'Accounts', 'API notebook', 'Proxy', 'Learn', 'Diagnostics']) {
     await expect(sidebar.getByRole('link', { name: label, exact: true })).toBeVisible();
   }
   // Every rail row stays on one line, so the group rhythm is predictable.
