@@ -119,6 +119,9 @@ export function SettingsPage() {
         <div className="space-y-2 text-sm"><span className="block font-medium">{t('settings:appearance.language')}</span><div className="vh-choice-group" role="group" aria-label={t('settings:appearance.language')}>
           {(['fa', 'en'] as const).map(language => <button key={language} type="button" aria-pressed={settings.language === language} onClick={() => update({ language })}>{t(language === 'fa' ? 'common:languagePersian' : 'common:languageEnglish')}</button>)}
         </div></div>
+        <div className="space-y-2 text-sm"><span className="block font-medium">{t('settings:appearance.textSize')}</span><div className="vh-choice-group" role="group" aria-label={t('settings:appearance.textSize')}>
+          {(['sm', 'md', 'lg'] as const).map(size => <button key={size} type="button" aria-pressed={settings.textSize === size} onClick={() => update({ textSize: size })}>{t(`ux:textSize${size === 'sm' ? 'Small' : size === 'md' ? 'Medium' : 'Large'}`)}</button>)}
+        </div></div>
         <div className="space-y-2 text-sm"><Toggle checked={settings.themeMode === 'system'} onChange={follow => update({ themeMode: follow ? 'system' : resolvedMode })} label={t('settings:appearance.followSystem')} /></div>
         <div className="space-y-2 text-sm sm:col-span-2"><span className="block font-medium">{t('settings:appearance.accent')}</span><div className="vh-accent-choices" role="group" aria-label={t('settings:appearance.accent')}>
           {ACCENTS.map(accent => <button key={accent} type="button" aria-label={t(`settings:appearance.accents.${accent}`)} aria-pressed={settings.accent === accent} onClick={() => update({ accent })}>
@@ -192,15 +195,14 @@ export function SettingsPage() {
         <div className="flex flex-wrap items-center justify-between gap-4 py-4"><div className="max-w-xl"><h3 className="font-semibold">{t('settingsUx:clearCredentials')}</h3><p className="mt-1 text-sm text-muted">{t('settingsUx:credentialsHint')}</p></div>
           <Button variant="danger" disabled={busy !== null} onClick={() => void inspectCredentials()}>{t('settingsUx:reviewDeletion')}</Button></div>
       </div>
-    </section>
-
-    <section hidden={selectedPanel !== 'data'} className="vh-settings-panel space-y-4">
-
+      {/* Same tab: "Data and about" keeps the destructive actions and the version card together. */}
+      <div className="space-y-3 border-t border-border pt-4">
       <p className="font-semibold">{t('common:appName')} <bdi>{version ? `v${version}` : ''}</bdi></p>
       <p className="text-sm">{t('settings:about.freeOss')}</p>
       <p className="text-sm text-muted">{t('settings:about.thirdPartyNote')}</p>
       <Badge>{t('settings:about.license')}</Badge>
       <p className="text-sm text-muted">{t('settings:about.funding')}</p>
+      </div>
     </section>
 
     </div>

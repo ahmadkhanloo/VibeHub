@@ -17,7 +17,8 @@ test('catalog apps render local images or icon fallbacks with external requests 
   await page.route('https://**/*', route => route.abort());
   await page.goto('/discover');
   const tiles = page.locator('.vh-catalog-tile');
-  await expect(tiles).toHaveCount(11);
+  await expect(tiles).toHaveCount(12);
+  await expect(tiles.filter({ has: page.getByRole('heading', { name: 'Pi CLI', exact: true }) })).toHaveCount(1);
   await expect.poll(() => tiles.locator('img').evaluateAll(images => images.every(image => (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0))).toBe(true);
   expect(await tiles.locator('img').evaluateAll(images => images.every(image => (image as HTMLImageElement).src.startsWith('data:image/') || new URL((image as HTMLImageElement).src).origin === location.origin))).toBe(true);
   await expect(page.getByRole('button', { name: /Filters|Open-source/i })).toHaveCount(0);
@@ -57,8 +58,11 @@ for (const language of ['fa', 'en']) for (const mode of ['light', 'dark']) {
           return { page: document.documentElement.scrollWidth > innerWidth, main: main.scrollWidth > main.clientWidth + 1 };
         }), { message: `${route} at ${width}px` }).toEqual({ page: false, main: false });
         if (route === '/') {
-          const columns = await page.locator('.vh-app-grid').evaluate(grid => getComputedStyle(grid).gridTemplateColumns.split(' ').length);
-          expect(columns).toBe(width === 320 ? 1 : width < 900 ? 2 : width < 1600 ? 3 : 4);
+          const grids = page.locator('.vh-app-grid');
+          await expect(grids.first()).toBeVisible();
+          const columns = await grids.evaluateAll(elements => elements.map(grid => getComputedStyle(grid).gridTemplateColumns.split(' ').length));
+          const expected = width === 320 ? 1 : width < 900 ? 2 : width < 1600 ? 3 : 4;
+          expect(columns).toEqual(columns.map(() => expected));
         }
       }
       const scan = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();

@@ -1,13 +1,24 @@
 {
   "home": "Home",
-  "models": "AI connections",
-  "terminal": "Terminal & Persian text",
+  "models": "API notebook",
+  "terminal": "Terminal",
+  "terminalHint": "Terminal and Persian text setup",
+  "tools": "Tools",
   "learning": "Learn",
-  "offers": "News and offers",
+  "offers": "News",
   "doctor": "Diagnostics",
   "settings": "Settings",
   "proxy": "Proxy",
   "proxyHint": "Proxy status",
   "collapse": "Collapse sidebar",
-  "expand": "Expand sidebar"
+  "expand": "Expand sidebar",
+  "groups": {
+    "workspace": "Workspace",
+    "connections": "Connections",
+    "learn": "Learn and tools"
+  },
+  "accounts": "Accounts",
+  "accountsHint": "ChatGPT, Claude, ZCode and Qoder accounts",
+  "helpers": "Helper tools",
+  "helpersHint": "Helper tools, skills and suggestions"
 }

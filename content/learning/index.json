@@ -208,8 +208,8 @@
       "kind": "guide",
       "order": 10,
       "title": {
-        "fa": "DeepSeek 网页登录（免费模型） — ورود وب دیپ‌سیک",
-        "en": "DeepSeek 网页登录（免费模型）"
+        "fa": "ورود وب دیپ‌سیک: مدل‌های رایگان",
+        "en": "DeepSeek web login: free models"
       },
       "summary": {
         "fa": "آموزش تکمیلی: اتصال حساب وب DeepSeek به DeepSeek Harness با افزونهٔ غیررسمی dsh-deepseek-web-login. سهمیهٔ وب، API رایگان نامحدود نیست. بررسی مستندات انجام شده؛ نصب و ورود محلی آزموده نشده است.",
@@ -263,84 +263,25 @@
       "contentPath": "content/learning/articles/webapp-testing"
     },
     {
-      "id": "pdf",
-      "category": "documents",
-      "kind": "skill",
-      "order": 10,
-      "title": {
-        "fa": "pdf",
-        "en": "pdf"
-      },
-      "summary": {
-        "fa": "خواندن، ساخت و بررسی فایل PDF.",
-        "en": "Read, generate and inspect PDF files."
-      },
-      "sourceUrl": "https://github.com/anthropics/skills/tree/main/skills/pdf",
-      "checkedAt": "2026-10-27",
-      "relatedIds": [
-        "skill-basics"
-      ],
-      "contentPath": "content/learning/articles/pdf"
-    },
-    {
-      "id": "docx",
-      "category": "documents",
-      "kind": "skill",
+      "id": "playwright",
+      "category": "testing",
+      "kind": "guide",
       "order": 20,
       "title": {
-        "fa": "docx",
-        "en": "docx"
+        "fa": "Playwright: آزمون مرورگری پروژه",
+        "en": "Playwright: browser testing for your project"
       },
       "summary": {
-        "fa": "ساخت و ویرایش سند Word.",
-        "en": "Create and edit Word documents."
+        "fa": "نصب، اجرای تست مرورگری و بررسی RTL در پروژهٔ خودتان؛ مستقل از VibeHub.",
+        "en": "Install, run browser tests and check RTL in your own project — independent of VibeHub."
       },
-      "sourceUrl": "https://github.com/anthropics/skills/tree/main/skills/docx",
-      "checkedAt": "2026-10-27",
+      "sourceUrl": "https://playwright.dev/docs/intro",
+      "checkedAt": "2026-11-15",
       "relatedIds": [
-        "skill-basics"
+        "webapp-testing",
+        "code-review"
       ],
-      "contentPath": "content/learning/articles/docx"
-    },
-    {
-      "id": "xlsx",
-      "category": "documents",
-      "kind": "skill",
-      "order": 30,
-      "title": {
-        "fa": "xlsx",
-        "en": "xlsx"
-      },
-      "summary": {
-        "fa": "کار با صفحه‌گسترده و فرمول‌ها.",
-        "en": "Work with spreadsheets and formulas."
-      },
-      "sourceUrl": "https://github.com/anthropics/skills/tree/main/skills/xlsx",
-      "checkedAt": "2026-10-27",
-      "relatedIds": [
-        "skill-basics"
-      ],
-      "contentPath": "content/learning/articles/xlsx"
-    },
-    {
-      "id": "pptx",
-      "category": "documents",
-      "kind": "skill",
-      "order": 40,
-      "title": {
-        "fa": "pptx",
-        "en": "pptx"
-      },
-      "summary": {
-        "fa": "ساخت و ویرایش ارائه PowerPoint.",
-        "en": "Create and edit PowerPoint presentations."
-      },
-      "sourceUrl": "https://github.com/anthropics/skills/tree/main/skills/pptx",
-      "checkedAt": "2026-10-27",
-      "relatedIds": [
-        "skill-basics"
-      ],
-      "contentPath": "content/learning/articles/pptx"
+      "contentPath": "content/learning/articles/playwright"
     },
     {
       "id": "skill-creator",
@@ -423,6 +364,27 @@
       "contentPath": "content/learning/articles/openai-developers"
     },
     {
+      "id": "repowise",
+      "category": "integrations",
+      "kind": "guide",
+      "order": 40,
+      "title": {
+        "fa": "RepoWise: هوش مخزن در کنار ایجنت",
+        "en": "RepoWise: repository intelligence for your agent"
+      },
+      "summary": {
+        "fa": "فشرده‌سازی خروجی‌های پرحجم، ارزیابی ریسک تغییر و بررسی سلامت کد — با مرزهای واقعی ابزار.",
+        "en": "Compress noisy command output, score change risk and check code health — with the tool's real limits."
+      },
+      "sourceUrl": "https://docs.repowise.dev/cli/overview",
+      "checkedAt": "2026-11-20",
+      "relatedIds": [
+        "code-review",
+        "debugging-with-agent"
+      ],
+      "contentPath": "content/learning/articles/repowise"
+    },
+    {
       "id": "git-first-commit",
       "category": "git",
       "kind": "guide",
@@ -474,157 +436,171 @@
       "contentPath": "content/learning/articles/git-practice-resources"
     },
     {
-      "id": "claude-workflow",
+      "id": "superpowers",
+      "category": "skills",
+      "kind": "skill",
+      "order": 20,
+      "title": {
+        "fa": "Superpowers: اسکیل‌های روش کار برای ایجنت",
+        "en": "Superpowers: working-method skills for your agent"
+      },
+      "summary": {
+        "fa": "پلاگین اسکیل‌های روشِ کار: ایده‌پردازی، نوشتن و اجرای طرح، توسعهٔ تست‌محور و دیباگ نظام‌مند.",
+        "en": "A plugin of working-method skills: brainstorming, writing and executing plans, test-driven development and systematic debugging."
+      },
+      "sourceUrl": "https://github.com/obra/superpowers",
+      "checkedAt": "2026-11-17",
+      "relatedIds": [
+        "skill-basics",
+        "skill-creator"
+      ],
+      "contentPath": "content/learning/articles/superpowers"
+    },
+    {
+      "id": "dsh-workspace-hygiene",
+      "category": "skills",
+      "kind": "guide",
+      "order": 70,
+      "title": {
+        "fa": "dsh-workspace-hygiene: نظم فضای کار ایجنت",
+        "en": "dsh-workspace-hygiene: keep the agent workspace tidy"
+      },
+      "summary": {
+        "fa": "ارزش فایل‌های میانی را می‌سنجد و پیشنهاد نگه‌داشتن، حذف، نام‌گذاری و جای درست می‌دهد؛ تصمیم نهایی با شماست.",
+        "en": "Assesses intermediate-file value and recommends keep, remove, rename and relocate; the final call is yours."
+      },
+      "sourceUrl": "https://github.com/taoshi1999/dsh-workspace-hygiene",
+      "checkedAt": "2026-11-20",
+      "relatedIds": [
+        "dsh-deepseek-web-login",
+        "long-running"
+      ],
+      "contentPath": "content/learning/articles/dsh-workspace-hygiene"
+    },
+    {
+      "id": "hindsight",
+      "category": "skills",
+      "kind": "guide",
+      "order": 30,
+      "title": {
+        "fa": "Hindsight: حافظهٔ ماندگار پروژه",
+        "en": "Hindsight: persistent project memory"
+      },
+      "summary": {
+        "fa": "تصمیم‌ها و دانش پروژه را برای همیشه نگه می‌دارد و موقع کار، ایجنت را از گذشته باخبر می‌کند.",
+        "en": "Keeps project decisions and knowledge alive and feeds them back to the agent while it works."
+      },
+      "checkedAt": "2026-11-21",
+      "relatedIds": [
+        "skill-basics",
+        "claude-code-handbook"
+      ],
+      "contentPath": "content/learning/articles/hindsight",
+      "sourceUrl": "https://hindsight.vectorize.io"
+    },
+    {
+      "id": "ponytail",
+      "category": "skills",
+      "kind": "skill",
+      "order": 40,
+      "title": {
+        "fa": "Ponytail: کوتاه‌ترین راه‌حل درست",
+        "en": "Ponytail: the shortest solution that works"
+      },
+      "summary": {
+        "fa": "ایجنت را به ساده‌ترین و کوتاه‌ترین راه‌حلِ واقعاً کارا مجبور می‌کند؛ ضد پیچیدگی و بloat.",
+        "en": "Forces the agent to the simplest, shortest solution that actually works; anti-complexity and anti-bloat."
+      },
+      "checkedAt": "2026-11-21",
+      "relatedIds": [
+        "superpowers",
+        "skill-creator"
+      ],
+      "contentPath": "content/learning/articles/ponytail",
+      "sourceUrl": "https://skills.sh"
+    },
+    {
+      "id": "ui-ux-pro-max",
+      "category": "skills",
+      "kind": "skill",
+      "order": 50,
+      "title": {
+        "fa": "UI/UX Pro Max: طراحی و بازبینی رابط",
+        "en": "UI/UX Pro Max: design and review interfaces"
+      },
+      "summary": {
+        "fa": "داده‌های جست‌وجوپذیر استایل، پالت، تایپوگرافی و رهنمود UX برای طراحی و بازبینی رابط کاربری.",
+        "en": "Searchable styles, palettes, typography and UX guidelines for designing and reviewing interfaces."
+      },
+      "checkedAt": "2026-11-21",
+      "relatedIds": [
+        "frontend-design",
+        "skill-basics"
+      ],
+      "contentPath": "content/learning/articles/ui-ux-pro-max",
+      "sourceUrl": "https://skills.sh"
+    },
+    {
+      "id": "unslop",
+      "category": "skills",
+      "kind": "skill",
+      "order": 60,
+      "title": {
+        "fa": "Unslop: نوشتن انسانی به‌جای لحن رباتیک",
+        "en": "Unslop: human writing instead of robotic tone"
+      },
+      "summary": {
+        "fa": "الگوهای تکراری نوشتهٔ AI را پیدا و حذف می‌کند تا متن انسانی و طبیعی به نظر برسد.",
+        "en": "Finds and removes repetitive AI writing patterns so text reads human and natural."
+      },
+      "checkedAt": "2026-11-21",
+      "relatedIds": [
+        "skill-basics"
+      ],
+      "contentPath": "content/learning/articles/unslop",
+      "sourceUrl": "https://skills.sh"
+    },
+    {
+      "id": "claude-code-handbook",
       "category": "applications",
       "kind": "guide",
       "order": 301,
       "title": {
-        "fa": "Claude Code: کار عملی روی پروژه",
-        "en": "Claude Code: Work on a project"
+        "fa": "Claude Code: راهنمای کامل کار با CLI",
+        "en": "Claude Code: the complete CLI handbook"
       },
       "summary": {
-        "fa": "در پوشهٔ یک پروژهٔ آزمایشی `claude` را اجرا کنید. ابتدا بخواهید ساختار پروژه و فرمان تست را توضیح دهد. سپس یک خطای کوچک مشخص کنید، برنامهٔ اصلاح را بخواهید و پس از بررسی اجازهٔ تغییر بدهید.",
-        "en": "Run `claude` in a disposable project. Ask for its structure and test command. Describe one small bug, request a plan, review it, then allow edits."
+        "fa": "همهٔ امکانات Claude Code یکجا: شروع کار، مجوزها، CLAUDE.md، اسکیل‌ها، MCP، ساب‌ایجنت، نشست‌ها، VS Code و افزونه‌ها.",
+        "en": "Everything Claude Code in one place: getting started, permissions, CLAUDE.md, skills, MCP, subagents, sessions, VS Code and plugins."
       },
       "sourceUrl": "https://code.claude.com/docs/en/common-workflows",
-      "checkedAt": "2026-11-05",
-      "contentPath": "content/learning/articles/claude-workflow"
+      "checkedAt": "2026-11-21",
+      "relatedIds": [
+        "skill-basics",
+        "skill-creator",
+        "superpowers"
+      ],
+      "contentPath": "content/learning/articles/claude-code-handbook"
     },
     {
-      "id": "claude-permissions",
-      "category": "applications",
-      "kind": "guide",
-      "order": 302,
+      "id": "document-formats",
+      "category": "documents",
+      "kind": "skill",
+      "order": 10,
       "title": {
-        "fa": "Claude Code: برنامه‌ریزی و مجوزها",
-        "en": "Claude Code: Planning and permissions"
+        "fa": "کار با PDF، Word، Excel و PowerPoint",
+        "en": "Working with PDF, Word, Excel and PowerPoint"
       },
       "summary": {
-        "fa": "با `/permissions` مجوزها را بررسی کنید. برای شناخت پروژه و طراحی تغییر از حالت Plan استفاده کنید. پیش از تأیید یک فرمان، مسیر و اثر آن را بخوانید؛ مجوز گسترده را جایگزین بررسی درخواست نکنید.",
-        "en": "Inspect permissions with `/permissions`. Use Plan mode to explore and design a change. Read each command and its target before approving it."
+        "fa": "چهار اسکیل رسمی اسناد با یک الگوی مشترک: نصب، فراخوانی و خروجی هر کدام.",
+        "en": "Four official document skills with one shared pattern: install, invoke and each output."
       },
-      "sourceUrl": "https://code.claude.com/docs/en/permissions",
-      "checkedAt": "2026-11-05",
-      "contentPath": "content/learning/articles/claude-permissions"
-    },
-    {
-      "id": "claude-memory",
-      "category": "applications",
-      "kind": "guide",
-      "order": 303,
-      "title": {
-        "fa": "Claude Code: دستورهای پروژه با CLAUDE.md",
-        "en": "Claude Code: Project instructions with CLAUDE.md"
-      },
-      "summary": {
-        "fa": "در ریشهٔ پروژه CLAUDE.md کوتاهی با فرمان تست، قواعد ضروری و مسیرهای مهم بنویسید. این متن زمینهٔ کاری مدل است؛ برای الزام قطعی اجرای تست به کنترل اجرایی نیاز دارید.",
-        "en": "Write a short CLAUDE.md at the project root with test commands, essential conventions and important paths. Instructions provide context; deterministic enforcement requires executable checks."
-      },
-      "sourceUrl": "https://code.claude.com/docs/en/memory",
-      "checkedAt": "2026-11-05",
-      "contentPath": "content/learning/articles/claude-memory"
-    },
-    {
-      "id": "claude-skills",
-      "category": "applications",
-      "kind": "guide",
-      "order": 304,
-      "title": {
-        "fa": "Claude Code: ساخت و استفاده از Skills",
-        "en": "Claude Code: Create and use skills"
-      },
-      "summary": {
-        "fa": "یک فایل `.claude/skills/review-checklist/SKILL.md` بسازید؛ در frontmatter نام و توضیح و در بدنه مراحل بازبینی را بنویسید. با `/review-checklist` آن را فراخوانی کنید و خروجی را با هدف اسکیل بسنجید.",
-        "en": "Create `.claude/skills/review-checklist/SKILL.md` with name and description frontmatter and review steps in the body. Invoke `/review-checklist` and inspect the result."
-      },
-      "sourceUrl": "https://code.claude.com/docs/en/skills",
-      "checkedAt": "2026-11-05",
-      "contentPath": "content/learning/articles/claude-skills"
-    },
-    {
-      "id": "claude-mcp",
-      "category": "applications",
-      "kind": "guide",
-      "order": 305,
-      "title": {
-        "fa": "Claude Code: اتصال ابزار با MCP",
-        "en": "Claude Code: Connect tools with MCP"
-      },
-      "summary": {
-        "fa": "سرور موردنیاز را از منبع معتبر انتخاب کنید و دستور نصب همان سرور را با مستندات Claude تطبیق دهید. با `/mcp` وضعیت اتصال و ابزارها را بررسی کنید. برای تمرین ابتدا درخواست فقط‌خواندنی بدهید.",
-        "en": "Choose a trusted server and check its installation instructions against Claude documentation. Inspect its status and tools with `/mcp`. Begin with a read-only request."
-      },
-      "sourceUrl": "https://code.claude.com/docs/en/mcp",
-      "checkedAt": "2026-11-05",
-      "contentPath": "content/learning/articles/claude-mcp"
-    },
-    {
-      "id": "claude-agents",
-      "category": "applications",
-      "kind": "guide",
-      "order": 306,
-      "title": {
-        "fa": "Claude Code: واگذاری کار به Subagents",
-        "en": "Claude Code: Delegate to subagents"
-      },
-      "summary": {
-        "fa": "ایجنت فقط‌خواندنی را با فایل Markdown بسازید، کار مشخصی به آن بدهید و گزارش را بررسی کنید.",
-        "en": "Create a read-only agent with a Markdown file, delegate a bounded task and verify its report."
-      },
-      "sourceUrl": "https://code.claude.com/docs/en/sub-agents",
-      "checkedAt": "2026-11-05",
-      "contentPath": "content/learning/articles/claude-agents"
-    },
-    {
-      "id": "claude-sessions",
-      "category": "applications",
-      "kind": "guide",
-      "order": 307,
-      "title": {
-        "fa": "Claude Code: ادامهٔ گفتگو و مدیریت زمینه",
-        "en": "Claude Code: Resume sessions and manage context"
-      },
-      "summary": {
-        "fa": "ادامهٔ گفتگو و مدیریت زمینه؛ تمرین مرحله‌ای بر پایهٔ مستندات رسمی.",
-        "en": "Resume sessions and manage context with a step-by-step exercise based on official documentation."
-      },
-      "sourceUrl": "https://code.claude.com/docs/en/common-workflows",
-      "checkedAt": "2026-11-05",
-      "contentPath": "content/learning/articles/claude-sessions"
-    },
-    {
-      "id": "claude-vscode",
-      "category": "applications",
-      "kind": "guide",
-      "order": 308,
-      "title": {
-        "fa": "Claude Code: ارجاع به کد و بررسی تغییر در VS Code",
-        "en": "Claude Code: Reference code and review edits in VS Code"
-      },
-      "summary": {
-        "fa": "ارجاع به کد و بررسی تغییر در VS Code؛ تمرین مرحله‌ای بر پایهٔ مستندات رسمی.",
-        "en": "Reference code and review edits in VS Code with a step-by-step exercise based on official documentation."
-      },
-      "sourceUrl": "https://code.claude.com/docs/en/vs-code",
-      "checkedAt": "2026-11-05",
-      "contentPath": "content/learning/articles/claude-vscode"
-    },
-    {
-      "id": "claude-plugins",
-      "category": "applications",
-      "kind": "guide",
-      "order": 309,
-      "title": {
-        "fa": "Claude Code: نصب و مدیریت افزونه‌ها",
-        "en": "Claude Code: Install and manage plugins"
-      },
-      "summary": {
-        "fa": "نصب و مدیریت افزونه‌ها؛ تمرین مرحله‌ای بر پایهٔ مستندات رسمی.",
-        "en": "Install and manage plugins with a step-by-step exercise based on official documentation."
-      },
-      "sourceUrl": "https://code.claude.com/docs/en/plugins",
-      "checkedAt": "2026-11-05",
-      "contentPath": "content/learning/articles/claude-plugins"
+      "sourceUrl": "https://github.com/anthropics/skills",
+      "checkedAt": "2026-11-21",
+      "relatedIds": [
+        "skill-basics"
+      ],
+      "contentPath": "content/learning/articles/document-formats"
     }
   ]
 }

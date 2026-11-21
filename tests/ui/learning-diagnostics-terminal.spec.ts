@@ -16,7 +16,7 @@ test('one compact learning destination keeps legacy guide links active and only 
   await page.goto('/learning');
   await expect(page.getByRole('heading', { name: 'Learn', exact: true })).toBeVisible();
   await expect(page.getByRole('searchbox', { name: 'Search learning guides' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'App guides', exact: true })).toBeVisible();
+  await expect(page.getByLabel('Learning categories').locator('option', { hasText: 'App guides' })).toHaveCount(1);
   await expect(page.getByRole('link', { name: /Qoder/ }).first()).toBeVisible();
 });
 
@@ -82,6 +82,8 @@ test('Persian host links to the official download and reports detected installat
 
 for (const language of ['fa', 'en']) {
   test(`learning and diagnostics stay readable in both sidebar states (${language})`, async ({ page }) => {
+    // 18 navigations with full-page screenshots sit close to the default limit.
+    test.setTimeout(120000);
     await mockNative(page, 'ready', language);
     await page.addInitScript(() => {
       const host = window as any, original = host.__TAURI_INTERNALS__.invoke;

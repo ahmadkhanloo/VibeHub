@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "offerId": "minimax-daily-free-quota",
+  "appId": "minimax-code",
+  "title": {
+    "fa": "سهمیهٔ رایگان روزانهٔ MiniMax",
+    "en": "MiniMax free daily quota"
+  },
+  "summary": {
+    "fa": "MiniMax Code برای مدل‌های کدنویسی‌اش سهمیهٔ استفادهٔ رایگان روزانه می‌دهد. مقدار سهمیه، ساعت ریست و شرط‌های منطقه‌ای را در صفحهٔ رسمی ببین؛ این یادداشت هنوز تأیید نشده و عددی برایش ثبت نشده است.",
+    "en": "MiniMax Code grants a free daily usage quota for its coding models. Check the official page for the current amount, the reset time and regional conditions; this note is not verified yet and carries no recorded figure."
+  },
+  "sourceUrl": "https://code.minimax.io/",
+  "publishedAt": "2026-11-16T04:40:00.000Z",
+  "verifiedAt": "2026-11-16T04:40:00.000Z",
+  "eligibility": "Individual accounts. The amount, reset time and regional limits follow the official page and may change without notice.",
+  "status": "reported"
+}

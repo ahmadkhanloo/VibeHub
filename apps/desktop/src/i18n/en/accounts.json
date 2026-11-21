@@ -4,7 +4,9 @@
   "reload": "Reload",
   "loading": "Loading accounts…",
   "unknown": "Unknown",
-  "cliMissing": "Install supported Codex CLI {{version}} to enable account operations.",
+  "cliMissing": "Install Codex CLI {{version}} or newer to enable account operations.",
+  "cliVersion": "Codex CLI {{version}} detected. Account switching requires {{supported}} or newer.",
+  "cliOutdated": "Codex CLI {{version}} is installed, which is older than the required {{supported}}. Update Codex CLI to switch accounts.",
   "setup": "CLI setup guide",
   "desktopUnverified": "Windows desktop switching is experimental; live compatibility has not yet been verified.",
   "add": "Add an account",
@@ -34,7 +36,8 @@
   "confirm": "Confirm",
   "dismiss": "Dismiss",
   "restartAndSwitch": "Switch and restart",
-  "restartConfirm": "Finish ongoing work first. Confirming closes the desktop app normally, switches the Codex account and reopens it. If the app cannot close normally, switching stops.",
+  "restartConfirm": "Finish ongoing work first. Confirming closes the desktop app normally; if it only hides in the tray, it is stopped, then the Codex account is switched and the app reopens.",
+  "switching": "Closing the original app, applying the account and reopening it…",
   "deleteConfirm": "Remove this saved account from VibeHub? The local signed-in Codex session is kept.",
   "errors": {
     "cliMissing": "Supported Codex CLI was not found.",
@@ -93,7 +96,6 @@
   "browserAccountsTitle": "Real accounts are available in the desktop app",
   "browserAccountsHint": "This browser preview cannot access your accounts or Windows credential store. Open VibeHub — Development and go to Codex accounts to detect your current account. An empty preview does not mean no account exists on this computer.",
   "desktopAccountsHint": "The current signed-in account is read locally. To add another account, sign in through the original app, then refresh here.",
-  "versionReadOnly": "Installed version {{version}}. Account switching is enabled only for verified version {{supported}}.",
   "captureAfterLogin": "Sign in through the original app, then refresh to add the current account.",
   "grantedQuota": "{{amount}} {{unit}} granted",
   "grantedNotRemaining": "Granted entitlements; this is not the remaining token balance.",
@@ -105,7 +107,55 @@
   "units": {
     "tokens": "tokens",
     "credits": "Credits",
+    "points": "points",
+    "images": "images",
     "units": "units"
   },
-  "undoSwitch": "Return to {{name}}"
+  "undoSwitch": "Return to {{name}}",
+  "quota": {
+    "title": "Daily quota",
+    "intro": "Daily quota for the coding apps, read from inside the app while it runs through VibeHub. Nothing is claimed unless you press the button.",
+    "apps": {
+      "qoder": "Qoder",
+      "minimax-code": "MiniMax Code"
+    },
+    "status": {
+      "ok": "Up to date",
+      "signedOut": "Not signed in",
+      "appNotRunning": "App is not running",
+      "notLaunchedByVibeHub": "Started outside VibeHub",
+      "unsupported": "Not exposed by this version",
+      "error": "Could not be read"
+    },
+    "remaining": "{{amount}} of {{total}} {{unit}} left",
+    "planLine": "Plan allowance: {{amount}} of {{total}} {{unit}} left",
+    "unknown": "Unknown",
+    "resets": "Next window (Singapore time)",
+    "checked": "Last checked",
+    "stale": "Older than five minutes",
+    "refresh": "Refresh",
+    "claim": "Claim the daily credits",
+    "claimed": "Claimed today",
+    "noReward": "No reward to claim today",
+    "noRewardHint": "The app itself reports that no daily reward is waiting. Refresh again to see the current state.",
+    "claimDone": "Received {{amount}} {{unit}}",
+    "claimFailed": "The app refused the daily reward.",
+    "claimNotFound": "In Qoder, open the Usage panel in the lower-left corner, press the gift icon, then press Claim.",
+    "claimHint": "Qoder claims its daily reward inside the app; VibeHub can only press the same button for you.",
+    "openApp": "Open through VibeHub",
+    "openFailed": "The app could not be opened.",
+    "errors": {
+      "appNotRunning": "The app is not running. Open it through VibeHub to read its quota.",
+      "notLaunchedByVibeHub": "This app was started outside VibeHub. Close it and open it through VibeHub to read its quota.",
+      "signedOut": "This app is signed out. Sign in there, then refresh.",
+      "unsupported": "This app version does not expose its quota.",
+      "timeout": "The app did not answer in time.",
+      "error": "The quota could not be read. The last saved numbers are shown.",
+      "probeFailed": "The quota could not be read. The last saved numbers are shown.",
+      "claimFailed": "The app refused the daily reward.",
+      "nothingToClaim": "There is no daily reward to claim right now.",
+      "networkUnavailable": "VibeHub could not reach the app.",
+      "busy": "Another quota check is still running."
+    }
+  }
 }

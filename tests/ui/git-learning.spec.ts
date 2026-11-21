@@ -38,7 +38,8 @@ test('Git lessons retain their category, reset scroll, and open resources extern
     };
   });
   await page.goto('/learning');
-  await page.getByRole('button', { name: 'گیت و مدیریت تغییرات', exact: true }).click();
+  await page.getByLabel('دسته‌های آموزش').selectOption({ label: 'گیت و مدیریت تغییرات' });
+  await expect(page).toHaveURL(/category=git/);
   await expect(page.locator('.vh-learning-row')).toHaveCount(3);
   await page.screenshot({ path: 'output/git-learning/category-fa.png' });
   await page.locator('.vh-learning-row').first().click();

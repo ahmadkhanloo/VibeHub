@@ -1,0 +1,46 @@
+{
+ "schemaVersion": 1,
+ "id": "pi",
+ "name": "Pi CLI",
+ "summary": {
+  "fa": "عامل کدنویسی مینیمال خط فرمان؛ سبک، سریع و با مدل دلخواه شما.",
+  "en": "A minimal command-line coding agent; lightweight, fast and driven by your own model choice."
+ },
+ "kind": "cli_agent",
+ "platforms": [
+  "windows",
+  "linux",
+  "macos"
+ ],
+ "websiteUrl": "https://github.com/badlogic/pi-mono",
+ "docsUrl": "https://github.com/badlogic/pi-mono/tree/main/packages/pi",
+ "sourceRepoUrl": "https://github.com/badlogic/pi-mono",
+ "isOpenSource": true,
+ "freeAccess": "free_tier",
+ "freeAccessDetails": {
+  "fa": "خود ابزار متن‌باز و رایگان است؛ هزینهٔ مدل به کلید و ارائه‌دهنده‌ای که خودتان وصل می‌کنید بستگی دارد.",
+  "en": "The tool itself is open source and free; model cost depends on the key and provider you connect."
+ },
+ "requiresSignup": false,
+ "requiresPaymentCard": null,
+ "sourceOfFreeAccess": "https://github.com/badlogic/pi-mono",
+ "lastVerified": "2026-11-21",
+ "capabilities": {
+  "install": "reported",
+  "launch": "reported",
+  "rtl": "unsupported",
+  "proxy": "unknown",
+  "terminal": "reported",
+  "byok": "unknown"
+ },
+ "installMethods": [
+  {
+   "method": "npm",
+   "idOrUrl": "@mariozechner/pi",
+   "note": {
+    "fa": "دستور نصب: npm install -g @mariozechner/pi",
+    "en": "Install with npm install -g @mariozechner/pi"
+   }
+  }
+ ]
+}

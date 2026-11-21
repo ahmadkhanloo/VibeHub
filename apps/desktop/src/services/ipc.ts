@@ -11,7 +11,7 @@ import type {
 } from '@core';
 import { invoke } from '@tauri-apps/api/core';
 import { loadCatalog, type Catalog } from '@catalog';
-import { assertNoExecutablePayload, parseLearningFeed, parseLearningTutorials, parseNewsFeed } from '@core';
+import { assertNoExecutablePayload, parseLearningFeed, parseNewsFeed } from '@core';
 import { applyRemoteCatalog, validateRemoteGuides } from '@/lib/catalog';
 
 export interface LaunchOutcome {
@@ -119,18 +119,12 @@ export interface FeedSyncResult {
   generatedAt?: string;
   catalog?: Catalog;
   guides?: Record<string, string>;
-  learning?: unknown;
   learningArticles?: unknown;
   news?: unknown;
 }
 
 const feedFlights = new Map<string, Promise<FeedSyncResult>>();
-const accountReads = new Map<string, Promise<DesktopAccountsSnapshot>>();
 const codexAccountReads = new Map<string, Promise<AccountsSnapshot>>();
-
-function accountSummaryChanged(appId: string) {
-  if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('vibehub:account-summary-changed', { detail: { appId } }));
-}
 
 function connectionsChanged() {
   if (typeof window !== 'undefined') window.dispatchEvent(new Event('vibehub:connections-changed'));
@@ -138,14 +132,8 @@ function connectionsChanged() {
 
 export const ipc = {
   appPath: (appId: string, path: string) => invoke<void>('app_path', { appId, path }),
-  appAccounts: (appId: string, action: string, payload: Record<string, unknown> = {}) => {
-    if (action !== 'list') return invoke<DesktopAccountsSnapshot>('app_accounts', { appId, action, payload }).then(result => { accountSummaryChanged(appId); return result; });
-    const current = accountReads.get(appId); if (current) return current;
-    const pending = invoke<DesktopAccountsSnapshot>('app_accounts', { appId, action, payload }).finally(() => { if (accountReads.get(appId) === pending) accountReads.delete(appId); });
-    accountReads.set(appId, pending); return pending;
-  },
   codexAccounts: (action: AccountsAction, payload: Record<string, unknown> = {}) => {
-    if (action !== 'list') return invoke<AccountsSnapshot>('codex_accounts', { action, payload }).then(result => { accountSummaryChanged('chatgpt'); return result; });
+    if (action !== 'list') return invoke<AccountsSnapshot>('codex_accounts', { action, payload });
     const key = String(payload.language ?? '');
     const current = codexAccountReads.get(key); if (current) return current;
     const pending = invoke<AccountsSnapshot>('codex_accounts', { action, payload }).finally(() => { if (codexAccountReads.get(key) === pending) codexAccountReads.delete(key); });
@@ -161,6 +149,7 @@ export const ipc = {
   launchApp: (req: LaunchRequest) => invoke<LaunchOutcome>('launch_app', { req }),
   launchStates: (appIds: string[]) => invoke<Record<string, LaunchState>>('launch_states', { appIds }),
   launchState: (appId: string) => invoke<LaunchState>('launch_state', { appId }),
+  traySync: (apps: { id: string; name: string; running?: boolean }[]) => invoke<void>('tray_update', { apps }),
   stopRtl: (appId: string) => invoke<boolean>('stop_rtl', { appId }),
 
   installWinget: (appId: string) => invoke<InstallRunResult>('install_winget', { appId }),
@@ -216,10 +205,9 @@ export const ipc = {
     assertNoExecutablePayload(JSON.stringify(result.catalog));
     const catalog = loadCatalog(result.catalog);
     const guides = validateRemoteGuides(result.guides, catalog);
-    const learning = result.learning === undefined ? undefined : parseLearningTutorials(result.learning);
     const learningArticles = result.learningArticles === undefined ? undefined : parseLearningFeed(result.learningArticles);
     const news = result.news === undefined ? undefined : parseNewsFeed(result.news);
-    applyRemoteCatalog(catalog, guides, learning, learningArticles, news);
+    applyRemoteCatalog(catalog, guides, learningArticles, news);
     try { const stamps = JSON.parse(localStorage.getItem('vibehub.feed.success.v1') ?? '{}'); stamps[feedBaseUrl] = Date.now(); localStorage.setItem('vibehub.feed.success.v1', JSON.stringify(stamps)); localStorage.removeItem('vibehub.feed.failure.v1'); } catch { /* Valid in-memory catalog remains available. */ }
     window.dispatchEvent(new Event('vibehub:feed-synced'));
     return { ...result, catalog };
@@ -233,7 +221,69 @@ export const ipc = {
     } finally { feedFlights.delete(feedBaseUrl); }
   },
   appVersion: () => invoke<string>('app_version'),
+  claudeAccounts: (action: ClaudeAccountsAction, payload: Record<string, unknown> = {}) =>
+    invoke<ClaudeAccountsSnapshot>('claude_accounts', { action, payload }),
+  appAccounts: (appId: string, action: AppAccountsAction, payload: Record<string, unknown> = {}) =>
+    invoke<AppAccountsSnapshot>('app_accounts', { appId, action, payload }),
+  appQuota: (action: QuotaAction, payload: Record<string, unknown> = {}) =>
+    invoke<AppQuotaSnapshot>('app_quota', { action, payload }),
+  toolchainStatus: () => invoke<ToolchainStatus>('toolchain_status'),
 };
+
+/** Machine-level facts about the helper tools the workspace advertises. */
+export interface ToolchainStatus {
+  repowise: { installed: boolean; version: string | null };
+  browsers: { edge: boolean; chrome: boolean };
+  plugins: { superpowers: boolean };
+  skills: {
+    hindsight: boolean;
+    dsh: boolean;
+    ponytail: boolean;
+    uiuxProMax: boolean;
+    unslop: boolean;
+  };
+}
+
+/** Apps whose session is an opaque blob that VibeHub swaps without decrypting it. */
+export type OpaqueAccountApp = 'zcode' | 'qoder';
+export type AppAccountsAction = 'list' | 'capture' | 'apply' | 'revert' | 'rename' | 'delete' | 'dismiss';
+export interface AppAccount {
+  id: string; name: string; size: number; files: string[]; active: boolean;
+  capturedAt: number | null; updatedAt: number | null;
+}
+export interface AppAccountsSnapshot {
+  app: OpaqueAccountApp;
+  accounts: AppAccount[];
+  activeId: string | null;
+  notice: string | null;
+  /** The app is running; capture and revert refuse, apply closes it first. */
+  running: boolean;
+  /** Required session files exist, i.e. the app has been signed in at least once. */
+  filesPresent: boolean;
+  /** The app rewrote its session since the last capture or switch. */
+  sessionChanged: boolean;
+  sessionPath: string;
+  managedFiles: string[];
+  backupCount: number;
+  lastBackupAt: number | null;
+  nativePreview?: boolean;
+}
+
+export type ClaudeAccountsAction = 'list' | 'save' | 'apply' | 'track' | 'rename' | 'delete' | 'dismiss';
+export interface ClaudeAccount {
+  id: string; name: string; label: string; active: boolean; updatedAt: number | null;
+}
+export interface ClaudeAccountsSnapshot {
+  app: 'claude-code';
+  accounts: ClaudeAccount[];
+  activeId: string | null;
+  notice: string | null;
+  /** True when settings.json currently holds a token, so "save" can capture it. */
+  configured: boolean;
+  current: string | null;
+  settingsPath: string | null;
+  nativePreview?: boolean;
+}
 
 export type AccountsAction = 'list' | 'login' | 'cancel' | 'import' | 'importJson' | 'refresh' | 'rename' | 'delete' | 'switch' | 'dismiss' | 'settings';
 export interface CodexAccount {
@@ -246,17 +296,39 @@ export interface AccountsSnapshot {
   errorCode?: string | null;
   accounts: CodexAccount[]; activeId: string | null; pendingId: string | null; notice: string | null;
   settings: { enabled: boolean; threshold: number }; lastSwitch: number; cliReady: boolean; nativePreview?: boolean;
-  supportedVersion: string; desktopRunning: boolean; desktopVerified: boolean; loginPending: boolean;
+  supportedVersion: string; cliVersion?: string | null; desktopRunning: boolean; desktopVerified: boolean; loginPending: boolean;
 }
 
-export interface DesktopAccount {
-  id: string; name: string; email: string; plan: string; checkedAt: number | null; error: string | null;
-  errorCode?: string | null; quotaError?: string | null; quotaErrorCode?: string | null; expiresAt?: number | null;
-  usage: { label: string; remaining?: number | null; granted?: number | string | null; unit: string; resetsAt?: number | string | null }[];
+/** Apps that publish a daily quota that VibeHub reads from inside the app. */
+export type QuotaAppId = 'qoder' | 'minimax-code';
+export type QuotaStatus = 'ok' | 'signedOut' | 'appNotRunning' | 'notLaunchedByVibeHub' | 'unsupported' | 'error';
+export type QuotaAction = 'list' | 'refresh' | 'claim';
+export interface AppQuotaClaim {
+  /** The app itself reports that a reward is waiting to be taken. */
+  available: boolean;
+  /** Taken today, when the app says so. */
+  claimed: boolean | null;
+  points: number | null;
+  dayNo: number | null;
 }
-export interface DesktopAccountsSnapshot {
-  appId: string; accounts: DesktopAccount[]; activeId: string | null; notice: string | null;
-  errorCode?: string | null;
-  version: string; supportedVersion: string; desktopRunning: boolean; liveSwitchVerified: boolean;
-  capabilities: { canImport: boolean; canLogin: boolean; canRefresh: boolean; canSwitch: boolean };
+export interface AppQuota {
+  appId: QuotaAppId;
+  status: QuotaStatus;
+  used: number | null;
+  total: number | null;
+  remaining: number | null;
+  percent: number | null;
+  unit: string;
+  /** A second pool, shown next to the daily credits when it exists. */
+  plan: { used: number | null; total: number | null; remaining: number | null; percent: number | null; unit?: string } | null;
+  resetsAt: number | null;
+  checkedAt: number | null;
+  claim: AppQuotaClaim;
+  error: string | null;
+}
+export interface AppQuotaSnapshot {
+  nativePreview?: boolean;
+  apps: AppQuota[];
+  /** Present on the answer to a claim. */
+  claim?: { appId: QuotaAppId; ok: boolean; error: string | null; points: number | null; dayNo: number | null };
 }

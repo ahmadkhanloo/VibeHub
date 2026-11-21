@@ -2,7 +2,7 @@ import { Disclosure } from '@/components/Disclosure';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ExternalLink, Eye, EyeOff, KeyRound, Plus, Save, StickyNote, Trash2, Zap } from 'lucide-react';
+import { ExternalLink, Eye, EyeOff, KeyRound, Plus, Save, Search, StickyNote, Trash2, Zap } from 'lucide-react';
 import { Badge, Button, Card, CopyButton, EmptyState, ErrorNotice, Input, Modal, PageHeader } from '@/components/ui';
 import { useCatalog, providers as bundledProviders } from '@/lib/catalog';
 import { ProviderLogo } from '@/components/ProviderLogo';
@@ -17,24 +17,16 @@ const origin = (value: string) => { try { return new URL(value).origin; } catch 
 
 // Single source of truth: the provider catalog (content/providers/*.json). This table only adds
 // the default model ID and the display order, plus the manifest-less `custom` preset.
-const PRESET_ORDER = ['openai', 'anthropic', 'google', 'deepseek', 'mistral', 'openrouter', 'nvidia', 'radeon-cloud', 'inferx', 'kira-ai', 'clean-apis', 'orcarouter', 'apinex', WORKERS_AI, 'groq', 'ollama'];
+// OpenAI and Anthropic are deliberately not first-class presets: they surface only as
+// ready-made fills of the `custom` endpoint (and Anthropic stays a Claude-native preset).
+const PRESET_ORDER = ['google', 'openrouter', 'nvidia', 'radeon-cloud', WORKERS_AI, 'groq'];
 const DEFAULT_MODELS: Record<string, string> = {
-  openai: 'gpt-4o-mini',
-  anthropic: 'claude-sonnet-4-5-20250929',
   google: 'gemini-2.5-flash',
-  deepseek: 'deepseek-flash',
-  mistral: 'mistral-small-latest',
   openrouter: 'openai/gpt-oss-20b:free',
   nvidia: 'meta/llama-3.3-70b-instruct',
   'radeon-cloud': 'DeepSeek-V4-Flash',
-  inferx: 'Qwen/Qwen3.6-35B-A3B',
-  'kira-ai': 'minimax-m3-free',
-  'clean-apis': 'claude-opus-4.8',
-  orcarouter: 'deepseek/deepseek-v4-flash-free',
-  apinex: 'free/jev-1.13',
   [WORKERS_AI]: '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
   groq: 'openai/gpt-oss-20b',
-  ollama: 'qwen2.5-coder:7b',
 };
 const CUSTOM_PRESET: Preset = { providerId: 'custom', name: 'OpenAI-compatible', baseUrl: 'https://', modelId: '', requiresKey: true };
 const PRESETS: Preset[] = PRESET_ORDER.flatMap((providerId) => {
@@ -45,17 +37,19 @@ const PRESETS: Preset[] = PRESET_ORDER.flatMap((providerId) => {
 
 const makeConnection = (preset: Preset): ProviderConnection => ({ id: `connection-${crypto.randomUUID()}`, providerId: preset.providerId, name: preset.name, baseUrl: preset.baseUrl, modelId: preset.modelId, hasKey: false });
 
-const costProviders = ['openrouter', 'radeon-cloud', 'nvidia-build', 'anthropic'];
+const costProviders = ['openrouter', 'radeon-cloud', 'nvidia-build'];
 const priority = (id: string) => { const index = ['openrouter', 'radeon-cloud', 'nvidia-build'].indexOf(id); return index < 0 ? 3 : index; };
 PRESETS.sort((a, b) => priority(catalogId(a.providerId)) - priority(catalogId(b.providerId)));
 
+// Claude connections keep the native Anthropic endpoint (its protocol is what
+// Claude Code speaks) alongside the generic presets; the retired providers stay
+// retired for Claude too. Anthropic never returns to the general API notebook.
+const ANTHROPIC_ONLY: Preset[] = bundledProviders
+  .filter(manifest => manifest.id === 'anthropic')
+  .map(manifest => ({ providerId: 'anthropic', name: manifest.name, baseUrl: 'https://api.anthropic.com', modelId: '', requiresKey: manifest.requiresApiKey !== false }));
 const CLAUDE_PRESETS = PRESETS
-  .filter(preset => ['openrouter', 'anthropic', 'radeon-cloud', 'custom'].includes(preset.providerId))
-  .map(preset => {
-    if (preset.providerId === 'anthropic') return { ...preset, baseUrl: 'https://api.anthropic.com', modelId: '' };
-
-    return preset;
-  });
+  .filter(preset => ['openrouter', 'radeon-cloud', 'custom'].includes(preset.providerId))
+  .concat(ANTHROPIC_ONLY);
 
 export const newClaudeConnection = () => makeConnection(CLAUDE_PRESETS[0]!);
 
@@ -201,6 +195,9 @@ export function ConnectionEditor({ connection, existing, otherNames = [], onClos
         {forClaude && <p className="text-sm text-muted sm:col-span-2">{t('models:nvidiaClaudeUnavailable')} <Link className="vh-link" to="/connections/api?provider=nvidia-build">NVIDIA NIM</Link></p>}
         <label className="block space-y-2 text-sm" htmlFor={`${id}-name`}><span className="block font-medium">{t('models:connectionName')}</span><Input id={`${id}-name`} data-autofocus dir="auto" value={draft.name} maxLength={120} onChange={(e) => setDraft({ ...draft, name: e.target.value })} {...errorProps('name')} />{fieldError('name')}{duplicateName && <p role="status" className="text-sm text-warning">{t('models:duplicateNameWarning')}</p>}</label>
         <label className="block space-y-2 text-sm sm:col-span-2" htmlFor={`${id}-url`}><span className="block font-medium">{t('models:baseUrl')}</span><Input id={`${id}-url`} dir="ltr" className="ltr-tech" value={draft.baseUrl} onChange={(e) => { const baseUrl = e.target.value; resetLookup(); const changed = origin(draft.baseUrl) !== origin(baseUrl); if (changed) setKey(''); setDraft({ ...draft, baseUrl, hasKey: changed ? false : draft.hasKey }); }} {...errorProps('url')} />{fieldError('url')}</label>
+        {draft.providerId === 'custom' && <div className="flex flex-wrap items-center gap-2 sm:col-span-2 text-sm"><span className="text-muted">{t('models:customPresetsHint')}</span>
+          {[{ id: 'anthropic', baseUrl: 'https://api.anthropic.com' }, { id: 'openai', baseUrl: 'https://api.openai.com/v1' }].map(fill => <Button key={fill.id} size="sm" variant="ghost" type="button" onClick={() => setDraft(current => ({ ...current, baseUrl: fill.baseUrl }))}>{fill.id === 'anthropic' ? 'Anthropic' : 'OpenAI'}</Button>)}
+        </div>}
         {needsWorkersAccountId && !errors.url && <p className="text-sm text-muted sm:col-span-2">{t('models:workersAccountId')}</p>}
         <label className="block space-y-2 text-sm" htmlFor={`${id}-model`}><span className="block font-medium">{t(forClaude ? 'models:modelId' : 'models:optionalModelId')}</span><Input id={`${id}-model`} dir="ltr" className="ltr-tech" value={draft.modelId} maxLength={256} onChange={(e) => { setPreviewReport(null); setDraft({ ...draft, modelId: e.target.value }); }} {...errorProps('model')} />{fieldError('model')}</label>
         {preset?.requiresKey !== false && <div className="space-y-2 text-sm"><span className="flex items-center gap-2 font-medium" id={`${id}-key-label`}><KeyRound size={16} aria-hidden="true" />{t(existing ? 'models:replaceApiKey' : 'models:apiKey')}</span><span className="relative block"><Input id={`${id}-key`} aria-labelledby={`${id}-key-label`} type={showKey ? 'text' : 'password'} dir="ltr" className="ltr-tech pe-20" autoComplete="new-password" value={key} onChange={(e) => { resetLookup(); setKey(e.target.value); }} {...errorProps('key')} placeholder={existing && draft.hasKey ? t('models:leaveBlankToKeep') : ''} /><Button size="sm" variant="ghost" type="button" className="absolute top-1/2 -translate-y-1/2" style={{ insetInlineEnd: 6 }} aria-label={t(showKey ? 'models:hideKey' : 'models:showKey')} aria-pressed={showKey} onClick={() => setShowKey(value => !value)}>{showKey ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}</Button></span>{fieldError('key')}</div>}
@@ -245,6 +242,15 @@ export function ModelsPage() {
   const pageParam = Number.parseInt(params.get('page') ?? '1', 10);
   const page = Number.isInteger(pageParam) && pageParam > 0 ? pageParam - 1 : 0;
   const selected = params.get('provider') ?? '';
+  // The notebook opens on what you already noted; the provider catalogue is the second view.
+  const viewMode: 'saved' | 'providers' = params.get('view') === 'saved'
+    ? 'saved'
+    : params.get('view') === 'providers'
+      ? 'providers'
+      : selected
+        ? 'providers'
+        : 'saved';
+  const setViewMode = (next: 'saved' | 'providers') => updateParams(params => { params.set('view', next); });
   const [connections, setConnections] = useState<ProviderConnection[]>([]);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [noteDraft, setNoteDraft] = useState('');
@@ -260,6 +266,7 @@ export function ModelsPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [message, setMessage] = useState('');
+  const [picker, setPicker] = useState(false);
   const operation = useRef(false);
   const updateParams = (mutate: (next: URLSearchParams) => void, replace = true) => {
     const next = new URLSearchParams(params);
@@ -270,16 +277,17 @@ export function ModelsPage() {
     setNoteEditing(false);
     setMessage('');
     setReports({});
-    updateParams(next => { if (id) next.set('provider', id); else next.delete('provider'); }, false);
+    // Remember which view the selection came from: a notebook tile must not jump to the catalogue.
+    updateParams(next => { next.set('view', viewMode); if (id) next.set('provider', id); else next.delete('provider'); }, false);
   };
   const changeFilter = (value: 'all' | 'saved' | 'notes') => {
     setNoteEditing(false);
     setMessage('');
     setReports({});
-    updateParams(next => { next.set('filter', value); next.delete('provider'); next.delete('page'); });
+    updateParams(next => { next.set('view', 'providers'); next.set('filter', value); next.delete('provider'); next.delete('page'); });
   };
-  const changeSearch = (value: string) => updateParams(next => { if (value) next.set('q', value); else next.delete('q'); next.delete('page'); });
-  const changePage = (value: number) => updateParams(next => { if (value > 0) next.set('page', String(value + 1)); else next.delete('page'); });
+  const changeSearch = (value: string) => updateParams(next => { next.set('view', 'providers'); if (value) next.set('q', value); else next.delete('q'); next.delete('page'); });
+  const changePage = (value: number) => updateParams(next => { next.set('view', 'providers'); if (value > 0) next.set('page', String(value + 1)); else next.delete('page'); });
   const reload = async () => {
     setLoading(true);
     setError(null);
@@ -297,7 +305,9 @@ export function ModelsPage() {
   const rows = useMemo(() => {
     const map = new Map<string, ProviderRow>();
     for (const provider of providers) {
-      if (provider.id === 'custom-openai-compatible') continue;
+      // Anthropic and OpenAI manifests back the custom fills and the Claude presets;
+      // they are not catalogue rows of their own any more.
+      if (provider.id === 'custom-openai-compatible' || provider.id === 'anthropic' || provider.id === 'openai') continue;
       map.set(provider.id, { id: provider.id, name: provider.name, provider, connections: [] });
     }
     for (const connection of connections) {
@@ -379,26 +389,55 @@ export function ModelsPage() {
     tileRefs.current.get(target.id)?.focus({ preventScroll: true });
   };
   return <div className="mx-auto w-full max-w-[1200px] space-y-8">
-    <PageHeader title={t('models:title')} actions={<Button variant="primary" onClick={() => startNew()}><Plus size={16} aria-hidden="true" />{t('models:tryCustom')}</Button>} />
+    <PageHeader title={t('models:title')} actions={<><Button variant="ghost" onClick={() => startNew()}>{t('models:tryCustom')}</Button><Button variant="primary" onClick={() => setPicker(true)}><Plus size={16} aria-hidden="true" />{t('models:addConnection')}</Button></>} />
     <p className="max-w-[70ch] text-sm leading-7 text-muted">{t('models:connectionIntro')}</p>
     {error != null && !deleting && !testing && <ErrorNotice error={error} onRetry={() => void reload()} />}{message && <p role="status" className="text-sm text-success">{message}</p>}
     <div className="space-y-4">
-      <label className="block max-w-xl space-y-1"><span>{t('models:searchProviders')}</span><Input type="search" value={search} onChange={event => changeSearch(event.target.value)} /></label>
-      <div className="vh-choice-group model-filter-group max-w-xl" role="group" aria-label={t('models:filterLabel')}>{(['all', 'saved', 'notes'] as const).map(value => <button key={value} type="button" aria-pressed={filter === value} onClick={() => changeFilter(value)}>{t(`models:views.${value}`)}</button>)}</div>
-      {!loading && <p role="status" className="text-sm text-muted">{t('models:resultsCount', { count: visible.length })}</p>}
-      {loading ? <p role="status">{t('common:loading')}</p> : <div className="model-workspace" data-selected={!!row}>
+      <div className="model-toolbar">
+        <div className="vh-choice-group" role="group" aria-label={t('models:savedConnections')}>
+          {(['saved', 'providers'] as const).map(value => <button key={value} type="button" aria-pressed={viewMode === value} onClick={() => setViewMode(value)}>{t(value === 'saved' ? 'models:savedConnections' : 'models:providerCatalog')}</button>)}
+        </div>
+        {viewMode === 'providers' && <>
+          <div className="model-search">
+            <Search size={16} aria-hidden="true" />
+            <Input type="search" aria-label={t('models:searchProviders')} placeholder={t('models:searchProviders')} value={search} onChange={event => changeSearch(event.target.value)} />
+          </div>
+          <div className="vh-choice-group model-filter-group" role="group" aria-label={t('models:filterLabel')}>{(['all', 'saved', 'notes'] as const).map(value => <button key={value} type="button" aria-pressed={filter === value} onClick={() => changeFilter(value)}>{t(`models:views.${value}`)}</button>)}</div>
+        </>}
+      </div>
+      {!loading && viewMode === 'providers' && <p role="status" className="text-sm text-muted">{t('models:resultsCount', { count: visible.length })}</p>}
+      {loading ? <p role="status">{t('common:loading')}</p> : <div className="model-workspace" data-selected={!!row} data-view={viewMode}>
           <div className="model-workspace-side min-w-0">
+          {viewMode === 'saved' ? <div className="model-notebook" data-testid="saved-connections">
+            {connections.length === 0
+              ? <EmptyState icon={<KeyRound size={22} aria-hidden="true" />} title={t('models:noConnections')} sub={t('connectionsUx:connectionEmptyHint')} action={<Button variant="primary" onClick={() => setPicker(true)}>{t('models:addConnection')}</Button>} />
+              : <ul className="model-notebook-grid">{[...connections].sort((a, b) => a.name.localeCompare(b.name)).map(connection => {
+                  const preset = PRESETS.find(p => p.providerId === connection.providerId);
+                  const rowId = connection.providerId === 'custom' ? `custom:${connection.baseUrl.replace(/\/$/, '')}` : catalogId(connection.providerId);
+                  return <li key={connection.id}>
+                    <button type="button" className="model-notebook-tile" data-testid={`connection-tile-${connection.id}`} aria-current={selected === rowId ? 'true' : undefined} onClick={() => selectProvider(rowId)}>
+                      <ProviderLogo id={preset?.providerId ?? connection.providerId} name={connection.name} />
+                      <span className="model-notebook-copy">
+                        <span className="model-notebook-name" dir="auto">{connection.name}</span>
+                        <code dir="ltr" className="model-notebook-model">{connection.modelId || t('models:noModelSelected')}</code>
+                      </span>
+                      <Badge tone={preset?.requiresKey === false || connection.hasKey ? 'success' : 'warning'}>{t(preset?.requiresKey === false ? 'connectionsUx:noKeyNeeded' : connection.hasKey ? 'models:keyStored' : 'models:keyMissing')}</Badge>
+                    </button>
+                  </li>;
+                })}</ul>}
+          </div> : <>
           <ul className="model-workspace-list" role="listbox" aria-label={t('models:providerCatalog')} aria-orientation="vertical" onKeyDown={listKeyDown} data-testid="provider-list">
             {visible.length === 0 && (() => {
               if (filter === 'saved' && connections.length === 0) return <li role="presentation" className="col-span-full"><EmptyState icon={<KeyRound size={22} aria-hidden="true" />} title={t('models:noConnections')} sub={t('connectionsUx:connectionEmptyHint')} action={<Button variant="primary" onClick={() => startNew()}>{t('models:addConnection')}</Button>} /></li>;
               if (filter === 'notes' && Object.keys(notes).length === 0) return <li role="presentation" className="col-span-full"><EmptyState icon={<StickyNote size={22} aria-hidden="true" />} title={t('models:noNotesYet')} sub={t('models:noNotesHint')} /></li>;
               return <li role="presentation" className="col-span-full"><p role="status">{t('models:noResults')}</p></li>;
             })()}
-            {paged.map(item => <li key={item.id} role="presentation" className="space-y-2"><button type="button" ref={element => { if (element) tileRefs.current.set(item.id, element); else tileRefs.current.delete(item.id); }} role="option" aria-selected={selected === item.id} tabIndex={selected === item.id || (!selected && paged[0]?.id === item.id) ? 0 : -1} className="model-provider-row" onClick={() => selectProvider(item.id)} data-testid={`provider-${item.id}`}><ProviderLogo id={item.provider?.logo ?? item.provider?.id ?? (item.id.startsWith("custom:") ? "custom-openai-compatible" : item.id)} name={item.name} /><span className="model-provider-name">{item.name}</span>{costProviders.includes(item.id) && <span className="model-provider-meta">{t(`models:providerCost.${item.id}`)}</span>}<span className="flex flex-wrap justify-center gap-1">{item.connections.length > 0 && <Badge tone="success">{t('models:connectionsCount', { count: item.connections.length })}</Badge>}{notes[item.id] && <Badge tone="muted">{t('models:note')}</Badge>}</span></button>{filter === 'notes' && <div className="rounded-lg border border-border bg-surface p-3 space-y-2">{noteEditing && selected === item.id ? <><textarea aria-label={t('models:note')} className="vh-input w-full" rows={3} dir="auto" value={noteDraft} onChange={event => setNoteDraft(event.target.value)} /><div className="flex gap-2"><Button size="sm" onClick={() => setNoteEditing(false)}>{t('common:cancel')}</Button><Button size="sm" variant="primary" loading={busy} onClick={() => void act(async () => { setNotes(await ipc.providerNoteSave(item.id, noteDraft)); setNoteEditing(false); })}>{t('common:save')}</Button></div></> : <><p className="whitespace-pre-wrap break-words" dir="auto">{notes[item.id]}</p><Button size="sm" onClick={() => { selectProvider(item.id); setNoteDraft(notes[item.id] ?? ''); setNoteEditing(true); }}>{t('common:edit')}</Button></>}</div>}</li>)}
+            {paged.map(item => <li key={item.id} role="presentation" className="space-y-2"><button type="button" ref={element => { if (element) tileRefs.current.set(item.id, element); else tileRefs.current.delete(item.id); }} role="option" aria-selected={selected === item.id} tabIndex={selected === item.id || (!selected && paged[0]?.id === item.id) ? 0 : -1} className="model-provider-row" onClick={() => selectProvider(item.id)} data-testid={`provider-${item.id}`}><ProviderLogo id={item.provider?.logo ?? item.provider?.id ?? (item.id.startsWith("custom:") ? "custom-openai-compatible" : item.id)} name={item.name} /><span className="model-provider-body"><span className="model-provider-name">{item.name}</span><span className="model-provider-meta">{costProviders.includes(item.id) && <span>{t(`models:providerCost.${item.id}`)}</span>}{item.connections.length > 0 && <Badge tone="success">{t('models:connectionsCount', { count: item.connections.length })}</Badge>}{notes[item.id] && <Badge tone="muted">{t('models:note')}</Badge>}</span></span></button>{filter === 'notes' && <div className="rounded-lg border border-border bg-surface p-3 space-y-2">{noteEditing && selected === item.id ? <><textarea aria-label={t('models:note')} className="vh-input w-full" rows={3} dir="auto" value={noteDraft} onChange={event => setNoteDraft(event.target.value)} /><div className="flex gap-2"><Button size="sm" onClick={() => setNoteEditing(false)}>{t('common:cancel')}</Button><Button size="sm" variant="primary" loading={busy} onClick={() => void act(async () => { setNotes(await ipc.providerNoteSave(item.id, noteDraft)); setNoteEditing(false); })}>{t('common:save')}</Button></div></> : <><p className="whitespace-pre-wrap break-words" dir="auto">{notes[item.id]}</p><Button size="sm" onClick={() => { selectProvider(item.id); setNoteDraft(notes[item.id] ?? ''); setNoteEditing(true); }}>{t('common:edit')}</Button></>}</div>}</li>)}
           </ul>
           {visible.length > 10 && <nav className="mt-3 flex items-center gap-2" aria-label={t('models:paginationLabel')}><Button size="sm" disabled={page === 0} onClick={() => changePage(page - 1)}>{t('models:previous')}</Button><span>{page + 1} / {Math.ceil(visible.length / 10)}</span><Button size="sm" disabled={(page + 1) * 10 >= visible.length} onClick={() => changePage(page + 1)}>{t('models:next')}</Button></nav>}
+          </>}
           </div>
-          <div className="model-workspace-detail" role="region" aria-labelledby={detailId}>{row ? <div className="space-y-5"><Button className="model-back" size="sm" onClick={() => selectProvider('')}>{t('models:backToList')}</Button><h2 id={detailId} ref={headingRef} tabIndex={-1} className="text-lg font-bold" dir="auto">{row.name}</h2>
+          <div className="model-workspace-detail" role="region" aria-labelledby={detailId}>{row ? <div className="space-y-5"><Button className="model-back" size="sm" onClick={() => selectProvider('')}>{t('models:backToList')}</Button><div className="model-detail-head"><ProviderLogo id={provider?.logo ?? provider?.id ?? (row.id.startsWith("custom:") ? "custom-openai-compatible" : row.id)} name={row.name} /><h2 id={detailId} ref={headingRef} tabIndex={-1} className="text-lg font-bold" dir="auto">{row.name}</h2></div>
             {provider && <div className="space-y-3"><p className="text-sm text-muted">{provider.notes[lang]}</p>{preset && <p><span>{t('models:suggestedAddress')}: </span><code dir="ltr" className="break-all">{preset.baseUrl}</code></p>}<div className="flex flex-wrap gap-2"><Button size="sm" onClick={() => void act(async () => { await openUrl(provider.keyUrl ?? provider.officialUrl); })}><ExternalLink size={15} />{t(provider.requiresApiKey ? 'models:openKeyPortal' : 'models:openProvider')}</Button>{preset && <Button size="sm" onClick={() => startNew(preset.providerId)}>{t('models:addConnection')}</Button>}<Button size="sm" onClick={() => void act(async () => { await openUrl(provider.modelsDocUrl ?? provider.officialUrl); })}>{t('models:officialUrl')}</Button><Button size="sm" onClick={() => void act(async () => { await openUrl(provider.usageTermsUrl); })}>{t('models:terms')}</Button></div><p className="text-sm text-muted">{provider.gettingStarted?.[lang]}</p><p className="text-sm text-muted">{t('models:compatibility')}: {Object.entries(provider.supportedApps).filter(([,status]) => status === 'verified').map(([id]) => apps.find(app => app.id === id)?.name ?? id).join(', ') || t('models:noVerifiedTools')}</p></div>}
             {!provider && preset && <div className="space-y-3"><p><span>{t('models:suggestedAddress')}: </span><code dir="ltr" className="break-all">{preset.baseUrl}</code></p><Button size="sm" onClick={() => startNew(preset.providerId)}>{t('models:addConnection')}</Button></div>}
             <section className="space-y-2"><h3 className="font-bold">{t('models:note')}</h3>{noteEditing ? <><textarea aria-label={t('models:note')} className="vh-input w-full" rows={4} dir="auto" value={noteDraft} onChange={event => setNoteDraft(event.target.value)} /><div className="flex gap-2"><Button size="sm" onClick={() => setNoteEditing(false)}>{t('common:cancel')}</Button><Button size="sm" variant="primary" loading={busy} onClick={() => void act(async () => { setNotes(await ipc.providerNoteSave(row.id, noteDraft)); setNoteEditing(false); })}>{t('common:save')}</Button></div></> : <><p className="whitespace-pre-wrap" dir="auto">{notes[row.id] || t('models:noNote')}</p><Button size="sm" onClick={() => { setNoteDraft(notes[row.id] ?? ''); setNoteEditing(true); }}>{t('common:edit')}</Button></>}</section>
@@ -437,6 +476,17 @@ export function ModelsPage() {
       setReports({});
       setMessage(t('connectionsUx:connectionSaved'));
     }} />}
+    <Modal open={picker} title={t('models:addConnection')} onClose={() => setPicker(false)}>
+      <p className="text-sm leading-7 text-muted">{t('models:provider')}</p>
+      <ul className="model-picker-grid">
+        {PRESETS.map(preset => <li key={preset.providerId}>
+          <button type="button" className="model-picker-tile" onClick={() => { setPicker(false); startNew(preset.providerId); }}>
+            <ProviderLogo id={preset.providerId} name={preset.name} />
+            <span className="model-picker-name" dir="auto">{preset.name}</span>
+          </button>
+        </li>)}
+      </ul>
+    </Modal>
     <Modal open={!!deleting} title={t('connectionsUx:deleteConnection')} onClose={() => setDeleting(null)} busy={busy}><p className="text-sm leading-7">{t('connectionsUx:deleteConnectionHint', { name: deleting?.name })}</p>{error != null && <ErrorNotice error={error} />}<div className="mt-5 flex justify-end gap-2"><Button disabled={busy} onClick={() => setDeleting(null)}>{t('common:cancel')}</Button><Button variant="danger" loading={busy} onClick={() => void act(async () => { if (!deleting) return; setConnections(await ipc.providerConnectionDelete(deleting.id)); setReports((current) => { const next = { ...current }; delete next[deleting.id]; return next; }); setDeleting(null); setMessage(t('connectionsUx:connectionDeleted')); })}>{t('common:delete')}</Button></div></Modal>
     <Modal open={!!testing} title={t('models:testConnection')} onClose={() => setTesting(null)} busy={busy}><p className="text-sm leading-7">{t('models:testConsent')}</p>{error != null && <ErrorNotice error={error} />}<div className="mt-5 flex justify-end gap-2"><Button disabled={busy} onClick={() => setTesting(null)}>{t('common:cancel')}</Button><Button variant="primary" loading={busy} onClick={() => void act(async () => { if (!testing) return; const report = await ipc.providerConnectionTest(testing.id); setReports((current) => ({ ...current, [testing.id]: report })); setTesting(null); })}>{t('common:confirm')}</Button></div></Modal>
   </div>;

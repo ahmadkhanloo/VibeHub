@@ -7,6 +7,7 @@ import { useSettings } from '@/app/settings';
 import { Badge, Button, Card } from '@/components/ui';
 import { AppLogo } from '@/components/AppLogo';
 import { ipc } from '@/services/ipc';
+import { WindowDragStrip } from '@/app/WindowTitlebar';
 import type { DetectedApp } from '@core';
 import { apps } from '@/lib/catalog';
 import vibeHubMark from '@/assets/vibehub-mark.svg';
@@ -46,8 +47,10 @@ export function Onboarding() {
   };
 
   return (
-    <main className="min-h-full bg-bg px-6 py-10">
-      <div className="mx-auto max-w-2xl space-y-8">
+    <>
+      <WindowDragStrip />
+      <main className="min-h-full bg-bg px-6 py-10">
+        <div className="mx-auto max-w-2xl space-y-8">
         <div className="flex items-center gap-3">
           <img src={vibeHubMark} alt="" aria-hidden="true" className="h-10 w-10 rounded-lg" />
           <span className="text-xl font-bold">{t('common:appName')}</span>
@@ -116,5 +119,6 @@ export function Onboarding() {
         </Card>
       </div>
     </main>
+    </>
   );
 }

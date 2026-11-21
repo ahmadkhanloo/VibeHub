@@ -17,8 +17,8 @@ test('failed app discovery remains unknown and offers retry', async ({ page }) =
   await page.goto('/');
   await expect(page.getByRole('alert')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Try again', exact: true })).toBeVisible();
-  await page.goto('/discover');
-  await expect(page.getByRole('heading', { name: 'Discover tools', exact: true })).toBeVisible();
+  await page.goto('/?view=available');
+  await expect(page.getByRole('button', { name: 'Not installed', exact: true })).toHaveAttribute('aria-pressed', 'true');
   expect(await page.locator('.vh-catalog-tile').count()).toBe(0);
 });
 

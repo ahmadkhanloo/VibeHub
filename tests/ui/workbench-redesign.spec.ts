@@ -5,12 +5,12 @@ test('main sidebar links directly to the tools and learning areas', async ({ pag
   await mockNative(page);
   await page.goto('/');
   const sidebar = page.getByRole('navigation', { name: 'Main navigation' });
-  for (const label of ['Apps', 'AI connections', 'Proxy', 'News and offers', 'Terminal & Persian text', 'Diagnostics', 'Learn']) {
-    await expect(sidebar.getByRole('link', { name: label })).toBeVisible();
+  for (const label of ['Apps', 'Helper tools', 'Accounts', 'API notebook', 'Proxy', 'Diagnostics', 'Learn']) {
+    await expect(sidebar.getByRole('link', { name: label, exact: true })).toBeVisible();
   }
   await expect(page.getByRole('link', { name: 'Settings' })).toBeVisible();
   await expect(sidebar.getByRole('link', { name: 'More' })).toHaveCount(0);
-  await expect(sidebar.getByRole('link', { name: 'Accounts and quotas' })).toHaveCount(0);
+  await expect(sidebar.getByRole('link', { name: 'Terminal', exact: true })).toHaveCount(0);
 });
 
 test('collapsed sidebar exposes its expand control on logo hover and keyboard focus', async ({ page }) => {
@@ -29,13 +29,13 @@ test('collapsed sidebar exposes its expand control on logo hover and keyboard fo
   await expect(page.getByRole('button', { name: 'Collapse sidebar', exact: true })).toBeVisible();
 });
 
-test('AI connections uses compact local provider cards and keeps proxy as a separate destination', async ({ page }) => {
+test('the API notebook keeps compact provider cards in its catalogue view and proxy stays separate', async ({ page }) => {
   await mockNative(page);
   await page.setViewportSize({ width: 1280, height: 860 });
-  await page.goto('/connections/api');
+  await page.goto('/connections/api?view=providers');
   const list = page.locator('.model-workspace-list');
   await expect(list).toBeVisible();
-  await expect(list.locator('[data-testid^="provider-"]')).toHaveCount(10);
+  await expect(list.getByRole('option')).toHaveCount(7);
   await expect(page.getByRole('tab', { name: 'Proxy', exact: true })).toHaveCount(0);
   await page.getByRole('searchbox').last().fill('Google');
   await page.getByTestId('provider-google').click();
@@ -51,7 +51,7 @@ test('apps page omits the intro and recent projects, and add-app view only lists
   await page.goto('/');
   await expect(page.getByText('Launch and prepare the tools installed on this computer.')).toHaveCount(0);
   await expect(page.getByRole('region', { name: 'Projects' })).toHaveCount(0);
-  await page.goto('/discover');
+  await page.goto('/?view=available');
   await expect(page.getByRole('tab')).toHaveCount(0);
   await expect(page.getByRole('button', { name: /filters/i })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'ZCode', exact: true })).toHaveCount(0);

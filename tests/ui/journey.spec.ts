@@ -58,8 +58,8 @@ test('offers survive corrupt read-state storage and never ask for notification p
   await page.addInitScript(() => { localStorage.setItem('vibehub.readOffers', '{invalid'); });
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('/offers');
-  await expect(page).toHaveURL(/offers/);
+  await page.goto('/learning?view=news');
+  await expect(page).toHaveURL(/learning\?view=news/);
   await page.locator('.vh-news-settings summary').click();
   const notifications = page.getByRole('switch', { name: 'System notifications (optional)', exact: true });
   await expect(notifications).toBeVisible();

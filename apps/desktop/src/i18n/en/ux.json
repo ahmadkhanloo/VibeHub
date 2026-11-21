@@ -31,7 +31,7 @@
   "installNote": "Installation happens through the official publisher. Return here after installing and check again.",
   "launchSetup": "Launch mode",
   "proxy": "Proxy",
-  "models": "AI connections",
+  "models": "API notebook",
   "guides": "Guides",
   "doctor": "Diagnostics",
   "offers": "Offers",
@@ -66,6 +66,9 @@
   "desktop_ide": "Development environment",
   "desktop_agent": "Desktop assistant",
   "cli_agent": "Command-line assistant",
+  "groupApps": "Apps",
+  "groupTerminal": "Terminal tools",
+  "groupHelpers": "Helper tools",
   "free_forever": "Free access",
   "free_tier": "Free tier",
   "trial": "Trial",
@@ -108,7 +111,8 @@
     "opencode": "Desktop coding agent",
     "chatgpt": "ChatGPT and Codex accounts",
     "antigravity-ide": "Google code editor with network and extension API guidance",
-    "claude-code": "Terminal coding with Claude sign-in or another API"
+    "claude-code": "Terminal coding with Claude sign-in or another API",
+    "minimax-code": "MiniMax desktop agent with Persian RTL"
   },
   "appearanceTab": "Appearance",
   "terminalTab": "Terminal",
@@ -117,6 +121,11 @@
   "dataTab": "Data and about",
   "launchTab": "Launch",
   "aboutTab": "About",
+  "textSizeSmall": "Small",
+  "textSizeMedium": "Medium",
+  "textSizeLarge": "Large",
+  "modeNormalShort": "Normal",
+  "available": "Not installed",
   "accountManagement": "Manage accounts for this app",
   "terminalRestore": "Restore previous terminal settings",
   "accountsTab": "Accounts",
@@ -156,6 +165,7 @@
     "source": {
       "chatgpt": "Quota source: Codex CLI; saved from the last check",
       "qoder": "Quota source: Qoder service; saved from the last check",
+      "minimax-code": "Quota source: MiniMax service; saved from the last check",
       "zcode": "Quota source: ZCode service; saved from the last check"
     }
   },
@@ -168,7 +178,7 @@
   "apiConnections": "AI connections",
   "rtlSetupFailed": "RTL setup did not finish. Please retry.",
   "rtlSetupShort": "Set up RTL",
-  "apiNotebook": "AI connections",
+  "apiNotebook": "API notebook",
   "rtlSetupFor": "Set up RTL for {{name}}",
   "rtlRepair": "Repair RTL",
   "rtlRepairFor": "Repair RTL for {{name}}",
@@ -202,5 +212,9 @@
   },
   "themeToggle": "Day and night",
   "dayMode": "Switch to day",
-  "nightMode": "Switch to night"
+  "nightMode": "Switch to night",
+  "accountsHub": "Accounts",
+  "groupSkills": "Skills",
+  "suggested": "Suggested",
+  "helpersIntro": "Helper tools and skills detected on this machine, with suggested next steps from the learning library."
 }

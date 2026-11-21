@@ -5,11 +5,13 @@ test('the sidebar links directly to each destination and legacy routes remain us
   await mockNative(page);
   await page.goto('/');
   const sidebar = page.getByRole('navigation', { name: 'Main navigation' });
-  for (const [label, route] of [['AI connections','/connections/api'],['Proxy','/connections/proxy'],['News and offers','/offers'],['Terminal & Persian text','/terminal'],['Diagnostics','/doctor'],['Learn','/learning']]) {
+  for (const [label, route] of [['Helper tools','/helpers'],['Accounts','/accounts'],['API notebook','/connections/api'],['Proxy','/connections/proxy'],['Diagnostics','/doctor'],['Learn','/learning']]) {
     await expect(sidebar.getByRole('link', { name: label, exact: true })).toHaveAttribute('href', route);
   }
+  // The terminal setup page stays reachable from the workspace cards, not the rail.
+  await expect(sidebar.getByRole('link', { name: 'Terminal', exact: true })).toHaveCount(0);
   await expect(sidebar.getByRole('link', { name: /More tools/i })).toHaveCount(0);
-  for (const [legacy, destination] of [['/tools','/'],['/accounts','/app/chatgpt'],['/connections','/connections/api'],['/proxy','/connections/proxy'],['/settings?panel=terminal','/terminal']]) {
+  for (const [legacy, destination] of [['/connections','/connections/api'],['/proxy','/connections/proxy'],['/settings?panel=terminal','/terminal']]) {
     await page.goto(legacy);
     await expect.poll(() => new URL(page.url()).pathname).toBe(destination);
   }

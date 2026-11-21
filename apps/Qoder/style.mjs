@@ -87,7 +87,19 @@ export function buildCss({ font = true } = {}) {
   return rules.join('\n');
 }
 
-export const STYLE_ID = 'qoder-rtl-fix-v4';
+export const STYLE_ID = 'qoder-rtl-fix-v5';
+
+// Message surfaces whose own direction decides where each line starts: text-align
+// is only start-relative to the block direction, so a container left in LTR keeps
+// Persian prompts hanging on the left even with plaintext bidi inside. A container
+// that holds block children is skipped so each paragraph keeps its own direction.
+const DIRECTION_CONTAINERS = [
+  '[class*="message"]:not([class*="icon"]):not(code):not(pre)',
+  '[class*="markdown"]:not(code):not(pre)',
+  '[class*="prose"]:not(code):not(pre)',
+].join(',');
+const DIRECTION_BLOCKS = '[class*="message"] p,[class*="message"] li,[class*="markdown"] p,[class*="markdown"] li,[class*="prose"] p,[class*="prose"] li';
+const DIRECTION_SURFACES = `${DIRECTION_CONTAINERS}:not(:has(p,li,ul,ol,blockquote,pre,table)),${DIRECTION_BLOCKS}`;
 
 // Runs in the page. Constructed stylesheet + <style> twin: a CSSOM-built sheet
 // is not gated by `style-src`, and the <style> element keeps working on engines
@@ -96,7 +108,27 @@ export function injectSource(css) {
   return `(() => {
   const ID = ${JSON.stringify(STYLE_ID)};
   const CSS = ${JSON.stringify(css)};
+  const DIRECTION_SURFACES = ${JSON.stringify(DIRECTION_SURFACES)};
   ${buildAutoHeadingDirectionScript('qoder-rtl-heading-direction-v1')}
+  // Write an explicit dir per message surface. dir="auto" stops resolving once a
+  // descendant uses plaintext bidi, which silently left Persian prompts on the left.
+  const resolveDirection = (text) => {
+    for (const character of text) {
+      const code = character.codePointAt(0);
+      if (code >= 0x0590 && code <= 0x08ff) return 'rtl';
+      if ((code >= 0x0041 && code <= 0x005a) || (code >= 0x0061 && code <= 0x007a)
+        || (code >= 0x00c0 && code <= 0x02af) || (code >= 0x0370 && code <= 0x058f)) return 'ltr';
+    }
+    return null;
+  };
+  const markDirections = (root) => {
+    if (!root || typeof root.querySelectorAll !== 'function') return;
+    for (const element of root.querySelectorAll(DIRECTION_SURFACES)) {
+      if (element.hasAttribute('dir') || element.closest('pre,code')) continue;
+      const resolved = resolveDirection(element.textContent || '');
+      if (resolved) element.setAttribute('dir', resolved);
+    }
+  };
   const apply = () => {
     const root = document.head || document.documentElement;
     if (!root) return false;
@@ -125,13 +157,24 @@ export function injectSource(css) {
     };
     return true;
   };
-  if (apply()) return;
-  document.addEventListener('readystatechange', apply, { once: true });
+  const start = () => {
+    markDirections(document);
+    return apply();
+  };
+  if (start()) return;
+  document.addEventListener('readystatechange', () => { start(); }, { once: true });
   if (!document.head) {
-    new MutationObserver((m, o) => { if (apply()) o.disconnect(); }).observe(
-      document.documentElement || document, { childList: true, subtree: true }
-    );
+    const observer = new MutationObserver((m, o) => { if (start()) o.disconnect(); });
+    observer.observe(document.documentElement || document, { childList: true, subtree: true });
   }
+  // Messages stream in and re-render after load, so keep resolving new surfaces.
+  new MutationObserver((records) => {
+    for (const record of records) {
+      for (const node of record.addedNodes) {
+        if (node.nodeType === 1) markDirections(node);
+      }
+    }
+  }).observe(document.documentElement || document, { childList: true, subtree: true });
 })();`;
 }
 

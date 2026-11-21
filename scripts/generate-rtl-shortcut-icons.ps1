@@ -1,3 +1,4 @@
+param([string[]]$Only = @())
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
 
@@ -8,8 +9,9 @@ $icons = @(
   @{ folder = 'DeepSeekHarness'; logo = 'deepseek.png' },
   @{ folder = 'Antigravity'; logo = 'antigravity.png' },
   @{ folder = 'OpenCode'; logo = 'opencode.png' },
-  @{ folder = 'Claude'; logo = 'claude.png' }
-)
+  @{ folder = 'Claude'; logo = 'claude.png' },
+  @{ folder = 'MiniMax'; logo = 'minimax.png' }
+) | Where-Object { $Only.Count -eq 0 -or $_.folder -in $Only }
 
 function New-RoundedRectanglePath([Drawing.RectangleF]$Rectangle, [single]$Radius) {
   $diameter = [Math]::Min($Radius * 2, [Math]::Min($Rectangle.Width, $Rectangle.Height))

@@ -377,8 +377,17 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "Minisign verification failed for $($signature.Name)" }
           }
 
+          # GitHub already supplies the tagged source archive. Keep the installer,
+          # signed updater, and required notices without changing published assets.
+          $retained = @('VibeHub-Setup.exe', 'latest.json', 'VibeHub-SBOM.cdx.json', 'LICENSE', 'THIRD_PARTY_LICENSES.md')
+          $publicAssets = @($assets | Where-Object { $_.Name -cin $retained -or $_.Name -like '*.nsis.zip' -or $_.Name -like '*.nsis.zip.sig' })
+          foreach ($asset in $assets | Where-Object Name -cnotin $publicAssets.Name) {
+            gh release delete-asset $tag $asset.Name --yes --repo $env:GITHUB_REPOSITORY
+            if ($LASTEXITCODE -ne 0) { throw "Could not trim draft asset $($asset.Name)" }
+          }
+
           $manifestPath = Join-Path $downloadDir 'checksums-sha256.txt'
-          $lines = @($assets | Sort-Object Name | ForEach-Object {
+          $lines = @($publicAssets | Sort-Object Name | ForEach-Object {
             $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
             "$hash  $($_.Name)"
           })

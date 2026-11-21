@@ -31,7 +31,7 @@
   "installNote": "نصب در سایت رسمی سازنده انجام می‌شود. پس از نصب، به این صفحه برگردید و دوباره بررسی کنید.",
   "launchSetup": "حالت اجرا",
   "proxy": "پروکسی",
-  "models": "اتصال هوش مصنوعی",
+  "models": "دفترچهٔ API",
   "guides": "راهنما",
   "doctor": "عیب‌یابی",
   "offers": "فرصت‌ها",
@@ -66,6 +66,9 @@
   "desktop_ide": "محیط توسعه",
   "desktop_agent": "دستیار دسکتاپ",
   "cli_agent": "دستیار خط فرمان",
+  "groupApps": "اپ‌ها",
+  "groupTerminal": "ابزارهای ترمینال",
+  "groupHelpers": "ابزارهای کمکی",
   "free_forever": "رایگان همیشگی",
   "free_tier": "پلن رایگان",
   "trial": "آزمایشی",
@@ -108,7 +111,8 @@
     "opencode": "عامل کدنویسی دسکتاپ",
     "chatgpt": "ChatGPT و حساب‌های Codex",
     "antigravity-ide": "ویرایشگر کد گوگل؛ راهنمای دسترسی و API افزونه‌ها",
-    "claude-code": "کدنویسی در ترمینال با حساب Claude یا API دیگر"
+    "claude-code": "کدنویسی در ترمینال با حساب Claude یا API دیگر",
+    "minimax-code": "عامل دسکتاپ MiniMax با RTL فارسی"
   },
   "appearanceTab": "ظاهر",
   "terminalTab": "ترمینال",
@@ -117,6 +121,11 @@
   "dataTab": "داده‌ها و درباره",
   "launchTab": "اجرا",
   "aboutTab": "درباره",
+  "textSizeSmall": "کوچک",
+  "textSizeMedium": "متوسط",
+  "textSizeLarge": "بزرگ",
+  "modeNormalShort": "عادی",
+  "available": "نصب‌نشده",
   "accountManagement": "مدیریت حساب‌های این برنامه",
   "terminalRestore": "بازگردانی تنظیمات قبلی ترمینال",
   "accountsTab": "حساب‌ها",
@@ -156,6 +165,7 @@
     "source": {
       "chatgpt": "منبع سهمیه: Codex CLI؛ دادهٔ ذخیره‌شده از آخرین بررسی",
       "qoder": "منبع سهمیه: سرویس Qoder؛ دادهٔ ذخیره‌شده از آخرین بررسی",
+      "minimax-code": "منبع سهمیه: سرویس MiniMax؛ دادهٔ ذخیره‌شده از آخرین بررسی",
       "zcode": "منبع سهمیه: سرویس ZCode؛ دادهٔ ذخیره‌شده از آخرین بررسی"
     }
   },
@@ -168,7 +178,7 @@
   "apiConnections": "اتصال هوش مصنوعی",
   "rtlSetupFailed": "نصب RTL کامل نشد. دوباره تلاش کنید.",
   "rtlSetupShort": "نصب RTL",
-  "apiNotebook": "اتصال هوش مصنوعی",
+  "apiNotebook": "دفترچهٔ API",
   "rtlSetupFor": "نصب RTL برای {{name}}",
   "rtlRepair": "تعمیر RTL",
   "rtlRepairFor": "تعمیر راست‌چین {{name}}",
@@ -202,5 +212,9 @@
   },
   "themeToggle": "شب و روز",
   "dayMode": "رفتن به حالت روز",
-  "nightMode": "رفتن به حالت شب"
+  "nightMode": "رفتن به حالت شب",
+  "accountsHub": "حساب‌ها",
+  "groupSkills": "اسکیل‌ها",
+  "suggested": "پیشنهادی‌ها",
+  "helpersIntro": "ابزارهای کمکی و اسکیل‌های نصب‌شده روی این دستگاه، به‌همراه گام‌های بعدی پیشنهادی از کتابخانهٔ آموزش."
 }

@@ -19,9 +19,9 @@ test('the workspace does not poll account identity or quota in the background', 
   expect(await page.evaluate(() => (window as any).__mock.calls.some((call: any) => call.cmd === 'app_accounts' || call.cmd === 'codex_accounts'))).toBe(false);
 });
 
-test('the legacy accounts route opens the Codex accounts tab', async ({ page }) => {
+test('the legacy accounts route opens the accounts hub on the Codex tab', async ({ page }) => {
   await mockNative(page);
   await page.goto('/accounts');
-  await expect(page).toHaveURL(/\/app\/chatgpt\?tab=accounts$/);
-  await expect(page.getByRole('tab', { name: 'Accounts' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page).toHaveURL(/\/accounts$/);
+  await expect(page.getByRole('tab', { name: 'ChatGPT / Codex' })).toHaveAttribute('aria-selected', 'true');
 });

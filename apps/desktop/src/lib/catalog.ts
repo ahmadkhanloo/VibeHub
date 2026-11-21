@@ -3,16 +3,17 @@ import { useMemo, useSyncExternalStore } from 'react';
 // overlays this via the feed_sync IPC after schema validation on the Rust side.
 
 import { loadCatalog, classifyOffers, type Catalog, type OfferView } from '@catalog';
-import { assertNoExecutablePayload, parseLearningIndex, parseLearningFeed, parseNewsFeed, parseLearningTutorials, type LearningArticle, type LearningCategory, type LearningTutorial, type AppManifest, type ProviderManifest } from '@core';
-import bundledLearning from '../../../../content/learning/extensions.json';
+import { assertNoExecutablePayload, parseLearningIndex, parseLearningFeed, parseNewsFeed, type LearningArticle, type LearningCategory, type AppManifest, type ProviderManifest } from '@core';
 import bundledLearningIndex from '../../../../content/learning/index.json';
 import bundledNews from '../../../../content/news/index.json';
 
 const appModules = import.meta.glob('../../../../content/apps/*.json', { eager: true, import: 'default' });
 const providerModules = import.meta.glob('../../../../content/providers/*.json', { eager: true, import: 'default' });
 const offerModules = import.meta.glob('../../../../content/offers/*.json', { eager: true, import: 'default' });
-const guideModules = import.meta.glob('../../../../docs/tutorials/**/*.md', { eager: true, import: 'default', query: '?raw' }) as Record<string, string>;
-const learningModules = import.meta.glob('../../../../content/learning/articles/**/*.md', { eager: true, import: 'default', query: '?raw' }) as Record<string, string>;
+// Lesson and guide bodies are the heaviest text in the bundle; they load on
+// demand so the entry chunk carries only titles, summaries and metadata.
+const guideModules = import.meta.glob('../../../../docs/tutorials/**/*.md', { query: '?raw', import: 'default' }) as Record<string, () => Promise<string>>;
+const learningModules = import.meta.glob('../../../../content/learning/articles/**/*.md', { query: '?raw', import: 'default' }) as Record<string, () => Promise<string>>;
 
 function values<T>(modules: Record<string, unknown>): T[] {
   return Object.values(modules) as T[];
@@ -33,25 +34,45 @@ export const apps: AppManifest[] = bundledCatalog.apps;
 export const providers: ProviderManifest[] = bundledCatalog.providers;
 
 const remoteGuides: Record<string, string> = {};
-let learning = parseLearningTutorials(bundledLearning);
 const initialLearningIndex = parseLearningIndex(bundledLearningIndex);
 const initialLearningCategories: LearningCategory[] = initialLearningIndex.categories;
-function localArticleBody(id: string, path: string | undefined, lang: 'fa' | 'en') {
+// The feed schema trims body text before validation, and the catalog cache
+// can contain bundled articles. Keep their loading marker valid in both places.
+const PENDING_BODY = '<!-- Bundled Markdown loads on demand. -->';
+const bodyCache = new Map<string, string>();
+function bodyModule(id: string, path: string | undefined, lang: 'fa' | 'en'): (() => Promise<string>) | null {
   const folder = path ?? `docs/tutorials/${id}`;
   const modules = folder.startsWith('content/learning/articles/') ? learningModules : guideModules;
-  const file = Object.entries(modules).find(([key]) => key.endsWith(`/${folder.split('/').at(-1)}/${lang}.md`) || key.endsWith(`/${folder.split('/').at(-1)}.${lang}.md`));
-  return file?.[1]?.trim() ?? '';
+  const file = Object.keys(modules).find(key => key.endsWith(`/${folder.split('/').at(-1)}/${lang}.md`) || key.endsWith(`/${folder.split('/').at(-1)}.${lang}.md`));
+  return file ? modules[file] ?? null : null;
 }
+/** Resolves the rendered Markdown for a lesson or guide. Remote-feed articles
+ * carry their bodies inline; bundled ones stream from the lazy module graph. */
+export async function articleBody(article: LearningArticle, lang: 'fa' | 'en'): Promise<string> {
+  const inline = article.body[lang] || article.body[lang === 'fa' ? 'en' : 'fa'];
+  if (inline && inline !== PENDING_BODY) return inline;
+  const cacheKey = `${article.id}.${lang}`;
+  const cached = bodyCache.get(cacheKey);
+  if (cached !== undefined) return cached;
+  const loader = bodyModule(article.id, bundledContentPaths.get(article.id), lang);
+  const body = loader ? await loader() : '';
+  bodyCache.set(cacheKey, body);
+  return body;
+}
+// The feed schema is strict (no contentPath), so the bundled body locations live
+// in this map and articleBody resolves them per article id.
+const bundledContentPaths = new Map<string, string>();
 function bundledArticleFeed() {
-  const articles = initialLearningIndex.articles.map(({ contentPath, ...item }) => ({
-    ...item, body: { fa: localArticleBody(item.id, contentPath, 'fa'), en: localArticleBody(item.id, contentPath, 'en') },
-  }));
+  const articles = initialLearningIndex.articles.map(({ contentPath, ...item }) => {
+    if (contentPath) bundledContentPaths.set(item.id, contentPath);
+    return { ...item, body: { fa: PENDING_BODY, en: PENDING_BODY } };
+  });
   for (const [order, app] of apps.entries()) {
     articles.push({
       id: app.id, category: 'applications', kind: 'guide' as const, order: 200 + order,
       title: { fa: app.name, en: app.name }, summary: app.summary,
       sourceUrl: app.docsUrl ?? app.websiteUrl, checkedAt: app.lastVerified, appId: app.id,
-      body: { fa: localArticleBody(app.id, undefined, 'fa'), en: localArticleBody(app.id, undefined, 'en') },
+      body: { fa: PENDING_BODY, en: PENDING_BODY },
     });
   }
   return parseLearningFeed({ schemaVersion: 1, categories: initialLearningCategories, articles });
@@ -64,14 +85,14 @@ let revision = 0;
 const listeners = new Set<() => void>();
 export function useCatalog() {
  const version = useSyncExternalStore((listener) => {listeners.add(listener);return () => {listeners.delete(listener);};}, () => revision);
- return useMemo(() => ({apps: [...apps], providers: [...providers], offers: [...bundledCatalog.offers], learning: [...learning], articles: [...articles], categories: [...categories], news: [...news]}), [version]);
+ return useMemo(() => ({apps: [...apps], providers: [...providers], offers: [...bundledCatalog.offers], articles: [...articles], categories: [...categories], news: [...news]}), [version]);
 }
 export function clearContentCache() {
  localStorage.removeItem('vibehub.content.v1');
+ bodyCache.clear();
  apps.splice(0,apps.length,...initialCatalog.apps);
  providers.splice(0,providers.length,...initialCatalog.providers);
  bundledCatalog.offers.splice(0,bundledCatalog.offers.length,...initialCatalog.offers);
- learning = parseLearningTutorials(bundledLearning);
  articles = initialLearningFeed.articles;
  categories = initialLearningFeed.categories;
  news = parseNewsFeed(bundledNews);
@@ -79,7 +100,7 @@ export function clearContentCache() {
  revision++;listeners.forEach(listener=>listener());
 }
 const initialCatalog = {apps: [...apps], providers: [...providers], offers: [...bundledCatalog.offers]};
-const bundledAppIds = new Set(['antigravity-ide', 'claude-code', 'claude-desktop', 'copilot-cli']);
+const bundledAppIds = new Set(['antigravity-ide', 'claude-code', 'claude-desktop', 'copilot-cli', 'minimax-code']);
 
 export function validateRemoteGuides(raw: unknown, catalog: Catalog): Record<string, string> {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('Incomplete guide feed');
@@ -102,7 +123,7 @@ export function validateRemoteGuides(raw: unknown, catalog: Catalog): Record<str
   return guides;
 }
 
-export function applyRemoteCatalog(catalog: Catalog, guides: Record<string, string>, tutorials?: LearningTutorial[], learningArticles?: ReturnType<typeof parseLearningFeed>, newsItems?: ReturnType<typeof parseNewsFeed>): void {
+export function applyRemoteCatalog(catalog: Catalog, guides: Record<string, string>, learningArticles?: ReturnType<typeof parseLearningFeed>, newsItems?: ReturnType<typeof parseNewsFeed>): void {
   const nextArticles = learningArticles;
   const nextNews = newsItems;
   // Keep the entries tied to this build when a cached feed predates them.
@@ -113,7 +134,6 @@ export function applyRemoteCatalog(catalog: Catalog, guides: Record<string, stri
   bundledCatalog.offers.splice(0, bundledCatalog.offers.length, ...catalog.offers);
   for (const key of Object.keys(remoteGuides)) delete remoteGuides[key];
   Object.assign(remoteGuides, guides);
-  if (tutorials !== undefined) learning = tutorials;
   if (nextArticles !== undefined) {
     articles = [...nextArticles.articles.filter(article => article.id !== 'antigravity' && !bundledAppIds.has(article.id)), ...initialLearningFeed.articles.filter(article => bundledAppIds.has(article.id))];
     categories = nextArticles.categories;
@@ -123,7 +143,7 @@ export function applyRemoteCatalog(catalog: Catalog, guides: Record<string, stri
   if (nextNews !== undefined) news = nextNews;
   revision++; listeners.forEach(listener=>listener());
   window.dispatchEvent(new Event('vibehub:catalog-updated'));
-  try { localStorage.setItem('vibehub.content.v1', JSON.stringify({ catalog, guides, learning, learningArticles: { schemaVersion: 1, categories, articles }, news: { schemaVersion: 1, news } })); } catch { /* Current in-memory content remains usable. */ }
+  try { localStorage.setItem('vibehub.content.v1', JSON.stringify({ catalog, guides, learningArticles: { schemaVersion: 1, categories, articles }, news: { schemaVersion: 1, news } })); } catch { /* Current in-memory content remains usable. */ }
 }
 
 try {
@@ -132,30 +152,19 @@ try {
     assertNoExecutablePayload(cached);
     const raw = JSON.parse(cached);
     const catalog = loadCatalog(raw.catalog);
-    const tutorials = raw.learning === undefined ? undefined : parseLearningTutorials(raw.learning);
     const learningArticles = raw.learningArticles === undefined ? undefined : parseLearningFeed(raw.learningArticles);
     const newsItems = raw.news === undefined ? undefined : parseNewsFeed(raw.news);
-    applyRemoteCatalog(catalog, validateRemoteGuides(raw.guides, catalog), tutorials, learningArticles, newsItems);
+    applyRemoteCatalog(catalog, validateRemoteGuides(raw.guides, catalog), learningArticles, newsItems);
   }
 } catch { /* Invalid cache or unavailable storage: use the bundled snapshot. */ }
 
-export function appById(id: string): AppManifest | undefined {
-  return apps.find((a) => a.id === id);
-}
-
-export function guideText(appId: string, lang: 'fa' | 'en'): string | null {
+export async function guideText(appId: string, lang: 'fa' | 'en'): Promise<string | null> {
   const remote = bundledAppIds.has(appId) ? undefined : remoteGuides[`${appId}/${lang}`];
   if (remote) return remote;
-  const hit = Object.entries(guideModules).find(([p]) => p.includes(`/${appId}/${lang}.md`));
-  return hit?.[1]?.trim() ? hit[1] : null;
-}
-
-export function guideSections(markdown: string): { title: string; body: string }[] {
-  const parts = markdown.split(/^##\s+/m).slice(1);
-  return parts.map((part) => {
-    const nl = part.indexOf('\n');
-    return { title: part.slice(0, nl).trim(), body: part.slice(nl + 1).trim() };
-  });
+  const key = Object.keys(guideModules).find(p => p.includes(`/${appId}/${lang}.md`));
+  const loader = key ? guideModules[key] : undefined;
+  const text = loader ? await loader() : null;
+  return text?.trim() ? text : null;
 }
 
 export { classifyOffers };

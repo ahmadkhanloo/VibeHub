@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "id": "minimax-code",
+  "name": "MiniMax Code",
+  "summary": {
+    "fa": "عامل دسکتاپ MiniMax برای کدنویسی و کارهای اداری، با اتصال به فایل‌ها، ابزارها و مرورگر سیستم؛ وایب‌هاب آن را شناسایی، اجرا و با RTL فارسی باز می‌کند.",
+    "en": "MiniMax’s desktop agent for coding and office work that connects to local files, tools, and the browser; VibeHub detects, launches, and runs it with Persian RTL."
+  },
+  "kind": "desktop_agent",
+  "platforms": ["windows", "macos"],
+  "websiteUrl": "https://code.minimax.io/",
+  "docsUrl": "https://code.minimax.io/docs/code/welcome",
+  "isOpenSource": false,
+  "freeAccess": "free_tier",
+  "freeAccessDetails": {
+    "fa": "ورود روزانه اعتبار رایگان برای امتحان حالت‌های Coding و Work می‌دهد. پلن‌های Go، Explore و Build اشتراکی هستند و هزینه و سهمیه تابع حساب MiniMax است.",
+    "en": "Daily sign-in credits let you try Coding and Work modes. Go, Explore, and Build are paid subscriptions; usage and quotas follow your MiniMax account."
+  },
+  "requiresSignup": true,
+  "requiresPaymentCard": false,
+  "sourceOfFreeAccess": "https://code.minimax.io/",
+  "lastVerified": "2026-11-14",
+  "capabilities": {
+    "install": "reported",
+    "launch": "verified",
+    "rtl": "verified",
+    "proxy": "unknown",
+    "terminal": "unsupported",
+    "byok": "unknown"
+  },
+  "installMethods": [
+    {
+      "method": "official-installer",
+      "idOrUrl": "https://code.minimax.io/",
+      "note": {
+        "fa": "نسخهٔ ویندوز را از دکمهٔ Download for Windows در سایت رسمی بگیرید.",
+        "en": "Use the Download for Windows button on the official site."
+      }
+    }
+  ],
+  "eligibility": [
+    {
+      "countryCode": "IR",
+      "networkAccess": "not_tested",
+      "accountPolicy": "unknown",
+      "confidence": "low"
+    }
+  ]
+}

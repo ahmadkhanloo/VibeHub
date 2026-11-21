@@ -54,11 +54,19 @@ const INJECT = `(() => {
 })();`;
 
 const lock = createServer();
-lock.once('error', () => {
-  console.log('[deepseek-harness-rtl] injector already running, exiting.');
+lock.once('error', (e) => {
+  console.log(`[deepseek-harness-rtl] injector lock unavailable (${e.code || e.message}), exiting.`);
   process.exit(0);
 });
 lock.listen(LOCK_PORT, '127.0.0.1');
+
+// The launcher starts us right after the app's CDP port comes up, so once we
+// have seen it, a long silence means the app was closed: exit instead of
+// lingering forever as an orphan that keeps the lock and pollutes the logs.
+const APP_LINGER_MS = 75_000;
+let lastCdpSeen = 0;
+let everConnected = false;
+let downLogged = false;
 
 const attached = new Set();
 let nextId = 1;
@@ -79,11 +87,11 @@ function connect(wsUrl, onMessage) {
 async function pageTargets() {
   try {
     const response = await fetch(`${BASE}/json/list`, { signal: AbortSignal.timeout(2000) });
-    if (!response.ok) return [];
+    if (!response.ok) return null;
     return (await response.json()).filter((target) =>
       target.type === 'page' && target.webSocketDebuggerUrl && target.url.startsWith('dsh-app://app/'));
   } catch {
-    return [];
+    return null; // app not running (anymore)
   }
 }
 
@@ -130,16 +138,35 @@ function watchBrowser(wsUrl) {
 
 console.log(`[deepseek-harness-rtl] waiting on port ${PORT}`);
 setInterval(async () => {
-  for (const target of await pageTargets()) await attach(target);
+  const targets = await pageTargets();
+  if (targets) {
+    lastCdpSeen = Date.now();
+    everConnected = true;
+    downLogged = false;
+  }
+  for (const target of targets || []) await attach(target);
 }, 2000);
 
 for (;;) {
   try {
     const response = await fetch(`${BASE}/json/version`, { signal: AbortSignal.timeout(2000) });
     const info = response.ok ? await response.json() : null;
-    if (info?.webSocketDebuggerUrl) await watchBrowser(info.webSocketDebuggerUrl);
+    if (info?.webSocketDebuggerUrl) {
+      lastCdpSeen = Date.now();
+      everConnected = true;
+      downLogged = false;
+      await watchBrowser(info.webSocketDebuggerUrl);
+    }
   } catch (error) {
-    console.log('[deepseek-harness-rtl] connection error:', error.message);
+    // Log the loss once instead of spamming the out log every second.
+    if (everConnected && !downLogged) {
+      console.log('[deepseek-harness-rtl] app went away; waiting before exiting:', error.message);
+      downLogged = true;
+    }
+  }
+  if (everConnected && Date.now() - lastCdpSeen > APP_LINGER_MS) {
+    console.log('[deepseek-harness-rtl] app is gone; injector exiting.');
+    process.exit(0);
   }
   await new Promise((resolve) => setTimeout(resolve, 1000));
 }

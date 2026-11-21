@@ -73,12 +73,7 @@ test('legacy adapter references are labeled and their active source links target
     assert.doesNotMatch(text, /github\.com\/ahmadkhanloo\/AgentRTL|raw\.githubusercontent\.com\/ahmadkhanloo\/AgentRTL|git clone[^\n]*AgentRTL/);
   }
 
-  const [legacyInstaller, sourceInstaller] = await Promise.all([
-    read('../installer.iss'),
-    read('../install.sh'),
-  ]);
-  assert.match(legacyInstaller, /Historical AgentRTL RTL-adapter installer/);
-  assert.match(legacyInstaller, /MyAppURL "https:\/\/github\.com\/ahmadkhanloo\/VibeHub"/);
+  const sourceInstaller = await read('../install.sh');
   assert.match(sourceInstaller, /REPO="https:\/\/github\.com\/ahmadkhanloo\/VibeHub"/);
 });
 

@@ -1,1265 +1,944 @@
-//! Version-pinned local desktop account adapters. No credential enters a webview response.
-use crate::{domain::Result, network, storage, system};
-use base64::{
-    engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD},
-    Engine,
-};
-use ring::{
-    aead,
-    rand::{SecureRandom, SystemRandom},
-};
-use serde_json::{json, Value};
+//! Opaque account switching for apps that keep their session in a machine-bound blob.
+//!
+//! ZCode and Qoder encrypt their login state themselves (`enc:v2:os:` envelopes and a
+//! binary `auth.v1.dat`). VibeHub never decrypts or reads those tokens: an account is a
+//! byte-for-byte snapshot of the session files, sealed with an age key held in the
+//! Windows Credential Manager. Switching closes the app, backs up the live files,
+//! restores the snapshot atomically and reopens the app.
+//!
+//! Two consequences are deliberate and surfaced in the UI:
+//! * snapshots only work on this machine and user, because the app's own key is local;
+//! * the session file is shared with unrelated state, so restoring rolls that state back.
+use crate::domain::Result;
+use crate::system;
+use base64::{Engine, engine::general_purpose::STANDARD as BASE64, engine::general_purpose::URL_SAFE_NO_PAD};
+use rand::TryRngCore;
+use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 use std::{
+    collections::BTreeMap,
     fs,
     io::Write,
     path::{Path, PathBuf},
-    process::{Command, Stdio},
     sync::Mutex,
-    time::{Duration, Instant},
 };
 use tauri::Manager;
 
-static QODER_OPERATION: Mutex<()> = Mutex::new(());
-static ZCODE_OPERATION: Mutex<()> = Mutex::new(());
-fn operation(id: &str) -> Result<std::sync::MutexGuard<'static, ()>> {
-    let mutex = match id {
-        "qoder" => &QODER_OPERATION,
-        "zcode" => &ZCODE_OPERATION,
-        _ => return Err(error("unsupportedApp")),
-    };
-    mutex.try_lock().map_err(|_| error("busy"))
-}
-fn error(key: &str) -> String {
+const MAX_ACCOUNTS: usize = 16;
+const MAX_BACKUPS: usize = 5;
+static BROKER_LOCK: Mutex<Option<()>> = Mutex::new(None);
+
+fn err(key: &str) -> String {
     format!("accounts:{key}")
-}
-fn error_code(reason: &str) -> String {
-    match reason.strip_prefix("accounts:") {
-        Some(code) if matches!(
-            code,
-            "loginRequired" | "network" | "requestFailed" | "protocol" | "identityMismatch" |
-            "unsupportedProvider" | "credentialInvalid" | "balanceUnavailable" | "storage" | "vault" | "busy" |
-            "unsupportedVersion" | "switchUnverified"
-        ) => code.to_owned(),
-        _ => "requestFailed".to_owned(),
-    }
 }
 fn now() -> i64 {
     chrono::Utc::now().timestamp()
 }
-fn digest(bytes: &[u8]) -> String {
+fn sha256(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
-fn profile(id: &str) -> Result<PathBuf> {
-    match id {
-        "qoder" => Ok(
-            PathBuf::from(std::env::var_os("APPDATA").ok_or(error("storage"))?)
-                .join("com.qoder.app.stable"),
-        ),
-        "zcode" => Ok(
-            PathBuf::from(std::env::var_os("USERPROFILE").ok_or(error("storage"))?)
-                .join(".zcode/v2"),
-        ),
-        _ => Err(error("unsupportedApp")),
-    }
-}
-fn read_bytes(path: &Path) -> Result<Vec<u8>> {
-    let size = fs::metadata(path)
-        .map_err(|_| error("loginRequired"))?
-        .len();
-    if size > 128 * 1024 {
-        return Err(error("credentialInvalid"));
-    }
-    fs::read(path).map_err(|_| error("storage"))
-}
-fn read_json(path: &Path) -> Result<Value> {
-    serde_json::from_slice(&read_bytes(path)?).map_err(|_| error("credentialInvalid"))
+
+/// Resolves (or creates) the age key for one stored object.
+type KeyFn<'a> = dyn Fn(&str, bool) -> Result<age::secrecy::SecretString> + 'a;
+
+/// Which base directory an app keeps its session under.
+#[derive(Clone, Copy)]
+enum Base {
+    UserProfile,
+    RoamingAppData,
 }
 
-/// Windows DPAPI is also the vault: encrypted profile snapshots are tied to the current OS user.
-fn dpapi(bytes: &[u8], protect: bool) -> Result<Vec<u8>> {
-    use std::io::Read;
-    if !cfg!(windows) {
-        return Err(error("unsupportedApp"));
+/// Everything the broker needs about one app; adding an app is one table entry.
+struct AppSpec {
+    id: &'static str,
+    base: Base,
+    segments: &'static [&'static str],
+    /// Files whose absence means "not signed in yet".
+    required: &'static [&'static str],
+    /// Files captured when present, ignored when absent.
+    optional: &'static [&'static str],
+    /// File whose bytes identify this machine for the app's own encryption.
+    machine_id: Option<&'static str>,
+}
+
+const APPS: &[AppSpec] = &[
+    AppSpec {
+        id: "zcode",
+        base: Base::UserProfile,
+        segments: &[".zcode", "v2"],
+        required: &["credentials.json"],
+        // `credential-source` is a three-byte hint about where credentials come from.
+        // Provider/config files stay out so plugin choices and settings survive a switch.
+        optional: &["credential-source"],
+        machine_id: None,
+    },
+    AppSpec {
+        id: "qoder",
+        base: Base::RoamingAppData,
+        segments: &["com.qoder.app.stable"],
+        required: &["auth.v1.dat"],
+        optional: &["auth-profile-overlays.v1.dat"],
+        // Never swapped: a snapshot from another machine must fail loudly instead of
+        // restoring a blob this machine's app cannot decrypt.
+        machine_id: Some("auth.machine-id"),
+    },
+];
+
+fn spec(app_id: &str) -> Result<&'static AppSpec> {
+    APPS.iter()
+        .find(|entry| entry.id == app_id)
+        .ok_or_else(|| err("unsupportedApp"))
+}
+
+fn app_home(spec: &AppSpec) -> Result<PathBuf> {
+    let base = match spec.base {
+        Base::UserProfile => std::env::var_os("USERPROFILE"),
+        Base::RoamingAppData => std::env::var_os("APPDATA"),
     }
-    let method = if protect { "Protect" } else { "Unprotect" };
-    let script = format!("$ErrorActionPreference='Stop'; Add-Type -AssemblyName System.Security; $b=[Convert]::FromBase64String([Console]::In.ReadToEnd()); [Console]::Out.Write([Convert]::ToBase64String([Security.Cryptography.ProtectedData]::{method}($b,$null,[Security.Cryptography.DataProtectionScope]::CurrentUser)))");
-    let mut command = Command::new("powershell.exe");
-    command
-        .args(["-NoProfile", "-NonInteractive", "-Command", &script])
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null());
-    system::hidden(&mut command);
-    let mut child = command.spawn().map_err(|_| error("vault"))?;
-    let mut input = child.stdin.take().ok_or(error("vault"))?;
-    let output = child.stdout.take().ok_or(error("vault"))?;
-    let encoded = STANDARD.encode(bytes);
-    let (input_tx, input_rx) = std::sync::mpsc::channel();
-    let (output_tx, output_rx) = std::sync::mpsc::channel();
-    std::thread::spawn(move || {
-        let result = input.write_all(encoded.as_bytes());
-        drop(input);
-        let _ = input_tx.send(result);
-    });
-    // Drain concurrently: waiting for process exit first deadlocks once encrypted output
-    // fills the Windows anonymous pipe. Both channels remain bounded by the operation timeout.
-    std::thread::spawn(move || {
-        let mut bytes = Vec::new();
-        let result = output
-            .take(512 * 1024 + 1)
-            .read_to_end(&mut bytes)
-            .map(|_| bytes);
-        let _ = output_tx.send(result);
-    });
-    let started = Instant::now();
-    while child.try_wait().map_err(|_| error("vault"))?.is_none() {
-        if started.elapsed() > Duration::from_secs(10) {
-            let _ = child.kill();
-            let _ = child.wait();
-            return Err(error("timeout"));
+    .ok_or_else(|| err("storage"))?;
+    let mut path = PathBuf::from(base);
+    for segment in spec.segments {
+        path.push(segment);
+    }
+    Ok(path)
+}
+
+fn is_valid_id(spec: &AppSpec, id: &str) -> bool {
+    let prefix = format!("{}-", spec.id);
+    id.len() > prefix.len()
+        && id.starts_with(&prefix)
+        && id.len() <= 48
+        && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+}
+
+// ---------------------------------------------------------------- sealing
+
+fn vault_entry(store: &Path, service: &str, key_id: &str) -> Result<keyring::Entry> {
+    let canonical = store.canonicalize().map_err(|_| err("storage"))?;
+    let digest = format!(
+        "{:x}",
+        Sha256::digest(format!("{}\n{key_id}", canonical.to_string_lossy()).as_bytes())
+    );
+    keyring::Entry::new(service, &format!("{key_id}|{}", &digest[..16])).map_err(|_| err("vault"))
+}
+
+fn vault_key(
+    store: &Path,
+    service: &str,
+    key_id: &str,
+    create: bool,
+) -> Result<age::secrecy::SecretString> {
+    let entry = vault_entry(store, service, key_id)?;
+    match entry.get_password() {
+        Ok(value) => Ok(age::secrecy::SecretString::from(value)),
+        Err(keyring::Error::NoEntry) if create => {
+            let mut bytes = [0u8; 32];
+            rand::rngs::OsRng
+                .try_fill_bytes(&mut bytes)
+                .map_err(|_| err("vault"))?;
+            let password = URL_SAFE_NO_PAD.encode(bytes);
+            entry.set_password(&password).map_err(|_| err("vault"))?;
+            Ok(age::secrecy::SecretString::from(password))
         }
-        std::thread::sleep(Duration::from_millis(20));
-    }
-    let status = child.wait().map_err(|_| error("vault"))?;
-    if !status.success() {
-        return Err(error("vault"));
-    }
-    input_rx
-        .recv_timeout(Duration::from_secs(1))
-        .map_err(|_| error("timeout"))?
-        .map_err(|_| error("vault"))?;
-    let output = output_rx
-        .recv_timeout(Duration::from_secs(1))
-        .map_err(|_| error("timeout"))?
-        .map_err(|_| error("vault"))?;
-    if output.len() > 512 * 1024 {
-        return Err(error("vault"));
-    }
-    STANDARD
-        .decode(String::from_utf8_lossy(&output).trim())
-        .map_err(|_| error("vault"))
-}
-fn gcm_key(key: &[u8]) -> Result<aead::LessSafeKey> {
-    Ok(aead::LessSafeKey::new(
-        aead::UnboundKey::new(&aead::AES_256_GCM, key).map_err(|_| error("credentialInvalid"))?,
-    ))
-}
-fn decrypt(key: &[u8], nonce: &[u8], ciphertext: &[u8]) -> Result<Vec<u8>> {
-    let nonce: [u8; 12] = nonce.try_into().map_err(|_| error("credentialInvalid"))?;
-    let mut bytes = ciphertext.to_vec();
-    Ok(gcm_key(key)?
-        .open_in_place(
-            aead::Nonce::assume_unique_for_key(nonce),
-            aead::Aad::empty(),
-            &mut bytes,
-        )
-        .map_err(|_| error("credentialInvalid"))?
-        .to_vec())
-}
-fn encrypt(key: &[u8], plaintext: &[u8]) -> Result<([u8; 12], Vec<u8>)> {
-    let mut nonce = [0; 12];
-    SystemRandom::new()
-        .fill(&mut nonce)
-        .map_err(|_| error("vault"))?;
-    let mut bytes = plaintext.to_vec();
-    gcm_key(key)?
-        .seal_in_place_append_tag(
-            aead::Nonce::assume_unique_for_key(nonce),
-            aead::Aad::empty(),
-            &mut bytes,
-        )
-        .map_err(|_| error("vault"))?;
-    Ok((nonce, bytes))
-}
-fn qoder_key(root: &Path) -> Result<Vec<u8>> {
-    let state = read_json(&root.join("Local State"))?;
-    let wrapped = STANDARD
-        .decode(
-            state["os_crypt"]["encrypted_key"]
-                .as_str()
-                .ok_or(error("credentialInvalid"))?,
-        )
-        .map_err(|_| error("credentialInvalid"))?;
-    if !wrapped.starts_with(b"DPAPI") {
-        return Err(error("unsupportedVersion"));
-    }
-    dpapi(&wrapped[5..], false)
-}
-fn zcode_key() -> Result<Vec<u8>> {
-    let secret = std::env::var("ZCODE_CREDENTIAL_SECRET").unwrap_or_else(|_| {
-        format!(
-            "zcode-credential-fallback:win32:{}:{}",
-            std::env::var("USERPROFILE").unwrap_or_default(),
-            std::env::var("USERNAME").unwrap_or_default()
-        )
-    });
-    Ok(Sha256::digest(secret.as_bytes()).to_vec())
-}
-fn zcode_decode(value: &str, key: &[u8]) -> Result<String> {
-    let Some(body) = value.strip_prefix("enc:v1:") else {
-        return Ok(value.into());
-    };
-    let parts: Vec<_> = body.split('.').collect();
-    if parts.len() != 3 {
-        return Err(error("credentialInvalid"));
-    }
-    let decode = |s: &str| {
-        URL_SAFE_NO_PAD
-            .decode(s)
-            .map_err(|_| error("credentialInvalid"))
-    };
-    let mut ciphertext = decode(parts[2])?;
-    ciphertext.extend(decode(parts[1])?);
-    String::from_utf8(decrypt(key, &decode(parts[0])?, &ciphertext)?)
-        .map_err(|_| error("credentialInvalid"))
-}
-fn auth_key(key: &str) -> bool {
-    matches!(
-        key,
-        "oauth:active_provider"
-            | "oauth:zai:access_token"
-            | "oauth:zai:refresh_token"
-            | "oauth:zai:user_info"
-            | "zcodejwttoken"
-    )
-}
-fn read_current(id: &str, root: &Path) -> Result<Value> {
-    if id == "qoder" {
-        let bytes = read_bytes(&root.join("auth.v1.dat"))?;
-        if bytes.len() < 31 || &bytes[..3] != b"v10" {
-            return Err(error("unsupportedVersion"));
-        }
-        let auth: Value =
-            serde_json::from_slice(&decrypt(&qoder_key(root)?, &bytes[3..15], &bytes[15..])?)
-                .map_err(|_| error("credentialInvalid"))?;
-        if auth["schemaVersion"] != 1
-            || auth["token"].as_str().is_none()
-            || auth["refreshToken"].as_str().is_none()
-            || auth["expiresAt"].as_str().is_none()
-        {
-            return Err(error("unsupportedVersion"));
-        }
-        Ok(auth)
-    } else {
-        let mut raw = read_json(&root.join("credentials.json"))?;
-        let key = zcode_key()?;
-        let map = raw.as_object_mut().ok_or(error("credentialInvalid"))?;
-        map.retain(|k, _| auth_key(k));
-        for value in map.values_mut() {
-            *value = json!(zcode_decode(
-                value.as_str().ok_or(error("credentialInvalid"))?,
-                &key
-            )?);
-        }
-        Ok(raw)
+        _ => Err(err("vault")),
     }
 }
-fn local_identity(id: &str, auth: &Value) -> Result<(String, String, String)> {
-    if id == "zcode" && auth["oauth:active_provider"] != "zai" {
-        return Err(error("unsupportedProvider"));
-    }
-    let user = if id == "qoder" {
-        auth["user"].clone()
-    } else {
-        serde_json::from_str(
-            auth["oauth:zai:user_info"]
-                .as_str()
-                .ok_or(error("loginRequired"))?,
-        )
-        .map_err(|_| error("credentialInvalid"))?
-    };
-    let raw_id = user["id"]
-        .as_str()
-        .or_else(|| user["user_id"].as_str())
-        .ok_or(error("credentialInvalid"))?;
-    let account_id = format!("account-{}", &digest(raw_id.as_bytes())[..24]);
-    Ok((
-        account_id,
-        user["email"].as_str().unwrap_or("").into(),
-        user["name"].as_str().unwrap_or("Account").into(),
-    ))
+
+fn seal(key: &age::secrecy::SecretString, bytes: &[u8], path: &Path) -> Result<()> {
+    fs::create_dir_all(path.parent().ok_or_else(|| err("storage"))?).map_err(|_| err("storage"))?;
+    let ciphertext =
+        age::encrypt(&age::scrypt::Recipient::new(key.clone()), bytes).map_err(|_| err("vault"))?;
+    let temp = path.with_extension("age.tmp");
+    let mut file = fs::File::create(&temp).map_err(|_| err("storage"))?;
+    file.write_all(&ciphertext)
+        .and_then(|_| file.sync_all())
+        .map_err(|_| err("storage"))?;
+    drop(file);
+    fs::rename(&temp, path).map_err(|_| err("storage"))
 }
-fn token<'a>(id: &str, auth: &'a Value) -> Result<&'a str> {
-    auth[if id == "qoder" {
-        "token"
-    } else {
-        "zcodejwttoken"
-    }]
-    .as_str()
-    .filter(|s| !s.is_empty())
-    .ok_or(error("loginRequired"))
+
+fn unseal(key: &age::secrecy::SecretString, path: &Path) -> Result<Vec<u8>> {
+    let ciphertext = fs::read(path).map_err(|_| err("storage"))?;
+    let mut identity = age::scrypt::Identity::new(key.clone());
+    identity.set_max_work_factor(20);
+    age::decrypt(&identity, &ciphertext).map_err(|_| err("vault"))
 }
-fn finite(value: &Value) -> Option<f64> {
-    value
-        .as_f64()
-        .or_else(|| value.as_str()?.parse().ok())
-        .filter(|n| n.is_finite() && *n >= 0.0)
-}
-fn timestamp(value: &Value) -> Option<i64> {
-    if let Some(text) = value.as_str() {
-        if let Ok(time) = chrono::DateTime::parse_from_rfc3339(text) {
-            return Some(time.timestamp());
-        }
-    }
-    finite(value).map(|n| {
-        if n > 1_000_000_000_000.0 {
-            (n / 1000.0) as i64
-        } else {
-            n as i64
-        }
-    })
-}
-fn zcode_balances(envelope: &Value) -> Result<Vec<Value>> {
-    if !matches!(envelope["code"].as_i64(), Some(0 | 200)) {
-        return Err(error("protocol"));
-    }
-    let clock = timestamp(&envelope["data"]["server_time"]).unwrap_or_else(now);
-    let balances = envelope["data"]["balances"]
-        .as_array()
-        .ok_or(error("protocol"))?;
-    let mut usage = vec![];
-    for balance in balances {
-        if timestamp(&balance["expires_at"]).is_some_and(|end| end <= clock) {
-            continue;
-        }
-        let Some(remaining) = finite(&balance["remaining_units"]) else {
-            continue;
+
+// ---------------------------------------------------------------- session files
+
+/// Live bytes of every session file that exists right now.
+fn read_session_in(home: &Path, spec: &AppSpec) -> Result<Vec<(String, Vec<u8>)>> {
+    let mut files = Vec::new();
+    for name in spec.required {
+        let bytes = match fs::read(home.join(name)) {
+            Ok(bytes) => bytes,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Err(err("loginRequired")),
+            Err(_) => return Err(err("storage")),
         };
-        let total = finite(&balance["total_units"]);
-        if total.is_some_and(|total| remaining > total) {
-            continue;
-        }
-        if let Some(plans) = envelope["data"]["plans"].as_array() {
-            let matched = plans
-                .iter()
-                .filter(|plan| {
-                    balance["user_plan_id"].as_str().is_some()
-                        && plan["user_plan_id"] == balance["user_plan_id"]
-                })
-                .collect::<Vec<_>>();
-            if !matched.is_empty()
-                && !matched.iter().any(|plan| {
-                    plan["status"] == "active"
-                        && timestamp(&plan["ends_at"]).is_none_or(|end| end > clock)
-                })
-            {
-                continue;
-            }
-        }
-        usage.push(json!({"label":balance["show_name"].as_str().unwrap_or("ZCode"),"remaining":remaining,"granted":total,"used":finite(&balance["used_units"]),"unit":balance["unit_type"].as_str().unwrap_or("units"),"resetsAt":balance["period_end"],"expiresAt":balance["expires_at"]}));
+        files.push(((*name).to_owned(), bytes));
     }
-    Ok(usage)
+    for name in spec.optional {
+        if let Ok(bytes) = fs::read(home.join(name)) {
+            files.push(((*name).to_owned(), bytes));
+        }
+    }
+    Ok(files)
 }
 
-fn qoder_renewed(auth: &Value, response: &Value, clock: i64) -> Result<Value> {
-    let text = |key: &str| {
-        response[key]
-            .as_str()
-            .filter(|value| !value.trim().is_empty())
-    };
-    let access = text("device_token")
-        .or_else(|| text("token"))
-        .ok_or(error("protocol"))?;
-    let refresh = text("refresh_token").ok_or(error("protocol"))?;
-    let expiry = timestamp(&response["expires_at"])
-        .or_else(|| {
-            finite(&response["expires_in"])
-                .map(|seconds| clock.saturating_add(seconds.min(315_360_000.0) as i64))
-        })
-        .filter(|end| *end > clock)
-        .ok_or(error("protocol"))?;
-    let mut next = auth.clone();
-    next["token"] = json!(access);
-    next["refreshToken"] = json!(refresh);
-    next["expiresAt"] = json!(chrono::DateTime::from_timestamp(expiry, 0)
-        .ok_or(error("protocol"))?
-        .to_rfc3339());
-    if let Some(expiry) = timestamp(&response["refresh_token_expires_at"]).or_else(|| {
-        finite(&response["refresh_token_expires_in"])
-            .map(|seconds| clock.saturating_add(seconds.min(315_360_000.0) as i64))
-    }) {
-        if expiry <= clock {
-            return Err(error("loginRequired"));
+/// Content hash of every session file that exists; the unit of change detection.
+fn fingerprints_in(home: &Path, spec: &AppSpec) -> Result<BTreeMap<String, String>> {
+    let mut out = BTreeMap::new();
+    for name in spec.required.iter().chain(spec.optional) {
+        if let Ok(bytes) = fs::read(home.join(name)) {
+            out.insert((*name).to_owned(), sha256(&bytes));
         }
-        next["refreshTokenExpiresAt"] = json!(chrono::DateTime::from_timestamp(expiry, 0)
-            .ok_or(error("protocol"))?
-            .to_rfc3339());
     }
-    Ok(next)
+    Ok(out)
 }
-async fn renew_qoder(client: &reqwest::Client, auth: &Value) -> Result<Value> {
-    renew_qoder_at(
-        client,
-        auth,
-        "https://openapi.qoder.sh/api/v1/deviceToken/refresh",
-    )
-    .await
+
+fn machine_fingerprint_in(home: &Path, spec: &AppSpec) -> Option<String> {
+    let bytes = fs::read(home.join(spec.machine_id?)).ok()?;
+    Some(sha256(&bytes))
 }
-async fn renew_qoder_at(client: &reqwest::Client, auth: &Value, url: &str) -> Result<Value> {
-    let refresh = auth["refreshToken"]
-        .as_str()
-        .filter(|value| !value.is_empty())
-        .ok_or(error("loginRequired"))?;
-    if timestamp(&auth["refreshTokenExpiresAt"]).is_some_and(|end| end <= now()) {
-        return Err(error("loginRequired"));
-    }
-    let response = client
-        .post(url)
-        .header("Accept", "application/json")
-        .json(&json!({"refresh_token":refresh}))
-        .send()
-        .await
-        .map_err(|_| error("network"))?;
-    if matches!(response.status().as_u16(), 400 | 401 | 403) {
-        return Err(error("loginRequired"));
-    }
-    if !response.status().is_success() {
-        return Err(error("requestFailed"));
-    }
-    let body: Value = serde_json::from_slice(
-        &network::bounded_bytes(response, 128 * 1024)
-            .await
-            .map_err(|_| error("protocol"))?,
-    )
-    .map_err(|_| error("protocol"))?;
-    qoder_renewed(auth, &body, now())
+
+fn hashes_of(files: &[(String, Vec<u8>)]) -> BTreeMap<String, String> {
+    files
+        .iter()
+        .map(|(name, bytes)| (name.clone(), sha256(bytes)))
+        .collect()
 }
-async fn get(client: &reqwest::Client, url: &str, token: &str) -> Result<Value> {
-    let response = client
-        .get(url)
-        .bearer_auth(token)
-        .header("Accept", "application/json")
-        .send()
-        .await
-        .map_err(|_| error("network"))?;
-    if matches!(response.status().as_u16(), 401 | 403) {
-        return Err(error("loginRequired"));
-    }
-    if !response.status().is_success() {
-        return Err(error("requestFailed"));
-    }
-    let bytes = network::bounded_bytes(response, 512 * 1024)
-        .await
-        .map_err(|_| error("protocol"))?;
-    serde_json::from_slice(&bytes).map_err(|_| error("protocol"))
-}
-async fn inspect(id: &str, auth: &Value, client: &reqwest::Client) -> Result<Value> {
-    let (account_id, email, name) = local_identity(id, auth)?;
-    let credential = token(id, auth)?;
-    let (plan, usage, quota_error, expires_at) = if id == "qoder" {
-        let user = get(
-            client,
-            "https://openapi.qoder.sh/api/v1/userinfo",
-            credential,
-        )
-        .await?;
-        if user["id"] != auth["user"]["id"] {
-            return Err(error("identityMismatch"));
-        }
-        let quota_result = get(
-            client,
-            "https://openapi.qoder.sh/api/v2/quota/usage?outerProviders=cmcc",
-            credential,
-        )
-        .await;
-        match quota_result {
-            Ok(quota) => {
-                let mut usage = vec![];
-                if let Some(percent) = quota["totalUsagePercentage"].as_f64() {
-                    usage.push(json!({"label":"Credits", "remaining":(100.0-percent).clamp(0.0,100.0),"unit":"percent","resetsAt":quota["expiresAt"]}));
-                }
-                (quota["userType"].as_str().unwrap_or("Qoder").to_owned(), usage, None, timestamp(&auth["expiresAt"]))
-            }
-            Err(reason) => ("Qoder".to_owned(), vec![], Some(reason), timestamp(&auth["expiresAt"])),
-        }
-    } else {
-        verify_zcode_identity(auth)?;
-        // Billing current is authenticated by the app's own JWT and returns granted entitlements.
-        let data = get(
-            client,
-            "https://zcode.z.ai/api/v1/zcode-plan/billing/current",
-            credential,
-        )
-        .await?;
-        if data["code"]
-            .as_i64()
-            .is_some_and(|code| code != 0 && code != 200)
-        {
-            return Err(error("requestFailed"));
-        }
-        let plans = data["data"]["plans"].as_array().ok_or(error("protocol"))?;
-        let clock = timestamp(&data["data"]["server_time"]).unwrap_or_else(now);
-        let plans: Vec<_> = plans
-            .iter()
-            .filter(|p| {
-                p["status"] == "active" && timestamp(&p["ends_at"]).is_none_or(|end| end > clock)
-            })
-            .collect();
-        let names = plans
-            .iter()
-            .filter_map(|p| p["name"].as_str())
-            .collect::<Vec<_>>()
-            .join(", ");
-        let expires_at = plans.iter().filter_map(|p| timestamp(&p["ends_at"])).min();
-        let mut usage = vec![];
-        for plan in plans {
-            if let Some(entries) = plan["entitlements"].as_array() {
-                for entry in entries {
-                    usage.push(json!({"label":entry["show_name"],"granted":entry["grant_units"],"remaining":null,"unit":entry["unit_type"],"resetsAt":plan["ends_at"]}));
-                }
-            }
-        }
-        let balance = get(
-            client,
-            "https://zcode.z.ai/api/v1/zcode-plan/billing/balance?app_version=3.16.3",
-            credential,
-        )
-        .await
-        .and_then(|body| zcode_balances(&body));
-        match balance {
-            Ok(balance) => (names, balance, None, expires_at),
-            Err(_) => (names, usage, Some(error("balanceUnavailable")), expires_at),
-        }
-    };
-    let quota_error_code = quota_error.as_deref().map(|reason| error_code(reason));
-    Ok(json!({
-        "id":account_id,"name":name,"email":email,"plan":plan,"usage":usage,
-        "checkedAt":if quota_error_code.is_none() { Some(now()) } else { None },
-        "error":null,"errorCode":null,"quotaError":quota_error,
-        "quotaErrorCode":quota_error_code,"expiresAt":expires_at
-    }))
-}
-fn atomic(path: &Path, bytes: &[u8]) -> Result<()> {
-    let temp = path.with_extension("vibehub.tmp");
-    let mut file = fs::File::create(&temp).map_err(|_| error("storage"))?;
+
+/// Writes one file through a temp file so a crash cannot leave a truncated credential.
+fn write_file_atomic(home: &Path, name: &str, bytes: &[u8]) -> Result<()> {
+    fs::create_dir_all(home).map_err(|_| err("storage"))?;
+    let target = home.join(name);
+    let temp = target.with_extension("vibehub.tmp");
+    let mut file = fs::File::create(&temp).map_err(|_| err("storage"))?;
     file.write_all(bytes)
         .and_then(|_| file.sync_all())
-        .map_err(|_| error("storage"))?;
-    fs::rename(&temp, path).map_err(|_| error("storage"))
+        .map_err(|_| err("storage"))?;
+    drop(file);
+    fs::rename(&temp, &target).map_err(|_| err("storage"))
 }
 
-/// Use each installed app's lock protocol. Never remove another writer's lock.
-struct CredentialLock {
-    path: PathBuf,
-    owner: Option<PathBuf>,
-    file: Option<fs::File>,
-}
-impl CredentialLock {
-    fn acquire(id: &str, root: &Path) -> Result<Self> {
-        let path = root.join(if id == "qoder" {
-            "auth.v1.lock"
-        } else {
-            "credentials.json.lock"
-        });
-        if id == "qoder" {
-            let mut options = fs::OpenOptions::new();
-            options.write(true).create_new(true);
-            #[cfg(windows)]
-            {
-                use std::os::windows::fs::OpenOptionsExt;
-                // Deny deletion while held; delete atomically when the handle closes.
-                // This also prevents Qoder's five-second stale-lock recovery from
-                // stealing a lease during a slow Windows credential-store operation.
-                const GENERIC_WRITE_AND_DELETE: u32 = 0x4000_0000 | 0x0001_0000;
-                const FILE_FLAG_DELETE_ON_CLOSE: u32 = 0x0400_0000;
-                options
-                    .share_mode(0)
-                    .access_mode(GENERIC_WRITE_AND_DELETE)
-                    .custom_flags(FILE_FLAG_DELETE_ON_CLOSE);
-            }
-            let file = options.open(&path).map_err(|_| error("busy"))?;
-            Ok(Self {
-                path,
-                owner: None,
-                file: Some(file),
-            })
-        } else {
-            fs::create_dir(&path).map_err(|_| error("busy"))?;
-            let nonce = format!(
-                "{}-{}",
-                std::process::id(),
-                chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0)
-            );
-            let owner = path.join(format!("owner-{nonce}.json"));
-            let value = json!({"pid":std::process::id(),"createdAt":chrono::Utc::now().timestamp_millis(),"token":nonce});
-            if fs::write(&owner, value.to_string()).is_err() {
-                let _ = fs::remove_dir(&path);
-                return Err(error("storage"));
-            }
-            Ok(Self {
-                path,
-                owner: Some(owner),
-                file: None,
-            })
+/// Rejects names outside the app's declared file set, so a tampered blob cannot write elsewhere.
+fn restore_blob_in(home: &Path, spec: &AppSpec, files: &[(String, Vec<u8>)]) -> Result<()> {
+    for (name, bytes) in files {
+        if !spec.required.contains(&name.as_str()) && !spec.optional.contains(&name.as_str()) {
+            return Err(err("credentialInvalid"));
         }
-    }
-}
-impl Drop for CredentialLock {
-    fn drop(&mut self) {
-        if let Some(owner) = &self.owner {
-            let _ = fs::remove_file(owner);
-            let _ = fs::remove_dir(&self.path);
-        } else {
-            drop(self.file.take());
-            #[cfg(not(windows))]
-            let _ = fs::remove_file(&self.path);
-        }
-    }
-}
-
-fn replace_auth(id: &str, root: &Path, expected: &Value, next: &Value) -> Result<()> {
-    let _lock = CredentialLock::acquire(id, root)?;
-    if read_current(id, root)? != *expected {
-        return Err(error("externalChanged"));
-    }
-    write_current(id, root, next)
-}
-fn restore_auth(id: &str, root: &Path, attempted: &Value, before: &Value) -> Result<()> {
-    let _lock = CredentialLock::acquire(id, root)?;
-    let current = read_current(id, root)?;
-    if current == *before {
-        return Ok(());
-    }
-    if current != *attempted {
-        return Err(error("externalChanged"));
-    }
-    write_current(id, root, before)
-}
-fn write_current(id: &str, root: &Path, auth: &Value) -> Result<()> {
-    if id == "qoder" {
-        let (nonce, ciphertext) = encrypt(
-            &qoder_key(root)?,
-            &serde_json::to_vec(auth).map_err(|_| error("protocol"))?,
-        )?;
-        let mut bytes = b"v10".to_vec();
-        bytes.extend(nonce);
-        bytes.extend(ciphertext);
-        atomic(&root.join("auth.v1.dat"), &bytes)
-    } else {
-        let path = root.join("credentials.json");
-        let mut raw = read_json(&path)?;
-        let map = raw.as_object_mut().ok_or(error("credentialInvalid"))?;
-        map.retain(|key, _| !auth_key(key));
-        let key = zcode_key()?;
-        for (name, value) in auth.as_object().ok_or(error("credentialInvalid"))? {
-            if !auth_key(name) {
-                return Err(error("credentialInvalid"));
-            }
-            let (nonce, bytes) = encrypt(
-                &key,
-                value.as_str().ok_or(error("credentialInvalid"))?.as_bytes(),
-            )?;
-            let split = bytes.len() - 16;
-            map.insert(
-                name.clone(),
-                json!(format!(
-                    "enc:v1:{}.{}.{}",
-                    URL_SAFE_NO_PAD.encode(nonce),
-                    URL_SAFE_NO_PAD.encode(&bytes[split..]),
-                    URL_SAFE_NO_PAD.encode(&bytes[..split])
-                )),
-            );
-        }
-        atomic(
-            &path,
-            &serde_json::to_vec_pretty(&raw).map_err(|_| error("storage"))?,
-        )
-    }
-}
-fn supported(id: &str, version: &str) -> bool {
-    version.trim_start_matches('v').split('+').next()
-        == Some(if id == "qoder" { "0.4.2" } else { "3.16.3" })
-}
-
-fn verify_zcode_identity(auth: &Value) -> Result<()> {
-    if auth["oauth:active_provider"] != "zai" {
-        return Err(error("unsupportedProvider"));
-    }
-    let user: Value = serde_json::from_str(
-        auth["oauth:zai:user_info"]
-            .as_str()
-            .ok_or(error("loginRequired"))?,
-    )
-    .map_err(|_| error("credentialInvalid"))?;
-    let payload = token("zcode", auth)?
-        .split('.')
-        .nth(1)
-        .ok_or(error("credentialInvalid"))?;
-    let claims: Value = serde_json::from_slice(
-        &URL_SAFE_NO_PAD
-            .decode(payload)
-            .map_err(|_| error("credentialInvalid"))?,
-    )
-    .map_err(|_| error("credentialInvalid"))?;
-    // The server authenticates the signature. Bind the locally displayed identity to that token.
-    if user["user_id"].as_str().is_none()
-        || claims["user_id"] != user["user_id"]
-        || claims["sub"] != user["user_id"]
-    {
-        return Err(error("identityMismatch"));
+        write_file_atomic(home, name, bytes)?;
     }
     Ok(())
 }
 
-// Enable only after a recorded real two-account round trip on the exact adapter version.
-// Read-only identity/quota verification alone cannot certify credential replacement.
-fn switch_verified(_id: &str, _version: &str) -> bool {
-    false
+fn files_to_value(files: &[(String, Vec<u8>)]) -> Value {
+    let map: Map<String, Value> = files
+        .iter()
+        .map(|(name, bytes)| (name.clone(), json!(BASE64.encode(bytes))))
+        .collect();
+    json!(map)
 }
 
-fn upsert_account(state: &mut Value, mut account: Value) -> Result<()> {
-    let account_id = account["id"].as_str().ok_or(error("protocol"))?.to_owned();
-    let list = state["accounts"].as_array_mut().ok_or(error("storage"))?;
-    if let Some(existing) = list.iter_mut().find(|a| a["id"] == account_id) {
-        account["name"] = existing["name"].clone();
-        if !account["quotaErrorCode"].is_null() {
-            account["usage"] = existing["usage"].clone();
-            account["checkedAt"] = existing["checkedAt"].clone();
-        }
-        account["error"] = Value::Null;
-        account["errorCode"] = Value::Null;
-        *existing = account;
-    } else {
-        if list.len() >= 16 {
-            return Err(error("tooMany"));
-        }
-        list.push(account);
+fn files_from_value(blob: &Value) -> Result<Vec<(String, Vec<u8>)>> {
+    let object = blob.as_object().ok_or_else(|| err("credentialInvalid"))?;
+    if object.is_empty() {
+        return Err(err("credentialInvalid"));
     }
-    Ok(())
+    let mut files = Vec::new();
+    for (name, encoded) in object {
+        if name.contains('/') || name.contains('\\') || name.contains("..") {
+            return Err(err("credentialInvalid"));
+        }
+        let bytes = BASE64
+            .decode(encoded.as_str().ok_or_else(|| err("credentialInvalid"))?)
+            .map_err(|_| err("credentialInvalid"))?;
+        files.push((name.clone(), bytes));
+    }
+    Ok(files)
 }
 
-fn replace_and_verify<T>(
-    write: impl FnOnce() -> Result<()>,
-    verify: impl FnOnce() -> Result<T>,
-    rollback: impl FnOnce() -> Result<()>,
-) -> Result<T> {
-    // A refused compare-and-swap has not written anything and must not trigger recovery.
-    if let Err(reason) = write() {
-        if reason == error("externalChanged") || reason == error("busy") {
-            return Err(reason);
-        }
-        rollback().map_err(|_| error("rollbackFailed"))?;
-        return Err(reason);
-    }
-    match verify() {
-        Ok(value) => Ok(value),
-        Err(reason) => {
-            rollback().map_err(|_| error("rollbackFailed"))?;
-            Err(reason)
-        }
-    }
+fn snapshot_value(home: &Path, spec: &AppSpec, files: &[(String, Vec<u8>)]) -> Value {
+    json!({
+        "files": files_to_value(files),
+        "machineIdHash": machine_fingerprint_in(home, spec),
+        "capturedAt": now(),
+    })
 }
 
-pub fn handle(app: &tauri::AppHandle, id: &str, action: &str, payload: Value) -> Result<Value> {
-    if id == "chatgpt" {
-        return crate::accounts::handle(app, action, payload);
-    }
-    let _guard = operation(id)?;
-    let root = profile(id)?;
-    let store = app
+fn snapshot_files(blob: &Value) -> Result<Vec<(String, Vec<u8>)>> {
+    files_from_value(&blob["files"])
+}
+
+// ---------------------------------------------------------------- state
+
+fn store_root(app: &tauri::AppHandle, spec: &AppSpec) -> Result<PathBuf> {
+    let root = app
         .path()
         .app_config_dir()
-        .map_err(|_| error("storage"))?
+        .map_err(|_| err("storage"))?
         .join("app-accounts")
-        .join(id);
-    fs::create_dir_all(&store).map_err(|_| error("storage"))?;
-    let state_path = store.join("profiles.json");
-    let mut state = storage::read(
-        &state_path,
-        json!({"accounts":[],"activeId":null,"fingerprint":null}),
+        .join(spec.id);
+    fs::create_dir_all(root.join("backup")).map_err(|_| err("storage"))?;
+    Ok(root)
+}
+
+fn state_path(store: &Path) -> PathBuf {
+    store.join("accounts.json")
+}
+
+fn read_state(store: &Path) -> Result<Value> {
+    let state = crate::storage::read(
+        &state_path(store),
+        json!({"accounts":[],"activeId":null,"fingerprints":null,"notice":null,"backups":[]}),
+    )
+    .map_err(|_| err("storage"))?;
+    if !state["accounts"].is_array() || !state["backups"].is_array() {
+        return Err(err("storage"));
+    }
+    Ok(state)
+}
+
+fn write_state(store: &Path, state: &Value) -> Result<()> {
+    crate::storage::write(&state_path(store), state).map_err(|_| err("storage"))
+}
+
+fn blob_path(store: &Path, id: &str) -> PathBuf {
+    store.join(id).join("blob.age")
+}
+
+fn account_index(state: &Value, id: &str) -> Result<usize> {
+    state["accounts"]
+        .as_array()
+        .and_then(|accounts| accounts.iter().position(|entry| entry["id"] == json!(id)))
+        .ok_or_else(|| err("unknownAccount"))
+}
+
+fn known_hashes(state: &Value) -> Option<BTreeMap<String, String>> {
+    let object = state["fingerprints"].as_object()?;
+    let mut out = BTreeMap::new();
+    for (name, hash) in object {
+        out.insert(name.clone(), hash.as_str()?.to_owned());
+    }
+    Some(out)
+}
+
+fn hashes_value(hashes: &BTreeMap<String, String>) -> Value {
+    json!(hashes)
+}
+
+// ---------------------------------------------------------------- capture and restore
+
+/// Captures the current session as an account snapshot and returns its id.
+fn capture_account(
+    home: &Path,
+    store: &Path,
+    spec: &AppSpec,
+    keys: &KeyFn<'_>,
+    state: &mut Value,
+    name: &str,
+) -> Result<String> {
+    let files = read_session_in(home, spec)?;
+    let mut digest_input = String::new();
+    for (file_name, bytes) in &files {
+        digest_input.push_str(file_name);
+        digest_input.push('\u{0}');
+        digest_input.push_str(&sha256(bytes));
+        digest_input.push('\u{0}');
+    }
+    let id = format!("{}-{}", spec.id, &sha256(digest_input.as_bytes())[..24]);
+    let key = keys(&format!("account|{id}"), true)?;
+    seal(
+        &key,
+        snapshot_value(home, spec, &files).to_string().as_bytes(),
+        &blob_path(store, &id),
     )?;
-    let desktop = system::powershell(app, json!({"operation":"account-app-state","appId":id}))
-        .unwrap_or(json!({"running":false,"version":""}));
-    let version = desktop["version"].as_str().unwrap_or("");
-    let compatible = supported(id, version);
-    let (selected, _) = storage::selected_profile(&storage::settings(app)?, id, None)?;
-    let client = network::client(selected.as_ref())?;
-    let run = |auth: &Value| tauri::async_runtime::block_on(inspect(id, auth, &client));
-    let current = read_current(id, &root);
-    let mut state_persisted = false;
-    let mut notice: Option<String> = None;
-    let mut summary_error_code: Option<String> = None;
-    if matches!(action, "list" | "import") {
-        match &current {
-            Ok(auth) => {
-                let fingerprint = digest(auth.to_string().as_bytes());
-                if state["fingerprint"].as_str() != Some(&fingerprint)
-                    || action == "import"
-                    || state["accounts"].as_array().is_some_and(|accounts| {
-                        accounts.iter().any(|a| {
-                            a["id"] == state["activeId"]
-                                && a["checkedAt"].as_i64().unwrap_or(0) < now() - 300
-                        })
-                    })
-                {
-                    match run(auth) {
-                        Ok(account) => {
-                            let account_id =
-                                account["id"].as_str().ok_or(error("protocol"))?.to_owned();
-                            upsert_account(&mut state, account)?;
-                            atomic(
-                                &store.join(format!("{account_id}.dat")),
-                                &dpapi(auth.to_string().as_bytes(), true)?,
-                            )?;
-                            state["activeId"] = json!(account_id);
-                            state["fingerprint"] = json!(fingerprint);
-                        }
-                        Err(reason) => {
-                            let code = error_code(&reason);
-                            summary_error_code = Some(code.clone());
-                            notice = Some(reason);
-                            if let Some(active) = state["activeId"].as_str().map(str::to_owned) {
-                                if let Some(account) = state["accounts"].as_array_mut().and_then(|items| items.iter_mut().find(|item| item["id"] == active)) {
-                                    account["error"] = json!(code);
-                                    account["errorCode"] = json!(code);
-                                }
-                            }
-                        }
-                    }
-                }
+
+    let size: usize = files.iter().map(|(_, bytes)| bytes.len()).sum();
+    // Recapturing an account the user already named must not overwrite that name.
+    let existing_name = account_index(state, &id)
+        .ok()
+        .and_then(|index| state["accounts"][index]["name"].as_str().map(str::to_owned));
+    let label: String = if let Some(existing) = existing_name.filter(|_| name.trim().is_empty()) {
+        existing
+    } else if name.trim().is_empty() {
+        format!("{} · {}", spec.id, &id[id.len() - 6..])
+    } else {
+        name.trim()
+            .chars()
+            .filter(|c| !c.is_control())
+            .take(120)
+            .collect()
+    };
+    let record = json!({
+        "id": id,
+        "name": label,
+        "size": size,
+        "files": files.iter().map(|(file, _)| file.clone()).collect::<Vec<_>>(),
+        "capturedAt": now(),
+        "updatedAt": now(),
+    });
+    match account_index(state, &id) {
+        Ok(index) => state["accounts"][index] = record,
+        Err(_) => {
+            let count = state["accounts"].as_array().map(Vec::len).unwrap_or(0);
+            if count >= MAX_ACCOUNTS {
+                return Err(err("tooMany"));
             }
-            Err(reason) => {
-                let code = error_code(&reason);
-                summary_error_code = Some(code.clone());
-                notice = Some(reason.clone());
-                if let Some(active) = state["activeId"].as_str().map(str::to_owned) {
-                    if let Some(account) = state["accounts"].as_array_mut().and_then(|items| items.iter_mut().find(|item| item["id"] == active)) {
-                        account["error"] = json!(code);
-                        account["errorCode"] = json!(code);
-                    }
-                }
-            }
+            state["accounts"]
+                .as_array_mut()
+                .ok_or_else(|| err("storage"))?
+                .push(record);
         }
-    } else if action == "login" {
-        system::powershell(app, json!({"operation":"account-app-open","appId":id}))?;
-        notice = Some(error("signInInApp"));
-    } else if matches!(action, "refresh" | "rename" | "delete" | "switch") {
-        if action == "switch" {
-            if !compatible {
-                return Err(error("unsupportedVersion"));
-            }
-            if !switch_verified(id, version) {
-                return Err(error("switchUnverified"));
-            }
+    }
+    state["fingerprints"] = hashes_value(&hashes_of(&files));
+    state["activeId"] = json!(id);
+    Ok(id)
+}
+
+/// Copies the live session into an encrypted backup and records it in state.
+fn backup_current(
+    home: &Path,
+    store: &Path,
+    service: &str,
+    spec: &AppSpec,
+    keys: &KeyFn<'_>,
+    state: &mut Value,
+    reason: &str,
+) -> Result<(PathBuf, String)> {
+    let files = read_session_in(home, spec)?;
+    let key_id = format!("backup|{}|{reason}", now());
+    let key = keys(&key_id, true)?;
+    let name = format!("{reason}-{}.age", now());
+    let path = store.join("backup").join(&name);
+    seal(
+        &key,
+        snapshot_value(home, spec, &files).to_string().as_bytes(),
+        &path,
+    )?;
+    state["backups"].as_array_mut().ok_or_else(|| err("storage"))?.push(json!({
+        "path": name,
+        "at": now(),
+        "reason": reason,
+        "keyId": key_id,
+    }));
+    prune_backups(store, service, state);
+    Ok((path, key_id))
+}
+
+/// Keeps the newest backups and drops both their file and their vault key.
+fn prune_backups(store: &Path, service: &str, state: &mut Value) {
+    let Some(list) = state["backups"].as_array().cloned() else {
+        return;
+    };
+    if list.len() <= MAX_BACKUPS {
+        return;
+    }
+    let drop_count = list.len() - MAX_BACKUPS;
+    for record in list.iter().take(drop_count) {
+        if let Some(name) = record["path"].as_str() {
+            let _ = fs::remove_file(store.join("backup").join(name));
         }
-        let account_id = payload["id"]
-            .as_str()
-            .filter(|s| {
-                s.len() == 32
-                    && s.starts_with("account-")
-                    && s[8..].chars().all(|c| c.is_ascii_hexdigit())
+        if let Some(key_id) = record["keyId"].as_str()
+            && let Ok(entry) = vault_entry(store, service, key_id)
+        {
+            let _ = entry.delete_credential();
+        }
+    }
+    state["backups"] = json!(list[drop_count..].to_vec());
+}
+
+/// Puts backed-up bytes back after a failed write; reports rollbackFailed if that fails too.
+fn rollback(
+    home: &Path,
+    spec: &AppSpec,
+    keys: &KeyFn<'_>,
+    backup: &Path,
+    key_id: &str,
+) -> Result<()> {
+    let key = keys(key_id, false)?;
+    let plaintext = unseal(&key, backup)?;
+    let value: Value = serde_json::from_slice(&plaintext).map_err(|_| err("credentialInvalid"))?;
+    let files = snapshot_files(&value)?;
+    restore_blob_in(home, spec, &files).map_err(|_| err("rollbackFailed"))
+}
+
+/// Restores a saved account over the live session, with backup and verification.
+fn apply_account(
+    home: &Path,
+    store: &Path,
+    service: &str,
+    spec: &AppSpec,
+    keys: &KeyFn<'_>,
+    state: &mut Value,
+    id: &str,
+) -> Result<()> {
+    let index = account_index(state, id)?;
+    if !blob_path(store, id).exists() {
+        return Err(err("loginRequired"));
+    }
+    let key = keys(&format!("account|{id}"), false)?;
+    let plaintext = unseal(&key, &blob_path(store, id))?;
+    let blob: Value = serde_json::from_slice(&plaintext).map_err(|_| err("credentialInvalid"))?;
+    let files = snapshot_files(&blob)?;
+
+    // A blob captured on another machine cannot be decrypted by the app either.
+    if let Some(expected) = blob["machineIdHash"].as_str()
+        && machine_fingerprint_in(home, spec).as_deref() != Some(expected)
+    {
+        return Err(err("machineMismatch"));
+    }
+    // The app rewrites this file on login and token refresh, so a fingerprint change is
+    // normal and must not block a switch. The mandatory backup below is what protects the
+    // outgoing session; the UI surfaces `sessionChanged` so the user knows a backup is the
+    // only copy of whatever account the app currently holds.
+
+    let (backup, backup_key) = backup_current(home, store, service, spec, keys, state, "apply")?;
+    let written = (|| -> Result<()> {
+        restore_blob_in(home, spec, &files)?;
+        if fingerprints_in(home, spec)? != hashes_of(&files) {
+            return Err(err("switchFailed"));
+        }
+        Ok(())
+    })();
+    if let Err(error) = written {
+        rollback(home, spec, keys, &backup, &backup_key)?;
+        return Err(error);
+    }
+
+    state["activeId"] = json!(id);
+    state["accounts"][index]["updatedAt"] = json!(now());
+    state["fingerprints"] = hashes_value(&hashes_of(&files));
+    state["notice"] = json!("switched");
+    Ok(())
+}
+
+fn revert_last_backup(
+    home: &Path,
+    store: &Path,
+    service: &str,
+    spec: &AppSpec,
+    keys: &KeyFn<'_>,
+    state: &mut Value,
+) -> Result<()> {
+    let record = state["backups"]
+        .as_array()
+        .and_then(|list| list.last().cloned())
+        .ok_or_else(|| err("noBackup"))?;
+    let name = record["path"].as_str().ok_or_else(|| err("storage"))?;
+    let key_id = record["keyId"].as_str().ok_or_else(|| err("storage"))?;
+    let backup = store.join("backup").join(name);
+    if !backup.exists() {
+        return Err(err("noBackup"));
+    }
+    let key = keys(key_id, false)?;
+    let plaintext = unseal(&key, &backup)?;
+    let value: Value = serde_json::from_slice(&plaintext).map_err(|_| err("credentialInvalid"))?;
+    let files = snapshot_files(&value)?;
+    // Restoring is itself a write we must survive, so snapshot the current state first.
+    let (safety, safety_key) = backup_current(home, store, service, spec, keys, state, "revert")?;
+    if let Err(error) = restore_blob_in(home, spec, &files) {
+        rollback(home, spec, keys, &safety, &safety_key)?;
+        return Err(error);
+    }
+    state["fingerprints"] = hashes_value(&hashes_of(&files));
+    state["notice"] = json!("reverted");
+    Ok(())
+}
+
+fn snapshot_state(
+    spec: &AppSpec,
+    state: &Value,
+    running: bool,
+    files_present: bool,
+    home: &Path,
+) -> Value {
+    let accounts: Vec<Value> = state["accounts"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default()
+        .iter()
+        .map(|account| {
+            json!({
+                "id": account["id"],
+                "name": account["name"],
+                "size": account["size"],
+                "files": account["files"],
+                "capturedAt": account["capturedAt"],
+                "updatedAt": account["updatedAt"],
+                "active": state["activeId"] == account["id"],
             })
-            .ok_or(error("credentialInvalid"))?;
-        let index = state["accounts"]
-            .as_array()
-            .ok_or(error("storage"))?
-            .iter()
-            .position(|a| a["id"] == account_id)
-            .ok_or(error("notFound"))?;
-        let vault = store.join(format!("{account_id}.dat"));
-        if action == "rename" {
-            let name = payload["name"]
-                .as_str()
-                .map(str::trim)
-                .filter(|s| !s.is_empty() && s.len() <= 240 && !s.chars().any(char::is_control))
-                .ok_or(error("required"))?;
-            state["accounts"][index]["name"] = json!(name);
-        } else if action == "delete" {
-            fs::remove_file(vault).map_err(|_| error("storage"))?;
-            state["accounts"].as_array_mut().unwrap().remove(index);
-            // The original signed-in application is untouched; the next scan may detect it again.
-            if state["activeId"] == account_id {
+        })
+        .collect();
+    let backups = state["backups"].as_array().cloned().unwrap_or_default();
+    // True when the app rewrote its session since our last capture or switch, which means
+    // the account the app currently holds is only preserved by the pre-switch backup.
+    let session_changed = known_hashes(state)
+        .is_some_and(|known| fingerprints_in(home, spec).map(|live| live != known).unwrap_or(false));
+    json!({
+        "app": spec.id,
+        "accounts": accounts,
+        "activeId": state["activeId"],
+        "notice": state["notice"],
+        "running": running,
+        "filesPresent": files_present,
+        "sessionChanged": session_changed,
+        "sessionPath": home.to_string_lossy(),
+        "managedFiles": spec.required.iter().chain(spec.optional).collect::<Vec<_>>(),
+        "backupCount": backups.len(),
+        "lastBackupAt": backups.last().and_then(|entry| entry["at"].as_i64()),
+    })
+}
+
+// ---------------------------------------------------------------- app process
+
+fn app_running(app: &tauri::AppHandle, spec: &AppSpec) -> bool {
+    system::powershell(app, json!({"operation":"account-app-state","appId":spec.id}))
+        .map(|state| state["running"] == true)
+        .unwrap_or(false)
+}
+
+fn close_app(app: &tauri::AppHandle, spec: &AppSpec) -> Result<()> {
+    system::powershell(app, json!({"operation":"account-app-close","appId":spec.id}))
+        .map_err(|_| err("closeRequired"))?;
+    Ok(())
+}
+
+fn open_app(app: &tauri::AppHandle, spec: &AppSpec) {
+    // Reopening is best effort: the switch already landed, and a failed relaunch is
+    // visible as the app not coming back rather than as a lost restore.
+    let _ = system::powershell(app, json!({"operation":"account-app-open","appId":spec.id}));
+}
+
+// ---------------------------------------------------------------- command
+
+pub fn handle(app: &tauri::AppHandle, app_id: &str, action: &str, payload: Value) -> Result<Value> {
+    let mut guard = BROKER_LOCK.try_lock().map_err(|_| err("busy"))?;
+    if guard.is_none() {
+        *guard = Some(());
+    }
+    let spec = spec(app_id)?;
+    let store = store_root(app, spec)?;
+    let service = format!("{}-accounts", spec.id);
+    let keys = |key_id: &str, create: bool| vault_key(&store, &service, key_id, create);
+    let mut state = read_state(&store)?;
+    let home = app_home(spec)?;
+    let typed_name = |payload: &Value| -> String {
+        payload["name"]
+            .as_str()
+            .unwrap_or("")
+            .trim()
+            .chars()
+            .filter(|c| !c.is_control())
+            .take(120)
+            .collect()
+    };
+    let running = app_running(app, spec);
+    let files_present = spec.required.iter().all(|file| home.join(file).exists());
+
+    match action {
+        "list" => {}
+        "capture" => {
+            if running {
+                return Err(err("closeRequired"));
+            }
+            capture_account(&home, &store, spec, &keys, &mut state, &typed_name(&payload))?;
+            state["notice"] = json!("captured");
+            write_state(&store, &state)?;
+        }
+        "apply" => {
+            let id = payload["id"].as_str().ok_or_else(|| err("unknownAccount"))?;
+            if !is_valid_id(spec, id) {
+                return Err(err("unknownAccount"));
+            }
+            if running {
+                close_app(app, spec)?;
+            }
+            let result = apply_account(&home, &store, &service, spec, &keys, &mut state, id);
+            // Persist whatever the attempt learned, including the automatic backup.
+            write_state(&store, &state)?;
+            if running {
+                open_app(app, spec);
+            }
+            result?;
+        }
+        "revert" => {
+            if running {
+                return Err(err("closeRequired"));
+            }
+            revert_last_backup(&home, &store, &service, spec, &keys, &mut state)?;
+            write_state(&store, &state)?;
+        }
+        "rename" => {
+            let id = payload["id"].as_str().ok_or_else(|| err("unknownAccount"))?;
+            let label = typed_name(&payload);
+            if label.is_empty() {
+                return Err(err("invalidName"));
+            }
+            let index = account_index(&state, id)?;
+            state["accounts"][index]["name"] = json!(label);
+            state["accounts"][index]["updatedAt"] = json!(now());
+            write_state(&store, &state)?;
+        }
+        "delete" => {
+            let id = payload["id"].as_str().ok_or_else(|| err("unknownAccount"))?;
+            if !is_valid_id(spec, id) {
+                return Err(err("unknownAccount"));
+            }
+            let index = account_index(&state, id)?;
+            let blob = blob_path(&store, id);
+            if blob.exists() {
+                fs::remove_file(&blob).map_err(|_| err("storage"))?;
+            }
+            if let Ok(entry) = vault_entry(&store, &service, &format!("account|{id}")) {
+                let _ = entry.delete_credential();
+            }
+            if let Some(parent) = blob.parent() {
+                let _ = fs::remove_dir(parent);
+            }
+            state["accounts"]
+                .as_array_mut()
+                .ok_or_else(|| err("storage"))?
+                .remove(index);
+            if state["activeId"] == json!(id) {
                 state["activeId"] = Value::Null;
             }
-        } else {
-            let mut auth: Value = serde_json::from_slice(&dpapi(&read_bytes(&vault)?, false)?)
-                .map_err(|_| error("vault"))?;
-            let active = current
-                .as_ref()
-                .ok()
-                .and_then(|auth| local_identity(id, auth).ok())
-                .map(|identity| identity.0);
-            if action == "refresh" && active.as_deref() == Some(account_id) {
-                auth = current.as_ref().unwrap().clone();
-            }
-            let mut checked = match run(&auth) {
-                Ok(checked) => checked,
-                Err(reason)
-                    if action == "refresh"
-                        && id == "qoder"
-                        && compatible
-                        && active.as_deref().is_some_and(|active| active != account_id)
-                        && reason == error("loginRequired") =>
-                {
-                    // Only an inactive saved session can rotate here. The original app owns its
-                    // active session and its own renewal; we never invalidate it behind its back.
-                    auth = tauri::async_runtime::block_on(renew_qoder(&client, &auth))?;
-                    // Rotation can consume the old refresh token. Retain the encrypted result even
-                    // if the follow-up network read fails, so retry does not reuse a consumed token.
-                    atomic(&vault, &dpapi(auth.to_string().as_bytes(), true)?)?;
-                    run(&auth)?
-                }
-                Err(reason) if action == "refresh" => {
-                    let code = error_code(&reason);
-                    state["accounts"][index]["error"] = json!(code);
-                    state["accounts"][index]["errorCode"] = json!(code);
-                    storage::write(&state_path, &state)?;
-                    return Ok(json!({
-                        "appId":id,"accounts":state["accounts"],"activeId":state["activeId"],
-                        "notice":reason,"errorCode":code,"version":version,
-                        "supportedVersion":if id=="qoder"{"0.4.2"}else{"3.16.3"},
-                        "desktopRunning":desktop["running"],"capabilities":{"canImport":true,"canLogin":true,"canRefresh":true,"canSwitch":compatible && switch_verified(id, version)},
-                        "liveSwitchVerified":switch_verified(id, version)
-                    }));
-                }
-                Err(reason) => return Err(reason),
-            };
-            if checked["id"] != account_id {
-                return Err(error("identityMismatch"));
-            }
-            if action == "refresh" {
-                atomic(&vault, &dpapi(auth.to_string().as_bytes(), true)?)?;
-            }
-            checked["name"] = state["accounts"][index]["name"].clone();
-            if action == "switch" {
-                let before = current?;
-                if state["fingerprint"].as_str() != Some(&digest(before.to_string().as_bytes())) {
-                    return Err(error("externalChanged"));
-                }
-                let restart = desktop["running"] == true;
-                if restart && payload["confirmRestart"] != true {
-                    return Err(error("restartRequired"));
-                }
-                if restart {
-                    system::powershell(app, json!({"operation":"account-app-close","appId":id}))?;
-                }
-                if !read_current(id, &root).is_ok_and(|current| current == before) {
-                    if restart {
-                        let _ = system::powershell(
-                            app,
-                            json!({"operation":"account-app-open","appId":id}),
-                        );
-                    }
-                    return Err(error("externalChanged"));
-                }
-                let previous_state = state.clone();
-                let mut next_state = state.clone();
-                next_state["activeId"] = json!(account_id);
-                next_state["fingerprint"] = json!(digest(auth.to_string().as_bytes()));
-                next_state["accounts"][index] = checked.clone();
-                let result = replace_and_verify(
-                    || replace_auth(id, &root, &before, &auth),
-                    || {
-                        let written = read_current(id, &root)?;
-                        if written != auth {
-                            return Err(error("identityMismatch"));
-                        }
-                        run(&written)?;
-                        storage::write(&state_path, &next_state)?;
-                        if restart {
-                            system::powershell(
-                                app,
-                                json!({"operation":"account-app-open","appId":id}),
-                            )?;
-                            let status = system::powershell(
-                                app,
-                                json!({"operation":"account-app-state","appId":id}),
-                            )?;
-                            if status["running"] != true {
-                                return Err(error("restartFailed"));
-                            }
-                            let reopened = read_current(id, &root)?;
-                            if local_identity(id, &reopened)?.0 != account_id {
-                                return Err(error("identityMismatch"));
-                            }
-                            run(&reopened)?;
-                        }
-                        Ok(())
-                    },
-                    || {
-                        if restart {
-                            system::powershell(
-                                app,
-                                json!({"operation":"account-app-close","appId":id}),
-                            )?;
-                        }
-                        restore_auth(id, &root, &auth, &before)?;
-                        storage::write(&state_path, &previous_state)
-                    },
-                );
-                if let Err(reason) = result {
-                    if restart {
-                        let _ = system::powershell(
-                            app,
-                            json!({"operation":"account-app-open","appId":id}),
-                        );
-                    }
-                    return Err(reason);
-                }
-                state = next_state;
-                state_persisted = true;
-            }
-            state["accounts"][index] = checked;
+            write_state(&store, &state)?;
         }
-    } else {
-        return Err(error("unsupportedAction"));
+        "dismiss" => {
+            state["notice"] = Value::Null;
+            write_state(&store, &state)?;
+        }
+        _ => return Err(err("unsupportedAction")),
     }
-    if !state_persisted {
-        storage::write(&state_path, &state)?;
-    }
-    Ok(
-        json!({"appId":id,"accounts":state["accounts"],"activeId":state["activeId"],"notice":notice,"errorCode":summary_error_code,"version":version,"supportedVersion":if id=="qoder"{"0.4.2"}else{"3.16.3"},"desktopRunning":desktop["running"],"capabilities":{"canImport":true,"canLogin":true,"canRefresh":true,"canSwitch":compatible && switch_verified(id, version)},"liveSwitchVerified":switch_verified(id, version)}),
-    )
+
+    // Re-read the process state: a switch reopens the app, and the UI badge must reflect
+    // what the user now sees rather than what was true when the command started.
+    let running_now = app_running(app, spec);
+    Ok(snapshot_state(spec, &state, running_now, files_present, &home))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test]
-    fn authenticated_envelopes_reject_tampering() {
-        let key = [7; 32];
-        let (nonce, mut bytes) = encrypt(&key, b"synthetic credential").unwrap();
-        assert_eq!(
-            decrypt(&key, &nonce, &bytes).unwrap(),
-            b"synthetic credential"
-        );
-        bytes[0] ^= 1;
-        assert!(decrypt(&key, &nonce, &bytes).is_err());
+    use age::secrecy::SecretString;
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    struct Sandbox {
+        root: PathBuf,
     }
-    #[test]
-    #[cfg(windows)]
-    fn vault_roundtrip_handles_credentials_larger_than_a_pipe_buffer() {
-        let original = vec![42; 48 * 1024];
-        let encrypted = dpapi(&original, true).unwrap();
-        assert_eq!(dpapi(&encrypted, false).unwrap(), original);
-    }
-    #[test]
-    fn identity_is_stable_and_versions_are_explicit() {
-        let auth = json!({"user":{"id":"synthetic","email":"person@example.invalid"}});
-        assert_eq!(local_identity("qoder", &auth).unwrap().0.len(), 32);
-        assert!(supported("qoder", "0.4.2"));
-        assert!(!supported("qoder", "0.4.3"));
-    }
-    #[test]
-    fn zcode_cipher_keeps_non_auth_settings_outside_scope() {
-        assert!(auth_key("oauth:zai:user_info"));
-        assert!(!auth_key("oauth:bigmodel:access_token"));
-        assert!(!auth_key("project-key-location:unrelated"));
-        assert!(!auth_key("setting.json"));
-        assert!(zcode_decode("enc:v1:bad", &[0; 32]).is_err());
-    }
-    #[test]
-    fn transaction_restores_after_write_or_identity_failure() {
-        use std::cell::Cell;
-        for write_fails in [true, false] {
-            let state = Cell::new(1);
-            let result = replace_and_verify(
-                || {
-                    state.set(2);
-                    if write_fails {
-                        Err(error("storage"))
-                    } else {
-                        Ok(())
-                    }
-                },
-                || Err::<(), _>(error("identityMismatch")),
-                || {
-                    state.set(1);
-                    Ok(())
-                },
-            );
-            assert!(result.is_err());
-            assert_eq!(state.get(), 1);
+    impl Sandbox {
+        fn new(tag: &str) -> Self {
+            static NEXT: AtomicU64 = AtomicU64::new(0);
+            let root = std::env::temp_dir().join(format!(
+                "vibehub-app-accounts-{tag}-{}-{}",
+                std::process::id(),
+                NEXT.fetch_add(1, Ordering::Relaxed)
+            ));
+            fs::create_dir_all(&root).unwrap();
+            Self { root }
         }
-        assert_eq!(
-            replace_and_verify(
-                || Ok(()),
-                || Err::<(), _>(error("identityMismatch")),
-                || Err(error("storage"))
-            )
-            .unwrap_err(),
-            error("rollbackFailed")
-        );
-        assert_eq!(
-            replace_and_verify(
-                || Err(error("externalChanged")),
-                || Ok(()),
-                || panic!("No write occurred; do not overwrite external state")
-            )
-            .unwrap_err(),
-            error("externalChanged")
-        );
+        fn home(&self) -> PathBuf {
+            self.root.join("home")
+        }
+        fn store(&self) -> PathBuf {
+            let store = self.root.join("store");
+            fs::create_dir_all(store.join("backup")).unwrap();
+            store
+        }
+        fn write(&self, name: &str, bytes: &[u8]) {
+            fs::create_dir_all(self.home()).unwrap();
+            fs::write(self.home().join(name), bytes).unwrap();
+        }
+        fn read(&self, name: &str) -> Vec<u8> {
+            fs::read(self.home().join(name)).unwrap()
+        }
     }
+    impl Drop for Sandbox {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.root);
+        }
+    }
+
+    const TEST_SERVICE: &str = "test-accounts";
+
+    /// One fixed key stands in for the Credential Manager during tests.
+    fn test_keys(_id: &str, _create: bool) -> Result<SecretString> {
+        Ok(SecretString::from("test-key-material".to_owned()))
+    }
+
+    fn zcode() -> &'static AppSpec {
+        spec("zcode").unwrap()
+    }
+    fn qoder() -> &'static AppSpec {
+        spec("qoder").unwrap()
+    }
+
     #[test]
-    fn repeated_detection_deduplicates_and_preserves_user_name() {
-        let mut state = json!({"accounts":[]});
-        upsert_account(
-            &mut state,
-            json!({"id":"one","name":"Personal","plan":"free"}),
-        )
-        .unwrap();
-        upsert_account(
-            &mut state,
-            json!({"id":"one","name":"Remote name","plan":"pro"}),
-        )
-        .unwrap();
+    fn capture_then_restore_returns_identical_bytes() {
+        let sandbox = Sandbox::new("roundtrip");
+        let app = zcode();
+        let store = sandbox.store();
+        let original = b"{\"oauth:zai:access_token\":\"opaque\"}".to_vec();
+        sandbox.write("credentials.json", &original);
+        sandbox.write("credential-source", b"os");
+        let mut state = json!({"accounts":[],"backups":[],"activeId":null});
+
+        let id = capture_account(&sandbox.home(), &store, app, &test_keys, &mut state, "").unwrap();
+        assert!(is_valid_id(app, &id));
+        sandbox.write("credentials.json", b"{\"other\":true}");
+
+        apply_account(&sandbox.home(), &store, TEST_SERVICE, app, &test_keys, &mut state, &id).unwrap();
+        assert_eq!(sandbox.read("credentials.json"), original);
+        assert_eq!(sandbox.read("credential-source"), b"os");
+        assert_eq!(state["activeId"], json!(id));
+        assert_eq!(state["notice"], json!("switched"));
+        assert_eq!(state["backups"].as_array().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn recapturing_the_same_session_reuses_the_account_id() {
+        let sandbox = Sandbox::new("dedupe");
+        let store = sandbox.store();
+        sandbox.write("credentials.json", b"same");
+        let mut state = json!({"accounts":[],"backups":[],"activeId":null});
+        let first = capture_account(&sandbox.home(), &store, zcode(), &test_keys, &mut state, "work").unwrap();
+        let second = capture_account(&sandbox.home(), &store, zcode(), &test_keys, &mut state, "").unwrap();
+        assert_eq!(first, second);
         assert_eq!(state["accounts"].as_array().unwrap().len(), 1);
-        assert_eq!(state["accounts"][0]["name"], "Personal");
-        assert_eq!(state["accounts"][0]["plan"], "pro");
-        assert!(token("qoder", &json!({"token":""})).is_err());
+        // A recapture keeps the name the user gave it.
+        assert_eq!(state["accounts"][0]["name"], json!("work"));
     }
+
     #[test]
-    fn zcode_balances_keep_units_and_reject_invalid_or_expired_limits() {
-        let data = json!({"code":0,"data":{"server_time":100,"balances":[
-            {"show_name":"Daily tokens","unit_type":"tokens","remaining_units":"0","total_units":"300000000","used_units":"300000000","expires_at":200},
-            {"show_name":"Expired","unit_type":"tokens","remaining_units":2,"expires_at":90},
-            {"show_name":"Invalid","unit_type":"tokens","remaining_units":-1},
-            {"show_name":"Reserved","unit_type":"tokens","available_units":17,"reserved_units":3}
-        ]}});
-        let usage = zcode_balances(&data).unwrap();
-        assert_eq!(usage.len(), 1);
-        assert_eq!(usage[0]["remaining"], 0.0);
-        assert_eq!(usage[0]["unit"], "tokens");
-        assert!(zcode_balances(&json!({"code":3001,"msg":"parameter error"})).is_err());
-        assert!(zcode_balances(&json!({"code":0,"data":{}})).is_err());
+    fn a_session_changed_by_the_app_is_backed_up_before_it_is_replaced() {
+        let sandbox = Sandbox::new("changed");
+        let app = zcode();
+        let store = sandbox.store();
+        sandbox.write("credentials.json", b"state-a");
+        let mut state = json!({"accounts":[],"backups":[],"activeId":null});
+        let id = capture_account(&sandbox.home(), &store, app, &test_keys, &mut state, "").unwrap();
+        // Logging into another account rewrites the file; that must not block a switch,
+        // but the account being replaced must survive in the automatic backup.
+        sandbox.write("credentials.json", b"state-b-uncaptured");
+
+        apply_account(&sandbox.home(), &store, TEST_SERVICE, app, &test_keys, &mut state, &id).unwrap();
+        assert_eq!(sandbox.read("credentials.json"), b"state-a");
+
+        let backup_name = state["backups"][0]["path"].as_str().unwrap();
+        let backup_key_id = state["backups"][0]["keyId"].as_str().unwrap();
+        let key = test_keys(backup_key_id, false).unwrap();
+        let plaintext = unseal(&key, &store.join("backup").join(backup_name)).unwrap();
+        let blob: Value = serde_json::from_slice(&plaintext).unwrap();
+        let files = snapshot_files(&blob).unwrap();
+        assert_eq!(files[0].1, b"state-b-uncaptured");
     }
+
     #[test]
-    fn qoder_renewal_requires_complete_response_and_keeps_identity() {
-        let auth = json!({"user":{"id":"synthetic"},"token":"old","refreshToken":"old-refresh","expiresAt":"2020-01-01T00:00:00Z"});
-        let next=qoder_renewed(&auth,&json!({"device_token":"new","refresh_token":"new-refresh","expires_in":3600,"refresh_token_expires_in":7200}),1000).unwrap();
-        assert_eq!(next["user"], auth["user"]);
-        assert_eq!(next["token"], "new");
-        assert_eq!(timestamp(&next["expiresAt"]), Some(4600));
-        assert!(qoder_renewed(&auth, &json!({"token":"new"}), 1000).is_err());
-        assert!(qoder_renewed(
-            &auth,
-            &json!({"token":"new","refresh_token":"refresh","expires_in":-1}),
-            1000
-        )
-        .is_err());
+    fn the_snapshot_reports_when_the_app_rewrote_the_session() {
+        let sandbox = Sandbox::new("changed-flag");
+        let app = zcode();
+        let store = sandbox.store();
+        sandbox.write("credentials.json", b"state-a");
+        let mut state = json!({"accounts":[],"backups":[],"activeId":null});
+        capture_account(&sandbox.home(), &store, app, &test_keys, &mut state, "").unwrap();
+        assert!(!snapshot_state(app, &state, false, true, &sandbox.home())["sessionChanged"]
+            .as_bool()
+            .unwrap());
+        sandbox.write("credentials.json", b"state-b");
+        assert!(snapshot_state(app, &state, false, true, &sandbox.home())["sessionChanged"]
+            .as_bool()
+            .unwrap());
     }
+
     #[test]
-    fn qoder_renewal_http_contract_has_no_access_token_and_handles_rejection() {
-        use std::io::Read;
-        for status in [200, 401] {
-            let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
-            let url = format!("http://{}/refresh", listener.local_addr().unwrap());
-            let server = std::thread::spawn(move || {
-                let (mut stream, _) = listener.accept().unwrap();
-                stream
-                    .set_read_timeout(Some(Duration::from_secs(3)))
-                    .unwrap();
-                let mut request = Vec::new();
-                let mut chunk = [0; 4096];
-                loop {
-                    let read = stream.read(&mut chunk).unwrap();
-                    assert!(read > 0);
-                    request.extend_from_slice(&chunk[..read]);
-                    let text = String::from_utf8_lossy(&request);
-                    if let Some(end) = text.find("\r\n\r\n") {
-                        let length = text[..end]
-                            .lines()
-                            .find_map(|line| {
-                                line.to_ascii_lowercase()
-                                    .strip_prefix("content-length:")
-                                    .and_then(|value| value.trim().parse::<usize>().ok())
-                            })
-                            .unwrap();
-                        if request.len() >= end + 4 + length {
-                            break;
-                        }
-                    }
-                }
-                let text = String::from_utf8(request).unwrap();
-                assert!(!text.to_ascii_lowercase().contains("authorization:"));
-                let body: Value =
-                    serde_json::from_str(text.split("\r\n\r\n").nth(1).unwrap()).unwrap();
-                assert_eq!(body, json!({"refresh_token":"synthetic-refresh"}));
-                let response = r#"{"token":"synthetic-next","refresh_token":"synthetic-next-refresh","expires_in":3600}"#;
-                write!(stream,"HTTP/1.1 {status} Test\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{response}",response.len()).unwrap();
-            });
-            let auth = json!({"user":{"id":"synthetic"},"token":"synthetic-access","refreshToken":"synthetic-refresh"});
-            let client =
-                network::client(Some(&json!({"id":"test","name":"Direct","mode":"direct"})))
-                    .unwrap();
-            let result = tauri::async_runtime::block_on(renew_qoder_at(&client, &auth, &url));
-            if status == 200 {
-                assert_eq!(result.unwrap()["token"], "synthetic-next");
-            } else {
-                assert_eq!(result.unwrap_err(), error("loginRequired"));
-            }
-            server.join().unwrap();
-        }
+    fn a_foreign_machine_snapshot_is_refused() {
+        let sandbox = Sandbox::new("machine");
+        let app = qoder();
+        let store = sandbox.store();
+        sandbox.write("auth.v1.dat", b"blob");
+        sandbox.write("auth.machine-id", b"machine-one");
+        let mut state = json!({"accounts":[],"backups":[],"activeId":null});
+        let id = capture_account(&sandbox.home(), &store, app, &test_keys, &mut state, "").unwrap();
+
+        // A different machine id means the app cannot decrypt this blob here.
+        sandbox.write("auth.machine-id", b"machine-two");
+        let error = apply_account(&sandbox.home(), &store, TEST_SERVICE, app, &test_keys, &mut state, &id).unwrap_err();
+        assert_eq!(error, err("machineMismatch"));
+        assert_eq!(sandbox.read("auth.v1.dat"), b"blob");
     }
+
     #[test]
-    fn vendor_lock_and_compare_exchange_keep_external_edits_and_non_auth_values() {
-        let root = std::env::temp_dir().join(format!(
-            "vibehub-adapter-{}-{}",
-            std::process::id(),
-            chrono::Utc::now().timestamp_nanos_opt().unwrap()
-        ));
-        fs::create_dir(&root).unwrap();
-        #[cfg(windows)]
-        {
-            let lock = CredentialLock::acquire("qoder", &root).unwrap();
-            assert!(
-                fs::remove_file(root.join("auth.v1.lock")).is_err(),
-                "A live Qoder lease must not be stolen as a stale file"
-            );
-            drop(lock);
-            assert!(!root.join("auth.v1.lock").exists());
-        }
-        let before = json!({"oauth:active_provider":"zai","oauth:zai:user_info":"{\"user_id\":\"one\"}","zcodejwttoken":"synthetic-before"});
-        let after = json!({"oauth:active_provider":"zai","oauth:zai:user_info":"{\"user_id\":\"two\"}","zcodejwttoken":"synthetic-after"});
-        fs::write(
-            root.join("credentials.json"),
-            json!({"project-key-location:keep":"opaque-value"}).to_string(),
-        )
-        .unwrap();
-        write_current("zcode", &root, &before).unwrap();
-        {
-            let _lock = CredentialLock::acquire("zcode", &root).unwrap();
-            assert!(replace_auth("zcode", &root, &before, &after).is_err());
-        }
-        replace_auth("zcode", &root, &before, &after).unwrap();
+    fn missing_session_files_mean_not_signed_in() {
+        let sandbox = Sandbox::new("missing");
+        let mut state = json!({"accounts":[],"backups":[],"activeId":null});
         assert_eq!(
-            read_json(&root.join("credentials.json")).unwrap()["project-key-location:keep"],
-            "opaque-value"
+            capture_account(&sandbox.home(), &sandbox.store(), zcode(), &test_keys, &mut state, "").unwrap_err(),
+            err("loginRequired")
         );
-        assert!(replace_auth("zcode", &root, &before, &before).is_err());
-        assert_eq!(read_current("zcode", &root).unwrap(), after);
-        replace_auth("zcode", &root, &after, &before).unwrap();
-        assert_eq!(read_current("zcode", &root).unwrap(), before);
-        fs::remove_file(root.join("credentials.json")).unwrap();
-        fs::remove_dir(root).unwrap();
     }
+
     #[test]
-    fn zcode_identity_must_match_authenticated_token() {
-        let jwt = format!(
-            "header.{}.signature",
-            URL_SAFE_NO_PAD.encode(br#"{"user_id":"one","sub":"one"}"#)
-        );
-        let mut auth = json!({"oauth:active_provider":"zai","zcodejwttoken":jwt,"oauth:zai:user_info":"{\"user_id\":\"one\"}"});
-        assert!(verify_zcode_identity(&auth).is_ok());
-        auth["oauth:zai:user_info"] = json!("{\"user_id\":\"two\"}");
-        assert!(verify_zcode_identity(&auth).is_err());
-        assert!(!switch_verified("qoder", "0.4.2"));
+    fn revert_restores_the_last_backup_and_keeps_a_safety_copy() {
+        let sandbox = Sandbox::new("revert");
+        let app = zcode();
+        let store = sandbox.store();
+        sandbox.write("credentials.json", b"first");
+        let mut state = json!({"accounts":[],"backups":[],"activeId":null});
+        capture_account(&sandbox.home(), &store, app, &test_keys, &mut state, "").unwrap();
+        sandbox.write("credentials.json", b"second");
+        let second = capture_account(&sandbox.home(), &store, app, &test_keys, &mut state, "").unwrap();
+        // Switch so a backup of "first" exists, then revert to it.
+        let first = state["accounts"][0]["id"].as_str().unwrap().to_owned();
+        apply_account(&sandbox.home(), &store, TEST_SERVICE, app, &test_keys, &mut state, &first).unwrap();
+        revert_last_backup(&sandbox.home(), &store, TEST_SERVICE, app, &test_keys, &mut state).unwrap();
+        assert_eq!(sandbox.read("credentials.json"), b"second");
+        assert_ne!(first, second);
+        // The revert itself was backed up, so the list grew by one more.
+        assert!(state["backups"].as_array().unwrap().len() >= 2);
     }
+
     #[test]
-    #[ignore = "Reads the signed-in desktop accounts and makes read-only vendor requests; no profile is modified"]
-    fn live_read_only_accounts() {
-        for id in ["qoder", "zcode"] {
-            let auth = read_current(id, &profile(id).unwrap()).unwrap();
-            let client = network::client(None).unwrap();
-            let snapshot = tauri::async_runtime::block_on(inspect(id, &auth, &client)).unwrap();
-            assert!(snapshot["id"].as_str().unwrap().starts_with("account-"));
-            assert!(snapshot.get("token").is_none());
-            if id == "zcode" && !snapshot["quotaError"].is_null() {
-                println!("zcode: identity and granted entitlements verified; remaining balance unavailable");
-            } else {
-                println!("{id}: identity and live usage verified");
-            }
+    fn backups_are_pruned_to_the_cap() {
+        let sandbox = Sandbox::new("prune");
+        let app = zcode();
+        let store = sandbox.store();
+        sandbox.write("credentials.json", b"payload");
+        let mut state = json!({"accounts":[],"backups":[],"activeId":null});
+        for index in 0..MAX_BACKUPS + 3 {
+            sandbox.write("credentials.json", format!("payload-{index}").as_bytes());
+            backup_current(&sandbox.home(), &store, TEST_SERVICE, app, &test_keys, &mut state, "apply").unwrap();
         }
+        assert_eq!(state["backups"].as_array().unwrap().len(), MAX_BACKUPS);
+        let files = fs::read_dir(store.join("backup")).unwrap().count();
+        assert_eq!(files, MAX_BACKUPS);
+    }
+
+    #[test]
+    fn ids_must_match_the_app_namespace_and_stay_path_safe() {
+        assert!(is_valid_id(zcode(), "zcode-0123456789abcdef01234567"));
+        for bad in ["", "qoder-0123456789abcdef01234567", "zcode-", "zcode-../../etc", "zcode-a/b"] {
+            assert!(!is_valid_id(zcode(), bad), "{bad} must be rejected");
+        }
+    }
+
+    #[test]
+    fn snapshot_payloads_reject_traversal_empty_sets_and_unknown_files() {
+        assert!(files_from_value(&json!({})).is_err());
+        assert!(files_from_value(&json!({"../escape": "AAAA"})).is_err());
+        assert!(files_from_value(&json!({"ok.json": "AAAA"})).is_ok());
+        // A tampered blob must not be able to write a file the app never declared.
+        let error = restore_blob_in(&Sandbox::new("tamper").home(), zcode(), &[("settings.json".into(), b"x".to_vec())]).unwrap_err();
+        assert_eq!(error, err("credentialInvalid"));
+    }
+
+    #[test]
+    fn the_app_file_sets_stay_minimal_and_explicit() {
+        // Regression guard: adding a settings file here would roll back user preferences.
+        assert_eq!(zcode().required, &["credentials.json"]);
+        assert_eq!(zcode().optional, &["credential-source"]);
+        assert_eq!(qoder().required, &["auth.v1.dat"]);
+        assert_eq!(qoder().optional, &["auth-profile-overlays.v1.dat"]);
+        assert!(!zcode().required.contains(&"provider_config.json"));
     }
 }

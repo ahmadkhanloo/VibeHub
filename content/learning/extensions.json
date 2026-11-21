@@ -416,5 +416,233 @@
       "en": "Check account/workspace availability, provider authorization and supported surface. If Plugins is absent, consult the official guide.",
       "fa": "دسترسی حساب یا فضای کاری، مجوز سرویس و محیط پشتیبانی‌شده را بررسی کنید. اگر Plugins وجود ندارد، راهنمای رسمی را ببینید."
     }
+  },
+  {
+    "id": "dsh-context",
+    "topic": "extensions",
+    "level": "beginner",
+    "order": 20,
+    "name": "dsh-context",
+    "kind": "plugin",
+    "source": "https://github.com/bowenliang123/dsh-context",
+    "checked": "2026-11-20",
+    "summary": {
+      "fa": "نگاه به زمینهٔ گفتگو: داشبورد مصرف توکن و هزینه، ترکیب و تحول زمینه و کارت زندهٔ ایجنت‌ها؛ همه از آمار محلی Harness و بدون مصرف مدل.",
+      "en": "Conversation context insight: token/cost usage dashboard, context composition and evolution, and live agent cards — all from local Harness stats, without model calls."
+    },
+    "compatibility": {
+      "fa": "DeepSeek Harness؛ روی پروفایل دسکتاپ یا وب نصب می‌شود. افزونهٔ مرورگر یا عامل دیگر نیست.",
+      "en": "DeepSeek Harness; installs on the desktop or web profile. Not a browser or other-agent extension."
+    },
+    "prerequisites": {
+      "fa": "Harness نصب‌شده. افزونه فقط آمار نشست‌های محلی را می‌خواند؛ توکن و شبکه مصرف نمی‌کند.",
+      "en": "Installed Harness. The plugin only reads local session stats; no tokens or network."
+    },
+    "install": {
+      "fa": "دستورهای عمومی در مقالهٔ افزونه‌های Harness: dsh plugin --profile desktop add dsh-context به‌روزرسانی: dsh plugin --profile desktop update dsh-context@latest از داخل برنامه هم در Plugin Market با جست‌وجوی dsh-context نصب می‌شود.",
+      "en": "Shared commands live in the Harness plugins guide: dsh plugin --profile desktop add dsh-context Update with: dsh plugin --profile desktop update dsh-context@latest Inside the app, install from Plugin Market by searching dsh-context."
+    },
+    "use": {
+      "fa": "پس از نصب و بازکردن دوبارهٔ Harness، دستور /context را در گفتگو بزنید؛ پانل Context را از نوار کناری باز کنید و برای زیرایجنت‌ها تب Fleet را ببینید.",
+      "en": "After install and a Harness restart, run /context in a chat; open the Context panel from the sidebar and check the Fleet tab for subagents."
+    },
+    "remove": {
+      "fa": "dsh plugin --profile desktop remove dsh-context یا غیرفعال/حذف از بخش Plugins.",
+      "en": "dsh plugin --profile desktop remove dsh-context, or disable/remove it in Plugins."
+    },
+    "troubleshoot": {
+      "fa": "اگر /context دیده نشد، افزونه را در Plugins فعال و Harness را دوباره باز کنید؛ آمار نشست‌های پیش از نصب کامل نیست.",
+      "en": "If /context is missing, enable the plugin in Plugins and restart Harness; sessions before install have incomplete stats."
+    }
+  },
+  {
+    "id": "dsh-squeeze",
+    "topic": "extensions",
+    "level": "intermediate",
+    "order": 30,
+    "name": "dsh-squeeze",
+    "kind": "plugin",
+    "source": "https://github.com/q8atnight/dsh-squeeze",
+    "checked": "2026-11-20",
+    "summary": {
+      "fa": "ابزار squeeze: صفحهٔ وب طولانی، دستهٔ صفحات، فایل متنی بزرگ یا PDF را با مدل کمکیِ انتخابی شما می‌خواند و فقط پاسخ را به گفتگو برمی‌گرداند؛ اصل مطلب زمینهٔ اصلی را پر نمی‌کند.",
+      "en": "Tool squeeze: reads a long web page, page batch, big text file or PDF with a helper model you choose and returns only the answer; the material never fills the main context."
+    },
+    "compatibility": {
+      "fa": "DeepSeek Harness؛ نسخهٔ سازگار را در README مخزن بررسی کنید.",
+      "en": "DeepSeek Harness; check the compatible version in the repository README."
+    },
+    "prerequisites": {
+      "fa": "یک مدل کمکی در فهرست مدل‌های Harness. بدنهٔ مطلب به سرویس‌دهندهٔ همان مدل فرستاده می‌شود؛ شرایط و حریم خصوصی آن سرویس هم بر داده اثر دارد.",
+      "en": "A helper model in the Harness model list. The material is sent to that model's provider; its terms and privacy apply to the content."
+    },
+    "install": {
+      "fa": "دستورهای عمومی در مقالهٔ افزونه‌های Harness: dsh plugin --profile desktop add github:q8atnight/dsh-squeeze",
+      "en": "Shared commands live in the Harness plugins guide: dsh plugin --profile desktop add github:q8atnight/dsh-squeeze"
+    },
+    "use": {
+      "fa": "در تنظیمات افزونه مدل پیش‌فرض و تا دو مدل دیگر با لقب (مثل quick و careful) و سطح تفکر تعیین کنید؛ سپس بخواهید ایجنت دربارهٔ یک URL یا فایل squeeze را با پرسش مشخص صدا بزند: squeeze url: <لینک> prompt: <پرسش>. خط وضعیت مدل پاسخ‌دهنده، زمان و حجم منبع را نشان می‌دهد.",
+      "en": "In the plugin settings pick a default model and up to two more with nicknames (quick, careful) and a thinking level; then ask the agent to call squeeze with a precise question: squeeze url: <link> prompt: <question>. The status line names the answering model, time and source size."
+    },
+    "remove": {
+      "fa": "dsh plugin --profile desktop remove dsh-squeeze",
+      "en": "dsh plugin --profile desktop remove dsh-squeeze"
+    },
+    "troubleshoot": {
+      "fa": "پیام SOURCE PROBLEM برای PDF بدون لایهٔ متن یعنی اسکن است و OCR لازم دارد؛ سقف اندازه از پنجرهٔ زمینهٔ مدل کمکی می‌آید. با fallback فعال، همان مطلب ممکن است به سرویس‌دهندهٔ دیگری هم فرستاده شود؛ دادهٔ حساس نفرستید.",
+      "en": "SOURCE PROBLEM on a PDF means no text layer (a scan) and OCR is needed; the size limit comes from the helper model's context window. With fallback enabled the same material may go to another provider; do not send sensitive data."
+    }
+  },
+  {
+    "id": "dsh-playwright",
+    "topic": "testing",
+    "level": "intermediate",
+    "order": 20,
+    "name": "dsh-playwright",
+    "kind": "plugin",
+    "source": "https://github.com/akash-digitavision/dsh-playwright",
+    "checked": "2026-11-20",
+    "summary": {
+      "fa": "Playwright MCP رسمی مایکروسافت را برای همهٔ ایجنت‌های پروفایل نصب می‌کند: ناوبری، کلیک، تایپ، اسنپ‌شات و اسکرین‌شات مرورگر واقعی با درخت دسترس‌پذیری، بدون مدل بینایی.",
+      "en": "Installs the official Microsoft Playwright MCP for every agent on the profile: navigate, click, type, snapshot and screenshot a real browser via accessibility snapshots, no vision model."
+    },
+    "compatibility": {
+      "fa": "DeepSeek Harness 0.2.0-rc.2 و بعدتر (API bundles)؛ ویندوز، مک و لینوکس با Node.js و npx و Chrome/Chromium.",
+      "en": "DeepSeek Harness 0.2.0-rc.2+ (bundles API); Windows, macOS and Linux with Node.js, npx and Chrome/Chromium."
+    },
+    "prerequisites": {
+      "fa": "Node.js 18 یا بالاتر با npx و یک Chrome یا Chromium نصب‌شده. شروع اولیه بستهٔ @playwright/mcp را با npx دانلود می‌کند (۳۰ تا ۶۰ ثانیه).",
+      "en": "Node.js 18+ with npx and an installed Chrome or Chromium. The first start downloads @playwright/mcp via npx (30-60s)."
+    },
+    "install": {
+      "fa": "دستورهای عمومی در مقالهٔ افزونه‌های Harness: dsh plugin --profile desktop add github:akash-digitavision/dsh-playwright از داخل برنامه هم در Plugin Market با جست‌وجوی dsh-playwright.",
+      "en": "Shared commands live in the Harness plugins guide: dsh plugin --profile desktop add github:akash-digitavision/dsh-playwright Inside the app, search dsh-playwright in Plugin Market."
+    },
+    "use": {
+      "fa": "از ایجنت بخواهید با browser_navigate صفحه‌ای را باز و با browser_snapshot اسنپ‌شات بگیرد؛ ابزارها با پیشوند mcp__playwright__ در دسترس‌اند و browser_click و browser_type روی عناصر همان اسنپ‌شات کار می‌کنند.",
+      "en": "Ask the agent to browser_navigate to a page and browser_snapshot it; tools are namespaced mcp__playwright__ and browser_click/browser_type act on the snapshot's elements."
+    },
+    "remove": {
+      "fa": "dsh plugin --profile desktop remove dsh-playwright",
+      "en": "dsh plugin --profile desktop remove dsh-playwright"
+    },
+    "troubleshoot": {
+      "fa": "خطای npx یعنی Node/npx در دسترس نیست؛ مرورگر نیامد یعنی Chrome نصب نیست. گزینه‌های --headless و --browser chromium و --isolated را در تنظیمات بگذارید. کلیک و تایپ با دسترسی کاربر شما اجرا می‌شوند؛ پیش از تأیید عمل مخرب هدف را بخوانید.",
+      "en": "An npx error means Node/npx is missing; no browser means Chrome is not installed. Set --headless, --browser chromium or --isolated in settings. Clicks and typing run with your user privileges; read the target before approving destructive actions."
+    }
+  },
+  {
+    "id": "dsh-workspace-hygiene",
+    "topic": "extensions",
+    "level": "intermediate",
+    "order": 40,
+    "name": "dsh-workspace-hygiene",
+    "kind": "plugin",
+    "source": "https://github.com/taoshi1999/dsh-workspace-hygiene",
+    "checked": "2026-11-20",
+    "summary": {
+      "fa": "ارزش فایل‌های میانی فضای کار را می‌سنجد و پیشنهاد نگه‌داشتن، حذف، نام‌گذاری و جای درست می‌دهد تا فضای کار در کارهای طولانی خوانا و کم‌اضافه بماند؛ تصمیم نهایی با شماست.",
+      "en": "Assesses the value of workspace intermediate files and recommends keeping, removing, renaming and relocating, keeping the workspace readable during long tasks; the final call is yours."
+    },
+    "compatibility": {
+      "fa": "DeepSeek Harness؛ روی پروفایل دسکتاپ نصب می‌شود. نسخهٔ سازگار را در README مخزن بررسی کنید.",
+      "en": "DeepSeek Harness; installs on the desktop profile. Check the compatible version in the repository README."
+    },
+    "prerequisites": {
+      "fa": "ارزیابی دسته‌ای با مدل نشست جاری انجام می‌شود و توکن و سهمیه مصرف می‌کند. تاریخچهٔ گفتگوی افزونه در ~/.dsh-workspace-hygiene/private با AES-256-GCM رمز می‌شود و رمز ذخیره نمی‌شود.",
+      "en": "Batch assessment runs with the current session's model and spends tokens and quota. The plugin's conversation history is AES-256-GCM encrypted under ~/.dsh-workspace-hygiene/private; the password is never stored."
+    },
+    "install": {
+      "fa": "دستورهای عمومی در مقالهٔ افزونه‌های Harness: dsh plugin --profile desktop add github:taoshi1999/dsh-workspace-hygiene",
+      "en": "Shared commands live in the Harness plugins guide: dsh plugin --profile desktop add github:taoshi1999/dsh-workspace-hygiene"
+    },
+    "use": {
+      "fa": "پانل افزونه را باز کنید و Refresh بزنید؛ برای هر فایل پیشنهاد نگه‌داشتن (با نام و پوشهٔ پیشنهادی)، حذف یا بی‌تصمیمی می‌آید و می‌پذیرید، ویرایش یا رد می‌کنید. در حالت automatic پیشنهادها در پایان هر دور می‌آید؛ ابزار ثبت‌شدهٔ ایجنت هم workspace_hygiene_review است.",
+      "en": "Open the plugin panel and hit Refresh; each file gets keep (with suggested name and folder), remove or undecided, and you accept, revise or reject. In automatic mode suggestions arrive each turn; the registered agent tool is workspace_hygiene_review."
+    },
+    "remove": {
+      "fa": "dsh plugin --profile desktop remove dsh-workspace-hygiene",
+      "en": "dsh plugin --profile desktop remove dsh-workspace-hygiene"
+    },
+    "troubleshoot": {
+      "fa": "خطای مدل یا پوشش ناقص پوشه‌ها، سازمان‌دهی را متوقف می‌کند؛ تغییرها پیش از اعمال با نشست بازبین جداگانه بررسی می‌شوند و بازبینی منفی یعنی بازگشت. رمز گم‌شدهٔ تاریخچه بازیابی‌ناپذیر است.",
+      "en": "Model errors or incomplete directory coverage stop organization; changes pass a separate reviewer session before applying and a negative review means rollback. A lost history password is unrecoverable."
+    }
+  },
+  {
+    "id": "dsh-subagent-model-router",
+    "topic": "models",
+    "level": "advanced",
+    "order": 20,
+    "name": "dsh-subagent-model-router",
+    "kind": "plugin",
+    "source": "https://github.com/pumbleblock/dsh-subagent-model-router",
+    "checked": "2026-11-20",
+    "summary": {
+      "fa": "برای هر کار واگذارشده مدل و سطح تفکر درست را انتخاب می‌کند: یک بار مدل سریع، ارزان، تخصصی و قوی را با لقب تعریف می‌کنید و ایجنت برای هر کار مسیر درست را برمی‌گزیند.",
+      "en": "Picks the right model and reasoning effort per delegated task: define your fast, affordable, specialized and strong models once with aliases, and the agent routes each task accordingly."
+    },
+    "compatibility": {
+      "fa": "DeepSeek Harness 0.1.7-rc.2 تا 0.2.x؛ در این دستگاه روی پروفایل وب نصب است. جدول Compatibility مخزن را ببینید.",
+      "en": "DeepSeek Harness 0.1.7-rc.2 through 0.2.x; installed on the web profile on this machine. See the repository compatibility table."
+    },
+    "prerequisites": {
+      "fa": "چند مدل یا مسیر مدل در Harness. پیکربندی مسیرها از فرم تنظیمات افزونه ذخیره می‌شود و در cordis.patch.yml پروفایل می‌نشیند.",
+      "en": "Several models or routes in Harness. Routes configured in the plugin settings form persist into the profile's cordis.patch.yml."
+    },
+    "install": {
+      "fa": "دستورهای عمومی در مقالهٔ افزونه‌های Harness: dsh plugin --profile web add github:pumbleblock/dsh-subagent-model-router",
+      "en": "Shared commands live in the Harness plugins guide: dsh plugin --profile web add github:pumbleblock/dsh-subagent-model-router"
+    },
+    "use": {
+      "fa": "در تنظیمات افزونه برای هر مسیر یک alias با provider و model و اختیاری reasoningEffort و یک خط توضیح تعریف کنید («کارهای مکانیکی و اجرای تست»، «باگ‌های سخت»)؛ یک مدل را هم می‌توانید در دو سطح تفکر با دو لقب بدهید. ایجنت با subagent_model کار می‌دهد و wait-for-subagents نتیجه‌ها را جمع می‌کند.",
+      "en": "In the plugin settings define an alias per route with provider, model, optional reasoningEffort and a one-line note (mechanical edits and test runs, stubborn bugs); one model can appear at two efforts under two aliases. The agent calls subagent_model and wait-for-subagents joins the results."
+    },
+    "remove": {
+      "fa": "dsh plugin --profile web remove dsh-subagent-model-router",
+      "en": "dsh plugin --profile web remove dsh-subagent-model-router"
+    },
+    "troubleshoot": {
+      "fa": "سطح تفکر پشتیبانی‌نشده فوراً خطا می‌دهد و سطوح مجاز همان مدل را فهرست می‌کند؛ بخش قدیمی subagent-model-router در settings.yaml پس از ارتقا به 0.1.7 خودکار وارد نمی‌شود و باید دستی به cordis.patch.yml منتقل شود.",
+      "en": "An unsupported effort fails immediately listing that model's allowed levels; a legacy subagent-model-router section in settings.yaml is not imported after the 0.1.7 upgrade and must be moved into a Cordis patch by hand."
+    }
+  },
+  {
+    "id": "dsh-our-free-model",
+    "topic": "models",
+    "level": "intermediate",
+    "order": 30,
+    "name": "dsh-our-free-model",
+    "kind": "plugin",
+    "source": "https://github.com/Ebony-Vinyl/dsh-our-free-model",
+    "checked": "2026-11-20",
+    "summary": {
+      "fa": "افزونهٔ غیررسمی کانال مدل رایگان: بدون ورود، ثبت‌نام یا کلید API مدل‌هایی مثل DeepSeek V4.1 Flash و Kimi K3 در انتخاب‌گر مدل Harness. لاین‌های رایگان مستقیم به دروازه‌های عمومی (OpenCode Zen، Kilo) وصل می‌شوند.",
+      "en": "Unofficial free-model plugin: without login, signup or API key it brings models like DeepSeek V4.1 Flash and Kimi K3 into the Harness model picker. Free lanes connect directly to public gateways (OpenCode Zen, Kilo)."
+    },
+    "compatibility": {
+      "fa": "DeepSeek Harness؛ در این دستگاه نسخهٔ ۲.۸.۵ روی پروفایل وب نصب است. نسخهٔ سازگار با نسخهٔ Harness خود را در README مخزن بررسی کنید.",
+      "en": "DeepSeek Harness; version 2.8.5 installed on the web profile on this machine. Check the version compatible with your Harness in the repository README."
+    },
+    "prerequisites": {
+      "fa": "سهمیهٔ رایگان لاین‌ها به IP خروجی وابسته است و یک 429 واقعی پنجرهٔ انتظار چندساعته باز می‌کند. بدنهٔ درخواست به سرویس‌دهندهٔ همان لاین می‌رود؛ برای کار حساس مناسب نیست.",
+      "en": "Free lanes rely on per-egress-IP public quota; one real 429 opens a multi-hour wait window. Request bodies go to the lane's provider; not suitable for sensitive work."
+    },
+    "install": {
+      "fa": "نسخهٔ پین‌شدهٔ مستندشده در README: dsh plugin --profile web add @ebony-vinyl/dsh-our-free-model@2.8.5 دستورهای عمومی نصب و حذف در مقالهٔ افزونه‌های Harness.",
+      "en": "The README's pinned install: dsh plugin --profile web add @ebony-vinyl/dsh-our-free-model@2.8.5 Shared commands live in the Harness plugins guide."
+    },
+    "use": {
+      "fa": "پس از نصب و بازکردن دوبارهٔ Harness، لاین‌ها در انتخاب‌گر مدل ظاهر می‌شوند. در کنسول افزونه وضعیت لاین‌ها، داشبورد مصرف و لاگ‌ها را ببینید؛ «تلاش پس از تغییر خروجی» پنجرهٔ 429 را می‌بندد، «تست خروجی» اتصال را بی‌هزینه می‌سنجد و برای هر لاین می‌توان پروکسی خروجی http/https/socks5 گذاشت.",
+      "en": "After install and a Harness restart, lanes appear in the model picker. The plugin console shows lane status, usage dashboard and logs; retry-after-egress closes the 429 window, the egress test checks connectivity for free, and each lane can take an http/https/socks5 egress proxy."
+    },
+    "remove": {
+      "fa": "dsh plugin --profile web remove @ebony-vinyl/dsh-our-free-model",
+      "en": "dsh plugin --profile web remove @ebony-vinyl/dsh-our-free-model"
+    },
+    "troubleshoot": {
+      "fa": "اگر مدلی نبود، پنجرهٔ سهمیهٔ همان لاین را بررسی و با تغییر خروجی یک‌بار تلاش کنید؛ کانال‌های حساب به ورود همان سرویس وابسته‌اند و می‌توانند قطع شوند. افزونهٔ شخص ثالث است؛ منبع و تغییرهای نسخه را مرور کنید و سهمیهٔ رایگان، API رایگان نامحدود نیست.",
+      "en": "If a model is missing, check that lane's quota window and retry once after changing egress; account channels depend on that service's login and can go offline. It is third-party; review the source and release notes, and remember free quota is not unlimited free API."
+    }
   }
 ]

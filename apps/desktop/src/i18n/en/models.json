@@ -1,5 +1,5 @@
 {
-  "title": "AI connections",
+  "title": "API notebook",
   "connectionIntro": "Enter an API base URL and key to see its models. Save the connection to refresh the list later. You can add a model ID when you want to test a model or configure a tool.",
   "savedConnections": "Saved connections",
   "providerCatalog": "Providers",
@@ -125,8 +125,8 @@
   "providerCost": {
     "openrouter": "Selected free models",
     "radeon-cloud": "Limited free allowance",
-    "nvidia-build": "Free development and prototyping",
-    "anthropic": "Paid API"
+    "nvidia-build": "Free development and prototyping"
   },
-  "nvidiaClaudeUnavailable": "NVIDIA NIM is available in general model connections."
+  "nvidiaClaudeUnavailable": "NVIDIA NIM is available in general model connections.",
+  "customPresetsHint": "Custom presets:"
 }

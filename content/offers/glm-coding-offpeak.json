@@ -1,0 +1,25 @@
+{
+ "schemaVersion": 1,
+ "offerId": "glm-coding-offpeak",
+ "appId": "claude-code",
+ "title": {
+  "fa": "GLM Coding Plan: نصف‌کردیت در ساعات کم‌ترافیک و کل آخرهفته",
+  "en": "GLM Coding Plan: half credits off-peak and all weekend"
+ },
+ "summary": {
+  "fa": "برای مشترک‌های GLM Coding Plan خودکار اعمال می‌شود و نیازی به دریافت جداگانه ندارد: بیرون از پیک هر درخواست نصف کردیت حساب می‌شود، جمعه و شنبه تمام روز نرخ کم‌ترافیک است و سقف هم‌زمانی بالاتر می‌رود. ساعت پیک ۱۴ تا ۱۸ به وقت سنگاپور (UTC+8) در روزهای کاری است.",
+  "en": "Applies automatically to GLM Coding Plan subscribers, nothing to claim: off-peak requests cost half credits, Saturday and Sunday stay off-peak all day, and the concurrency ceiling rises. Peak is 14:00-18:00 Singapore time (UTC+8) on weekdays."
+ },
+ "sourceUrl": "https://docs.z.ai/devpack/notice/usage-revision",
+ "publishedAt": "2026-07-30T00:00:00.000Z",
+ "verifiedAt": "2026-11-21T00:00:00.000Z",
+ "eligibility": "GLM Coding Plan subscribers (Lite, Pro, Max).",
+ "status": "verified",
+ "checkedAt": "2026-11-21T00:00:00.000Z",
+ "sourceState": "fresh",
+ "usageWindow": {
+  "from": "18:00",
+  "to": "14:00",
+  "timeZone": "Asia/Shanghai"
+ }
+}

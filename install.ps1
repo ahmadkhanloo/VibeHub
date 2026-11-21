@@ -9,6 +9,7 @@ $zcodeExe = @(
 ) | Where-Object { Test-Path -PathType Leaf $_ } | Select-Object -First 1
 . (Join-Path $PSScriptRoot 'apps\rtl-paths.ps1')
 $claudeExe = Get-RtlExecutable 'claude-desktop' (Join-Path $PSScriptRoot 'apps\Claude')
+$minimaxExe = Get-RtlExecutable 'minimax-code' (Join-Path $PSScriptRoot 'apps\MiniMax')
 $definitions = @{
   zcode = @{ Name = 'ZCode RTL'; Dir = 'ZCode'; Exe = $zcodeExe }
   qoder = @{ Name = 'Qoder RTL'; Dir = 'Qoder'; Exe = $null }
@@ -16,6 +17,7 @@ $definitions = @{
   antigravity = @{ Name = 'Antigravity RTL'; Dir = 'Antigravity'; Exe = "$env:LOCALAPPDATA\Programs\antigravity\Antigravity.exe" }
   opencode = @{ Name = 'OpenCode RTL'; Dir = 'OpenCode'; Exe = "$env:LOCALAPPDATA\Programs\ai.opencode.desktop\OpenCode.exe" }
   'claude-desktop' = @{ Name = 'Claude Desktop RTL'; Dir = 'Claude'; Exe = $claudeExe }
+  'minimax-code' = @{ Name = 'MiniMax Code RTL'; Dir = 'MiniMax'; Exe = $minimaxExe }
 }
 $desktop = [Environment]::GetFolderPath('Desktop')
 $shell = New-Object -ComObject WScript.Shell
@@ -69,9 +71,9 @@ if ($Uninstall) {
 }
 
 $requested = @($Apps -split '[,\s]+' | ForEach-Object { $_.Trim().ToLowerInvariant() } | Where-Object { $_ } | ForEach-Object { if ($_ -eq 'deepseek-harness') { 'deepseek' } else { $_ } } | Select-Object -Unique)
-if (-not $requested.Count) { throw 'Choose at least one app with -Apps zcode,qoder,deepseek,antigravity,opencode,claude-desktop.' }
+if (-not $requested.Count) { throw 'Choose at least one app with -Apps zcode,qoder,deepseek,antigravity,opencode,claude-desktop,minimax-code.' }
 foreach ($name in $requested) {
-  if (-not $definitions.ContainsKey($name)) { throw "Unknown app '$name'. Choose zcode, qoder, deepseek, antigravity, opencode, or claude-desktop." }
+  if (-not $definitions.ContainsKey($name)) { throw "Unknown app '$name'. Choose zcode, qoder, deepseek, antigravity, opencode, claude-desktop, or minimax-code." }
 }
 
 try {
@@ -91,6 +93,7 @@ foreach ($name in $requested) {
   }
   if ($name -eq 'claude-desktop' -and -not (Test-Path -LiteralPath (Join-Path $folder 'compatibility.json'))) { throw 'Missing Claude Desktop compatibility status.' }
   if (-not (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'apps\rtl-style.mjs'))) { throw 'Missing apps\rtl-style.mjs shared style helper.' }
+  if (-not (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'apps\rtl-launch-lib.ps1'))) { throw 'Missing apps\rtl-launch-lib.ps1 shared launcher library.' }
   if ($name -eq 'qoder') {
     $discovery = @(& $powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $folder 'start.ps1') -Discover 2>&1)
     # Prefer the base64 handoff: raw path text is corrupted to '?' whenever the

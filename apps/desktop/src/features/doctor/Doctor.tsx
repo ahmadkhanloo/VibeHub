@@ -23,7 +23,7 @@ const freshGroups = (phase: Group['phase']): Record<GroupId, Group> => ({
   native: { phase, checks: [] }, apps: { phase, checks: [] }, rtlAdapters: { phase, checks: [] },
   proxyConfig: { phase, checks: [] }, modelConnections: { phase, checks: [] },
 });
-const appNames: Record<string, string> = { zcode: 'ZCode', qoder: 'Qoder', 'deepseek-harness': 'DeepSeek Harness', opencode: 'OpenCode', mimocode: 'MiMo Code', freebuff: 'Freebuff' };
+const appNames: Record<string, string> = { zcode: 'ZCode', qoder: 'Qoder', 'deepseek-harness': 'DeepSeek Harness', opencode: 'OpenCode', mimocode: 'MiMo Code', freebuff: 'Freebuff', 'minimax-code': 'MiniMax Code' };
 
 export function DoctorPage() {
   const { t, i18n } = useTranslation(['doctor', 'common', 'nav', 'journeyUx', 'ux']);

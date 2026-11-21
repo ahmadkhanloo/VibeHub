@@ -15,16 +15,12 @@ import "@/styles/day-night.css";
 import i18n from "@/i18n";
 import { SettingsProvider } from "@/app/settings";
 import { ToolProvider } from "@/app/tool-context";
-import { WindowTitlebar } from "@/app/WindowTitlebar";
 const SearchPage = lazy(async () => ({
   default: (await import("@/features/explore/Search")).SearchPage,
 }));
 import { AppShell } from "@/app/shell";
 const HomePage = lazy(async () => ({
   default: (await import("@/features/home/Home")).HomePage,
-}));
-const DiscoverPage = lazy(async () => ({
-  default: (await import("@/features/explore/Discover")).DiscoverPage,
 }));
 const AppDetailsPage = lazy(async () => ({
   default: (await import("@/features/explore/AppDetails")).AppDetailsPage,
@@ -43,10 +39,11 @@ const SettingsPage = lazy(async () => ({
 }));
 
 const TerminalPage = lazy(async () => ({default: (await import('@/features/terminal/Terminal')).TerminalPage}));
-const OffersPage = lazy(async () => ({default: (await import('@/features/offers/Offers')).OffersPage}));
 const LearningPage = lazy(async () => ({default: (await import('@/features/learning/Learning')).LearningPage}));
 const WorkshopPage = lazy(async () => ({default: (await import('@/features/workshop/Workshop')).WorkshopPage}));
 const Onboarding = lazy(async () => ({default: (await import('@/features/onboarding/Onboarding')).Onboarding}));
+const AccountsHubPage = lazy(async () => ({default: (await import('@/features/accounts/AccountsHub')).AccountsHubPage}));
+const HelpersPage = lazy(async () => ({default: (await import('@/features/helpers/Helpers')).HelpersPage}));
 
 function LegacyModels() { const { search } = useLocation(); return <Navigate to={"/connections/api" + search} replace />; }
 function LegacyGuide() { const { appId } = useParams(); return <Navigate to={`/learning/${appId ?? ''}`} replace />; }
@@ -63,8 +60,10 @@ function Gate() {
         }
       >
         <Route path="/" element={<HomePage />} />
+        {/* Tools and discovery folded into the workspace; news folded into learning. */}
         <Route path="/tools" element={<Navigate to="/" replace />} />
-        <Route path="/discover" element={<DiscoverPage />} />
+        <Route path="/discover" element={<Navigate to="/?view=available" replace />} />
+        <Route path="/offers" element={<Navigate to="/learning?view=news" replace />} />
         <Route path="/app/:appId" element={<AppDetailsPage />} />
         <Route path="/app/antigravity" element={<Navigate to="/app/antigravity-ide" replace />} />
         <Route path="/editor/:editorId" element={<Navigate to="/" replace />} />
@@ -84,9 +83,9 @@ function Gate() {
         />
         <Route path="/guides" element={<Navigate to="/learning?category=applications" replace />} />
         <Route path="/guides/extensions" element={<Navigate to="/learning?category=skills" replace />} />
-        <Route path="/accounts" element={<Navigate to="/app/chatgpt?tab=accounts" replace />} />
+        <Route path="/accounts" element={<AccountsHubPage />} />
+        <Route path="/helpers" element={<HelpersPage />} />
         <Route path="/guides/:appId" element={<LegacyGuide />} />
-        <Route path="/offers" element={<OffersPage />} />
         <Route path="/learning" element={<LearningPage />} />
         <Route path="/learning/:articleId" element={<LearningPage />} />
         <Route path="/workshop" element={<WorkshopPage />} />
@@ -112,7 +111,6 @@ async function bootstrap() {
   <StrictMode>
     <SettingsProvider>
       <div className="vh-app-frame">
-        <WindowTitlebar />
         <div className="vh-app-content">
           <Router>
             <Suspense

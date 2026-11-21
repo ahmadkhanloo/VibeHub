@@ -1,11 +1,25 @@
 // Selectors observed in OpenCode desktop 2.2.5.
+import { buildScopedTextCss } from '../rtl-style.mjs';
+
 export const STYLE_ID = 'vibehub-opencode-rtl-v1';
-export const CSS_TEXT = `
-:is([data-component="markdown"],[data-slot="user-message-text"]) :is(p,li,h1,h2,h3,h4,h5,h6,blockquote,td,th),
-[data-slot="user-message-text"], [data-component="composer-editor"][contenteditable="true"] { unicode-bidi:plaintext!important;text-align:start!important;font-family:'Vazirmatn',Tahoma,sans-serif!important }
-:is([data-component="markdown"],[data-slot="user-message-text"]) :is(pre,code,kbd,samp),
-:is([data-component="markdown"],[data-slot="user-message-text"]) :is(pre,code,kbd,samp) * { direction:ltr!important;unicode-bidi:isolate!important;text-align:left!important;font-family:revert!important }
-`;
+// The element that holds a typed prompt is a direction root: its own direction
+// decides whether start-aligned lines hug the right. Inline code inside it stays
+// LTR through its own dir attribute or the isolate guard.
+const PROSE_ROOTS = ['[data-component="markdown"]', '[data-slot="user-message-text"]'];
+const GUARD_SELECTORS = [
+  `${PROSE_ROOTS[0]} :is(pre,code,kbd,samp)`,
+  `${PROSE_ROOTS[0]} :is(pre,code,kbd,samp) *`,
+];
+
+export const CSS_TEXT = buildScopedTextCss({
+  prose: [
+    `${PROSE_ROOTS[0]} :is(p,li,h1,h2,h3,h4,h5,h6,blockquote,td,th)`,
+    PROSE_ROOTS[1],
+  ],
+  composers: ['[data-component="composer-editor"][contenteditable="true"]'],
+  guards: GUARD_SELECTORS,
+});
+
 export function injectSource(fontFaces = '') {
   return `(() => {
     const id = ${JSON.stringify(STYLE_ID)};

@@ -76,17 +76,79 @@ export function installMockNative({ scenario, language, onboardingDone }: { scen
               }
               if (args.action === 'list') return { nativePreview: true, settings: { enabled: false, threshold: 1 }, accounts: [] };
               throw new Error('accounts:browserPreview');
-            case "app_accounts": {
-              const id = args.appId;
-              const snapshots = state as any;
-              snapshots.desktopAccounts ??= {};
-              const accountId = 'account-' + 'a'.repeat(24);
-              const data = snapshots.desktopAccounts[id] ??= { appId: id, accounts: [{ id: accountId, name: 'Local fixture', email: 'fixture@example.invalid', plan: 'Fixture plan', usage: [{ label: 'Credits', remaining: 75, unit: 'percent' }], checkedAt: Math.floor(Date.now()/1000), error: null }], activeId: accountId, notice: null, version: id === 'qoder' ? '0.4.2' : '3.16.3', supportedVersion: id === 'qoder' ? '0.4.2' : '3.16.3', desktopRunning: true, liveSwitchVerified: false, capabilities: { canImport: true, canLogin: true, canRefresh: true, canSwitch: true } };
-              if (args.action === 'rename') data.accounts.find((a: any) => a.id === args.payload.id).name = args.payload.name;
-              if (args.action === 'delete') data.accounts = data.accounts.filter((a: any) => a.id !== args.payload.id);
-              if (args.action === 'switch') data.activeId = args.payload.id;
-              return structuredClone(data);
-            }
+            case "claude_accounts":
+              // The preview has no access to ~/.claude or the Windows vault.
+              return {
+                app: 'claude-code',
+                accounts: [],
+                activeId: null,
+                notice: null,
+                configured: false,
+                current: null,
+                settingsPath: null,
+                nativePreview: true,
+              };
+            case "app_accounts":
+              // The preview cannot read a real session file or reach the Windows vault.
+              return {
+                app: args.appId,
+                accounts: [],
+                activeId: null,
+                notice: null,
+                running: false,
+                filesPresent: false,
+                sessionChanged: false,
+                sessionPath: '',
+                managedFiles: [],
+                backupCount: 0,
+                lastBackupAt: null,
+                nativePreview: true,
+              };
+            case "app_quota":
+              // The preview cannot reach a running app; it shows fixture counters.
+              {
+                const now = Math.floor(Date.now() / 1000);
+                const apps = [
+                  {
+                    appId: 'qoder',
+                    status: 'ok',
+                    used: 1618,
+                    total: 2400,
+                    remaining: 782,
+                    percent: 67,
+                    unit: 'credits',
+                    plan: null,
+                    resetsAt: now + 3600,
+                    checkedAt: now,
+                    claim: { available: true, claimed: false, points: null, dayNo: null },
+                    error: null,
+                  },
+                  {
+                    appId: 'minimax-code',
+                    status: 'appNotRunning',
+                    used: null,
+                    total: null,
+                    remaining: null,
+                    percent: null,
+                    unit: 'credits',
+                    plan: null,
+                    resetsAt: null,
+                    checkedAt: null,
+                    claim: { available: false, claimed: null, points: null, dayNo: null },
+                    error: 'appNotRunning',
+                  },
+                ];
+                return {
+                  nativePreview: false,
+                  apps,
+                  ...(args.action === 'claim'
+                    ? { claim: { appId: args.payload?.appId ?? 'qoder', ok: true, error: null, points: 100, dayNo: null } }
+                    : {}),
+                };
+              }
+            case "toolchain_status":
+              // Preview values: the browser has no PATH or Program Files to inspect.
+              return { repowise: { installed: true, version: '0.45.0' }, browsers: { edge: true, chrome: false }, plugins: { superpowers: true }, skills: { hindsight: true, dsh: true, ponytail: true, uiuxProMax: true, unslop: true } };
             case "app_version":
               return "0.1.0";
             case "detect_apps":
@@ -101,6 +163,7 @@ export function installMockNative({ scenario, language, onboardingDone }: { scen
                       via: "fixture",
                     },
                     { id: "qoder", installed: false, via: "fixture" },
+                    ...(state.scenario !== "empty" ? [{id:"minimax-code",installed:true,path:"C:/Fixtures/MiniMax Code.exe",via:"fixture"}] : []),
                     ...(state.scenario === "antigravity" ? [{id:"antigravity",installed:true,path:"C:/Fixtures/Antigravity.exe",via:"fixture"}] : []),
                     ...(state.scenario === "antigravity" ? [{id:"claude-code",installed:true,path:"C:/Fixtures/claude.cmd",via:"legacy-cache"}] : []),
                     ...(['ide-cli', 'persian-missing', 'persian-old'].includes(state.scenario) ? [
@@ -126,6 +189,7 @@ export function installMockNative({ scenario, language, onboardingDone }: { scen
                 { id: "qoder", available: true, configured: true },
                 { id: "deepseek-harness", available: true, configured: true },
                 { id: "antigravity", available: true, configured: true },
+                { id: "minimax-code", available: state.scenario !== "missing", configured: true },
               ];
             case "focus_editor":
               return { ok: true, id: args.editorId, rtl: false, detail: "Editor window activated" };
@@ -267,6 +331,8 @@ export function installMockNative({ scenario, language, onboardingDone }: { scen
               ];
             case "plugin:notification|is_permission_granted":
               return false;
+            case "tray_update":
+              return null;
             default:
               throw Error("Unexpected mock command " + cmd);
           }

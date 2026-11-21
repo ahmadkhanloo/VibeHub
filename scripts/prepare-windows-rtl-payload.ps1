@@ -34,6 +34,7 @@ try {
     OpenCode = @('rtl.ico', 'rtl-shortcut.ico', 'start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs', 'cdp-targets.mjs', 'assets/OFL.txt', 'assets/Vazirmatn-Regular.woff2', 'assets/Vazirmatn-Bold.woff2')
     DeepSeekHarness = @('rtl.ico', 'rtl-shortcut.ico', 'start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs', 'cdp-targets.mjs', 'assets/OFL.txt', 'assets/Vazirmatn-Regular.woff2', 'assets/Vazirmatn-Bold.woff2')
     Claude = @('rtl.ico', 'rtl-shortcut.ico', 'start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs', 'cdp-targets.mjs', 'compatibility.json', 'assets/OFL.txt', 'assets/Vazirmatn-Regular.woff2', 'assets/Vazirmatn-Bold.woff2')
+    MiniMax = @('rtl.ico', 'rtl-shortcut.ico', 'start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs', 'cdp-targets.mjs', 'assets/OFL.txt', 'assets/Vazirmatn-Regular.woff2', 'assets/Vazirmatn-Bold.woff2')
   }
   foreach ($id in $files.Keys) {
     $destination = Join-Path $payload $id
@@ -46,6 +47,7 @@ try {
     }
   }
   Copy-Item -LiteralPath (Join-Path $root 'apps\rtl-paths.ps1') -Destination (Join-Path $payload 'rtl-paths.ps1') -Force
+  Copy-Item -LiteralPath (Join-Path $root 'apps\rtl-launch-lib.ps1') -Destination (Join-Path $payload 'rtl-launch-lib.ps1') -Force
   Copy-Item -LiteralPath (Join-Path $root 'apps\rtl-direction.mjs') -Destination (Join-Path $payload 'rtl-direction.mjs') -Force
   Copy-Item -LiteralPath (Join-Path $root 'apps\rtl-style.mjs') -Destination (Join-Path $payload 'rtl-style.mjs') -Force
   Copy-Item -LiteralPath (Join-Path $root 'apps\migrate-agentrtl-paths.ps1') -Destination (Join-Path $payload 'migrate-agentrtl-paths.ps1') -Force

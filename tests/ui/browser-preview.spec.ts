@@ -23,7 +23,7 @@ test('browser development exposes separate launch actions and a read-only Codex 
   await page.locator('a[href="/settings"]').click();
   await expect(page).toHaveURL(/\/settings$/);
   await page.goto('http://127.0.0.1:1422/accounts');
-  await expect(page).toHaveURL(/\/app\/chatgpt\?tab=accounts$/);
+  await expect(page).toHaveURL(/\/accounts$/);
   await expect(page.getByRole('heading', { name: 'حساب‌های واقعی در نسخه دسکتاپ' })).toBeVisible();
   expect(await page.evaluate(() => (window as any).__mock.calls.some((call: any) => call.cmd === 'app_accounts' || (call.cmd === 'codex_accounts' && call.args.action !== 'list')))).toBe(false);
   expect(errors).toEqual([]);

@@ -1,0 +1,43 @@
+{
+  "title": "Claude Code accounts",
+  "loading": "Reading Claude Code settings…",
+  "reload": "Reload",
+  "save": "Save current as an account",
+  "saved": "Saved accounts",
+  "apply": "Switch to this account",
+  "applied": "Current account",
+  "active": "Active",
+  "rename": "Rename",
+  "delete": "Delete",
+  "dismiss": "Dismiss",
+  "confirm": "Confirm",
+  "accountName": "Account name",
+  "currentProvider": "Current provider",
+  "notConfigured": "No token configured",
+  "noToken": "Claude Code has no provider token right now. Sign in or configure an API provider in Claude Code first, then save that configuration as an account here.",
+  "explain": "An account is the provider address, token and model that Claude Code reads from its settings file. Switching rewrites only those values and leaves every other setting untouched. Tokens stay in the Windows credential vault and are never shown here.",
+  "empty": "No saved account yet",
+  "emptyHint": "Configure a provider in Claude Code, then use “Save current as an account”. You can then add a second provider, save it too, and switch between them.",
+  "restartHint": "Claude Code reads these values at startup, so restart a running Claude Code session after switching.",
+  "deleteConfirm": "This saved account is removed from VibeHub. The provider currently configured in Claude Code is not changed.",
+  "browserTitle": "Real Claude Code accounts are available in the desktop app",
+  "browserHint": "This browser preview cannot read your Claude Code settings or the Windows credential vault.",
+  "notices": {
+    "saved": "Account saved.",
+    "switched": "Claude Code now uses this account. Restart a running session to pick it up."
+  },
+  "errors": {
+    "loginRequired": "Claude Code has no provider token to save. Configure a provider first.",
+    "unknownAccount": "That saved account no longer exists. Reload the list.",
+    "invalidName": "Enter a name between 1 and 120 characters.",
+    "tooMany": "At most 16 accounts can be saved.",
+    "externalChanged": "The Claude Code settings changed outside VibeHub. Reload, review the current provider, then switch again.",
+    "vault": "The Windows credential vault is unavailable, so the saved account cannot be decrypted.",
+    "configuration": "The Claude Code settings file is not valid JSON, or its shape is unsupported.",
+    "storage": "Reading or writing the account data failed.",
+    "switchFailed": "The settings were written but did not verify; the previous provider is still in place. Check the settings file.",
+    "credentialInvalid": "The stored account data is not usable. Delete the account and save it again.",
+    "busy": "Another account operation is already running.",
+    "requestFailed": "The operation did not complete. Try again."
+  }
+}

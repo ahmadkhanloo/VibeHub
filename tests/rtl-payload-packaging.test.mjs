@@ -11,6 +11,7 @@ const adapters = new Map([
   ['antigravity', 'Antigravity'],
   ['opencode', 'OpenCode'],
   ['claude-desktop', 'Claude'],
+  ['minimax-code', 'MiniMax'],
 ]);
 const payloadFiles = ['start.ps1', 'launch.vbs', 'injector.mjs', 'style.mjs', 'cdp-targets.mjs', 'rtl.ico'];
 const fontFiles = ['assets/OFL.txt', 'assets/Vazirmatn-Regular.woff2', 'assets/Vazirmatn-Bold.woff2'];
@@ -66,9 +67,13 @@ test('every usable adapter carries its launcher, injector, style, target guard, 
   }
   assert.ok(prepare.includes("Copy-Item -LiteralPath (Join-Path $root 'apps\\rtl-style.mjs')"), 'shared style helper must ship in the independent payload');
   assert.ok(fullPackageHas(resources, 'rtl-style.mjs'), 'shared style helper must ship in the full Tauri package');
+  assert.ok(prepare.includes("Copy-Item -LiteralPath (Join-Path $root 'apps\\rtl-launch-lib.ps1')"), 'shared launcher library must ship in the independent payload');
+  assert.ok(fullPackageHas(resources, 'rtl-launch-lib.ps1'), 'shared launcher library must ship in the full Tauri package');
   const rtlInstaller = await read('apps/desktop/src-tauri/windows/installer.nsi');
   assert.ok(rtlInstaller.includes('File "${VIBEHUB_PAYLOAD_DIR}\\rtl-style.mjs"'), 'standalone RTL installer must install the shared style helper');
   assert.ok(rtlInstaller.includes('Delete "$INSTDIR\\apps\\rtl-style.mjs"'), 'standalone RTL uninstaller must remove its shared style helper');
+  assert.ok(rtlInstaller.includes('File "${VIBEHUB_PAYLOAD_DIR}\\rtl-launch-lib.ps1"'), 'standalone RTL installer must install the shared launcher library');
+  assert.ok(rtlInstaller.includes('Delete "$INSTDIR\\apps\\rtl-launch-lib.ps1"'), 'standalone RTL uninstaller must remove its shared launcher library');
 });
 
 test('the independent RTL installer offers every available adapter and keeps translations in sync', async () => {
@@ -76,24 +81,20 @@ test('the independent RTL installer offers every available adapter and keeps tra
   for (const token of [
     'OpenCode RTL', 'SEC_OPENCODE', 'ModeOpenCode', 'VibeHubOpenCode',
     'Claude Desktop RTL', 'SEC_CLAUDE', 'ModeClaude', 'VibeHubClaude',
-    'Choose 1–6 tools', 'Choose RTL tools (6 available)', 'All 6 RTL tools',
+    'MiniMax Code RTL', 'SEC_MINIMAX', 'ModeMiniMax', 'VibeHubMiniMax',
+    'Choose 1–7 tools', 'Choose RTL tools (7 available)', 'All 7 RTL tools',
   ]) assert.ok(installer.includes(token), `NSIS independent RTL mode is missing ${token}`);
   assert.match(installer, /File \/r "\$\{VIBEHUB_PAYLOAD_DIR\}\\OpenCode\\\*"/);
   assert.match(installer, /StrCpy \$SelectedComponents "[^"]*opencode[^"]*"/);
+  assert.match(installer, /File \/r "\$\{VIBEHUB_PAYLOAD_DIR\}\\MiniMax\\\*"/);
+  assert.match(installer, /StrCpy \$SelectedComponents "[^"]*minimax-code[^"]*"/);
 
-  const legacy = await read('installer.iss');
-  for (const [id, folder] of adapters) {
-    const componentId = folder === 'DeepSeekHarness' ? 'deepseek' : id;
-    assert.match(legacy, new RegExp(`Name: "${componentId}";`), `${folder} must be selectable in the independent installer`);
-    assert.ok(legacy.includes(`apps\\${folder}\\*`), `${folder} files are missing from the independent installer`);
-  }
   const sourceInstaller = await read('install.ps1');
   assert.match(sourceInstaller, /function Assert-ClaudeRtlCompatible/);
   assert.match(sourceInstaller, /adapterVerified -ne \$true[\s\S]*?Get-AuthenticodeSignature[\s\S]*?ProductVersion/,
     'the source-checkout helper must keep Claude shortcut creation version- and signature-gated');
-  for (const id of ['antigravity', 'opencode', 'claude-desktop']) {
-    const key = id === 'claude-desktop' ? `['"]${id}['"]` : id;
-    assert.match(sourceInstaller, new RegExp(`^\\s*${key}\\s*=`, 'm'), `source-checkout shortcut helper must support ${id}`);
+  for (const id of ['antigravity', 'opencode', 'claude-desktop', 'minimax-code']) {
+    assert.match(sourceInstaller, new RegExp(`^\\s*['"]?${id}['"]?\\s*=`, 'm'), `source-checkout shortcut helper must support ${id}`);
   }
 });
 
@@ -110,6 +111,7 @@ test('upgrades preserve foreign shortcuts and uninstall removes only exact VibeH
     ['ZCode', 'ZCode'], ['Qoder', 'Qoder'], ['DeepSeekHarness', 'DeepSeek Harness'],
     ['Antigravity', 'Antigravity'], ['OpenCode', 'OpenCode'],
     ['Claude', 'Claude Desktop'],
+    ['MiniMax', 'MiniMax Code'],
   ]);
   for (const [, folder] of adapters) {
     const label = labels.get(folder);

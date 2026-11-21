@@ -17,22 +17,17 @@
   "providers": [
     "nvidia-build",
     "openrouter",
-    "ollama",
     "custom-openai-compatible",
     "radeon-cloud",
-    "inferx",
-    "kira-ai",
-    "clean-apis",
-    "orcarouter",
-    "apinex",
     "google",
-    "mistral",
     "cloudflare-workers-ai",
     "groq"
   ],
   "offers": [
     "qoder-daily-credits",
     "qoder-qwen-flash",
-    "qoder-deepseek-flash"
+    "qoder-deepseek-flash",
+    "minimax-daily-free-quota",
+    "glm-coding-offpeak"
   ]
 }

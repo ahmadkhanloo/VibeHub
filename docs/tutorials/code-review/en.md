@@ -43,4 +43,4 @@ After defining the scope, ask the reviewer to read the changes and report reprod
 
 ![The code-reviewer in an official Claude Code example; tool activity appears below the agent name and should be followed through to the final report.](../../../apps/desktop/public/tutorials/screenshots/claude-review-agent.webp)
 
-[Create a bounded reviewer](/learning/claude-agents) · [Official Claude Academy example](https://academy.claude.com/courses/claude-code-101/the-explore-plan-code-commit-workflow)
+[Create a bounded reviewer](/learning/claude-agents) · [Official Claude Academy example](https://academy.claude.com/courses/claude-code-101/the-explore-plan-code-commit-workflow) · [Compress output and score risk with RepoWise](/learning/repowise)

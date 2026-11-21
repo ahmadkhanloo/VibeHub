@@ -99,6 +99,7 @@ Var ModeAntigravity
 Var ModeDeepSeek
 Var ModeOpenCode
 Var ModeClaude
+Var ModeMiniMax
 Var ModeCountLabel
 
 Name "${PRODUCTNAME}"
@@ -603,20 +604,20 @@ LangString VibeHubModePrompt ${LANG_ENGLISH} "Choose a setup. Then select RTL to
 LangString VibeHubModePrompt ${LANG_FARSI} "روش نصب را انتخاب کن و ابزارهای RTL را پایین تیک بزن."
 LangString VibeHubModeFull ${LANG_ENGLISH} "Full install"
 LangString VibeHubModeFull ${LANG_FARSI} "نصب کامل"
-LangString VibeHubModeFullDetail ${LANG_ENGLISH} "VibeHub + all 5 RTL tools (recommended)"
-LangString VibeHubModeFullDetail ${LANG_FARSI} "VibeHub و هر ۵ ابزار RTL (پیشنهادی)"
+LangString VibeHubModeFullDetail ${LANG_ENGLISH} "VibeHub + all 7 RTL tools (recommended)"
+LangString VibeHubModeFullDetail ${LANG_FARSI} "VibeHub و هر ۷ ابزار RTL (پیشنهادی)"
 LangString VibeHubModeRtl ${LANG_ENGLISH} "RTL tools only"
 LangString VibeHubModeRtl ${LANG_FARSI} "فقط ابزارهای RTL"
-LangString VibeHubModeRtlDetail ${LANG_ENGLISH} "Choose 1–6 tools; no VibeHub app"
-LangString VibeHubModeRtlDetail ${LANG_FARSI} "۱ تا ۶ ابزار؛ بدون نصب خود VibeHub"
-LangString VibeHubRtlSectionTitle ${LANG_ENGLISH} "Choose RTL tools (6 available)"
-LangString VibeHubRtlSectionTitle ${LANG_FARSI} "انتخاب ابزارهای RTL (۵ مورد)"
-LangString VibeHubFullCount ${LANG_ENGLISH} "All 6 RTL tools are included in Full install."
-LangString VibeHubFullCount ${LANG_FARSI} "در نصب کامل هر ۶ ابزار RTL نصب می‌شوند."
+LangString VibeHubModeRtlDetail ${LANG_ENGLISH} "Choose 1–7 tools; no VibeHub app"
+LangString VibeHubModeRtlDetail ${LANG_FARSI} "۱ تا ۷ ابزار؛ بدون نصب خود VibeHub"
+LangString VibeHubRtlSectionTitle ${LANG_ENGLISH} "Choose RTL tools (7 available)"
+LangString VibeHubRtlSectionTitle ${LANG_FARSI} "انتخاب ابزارهای RTL (۷ مورد)"
+LangString VibeHubFullCount ${LANG_ENGLISH} "All 7 RTL tools are included in Full install."
+LangString VibeHubFullCount ${LANG_FARSI} "در نصب کامل هر ۷ ابزار RTL نصب می‌شوند."
 LangString VibeHubCountSelected ${LANG_ENGLISH} "Selected:"
 LangString VibeHubCountSelected ${LANG_FARSI} "انتخاب:"
-LangString VibeHubCountTotal ${LANG_ENGLISH} "of 6"
-LangString VibeHubCountTotal ${LANG_FARSI} "از ۶"
+LangString VibeHubCountTotal ${LANG_ENGLISH} "of 7"
+LangString VibeHubCountTotal ${LANG_FARSI} "از ۷"
 LangString VibeHubZCode ${LANG_ENGLISH} "ZCode RTL"
 LangString VibeHubZCode ${LANG_FARSI} "RTL زِدکد"
 LangString VibeHubQoder ${LANG_ENGLISH} "Qoder RTL"
@@ -629,6 +630,8 @@ LangString VibeHubOpenCode ${LANG_ENGLISH} "OpenCode RTL"
 LangString VibeHubOpenCode ${LANG_FARSI} "RTL اوپن‌کد"
 LangString VibeHubClaude ${LANG_ENGLISH} "Claude Desktop RTL"
 LangString VibeHubClaude ${LANG_FARSI} "RTL کلاد دسکتاپ"
+LangString VibeHubMiniMax ${LANG_ENGLISH} "MiniMax Code RTL"
+LangString VibeHubMiniMax ${LANG_FARSI} "RTL مینی‌مکس کد"
 LangString VibeHubNoRtl ${LANG_ENGLISH} "Select at least one RTL launcher."
 LangString VibeHubNoRtl ${LANG_FARSI} "حداقل یک میانبر RTL را انتخاب کنید."
 LangString VibeHubLegacyNotice ${LANG_ENGLISH} "AgentRTL found. Previous RTL choices are selected below."
@@ -668,7 +671,7 @@ Function .onInit
     StrCpy $InstallMode "full"
   ${EndIf}
   ${If} $SelectedComponents == ""
-    StrCpy $SelectedComponents "zcode,qoder,deepseek-harness,antigravity,opencode,claude-desktop"
+    StrCpy $SelectedComponents "zcode,qoder,deepseek-harness,antigravity,opencode,claude-desktop,minimax-code"
   ${EndIf}
   ${If} $UpdateMode = 1
     StrCpy $InstallMode "full"
@@ -956,6 +959,7 @@ Section /o "RTL runtime" SEC_RUNTIME
   File "${VIBEHUB_PAYLOAD_DIR}\node.exe"
   SetOutPath "$INSTDIR\apps"
   File "${VIBEHUB_PAYLOAD_DIR}\rtl-paths.ps1"
+  File "${VIBEHUB_PAYLOAD_DIR}\rtl-launch-lib.ps1"
   File "${VIBEHUB_PAYLOAD_DIR}\rtl-direction.mjs"
   File "${VIBEHUB_PAYLOAD_DIR}\rtl-style.mjs"
   File "${VIBEHUB_PAYLOAD_DIR}\migrate-agentrtl-paths.ps1"
@@ -997,6 +1001,11 @@ Section /o "Claude Desktop RTL" SEC_CLAUDE
   File /r "${VIBEHUB_PAYLOAD_DIR}\Claude\*"
 SectionEnd
 
+Section /o "MiniMax Code RTL" SEC_MINIMAX
+  SetOutPath "$INSTDIR\apps\MiniMax"
+  File /r "${VIBEHUB_PAYLOAD_DIR}\MiniMax\*"
+SectionEnd
+
 Section "-VibeHub installation state" SEC_INSTALL_STATE
   ${If} $InstallMode == "rtl"
     SetOutPath "$INSTDIR"
@@ -1011,7 +1020,7 @@ Section "-VibeHub installation state" SEC_INSTALL_STATE
     WriteRegDWORD HKCU "${UNINSTKEY}" "NoRepair" "1"
     Call CreateRtlShortcuts
   ${Else}
-    StrCpy $SelectedComponents "zcode,qoder,deepseek-harness,antigravity,opencode,claude-desktop"
+    StrCpy $SelectedComponents "zcode,qoder,deepseek-harness,antigravity,opencode,claude-desktop,minimax-code"
     Call RemoveBrokenFullRtlShortcuts
   ${EndIf}
   ${If} $LegacyAgentRTL != ""
@@ -1032,6 +1041,7 @@ Function InitSelection
   SectionSetFlags ${SEC_ANTIGRAVITY} 0
   SectionSetFlags ${SEC_OPENCODE} 0
   SectionSetFlags ${SEC_CLAUDE} 0
+  SectionSetFlags ${SEC_MINIMAX} 0
   ${If} $InstallMode == "full"
   ${OrIf} $UpdateMode = 1
     SectionSetFlags ${SEC_INSTALL} ${SF_SELECTED}
@@ -1056,6 +1066,10 @@ Function InitSelection
     ${StrLoc} $R1 $SelectedComponents "claude-desktop" ">"
     ${If} $R1 != "-1"
       SectionSetFlags ${SEC_CLAUDE} ${SF_SELECTED}
+    ${EndIf}
+    ${StrLoc} $R1 $SelectedComponents "minimax-code" ">"
+    ${If} $R1 != "-1"
+      SectionSetFlags ${SEC_MINIMAX} ${SF_SELECTED}
     ${EndIf}
     ${StrLoc} $R1 $SelectedComponents "opencode" ">"
     ${If} $R1 != "-1"
@@ -1097,7 +1111,7 @@ Function PageSetupChoice
   Pop $ModeFullDetail
   ${NSD_CreateLabel} 54% 44u 39% 18u "$(VibeHubModeRtlDetail)"
   Pop $ModeRtlDetail
-  ${NSD_CreateGroupBox} 0 66u 100% 138u "$(VibeHubRtlSectionTitle)"
+  ${NSD_CreateGroupBox} 0 66u 100% 150u "$(VibeHubRtlSectionTitle)"
   Pop $0
   ${NSD_CreateCheckBox} 12u 81u 92% 15u "$(VibeHubZCode)"
   Pop $ModeZCode
@@ -1111,7 +1125,9 @@ Function PageSetupChoice
   Pop $ModeOpenCode
   ${NSD_CreateCheckBox} 12u 161u 92% 15u "$(VibeHubClaude)"
   Pop $ModeClaude
-  ${NSD_CreateLabel} 12u 181u 92% 18u ""
+  ${NSD_CreateCheckBox} 12u 177u 92% 15u "$(VibeHubMiniMax)"
+  Pop $ModeMiniMax
+  ${NSD_CreateLabel} 12u 197u 92% 18u ""
   Pop $ModeCountLabel
   ${If} $InstallMode == "rtl"
     ${NSD_Check} $ModeRtlRadio
@@ -1139,6 +1155,10 @@ Function PageSetupChoice
     ${If} $R1 != "-1"
       ${NSD_Check} $ModeClaude
     ${EndIf}
+    ${StrLoc} $R1 $SelectedComponents "minimax-code" ">"
+    ${If} $R1 != "-1"
+      ${NSD_Check} $ModeMiniMax
+    ${EndIf}
   ${Else}
     ${NSD_Check} $ModeFullRadio
     ${NSD_Check} $ModeZCode
@@ -1147,6 +1167,7 @@ Function PageSetupChoice
     ${NSD_Check} $ModeAntigravity
     ${NSD_Check} $ModeOpenCode
     ${NSD_Check} $ModeClaude
+    ${NSD_Check} $ModeMiniMax
   ${EndIf}
   ${NSD_OnClick} $ModeFullRadio UpdateModeControls
   ${NSD_OnClick} $ModeRtlRadio UpdateModeControls
@@ -1158,6 +1179,7 @@ Function PageSetupChoice
   ${NSD_OnClick} $ModeAntigravity UpdateModeCount
   ${NSD_OnClick} $ModeOpenCode UpdateModeCount
   ${NSD_OnClick} $ModeClaude UpdateModeCount
+  ${NSD_OnClick} $ModeMiniMax UpdateModeCount
   Call UpdateModeControls
   nsDialogs::Show
 FunctionEnd
@@ -1188,12 +1210,14 @@ Function UpdateModeControls
     ${NSD_Check} $ModeAntigravity
     ${NSD_Check} $ModeOpenCode
     ${NSD_Check} $ModeClaude
+    ${NSD_Check} $ModeMiniMax
     EnableWindow $ModeZCode 0
     EnableWindow $ModeQoder 0
     EnableWindow $ModeDeepSeek 0
     EnableWindow $ModeAntigravity 0
     EnableWindow $ModeOpenCode 0
     EnableWindow $ModeClaude 0
+    EnableWindow $ModeMiniMax 0
   ${Else}
     ${If} $LegacyAgentRTL != ""
     ${AndIf} $PreviousInstallMode == ""
@@ -1207,6 +1231,7 @@ Function UpdateModeControls
     EnableWindow $ModeAntigravity 1
     EnableWindow $ModeOpenCode 1
     EnableWindow $ModeClaude 1
+    EnableWindow $ModeMiniMax 1
   ${EndIf}
   Call UpdateModeCount
 FunctionEnd
@@ -1227,6 +1252,8 @@ Function UpdateModeCount
     IntOp $R0 $R0 + $4
     ${NSD_GetState} $ModeClaude $5
     IntOp $R0 $R0 + $5
+    ${NSD_GetState} $ModeMiniMax $6
+    IntOp $R0 $R0 + $6
     StrCpy $R3 "$(VibeHubCountSelected) $R0 $(VibeHubCountTotal)"
   ${EndIf}
   ${NSD_SetText} $ModeCountLabel $R3
@@ -1239,6 +1266,7 @@ Function SeedLegacySelection
   ${NSD_Uncheck} $ModeDeepSeek
   ${NSD_Uncheck} $ModeOpenCode
   ${NSD_Uncheck} $ModeClaude
+  ${NSD_Uncheck} $ModeMiniMax
   ${If} $LegacyComponents == ""
     ${NSD_Check} $ModeZCode
     ${NSD_Check} $ModeQoder
@@ -1263,7 +1291,7 @@ Function LeaveSetupChoice
   ${NSD_GetState} $ModeFullRadio $0
   ${If} $0 = ${BST_CHECKED}
     StrCpy $InstallMode "full"
-    StrCpy $SelectedComponents "zcode,qoder,deepseek-harness,antigravity,opencode,claude-desktop"
+    StrCpy $SelectedComponents "zcode,qoder,deepseek-harness,antigravity,opencode,claude-desktop,minimax-code"
     Call InitSelection
     Return
   ${EndIf}
@@ -1273,12 +1301,14 @@ Function LeaveSetupChoice
   ${NSD_GetState} $ModeAntigravity $3
   ${NSD_GetState} $ModeOpenCode $4
   ${NSD_GetState} $ModeClaude $5
+  ${NSD_GetState} $ModeMiniMax $6
   ${If} $0 != ${BST_CHECKED}
   ${AndIf} $1 != ${BST_CHECKED}
   ${AndIf} $2 != ${BST_CHECKED}
   ${AndIf} $3 != ${BST_CHECKED}
   ${AndIf} $4 != ${BST_CHECKED}
   ${AndIf} $5 != ${BST_CHECKED}
+  ${AndIf} $6 != ${BST_CHECKED}
     MessageBox MB_ICONSTOP "$(VibeHubNoRtl)"
     Abort
   ${EndIf}
@@ -1340,6 +1370,16 @@ Function LeaveSetupChoice
   ${Else}
     SectionSetFlags ${SEC_CLAUDE} 0
   ${EndIf}
+  ${If} $6 = ${BST_CHECKED}
+    ${If} $SelectedComponents != ""
+      StrCpy $SelectedComponents "$SelectedComponents,minimax-code"
+    ${Else}
+      StrCpy $SelectedComponents "minimax-code"
+    ${EndIf}
+    SectionSetFlags ${SEC_MINIMAX} ${SF_SELECTED}
+  ${Else}
+    SectionSetFlags ${SEC_MINIMAX} 0
+  ${EndIf}
   SectionSetFlags ${SEC_INSTALL} 0
   SectionSetFlags ${SEC_RUNTIME} ${SF_SELECTED}
 FunctionEnd
@@ -1370,6 +1410,8 @@ Function RemoveBrokenFullRtlShortcuts
   !insertmacro RemoveBrokenFullRtlShortcut "$DESKTOP\OpenCode RTL.lnk" "OpenCode"
   !insertmacro RemoveBrokenFullRtlShortcut "$SMPROGRAMS\$AppStartMenuFolder\Claude Desktop RTL.lnk" "Claude"
   !insertmacro RemoveBrokenFullRtlShortcut "$DESKTOP\Claude Desktop RTL.lnk" "Claude"
+  !insertmacro RemoveBrokenFullRtlShortcut "$SMPROGRAMS\$AppStartMenuFolder\MiniMax Code RTL.lnk" "MiniMax"
+  !insertmacro RemoveBrokenFullRtlShortcut "$DESKTOP\MiniMax Code RTL.lnk" "MiniMax"
 FunctionEnd
 
 ; Never replace a shortcut owned by another application.
@@ -1398,6 +1440,7 @@ Function CreateRtlShortcuts
   SectionGetFlags ${SEC_ANTIGRAVITY} $R5
   SectionGetFlags ${SEC_OPENCODE} $R6
   SectionGetFlags ${SEC_CLAUDE} $R7
+  SectionGetFlags ${SEC_MINIMAX} $R8
   ${If} $R1 & ${SF_SELECTED}
     !insertmacro CreateOwnedRtlShortcut "$R4\ZCode RTL.lnk" "$R0\ZCode\launch.vbs" "$R0\ZCode\rtl-shortcut.ico"
     !insertmacro CreateOwnedRtlShortcut "$DESKTOP\ZCode RTL.lnk" "$R0\ZCode\launch.vbs" "$R0\ZCode\rtl-shortcut.ico"
@@ -1421,6 +1464,10 @@ Function CreateRtlShortcuts
   ${If} $R7 & ${SF_SELECTED}
     !insertmacro CreateOwnedRtlShortcut "$R4\Claude Desktop RTL.lnk" "$R0\Claude\launch.vbs" "$R0\Claude\rtl-shortcut.ico"
     !insertmacro CreateOwnedRtlShortcut "$DESKTOP\Claude Desktop RTL.lnk" "$R0\Claude\launch.vbs" "$R0\Claude\rtl-shortcut.ico"
+  ${EndIf}
+  ${If} $R8 & ${SF_SELECTED}
+    !insertmacro CreateOwnedRtlShortcut "$R4\MiniMax Code RTL.lnk" "$R0\MiniMax\launch.vbs" "$R0\MiniMax\rtl-shortcut.ico"
+    !insertmacro CreateOwnedRtlShortcut "$DESKTOP\MiniMax Code RTL.lnk" "$R0\MiniMax\launch.vbs" "$R0\MiniMax\rtl-shortcut.ico"
   ${EndIf}
 FunctionEnd
 
@@ -1555,6 +1602,7 @@ Section Uninstall
   Delete "$INSTDIR\apps\Claude\assets\Vazirmatn-Bold.woff2"
   Delete "$INSTDIR\apps\Claude\assets\Vazirmatn-Regular.woff2"
   Delete "$INSTDIR\apps\rtl-paths.ps1"
+  Delete "$INSTDIR\apps\rtl-launch-lib.ps1"
   Delete "$INSTDIR\apps\rtl-direction.mjs"
   Delete "$INSTDIR\apps\rtl-style.mjs"
   Delete "$INSTDIR\cleanup.ps1"
@@ -1615,6 +1663,8 @@ Section Uninstall
     !insertmacro RemoveBrokenFullRtlShortcut "$DESKTOP\OpenCode RTL.lnk" "OpenCode"
     !insertmacro RemoveBrokenFullRtlShortcut "$R4\Claude Desktop RTL.lnk" "Claude"
     !insertmacro RemoveBrokenFullRtlShortcut "$DESKTOP\Claude Desktop RTL.lnk" "Claude"
+    !insertmacro RemoveBrokenFullRtlShortcut "$R4\MiniMax Code RTL.lnk" "MiniMax"
+    !insertmacro RemoveBrokenFullRtlShortcut "$DESKTOP\MiniMax Code RTL.lnk" "MiniMax"
   ${EndIf}
   !insertmacro IsShortcutTarget "$R4\ZCode RTL.lnk" "$R0\ZCode\launch.vbs"
   Pop $0
@@ -1675,6 +1725,16 @@ Section Uninstall
   Pop $0
   ${If} $0 = 1
     Delete "$DESKTOP\Claude Desktop RTL.lnk"
+  ${EndIf}
+  !insertmacro IsShortcutTarget "$R4\MiniMax Code RTL.lnk" "$R0\MiniMax\launch.vbs"
+  Pop $0
+  ${If} $0 = 1
+    Delete "$R4\MiniMax Code RTL.lnk"
+  ${EndIf}
+  !insertmacro IsShortcutTarget "$DESKTOP\MiniMax Code RTL.lnk" "$R0\MiniMax\launch.vbs"
+  Pop $0
+  ${If} $0 = 1
+    Delete "$DESKTOP\MiniMax Code RTL.lnk"
   ${EndIf}
   RMDir "$R4"
 

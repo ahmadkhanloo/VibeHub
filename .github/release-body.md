@@ -8,12 +8,9 @@ VibeHub is a free, open-source desktop workspace for AI coding tools. It does no
 |---|---|
 | `VibeHub-Setup.exe` | Windows NSIS installer; it does not carry a Windows publisher (Authenticode) signature |
 | `latest.json`, `VibeHub_*_x64-setup.nsis.zip`, and `.sig` files | Signed Tauri updater metadata and artifacts |
-| `checksums-sha256.txt` | SHA-256 hashes for the public release assets |
-| `VibeHub-*-source.zip` | Source snapshot for this tag |
-| `VibeHub-SBOM.cdx.json` | CycloneDX software bill of materials |
-| `LICENSE`, `THIRD_PARTY_LICENSES.md` | Project and third-party license notices |
+| `checksums-sha256.txt`, `VibeHub-SBOM.cdx.json`, `LICENSE`, and `THIRD_PARTY_LICENSES.md` | Download checksums, component inventory, and license notices |
 
-Verify the installer SHA-256 against `checksums-sha256.txt` before running it. Updates are manual: open **Settings → Updates → Check now**. The updater archive is signed and VibeHub verifies it against its embedded public key.
+Updates are manual: open **Settings → Updates → Check now**. The updater archive is signed and VibeHub verifies it against its embedded public key.
 
 {{PRERELEASE_NOTICE}}
 
@@ -31,9 +28,6 @@ VibeHub یک میزکار دسکتاپ رایگان و متن‌باز برای 
 |---|---|
 | `VibeHub-Setup.exe` | نصب‌کنندهٔ NSIS ویندوز؛ امضای ناشر (Authenticode) ندارد |
 | `latest.json`، `VibeHub_*_x64-setup.nsis.zip` و فایل‌های `.sig` | metadata و artifactهای امضاشدهٔ updater |
-| `checksums-sha256.txt` | هش SHA-256 فایل‌های عمومی Release |
-| `VibeHub-*-source.zip` | snapshot سورس همین tag |
-| `VibeHub-SBOM.cdx.json` | فهرست اجزای نرم‌افزار به قالب CycloneDX |
-| `LICENSE`، `THIRD_PARTY_LICENSES.md` | مجوز پروژه و noticeهای وابستگی‌های ثالث |
+| `checksums-sha256.txt`، `VibeHub-SBOM.cdx.json`، `LICENSE` و `THIRD_PARTY_LICENSES.md` | هش فایل‌ها، فهرست اجزا و مجوزها |
 
-پیش از اجرا، SHA-256 نصب‌کننده را با `checksums-sha256.txt` بسنجید. به‌روزرسانی دستی است: **تنظیمات ← به‌روزرسانی‌ها ← بررسی کن**. بستهٔ updater امضا شده و VibeHub آن را با کلید عمومی تعبیه‌شده می‌سنجد.
+به‌روزرسانی دستی است: **تنظیمات ← به‌روزرسانی‌ها ← بررسی کن**. بستهٔ updater امضا شده و VibeHub آن را با کلید عمومی تعبیه‌شده می‌سنجد.

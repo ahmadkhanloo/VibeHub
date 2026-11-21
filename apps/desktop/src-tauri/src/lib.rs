@@ -1,7 +1,9 @@
 mod accounts;
 mod app_accounts;
+mod claude_accounts;
 mod domain;
 mod network;
+mod quota;
 mod storage;
 mod system;
 
@@ -10,18 +12,37 @@ use serde_json::{Value, json};
 use tauri::Manager;
 
 #[tauri::command]
-async fn app_accounts(app: tauri::AppHandle, app_id: String, action: String, payload: Value) -> Result<Value> {
-    system::blocking(move || app_accounts::handle(&app, &app_id, &action, payload)).await
-}
-
-#[tauri::command]
 async fn codex_accounts(app: tauri::AppHandle, action: String, payload: Value) -> Result<Value> {
     system::blocking(move || accounts::handle(&app, &action, payload)).await
 }
 
 #[tauri::command]
-async fn app_path(app: tauri::AppHandle, app_id: String, path: String) -> Result<()> {
-    if !APP_IDS.contains(&app_id.as_str()) { return Err("Unsupported app path".into()); }
+async fn claude_accounts(app: tauri::AppHandle, action: String, payload: Value) -> Result<Value> {
+    system::blocking(move || claude_accounts::handle(&app, &action, payload)).await
+}
+
+#[tauri::command]
+async fn app_accounts(
+    app: tauri::AppHandle,
+    app_id: String,
+    action: String,
+    payload: Value,
+) -> Result<Value> {
+    system::blocking(move || app_accounts::handle(&app, &app_id, &action, payload)).await
+}
+
+#[tauri::command]
+async fn app_quota(app: tauri::AppHandle, action: String, payload: Value) -> Result<Value> {
+    quota::handle(&app, &action, payload).await
+}
+
+#[tauri::command]
+async fn toolchain_status(app: tauri::AppHandle) -> Result<Value> {
+    system::run(app, json!({"operation":"toolchain-status"})).await
+}
+
+#[tauri::command]
+async fn app_path(app: tauri::AppHandle, app_id: String, path: String) -> Result<()> {    if !APP_IDS.contains(&app_id.as_str()) { return Err("Unsupported app path".into()); }
     system::run(app, json!({"operation":"app-path", "appId":app_id, "path":path})).await?;
     Ok(())
 }
@@ -51,7 +72,7 @@ async fn focus_editor(app: tauri::AppHandle, editor_id: String) -> Result<Value>
 
 #[tauri::command]
 async fn rtl_setup(app: tauri::AppHandle, app_id: String) -> Result<Value> {
-    if !["qoder", "zcode", "deepseek-harness", "opencode"].contains(&app_id.as_str()) {
+    if !["qoder", "zcode", "deepseek-harness", "opencode", "minimax-code"].contains(&app_id.as_str()) {
         return Err("RTL is unavailable for this app".into());
     }
     system::run(app, json!({"operation":"rtl-setup", "appId":app_id})).await
@@ -488,6 +509,11 @@ fn launch_request(app: &tauri::AppHandle, id: &str, override_id: Option<&str>) -
 
 #[tauri::command]
 async fn launch_app(app: tauri::AppHandle, req: Value) -> Result<Value> {
+    launch_app_inner(app, req).await
+}
+
+/// Shared launch pipeline for the UI command and the tray quick-launch menu.
+async fn launch_app_inner(app: tauri::AppHandle, req: Value) -> Result<Value> {
     let id = domain::field(&req, "appId")?.to_owned();
     if !APP_IDS.contains(&id.as_str()) || !req["rtl"].is_boolean() {
         return Err("Invalid launch request".into());
@@ -605,6 +631,75 @@ fn app_version(app: tauri::AppHandle) -> String {
     app.package_info().version.to_string()
 }
 
+/// Tray quick-launch menu: Open, an "RTL launchers" submenu with one entry per
+/// RTL-capable app (● marks running ones), Quit.
+fn tray_menu(
+    app: &tauri::AppHandle,
+    apps: &[(String, String, bool)],
+) -> tauri::Result<tauri::menu::Menu<tauri::Wry>> {
+    use tauri::menu::{IsMenuItem, Menu, MenuItem, Submenu};
+    let open = MenuItem::with_id(app, "open", "Open / باز کردن", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "Quit / خروج", true, None::<&str>)?;
+    if apps.is_empty() {
+        return Menu::with_items(app, &[&open, &quit]);
+    }
+    let mut children: Vec<MenuItem<tauri::Wry>> = Vec::new();
+    for (id, label, running) in apps {
+        children.push(MenuItem::with_id(
+            app,
+            format!("rtl:{id}"),
+            if *running { format!("● {label}") } else { label.clone() },
+            true,
+            None::<&str>,
+        )?);
+    }
+    let refs: Vec<&dyn IsMenuItem<tauri::Wry>> =
+        children.iter().map(|item| item as &dyn IsMenuItem<tauri::Wry>).collect();
+    let launchers = Submenu::with_id_and_items(
+        app,
+        "rtl-launchers",
+        "اجراگرهای RTL / RTL launchers",
+        true,
+        &refs,
+    )?;
+    Menu::with_items(app, &[&open, &launchers, &quit])
+}
+
+/// The frontend pushes its detected RTL-capable inventory after every scan so
+/// the always-visible tray stays useful while the window is hidden.
+#[tauri::command]
+async fn tray_update(app: tauri::AppHandle, apps: Vec<Value>) -> Result<()> {
+    if apps.len() > APP_IDS.len() {
+        return Err("Invalid tray app list".into());
+    }
+    let mut entries: Vec<(String, String, bool)> = Vec::new();
+    for entry in &apps {
+        let id = entry["id"].as_str().unwrap_or_default();
+        if !APP_IDS.contains(&id) {
+            return Err("Invalid tray app list".into());
+        }
+        if entries.iter().any(|(seen, _, _)| seen == id) {
+            continue;
+        }
+        let name: String = entry["name"]
+            .as_str()
+            .unwrap_or(id)
+            .chars()
+            .filter(|c| !c.is_control())
+            .take(48)
+            .collect();
+        let name = name.trim();
+        entries.push((
+            id.to_string(),
+            if name.is_empty() { id.to_string() } else { name.to_string() },
+            entry["running"] == json!(true),
+        ));
+    }
+    let tray = app.tray_by_id("vibehub-tray").ok_or("Tray unavailable")?;
+    let menu = tray_menu(&app, &entries).map_err(|e| e.to_string())?;
+    tray.set_menu(Some(menu)).map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
@@ -624,10 +719,26 @@ pub fn run() {
             let open = MenuItem::with_id(app, "open", "Open / باز کردن", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "Quit / خروج", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&open, &quit])?;
-            let mut tray = TrayIconBuilder::new().tooltip("VibeHub").menu(&menu)
+            let mut tray = TrayIconBuilder::with_id("vibehub-tray").tooltip("VibeHub").menu(&menu)
                 .on_menu_event(|app, event| match event.id().as_ref() {
                     "open" => { if let Some(window) = app.get_webview_window("main") { let _ = window.show(); let _ = window.unminimize(); let _ = window.set_focus(); } },
                     "quit" => app.exit(0),
+                    id if id.starts_with("rtl:") => {
+                        let app_id = id.trim_start_matches("rtl:").to_string();
+                        if APP_IDS.contains(&app_id.as_str()) {
+                            let handle = app.clone();
+                            tauri::async_runtime::spawn(async move {
+                                let result = launch_app_inner(handle.clone(), json!({"appId": app_id, "rtl": true})).await;
+                                if let Err(error) = result {
+                                    use tauri_plugin_notification::NotificationExt;
+                                    let _ = handle.notification().builder()
+                                        .title("VibeHub")
+                                        .body(format!("اجرای RTL ناموفق بود: {error}"))
+                                        .show();
+                                }
+                            });
+                        }
+                    }
                     _ => {}
                 })
                 .on_tray_icon_event(|tray, event| {
@@ -648,8 +759,18 @@ pub fn run() {
             Ok(())
         });
 
+    // Single-instance is release-only: a still-held dev mutex would make every
+    // tauri dev restart exit immediately while the previous instance runs.
     #[cfg(not(debug_assertions))]
-    let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
+    let builder = builder
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.unminimize();
+                let _ = window.set_focus();
+            }
+        }))
+        .plugin(tauri_plugin_updater::Builder::new().build());
 
     #[cfg(debug_assertions)]
     let builder = builder;
@@ -658,7 +779,10 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             app_version,
             codex_accounts,
+            claude_accounts,
             app_accounts,
+            app_quota,
+            toolchain_status,
             app_path,
             detect_apps,
             detect_editors,
@@ -670,6 +794,7 @@ pub fn run() {
             launch_state,
             launch_states,
             stop_rtl,
+            tray_update,
             install_winget,
             install_npm,
             proxy_list,

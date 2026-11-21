@@ -2,7 +2,7 @@ import { Disclosure } from '@/components/Disclosure';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { Badge, Button, Card, EmptyState, ErrorNotice, Input, Modal, PageHeader, Toggle, Select } from '@/components/ui';
+import { Badge, Button, Card, EmptyState, ErrorNotice, Input, Modal, PageHeader, Spinner, Toggle, Select } from '@/components/ui';
 import { ipc, type AccountsAction, type AccountsSnapshot, type CodexAccount } from '@/services/ipc';
 
 export function AccountsPage({ embedded = false }: { embedded?: boolean }) {
@@ -10,9 +10,11 @@ export function AccountsPage({ embedded = false }: { embedded?: boolean }) {
   const [adding, setAdding] = useState(false);
 
   const [data, setData] = useState<AccountsSnapshot | null>(null);
+  const [appVersion, setAppVersion] = useState<string | null>(null);
   const [busy, setBusy] = useState(false), [error, setError] = useState<string | null>(null);
   const [name, setName] = useState(''), [threshold, setThreshold] = useState(1);
   const [dialog, setDialog] = useState<{ kind: 'rename' | 'delete' | 'switch'; account: CodexAccount } | null>(null);
+  const [restarting, setRestarting] = useState(false);
   const [rename, setRename] = useState('');
   const flight = useRef(false);
   const translatedError = useCallback((cause: unknown) => {
@@ -23,11 +25,16 @@ export function AccountsPage({ embedded = false }: { embedded?: boolean }) {
     if (flight.current) return;
     flight.current = true;
     if (!quiet) { setBusy(true); setError(null); }
+    // Restarting the original app can take a while; say what is happening instead of
+    // leaving the user with a silent spinner and a window that will not close.
+    const restart = action === 'switch' && payload.confirmRestart === true;
+    if (restart) setRestarting(true);
     try { setData(await ipc.codexAccounts(action, { ...payload, language: i18n.language.startsWith('fa') ? 'fa' : 'en' })); }
     catch (cause) { if (!quiet) setError(translatedError(cause)); }
-    finally { flight.current = false; if (!quiet) setBusy(false); }
+    finally { flight.current = false; if (!quiet) setBusy(false); if (restart) setRestarting(false); }
   }, [translatedError, i18n.language]);
   useEffect(() => { void act('list'); }, [act]);
+  useEffect(() => { void ipc.appVersion().then(setAppVersion).catch(() => setAppVersion(null)); }, []);
   useEffect(() => { if (data?.loginPending) setAdding(false); }, [data?.loginPending]);
   useEffect(() => { if (data) setThreshold(data.settings.threshold); }, [data?.settings.threshold]);
   useEffect(() => {
@@ -39,6 +46,14 @@ export function AccountsPage({ embedded = false }: { embedded?: boolean }) {
   const date = (value: number | null) => value ? new Date(value * 1000).toLocaleString(i18n.language) : t('unknown');
   const previous = data?.accounts.find(a => a.id === data.previousId && a.id !== data.activeId);
   const pending = data?.accounts.find(a => a.id === data.pendingId);
+  // A CLI that exists but is below the floor is reported as missing by the backend;
+  // keep the detected version visible so the user can see why switching is refused.
+  const cliBehind = !!data && !data.cliReady && !!data.cliVersion;
+  const cliState = !data ? null : data.cliReady
+    ? t('cliVersion', { version: data.cliVersion ?? data.supportedVersion, supported: data.supportedVersion })
+    : cliBehind
+      ? t('cliOutdated', { version: data.cliVersion, supported: data.supportedVersion })
+      : t('cliMissing', { version: data.supportedVersion });
   const pendingLogin = data?.loginPending && <div role="status" className="flex flex-wrap items-center gap-3 text-sm">{t('loginPending')}<Button disabled={busy} onClick={() => void act('cancel')}>{t('cancelLogin')}</Button></div>;
   const submitDialog = async () => {
     if (!dialog) return;
@@ -47,11 +62,18 @@ export function AccountsPage({ embedded = false }: { embedded?: boolean }) {
     setDialog(null);
   };
   return <div className="space-y-6">
-    <div className="flex flex-wrap gap-3">{!embedded && <h1>{t('title')}</h1>}<><Button disabled={busy} onClick={() => void act('list')}>{t('reload')}</Button><Button variant="primary" disabled={busy || !data || data.nativePreview} onClick={() => setAdding(true)}>{t('add')}</Button></></div>
-    <>
+    <div className="flex flex-wrap items-center gap-3">{!embedded && <h1>{t('title')}</h1>}
+      <div className="flex flex-wrap items-center gap-2" data-testid="accounts-versions">
+        <Badge>{t('common:version')}: <bdi>{appVersion ?? '—'}</bdi></Badge>
+        {!data?.nativePreview && <Badge tone={!data ? 'muted' : data.cliReady ? 'primary' : cliBehind ? 'warning' : 'muted'}>
+          <bdi dir="ltr">Codex CLI</bdi>{data?.cliReady ? <>: <bdi>{data.cliVersion ?? data.supportedVersion}</bdi></> : cliBehind ? <>: <bdi>{data.cliVersion}</bdi></> : null}
+        </Badge>}
+      </div>
+      <div className="ms-auto flex flex-wrap gap-3"><Button disabled={busy} onClick={() => void act('list')}>{t('reload')}</Button><Button variant="primary" disabled={busy || !data || data.nativePreview} onClick={() => setAdding(true)}>{t('add')}</Button></div></div>
+    {restarting && <div role="status" className="flex items-center gap-3 text-sm"><Spinner />{t('switching')}</div>}
     {error && !adding && <ErrorNotice error={error} message={error} />}
     {!data ? <p role="status">{t('loading')}</p> : data.nativePreview ? <Card className="space-y-3"><h2 className="font-bold">{t('browserAccountsTitle')}</h2><p role="status" className="text-sm leading-7">{t('browserAccountsHint')}</p><code dir="ltr" className="block">pnpm dev:desktop</code></Card> : <>
-      {!data.cliReady && <Card className="space-y-3"><p role="status">{t('cliMissing', { version: data.supportedVersion })}</p><Link className="vh-link" to="/guides/chatgpt">{t('setup')}</Link></Card>}
+      {!data.cliReady && <Card className="space-y-3"><p role="status">{cliState}</p><Link className="vh-link" to="/guides/chatgpt">{t('setup')}</Link></Card>}
       {!data.desktopVerified && <p className="text-sm text-muted">{t('desktopUnverified')}</p>}
       <Disclosure title={t('ux:help')}><p className="text-sm text-muted">{t('initialRead')}</p></Disclosure>
       {data.notice && <Card className="space-y-3" as="section"><p role="status">{t(`notices.${data.notice}`, { defaultValue: t(`errors.${data.notice}`, { defaultValue: t('errors.requestFailed') }) })}</p>
@@ -103,7 +125,6 @@ export function AccountsPage({ embedded = false }: { embedded?: boolean }) {
         </Card>)}
       </section>
     </>}
-    </>
     <Modal open={!!dialog} title={t(dialog?.kind === 'switch' ? 'restartAndSwitch' : dialog?.kind ?? 'rename')} onClose={() => setDialog(null)} busy={busy}>
       {dialog?.kind === 'rename' ? <label className="block space-y-2"><span>{t('accountName')}</span><Input value={rename} maxLength={120} onChange={e => setRename(e.target.value)} /></label> : <p className="text-sm leading-7">{t(dialog?.kind === 'switch' ? 'restartConfirm' : 'deleteConfirm')}</p>}
       <div className="mt-5 flex gap-2"><Button variant="primary" disabled={busy || (dialog?.kind === 'rename' && !rename.trim())} onClick={() => void submitDialog()}>{t('confirm')}</Button><Button disabled={busy} onClick={() => setDialog(null)}>{t('common:cancel')}</Button></div>
