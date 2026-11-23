@@ -15,10 +15,12 @@ Call the assistant and fill in this pattern:
 ```text
 When I press "Add", the new task is not appended to the list.
 The browser console shows: [full error text]
-Look at index.html and app.js and tell me the cause.
+Look at the script inside index.html and tell me the cause.
 ```
 
 If the page shows no error, take one from the browser console: press F12 and open the Console tab; errors are red. Copy the full text, including line numbers.
+
+![Another example of evidence to give an assistant: a terminal assertion identifies the observed result and the expected value.](../../../../apps/desktop/public/tutorials/screenshots/course-test-fail.webp)
 
 ## Do not accept the cause — test it
 

@@ -46,3 +46,60 @@ test('the accounts hub opens on the Codex tab by default', async ({ page }) => {
   await expect(page).toHaveURL(/\/accounts$/);
   await expect(page.getByRole('tab', { name: 'ChatGPT / Codex' })).toHaveAttribute('aria-selected', 'true');
 });
+
+test('batch quota shows the current check and stops at rate-limiting without a persistent progress count', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 860 });
+  await mockNative(page);
+  await page.addInitScript(() => {
+    const host = window as any;
+    const invoke = host.__TAURI_INTERNALS__.invoke;
+    const accounts = ['one', 'two', 'three', 'four'].map(id => ({ id, name: id, email: id + '@example.invalid', windows: [] }));
+    host.__TAURI_INTERNALS__.invoke = async (cmd: string, args: any) => {
+      if (cmd !== 'codex_accounts') return invoke(cmd, args);
+      host.__mock.calls.push({ cmd, args });
+      const data = { cliReady: true, quotaBatchReady: true, settings: { enabled: false, threshold: 1 }, accounts };
+      if (args.action !== 'refreshQuota') return data;
+      if (args.payload.id === 'one') {
+        await new Promise(resolve => { host.__finishQuota = resolve; });
+        return { ...data, accounts: [{ ...accounts[0], checkedAt: 1795334400, windows: [] }, ...accounts.slice(1)] };
+      }
+      return { ...data, quotaBatchCode: 'rateLimited' };
+    };
+  });
+  await page.goto('/accounts');
+  const refresh = page.getByRole('button', { name: 'Refresh all', exact: true });
+  await refresh.click();
+  await expect(refresh).toBeDisabled();
+  await expect(page.getByTestId('account-one').getByText('Checking quota', { exact: true })).toBeVisible();
+  await page.evaluate(() => (window as any).__finishQuota());
+  await expect(page.getByRole('alert')).toContainText('temporarily limited quota checks');
+  await expect(page.getByText(/Checked \d+ of \d+ accounts/)).toHaveCount(0);
+  await expect(page.getByText('Checking quota', { exact: true })).toHaveCount(0);
+  expect(await page.evaluate(() => (window as any).__mock.calls
+    .filter((call: any) => call.cmd === 'codex_accounts' && call.args.action === 'refreshQuota')
+    .map((call: any) => call.args.payload.id))).toEqual(['one', 'two']);
+  const columns = (await page.locator('.vh-account-grid').evaluate(el => getComputedStyle(el).gridTemplateColumns)).split(' ');
+  expect(columns).toHaveLength(4);
+  await page.setViewportSize({ width: 960, height: 860 });
+  expect((await page.locator('.vh-account-grid').evaluate(el => getComputedStyle(el).gridTemplateColumns)).split(' ')).toHaveLength(3);
+  await page.setViewportSize({ width: 390, height: 860 });
+  expect((await page.locator('.vh-account-grid').evaluate(el => getComputedStyle(el).gridTemplateColumns)).split(' ')).toHaveLength(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await page.getByRole('button', { name: 'Automatic switching settings' }).click();
+  await expect(page.getByRole('dialog', { name: 'Automatic switching settings' })).toBeVisible();
+});
+
+test('the account heading help opens from its info icon and dismisses with Escape', async ({ page }) => {
+  await mockNative(page);
+  await page.goto('/accounts');
+  const title = page.locator('.vh-page-title-row');
+  await title.getByRole('heading').hover();
+  await expect(page.getByRole('tooltip')).toHaveCount(0);
+  const info = title.getByRole('button', { name: 'Help', exact: true });
+  await info.hover();
+  await expect(page.getByRole('tooltip')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('tooltip')).toHaveCount(0);
+  await info.focus();
+  await expect(page.getByRole('tooltip')).toBeVisible();
+});

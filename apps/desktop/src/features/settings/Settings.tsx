@@ -1,34 +1,40 @@
 import { Disclosure } from '@/components/Disclosure';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, Download, Moon, RefreshCw, Sun } from 'lucide-react';
+import { Bell, Check, Database, Download, LifeBuoy, Moon, Palette, RefreshCw, Sun } from 'lucide-react';
 import { Badge, Button, ErrorNotice, Input, Modal, PageHeader, Toggle, Tabs } from '@/components/ui';
 import { useSettings, type Accent, type ThemeFamily } from '@/app/settings';
 import { ipc, type CredentialClearResult, type ProviderCredentialInventory } from '@/services/ipc';
 import { check } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-
-
+import { WindowsChecks } from '@/features/doctor/Doctor';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
 
 const FAMILIES: ThemeFamily[] = ['graphite', 'nord', 'catppuccin', 'solarized'];
 const ACCENTS: Accent[] = ['auto', 'indigo', 'emerald', 'violet', 'amber'];
+const PANELS = [
+  { value: 'appearance', icon: Palette },
+  { value: 'updates', icon: Download },
+  { value: 'notifications', icon: Bell },
+  { value: 'data', icon: Database },
+  { value: 'support', icon: LifeBuoy },
+] as const;
 
 const LEGACY_NAMES: Record<string, string> = { openrouter: 'OpenRouter', 'nvidia-build': 'NVIDIA', 'custom-openai-compatible': 'OpenAI-compatible' };
 
 function ThemeGallery() {
   const { t } = useTranslation(['settings', 'common']);
   const { settings, update, resolvedMode } = useSettings();
-  return <div className="space-y-4">
-    <h3 className="font-semibold">{t('settings:appearance.gallery')}</h3>
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      {FAMILIES.flatMap((family) => (['light', 'dark'] as const).map((mode) => {
+  return <fieldset className="min-w-0">
+    <legend className="mb-3 font-semibold">{t('settings:appearance.gallery')}</legend>
+    <div className="vh-settings-theme-grid">
+      {(['light', 'dark'] as const).flatMap(mode => FAMILIES.map(family => {
         const active = settings.themeFamily === family && resolvedMode === mode;
         return <button key={`${family}-${mode}`} type="button" aria-pressed={active}
           onClick={() => update({ themeFamily: family, themeMode: mode })}
           data-theme={family} data-mode={mode} data-accent={settings.accent}
-          className={`rounded-xl border p-4 text-start ${active ? 'border-primary ring-1 ring-primary' : 'border-border'}`}
+          className={`vh-settings-theme rounded-lg border p-3 text-start ${active ? 'border-primary ring-1 ring-primary' : 'border-border'}`}
           style={{ background: 'var(--surface)', color: 'var(--text)' }}>
           <span className="vh-theme-preview" aria-hidden="true">
             <span className="vh-theme-preview-nav"><i /><i /><i /></span>
@@ -43,16 +49,15 @@ function ThemeGallery() {
         </button>;
       }))}
     </div>
-  </div>;
+  </fieldset>;
 }
 
 export function SettingsPage() {
-  const { t } = useTranslation(['settingsUx', 'settings', 'common']);
+  const { t } = useTranslation(['settingsUx', 'settings', 'common', 'ux']);
   const { settings, update, resolvedMode } = useSettings();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const panels = ['appearance', 'updates', 'notifications', 'data'];
-  const selectedPanel = panels.includes(params.get('section') ?? '') ? params.get('section')! : 'appearance';
+  const selectedPanel = PANELS.find(panel => panel.value === params.get('section'))?.value ?? 'appearance';
   useEffect(() => {
     if (params.get('section') === 'terminal' || params.get('panel') === 'terminal') navigate('/terminal', { replace: true });
   }, [navigate, params]);
@@ -60,23 +65,27 @@ export function SettingsPage() {
   const [availableUpdate, setAvailableUpdate] = useState<Awaited<ReturnType<typeof check>>>(null);
   const [checked, setChecked] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const [feedbackPanel, setFeedbackPanel] = useState(selectedPanel);
   const [error, setError] = useState<unknown>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [syncDate, setSyncDate] = useState<string | null>(null);
+  const [feedDraft, setFeedDraft] = useState(settings.feedBaseUrl);
   const [modal, setModal] = useState<'credentials' | 'reset' | null>(null);
   const [inventory, setInventory] = useState<ProviderCredentialInventory | null>(null);
   const [clearReport, setClearReport] = useState<CredentialClearResult | null>(null);
   const [credentialError, setCredentialError] = useState<unknown>(null);
 
   useEffect(() => { void ipc.appVersion().then(setVersion).catch(() => setVersion(null)); }, []);
+  useEffect(() => { setFeedDraft(settings.feedBaseUrl); }, [settings.feedBaseUrl]);
 
   const perform = async (name: string, action: () => Promise<void>) => {
     if (busy) return;
-    setBusy(name); setError(null); setMessage(null);
+    setFeedbackPanel(selectedPanel); setBusy(name); setError(null); setMessage(null);
     try { await action(); } catch (reason) { setError(reason); } finally { setBusy(null); }
   };
   const inspectCredentials = async () => {
     setModal('credentials'); setBusy('inventory'); setCredentialError(null); setClearReport(null); setInventory(null);
+    setFeedbackPanel('data'); setError(null); setMessage(null);
     try { setInventory(await ipc.providerCredentialsInventory()); }
     catch (reason) { setCredentialError(reason); }
     finally { setBusy(null); }
@@ -108,64 +117,94 @@ export function SettingsPage() {
 
   return <div className="space-y-6 vh-settings-sections">
     <PageHeader title={t('settings:title')} />
-    <Tabs panelId="settings-panel" label={t('settings:title')} value={selectedPanel} onChange={value => setParams(current => { const next = new URLSearchParams(current); next.delete('panel'); next.set('section', value); return next; })} items={panels.map(value => ({ value, label: t('ux:' + value + 'Tab') }))} />
-    <div id="settings-panel" role="tabpanel" aria-labelledby={'settings-panel-tab-' + selectedPanel}>
-    {error != null && <ErrorNotice error={error} />}
-    {message && <p className="rounded-lg border border-success/40 bg-success/10 p-4 text-sm" role="status">{message}</p>}
+    <Tabs panelId="settings-panel" label={t('settings:title')} value={selectedPanel} onChange={value => setParams(current => {
+      const next = new URLSearchParams(current);
+      next.delete('panel');
+      next.set('section', value);
+      return next;
+    })} items={PANELS.map(({ value, icon: Icon }) => ({
+      value, label: t(`ux:${value}Tab`), icon: <Icon size={16} aria-hidden="true" />,
+    }))} />
+    <div className="vh-settings-content" id="settings-panel" role="tabpanel" aria-labelledby={'settings-panel-tab-' + selectedPanel}>
+    {feedbackPanel === selectedPanel && error != null && <ErrorNotice error={error} />}
+    {feedbackPanel === selectedPanel && message && <p className="rounded-lg border border-success/40 bg-success/10 p-4 text-sm" role="status">{message}</p>}
 
-    <section hidden={selectedPanel !== 'appearance'} className="vh-settings-panel space-y-4">
-
-      <div className="grid gap-5 sm:grid-cols-2">
-        <div className="space-y-2 text-sm"><span className="block font-medium">{t('settings:appearance.language')}</span><div className="vh-choice-group" role="group" aria-label={t('settings:appearance.language')}>
-          {(['fa', 'en'] as const).map(language => <button key={language} type="button" aria-pressed={settings.language === language} onClick={() => update({ language })}>{t(language === 'fa' ? 'common:languagePersian' : 'common:languageEnglish')}</button>)}
-        </div></div>
-        <div className="space-y-2 text-sm"><span className="block font-medium">{t('settings:appearance.textSize')}</span><div className="vh-choice-group" role="group" aria-label={t('settings:appearance.textSize')}>
-          {(['sm', 'md', 'lg'] as const).map(size => <button key={size} type="button" aria-pressed={settings.textSize === size} onClick={() => update({ textSize: size })}>{t(`ux:textSize${size === 'sm' ? 'Small' : size === 'md' ? 'Medium' : 'Large'}`)}</button>)}
-        </div></div>
-        <div className="space-y-2 text-sm"><Toggle checked={settings.themeMode === 'system'} onChange={follow => update({ themeMode: follow ? 'system' : resolvedMode })} label={t('settings:appearance.followSystem')} /></div>
-        <div className="space-y-2 text-sm sm:col-span-2"><span className="block font-medium">{t('settings:appearance.accent')}</span><div className="vh-accent-choices" role="group" aria-label={t('settings:appearance.accent')}>
-          {ACCENTS.map(accent => <button key={accent} type="button" aria-label={t(`settings:appearance.accents.${accent}`)} aria-pressed={settings.accent === accent} onClick={() => update({ accent })}>
-            <span className="vh-accent-swatch" data-accent-choice={accent} aria-hidden="true">{settings.accent === accent && <Check size={15} />}</span><span>{t(`settings:appearance.accents.${accent}`)}</span>
-          </button>)}
-        </div></div>
+    <section hidden={selectedPanel !== 'appearance'} className="vh-settings-panel vh-card space-y-4">
+      <div className="vh-settings-appearance">
+        <div className="vh-settings-preferences">
+          <div className="space-y-2 text-sm">
+            <span className="block font-medium">{t('settings:appearance.language')}</span>
+            <div className="vh-choice-group" role="group" aria-label={t('settings:appearance.language')}>
+              {(['fa', 'en'] as const).map(language => <button key={language} type="button" aria-pressed={settings.language === language} onClick={() => update({ language })}>{t(language === 'fa' ? 'common:languagePersian' : 'common:languageEnglish')}</button>)}
+            </div>
+          </div>
+          <div className="space-y-2 text-sm">
+            <span className="block font-medium">{t('settings:appearance.textSize')}</span>
+            <div className="vh-choice-group" role="group" aria-label={t('settings:appearance.textSize')}>
+              {(['sm', 'md', 'lg'] as const).map(size => <button key={size} type="button" aria-pressed={settings.textSize === size} onClick={() => update({ textSize: size })}>{t(`ux:textSize${size === 'sm' ? 'Small' : size === 'md' ? 'Medium' : 'Large'}`)}</button>)}
+            </div>
+          </div>
+          <div className="space-y-2 text-sm">
+            <Toggle checked={settings.themeMode === 'system'} onChange={follow => update({ themeMode: follow ? 'system' : resolvedMode })} label={t('settings:appearance.followSystem')} />
+            {settings.themeMode === 'system' && <p className="text-muted">{t('settings:appearance.resolvedMode', { mode: t(resolvedMode === 'dark' ? 'settings:appearance.modeDark' : 'settings:appearance.modeLight') })}</p>}
+          </div>
+          <div className="space-y-2 text-sm">
+            <span className="block font-medium">{t('settings:appearance.accent')}</span>
+            <div className="vh-accent-choices" role="group" aria-label={t('settings:appearance.accent')}>
+              {ACCENTS.map(accent => <button key={accent} type="button" aria-label={t(`settings:appearance.accents.${accent}`)} aria-pressed={settings.accent === accent} onClick={() => update({ accent })}>
+                <span className="vh-accent-swatch" data-accent-choice={accent} aria-hidden="true">{settings.accent === accent && <Check size={15} />}</span>
+                <span>{t(`settings:appearance.accents.${accent}`)}</span>
+              </button>)}
+            </div>
+          </div>
+          <div className="space-y-2 border-t border-border pt-4 text-sm">
+            <Toggle checked={settings.workshopMode} onChange={enabled => update({ workshopMode: enabled })} label={t('settings:workshop.title')} />
+            <p className="leading-relaxed text-muted">{t('settings:workshop.description')}</p>
+          </div>
+        </div>
+        <ThemeGallery />
       </div>
-      <div className="space-y-2 text-sm">
-        <Toggle checked={settings.workshopMode} onChange={enabled => update({ workshopMode: enabled })} label={t('settings:workshop.title')} />
-        <p className="text-sm leading-7 text-muted">{t('settings:workshop.description')}</p>
-      </div>
-      <ThemeGallery />
     </section>
 
-    <section hidden={selectedPanel !== 'updates'} className="vh-settings-panel space-y-4">
-
-      <div className="flex flex-wrap items-center gap-3">
-        <Badge>{t('settings:updates.currentVersion')}: <bdi>{version ?? '—'}</bdi></Badge>
-        <Button loading={busy === 'check'} disabled={busy !== null} onClick={() => void perform('check', async () => { setAvailableUpdate(await check()); setChecked(true); })}>
-          <RefreshCw size={16} aria-hidden="true" />{t('settings:updates.checkNow')}
-        </Button>
-        {availableUpdate && <Button variant="primary" loading={busy === 'install'} disabled={busy !== null} onClick={() => void perform('install', async () => { await availableUpdate.downloadAndInstall(); await relaunch(); })}>
-          <Download size={16} aria-hidden="true" />{t('settings:updates.downloadInstall')} <bdi>{availableUpdate.version}</bdi>
-        </Button>}
+    <section hidden={selectedPanel !== 'updates'} className="vh-settings-panel vh-card space-y-4">
+      <div className="vh-settings-row">
+        <div className="space-y-2">
+          <h3 className="font-semibold">{t('settings:updates.currentVersion')} <bdi>{version ?? '—'}</bdi></h3>
+          <p className="text-sm text-muted">{t('settings:updates.updatePolicy')}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button loading={busy === 'check'} disabled={busy !== null} onClick={() => void perform('check', async () => { setChecked(false); setAvailableUpdate(null); setAvailableUpdate(await check()); setChecked(true); })}>
+            <RefreshCw size={16} aria-hidden="true" />{t('settings:updates.checkNow')}
+          </Button>
+          {availableUpdate && <Button variant="primary" loading={busy === 'install'} disabled={busy !== null} onClick={() => void perform('install', async () => { await availableUpdate.downloadAndInstall(); await relaunch(); })}>
+            <Download size={16} aria-hidden="true" />{t('settings:updates.downloadInstall')} <bdi>{availableUpdate.version}</bdi>
+          </Button>}
+        </div>
       </div>
-      {checked && !availableUpdate && !error && <p role="status" className="text-sm">{t('settings:updates.upToDate')}</p>}
+      {checked && !availableUpdate && <p role="status" className="text-sm">{t('settings:updates.upToDate')}</p>}
       {availableUpdate?.body && <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-surface-alt p-4 text-sm">{availableUpdate.body}</pre>}
-      <p className="text-sm text-muted">{t('settings:updates.updatePolicy')}</p>
-      <Disclosure title={t("ux:advanced")}>
-        <label className="block max-w-2xl space-y-2 text-sm"><span>{t('settingsUx:feedAddress')}</span>
-          <Input dir="ltr" type="url" value={settings.feedBaseUrl} onChange={(event) => update({ feedBaseUrl: event.target.value })} /></label>
-        <Button loading={busy === 'sync'} disabled={busy !== null} onClick={() => void perform('sync', async () => {
-          const result = await ipc.feedSync(settings.feedBaseUrl);
-          setSyncDate(result.generatedAt ?? null); setMessage(t('settingsUx:contentUpdated'));
-        })}>{t('settings:updates.contentCheck')}</Button>
+      <div className="space-y-3 border-t border-border pt-4">
+        <div className="vh-settings-row">
+          <div className="space-y-2">
+            <h3 className="font-semibold">{t('settingsUx:contentTitle')}</h3>
+            <p className="text-sm text-muted">{t('settingsUx:contentHint')}</p>
+          </div>
+          <Button loading={busy === 'sync'} disabled={busy !== null} onClick={() => void perform('sync', async () => {
+            const result = await ipc.feedSync(settings.feedBaseUrl);
+            setSyncDate(result.generatedAt ?? null); setMessage(t('settingsUx:contentUpdated'));
+          })}>{t('settings:updates.contentCheck')}</Button>
+        </div>
         {syncDate && <p className="text-sm text-muted">{t('settings:updates.lastSynced')}: <bdi>{syncDate}</bdi></p>}
-      </Disclosure>
-      <p className="text-sm text-muted">{t('settingsUx:manualUpdates')}</p>
+        <Disclosure title={t("ux:advanced")}>
+          <form className="space-y-3" onSubmit={(event) => { event.preventDefault(); update({ feedBaseUrl: feedDraft.trim() }); setSyncDate(null); setFeedbackPanel('updates'); setError(null); setMessage(t('settingsUx:feedSaved')); }}>
+            <label className="block max-w-2xl space-y-2 text-sm"><span>{t('settingsUx:feedAddress')}</span>
+              <Input dir="ltr" type="url" required value={feedDraft} onChange={(event) => setFeedDraft(event.target.value)} /></label>
+            <Button type="submit" disabled={busy !== null || feedDraft.trim() === settings.feedBaseUrl}>{t('common:save')}</Button>
+          </form>
+        </Disclosure>
+      </div>
     </section>
-
-
-
-    <section hidden={selectedPanel !== 'notifications'} className="vh-settings-panel space-y-4">
-
+    <section hidden={selectedPanel !== 'notifications'} className="vh-settings-panel vh-card space-y-4">
       <Toggle checked={settings.nativeNotifications} disabled={busy !== null} onChange={(enabled) => {
         if (!enabled) { update({ nativeNotifications: false }); return; }
         void perform('notifications', async () => {
@@ -175,21 +214,21 @@ export function SettingsPage() {
         });
       }} label={t('settings:notifications.system')} />
       <p className="text-sm leading-7 text-muted">{t('settingsUx:notificationsHint')}</p>
-      <Toggle checked={settings.quietHours.enabled} disabled={busy !== null} onChange={(enabled) => update({ quietHours: { ...settings.quietHours, enabled } })} label={t('settingsUx:quietHours')} />
-      {settings.quietHours.enabled && <div className="grid max-w-md grid-cols-2 gap-4">
-        <label className="block space-y-2 text-sm"><span>{t('settingsUx:quietFrom')}</span><Input type="time" dir="ltr" value={settings.quietHours.from} onChange={(event) => update({ quietHours: { ...settings.quietHours, from: event.target.value } })} /></label>
-        <label className="block space-y-2 text-sm"><span>{t('settingsUx:quietTo')}</span><Input type="time" dir="ltr" value={settings.quietHours.to} onChange={(event) => update({ quietHours: { ...settings.quietHours, to: event.target.value } })} /></label>
-      </div>}
+      <div className="space-y-3 border-t border-border pt-4">
+        <Toggle checked={settings.quietHours.enabled} disabled={busy !== null} onChange={(enabled) => update({ quietHours: { ...settings.quietHours, enabled } })} label={t('settingsUx:quietHours')} />
+        {settings.quietHours.enabled && <div className="grid max-w-md grid-cols-2 gap-4">
+          <label className="block space-y-2 text-sm"><span>{t('settingsUx:quietFrom')}</span><Input type="time" dir="ltr" value={settings.quietHours.from} onChange={(event) => update({ quietHours: { ...settings.quietHours, from: event.target.value } })} /></label>
+          <label className="block space-y-2 text-sm"><span>{t('settingsUx:quietTo')}</span><Input type="time" dir="ltr" value={settings.quietHours.to} onChange={(event) => update({ quietHours: { ...settings.quietHours, to: event.target.value } })} /></label>
+        </div>}
+      </div>
     </section>
 
-    <section hidden={selectedPanel !== 'data'} className="vh-settings-panel space-y-4">
-
+    {selectedPanel === 'support' && <section className="vh-settings-panel space-y-4"><WindowsChecks /><Button disabled={busy !== null} onClick={() => void perform('docs', async () => { await import('@tauri-apps/plugin-opener').then(({ openUrl }) => openUrl('https://github.com/ahmadkhanloo/VibeHub/tree/main/docs/tutorials')); })}>{t('ux:externalDocs')}</Button></section>}
+    <section hidden={selectedPanel !== 'data'} className="vh-settings-panel vh-card space-y-4">
       <p className="text-sm text-muted">{t('settings:privacy.noTelemetry')}</p>
-      <Link className="vh-link text-sm" to="/doctor">{t('ux:doctor')}</Link>
-      <Button disabled={busy !== null} onClick={() => void perform('docs', async () => { await import('@tauri-apps/plugin-opener').then(({ openUrl }) => openUrl('https://github.com/ahmadkhanloo/VibeHub/tree/main/docs/tutorials')); })}>{t('ux:externalDocs')}</Button>
       <div className="divide-y divide-border">
         <div className="flex flex-wrap items-center justify-between gap-4 py-4"><div className="max-w-xl"><h3 className="font-semibold">{t('settings:privacy.wipeCache')}</h3><p className="mt-1 text-sm text-muted">{t('settingsUx:cacheHint')}</p></div>
-          <Button disabled={busy !== null} onClick={() => { localStorage.removeItem('vibehub.content.v1'); location.reload(); }}>{t('settings:privacy.wipeCache')}</Button></div>
+          <Button disabled={busy !== null} onClick={() => { localStorage.removeItem('vibehub.content.v1'); localStorage.removeItem('vibehub.feed.success.v1'); localStorage.removeItem('vibehub.feed.failure.v1'); location.reload(); }}>{t('settings:privacy.wipeCache')}</Button></div>
         <div className="flex flex-wrap items-center justify-between gap-4 py-4"><div className="max-w-xl"><h3 className="font-semibold">{t('settingsUx:resetTitle')}</h3><p className="mt-1 text-sm text-muted">{t('settingsUx:resetHint')}</p></div>
           <Button disabled={busy !== null} onClick={() => setModal('reset')}>{t('settingsUx:resetTitle')}</Button></div>
         <div className="flex flex-wrap items-center justify-between gap-4 py-4"><div className="max-w-xl"><h3 className="font-semibold">{t('settingsUx:clearCredentials')}</h3><p className="mt-1 text-sm text-muted">{t('settingsUx:credentialsHint')}</p></div>
@@ -215,13 +254,13 @@ export function SettingsPage() {
       <div className="space-y-4">
         <p className="text-sm leading-7">{t('settingsUx:credentialsConfirm')}</p>
         {busy === 'inventory' && <p role="status">{t('common:loading')}</p>}
-        {credentialError != null && <ErrorNotice error={credentialError} onRetry={() => void inspectCredentials()} />}
+        {credentialError != null && <ErrorNotice error={credentialError} onRetry={inventory ? undefined : () => void inspectCredentials()} />}
         {inventory && <>
           <p className="font-semibold">{t('settingsUx:selectionCount', { count: selectionCount })}</p>
-          <ul className="max-h-52 list-disc space-y-2 overflow-auto rounded-lg bg-surface-alt p-4 ps-8 text-sm">
+          {selectionCount > 0 && <ul className="max-h-52 list-disc space-y-2 overflow-auto rounded-lg bg-surface-alt p-4 ps-8 text-sm">
             {inventory.connections.map((connection) => <li key={connection.id}>{connection.name} <span className="text-muted">({connection.hasKey ? t('settingsUx:connectionWithKey') : t('settingsUx:connectionOnly')})</span></li>)}
             {inventory.legacyProviderIds.map((id) => <li key={id}>{LEGACY_NAMES[id] ?? id} — {t('settingsUx:legacyKey')}</li>)}
-          </ul>
+          </ul>}
           {selectionCount === 0 && <p role="status">{t('settingsUx:nothingToDelete')}</p>}
         </>}
         {clearReport && clearReport.failures.length > 0 && <div role="alert" className="space-y-2 rounded-lg border border-danger/40 bg-danger/10 p-4 text-sm">

@@ -48,7 +48,7 @@ test('Git lessons retain their category, reset scroll, and open resources extern
   await page.getByRole('link', { name: /قدم بعدی: درس ۲/ }).click();
   await expect(page).toHaveURL(/git-agent-github\?category=git/);
   await expect.poll(() => page.locator('.vh-main').evaluate(el => el.scrollTop)).toBe(0);
-  await page.getByRole('link', { name: /قدم بعدی: درس ۳/ }).click();
+  await page.getByRole('link', { name: /تمرین تکمیلی: منابع و تمرین‌های Git/ }).click();
   await expect(page).toHaveURL(/git-practice-resources\?category=git/);
   await page.screenshot({ path: 'output/git-learning/resources-fa.png' });
   await page.getByRole('button', { name: 'بازکردن در مرورگر', exact: true }).first().focus();

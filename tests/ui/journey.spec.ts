@@ -37,20 +37,22 @@ test('legacy guides open the current reader and learning search has an empty sta
   await expect(page.getByRole('heading', { name: 'Qoder', exact: true })).toBeVisible();
   await expect(page.getByText('Original source', { exact: true })).toBeVisible();
   await page.goto('/learning');
-  await page.getByRole('searchbox', { name: 'Search learning guides', exact: true }).fill('unfindable-journey-fixture');
-  await expect(page.locator('.vh-learning-results')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Search…', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Search scope' }).selectOption('learning');
+  await page.getByRole('searchbox', { name: 'Search…', exact: true }).fill('unfindable-journey-fixture');
+  await expect(page.getByRole('dialog').getByRole('status')).toHaveText('No results found');
+  await page.keyboard.press('Escape');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 });
 
-test('native prerequisite failure does not discard independent diagnostic results', async ({ page }) => {
+test('legacy diagnostics opens support and reports a prerequisite failure', async ({ page }) => {
   await fixture(page, 'doctor-error');
   await page.goto('/doctor');
+  await expect(page).toHaveURL(/settings\?section=support$/);
   await page.getByRole('button', { name: 'Run checks', exact: true }).click();
-  for (const details of await page.locator('main details').all()) { if (!await details.getAttribute('open').then(value => value !== null)) await details.locator('summary').first().click(); }
-  await expect(page.getByText('1 of 1 catalog tools found', { exact: true })).toBeVisible();
-  await expect(page.getByText('0 connections saved. No model request was sent.', { exact: true })).toBeVisible();
-  await expect(page.getByRole('alert')).toBeVisible();
-  await expect(page.getByText('1 bundled adapters available for installed tools; injection was not tested', { exact: true })).toBeVisible();
+  await expect(page.getByRole('alert')).toContainText('The prerequisite check is unavailable');
+  const calls = await page.evaluate(() => (window as any).journeyCalls);
+  expect(calls.filter((command: string) => command === 'doctor_run')).toHaveLength(1);
 });
 
 test('offers survive corrupt read-state storage and never ask for notification permission on entry', async ({ page }) => {

@@ -1,4 +1,4 @@
-Lesson 2 of 3 · Suggested time: 25–35 minutes with practice
+Suggested time: 25–35 minutes with practice
 
 By the end you can review assistant changes, commit on a branch, and send them to GitHub.
 
@@ -27,6 +27,8 @@ Add an explanatory line to notes.txt yourself or with an assistant. Read the dif
 ```powershell
 git diff
 ```
+
+![PowerShell shows the practice branch name and the one-line change before staging.](../../../../apps/desktop/public/tutorials/screenshots/course-git-branch.webp)
 
 Stage only the reviewed file:
 
@@ -86,6 +88,10 @@ On GitHub, open a Pull Request from practice/agent-note to main, review the diff
 
 A GitHub AI plugin is an account-authorized connection; it does not replace Git or reviewing changes.
 
+![After pushing a branch, use Compare & pull request on GitHub to begin a pull request.](../../../../apps/desktop/public/tutorials/screenshots/course-github-compare.webp)
+
+![Official GitHub example. Open Files changed to review the changes the branch introduces.](../../../../apps/desktop/public/tutorials/screenshots/course-github.webp)
+
 ## When something goes wrong
 
 - Accidentally staged a file: `git restore --staged notes.txt` preserves edits.
@@ -93,6 +99,6 @@ A GitHub AI plugin is an account-authorized connection; it does not replace Git 
 - Incorrect published commit: `git revert HEAD` creates a compensating commit; first confirm HEAD is the intended commit. Save and close the commit-message editor when it opens.
 - Conflict: stop and inspect status and conflicting files. Understand both changes before accepting anything; consult the next lesson's troubleshooting resources.
 
-**[Next: lesson 3 — practice and resources](/learning/git-practice-resources?category=git)**
+**[Extra practice: Git exercises and resources](/learning/git-practice-resources?category=git)**
 
 [Previous lesson](/learning/git-first-commit?category=git)

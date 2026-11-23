@@ -74,6 +74,7 @@ export function ToolProvider({ children }: { children: ReactNode }) {
     proxyWrite = useRef<Promise<void>>(Promise.resolve()),
     polling = useRef(false),
     connectionFlight = useRef<Promise<void> | null>(null),
+    backgroundProxy = useRef<Promise<void> | null>(null),
     trayPayload = useRef('');
   const { settings, update } = useSettings();
   const acceptStates = useCallback((next: Record<string, LaunchState>) => {
@@ -118,7 +119,7 @@ export function ToolProvider({ children }: { children: ReactNode }) {
     setProxyConfig(configResult.status === 'fulfilled' ? configResult.value : null);
     await refreshConnections();
   }, [refreshConnections]);
-  const refresh = useCallback(() => {
+  const refreshInventory = useCallback(() => {
     if (scan.current) return scan.current;
     setLoading(true);
     const task = (async () => {
@@ -126,7 +127,6 @@ export function ToolProvider({ children }: { children: ReactNode }) {
         ipc.detectApps(),
         ipc.detectEditors(),
         ipc.rtlComponents(),
-        refreshProxy(),
       ]);
       const [a, e, c] = result;
       setErrors(
@@ -151,14 +151,31 @@ export function ToolProvider({ children }: { children: ReactNode }) {
     });
     scan.current = task;
     return task;
-  }, [checkStates, refreshProxy]);
+  }, [checkStates]);
+  const refresh = useCallback(async () => {
+    const inventory = refreshInventory();
+    if (!backgroundProxy.current) {
+      backgroundProxy.current = refreshProxy().finally(() => { backgroundProxy.current = null; });
+    }
+    await Promise.all([inventory, backgroundProxy.current]);
+  }, [refreshInventory, refreshProxy]);
+  const latestLaunch = useRef({ states, failures });
+  useEffect(() => { latestLaunch.current = { states, failures }; }, [states, failures]);
   useEffect(() => { void refresh(); }, [refresh]);
   useEffect(() => {
     let lastScan = Date.now();
     const scanOnReturn = () => {
-      if (document.visibilityState !== 'visible' || Date.now() - lastScan < 5000) return;
-      lastScan = Date.now();
-      void refresh();
+      if (document.visibilityState !== 'visible' || scan.current) return;
+      if (Date.now() - lastScan >= 5000) {
+        lastScan = Date.now();
+        void refresh();
+        return;
+      }
+      const ids = Object.entries(latestLaunch.current.states)
+        .filter(([id, state]) => !state || state.phase === 'running' || state.phase === 'starting'
+          || launchFailureKind(latestLaunch.current.failures['app:' + id]) === 'alreadyOpen')
+        .map(([id]) => id);
+      void checkStates(ids);
     };
     window.addEventListener('focus', scanOnReturn);
     document.addEventListener('visibilitychange', scanOnReturn);
@@ -166,7 +183,7 @@ export function ToolProvider({ children }: { children: ReactNode }) {
       window.removeEventListener('focus', scanOnReturn);
       document.removeEventListener('visibilitychange', scanOnReturn);
     };
-  }, [refresh]);
+  }, [checkStates, refresh]);
   useEffect(() => {
     const onConnectionsChange = () => { void refreshConnections(); };
     window.addEventListener('vibehub:connections-changed', onConnectionsChange);
@@ -175,25 +192,14 @@ export function ToolProvider({ children }: { children: ReactNode }) {
     };
   }, [refreshConnections]);
   useEffect(() => {
-    const onReturn = () => {
-      if (document.visibilityState !== 'visible') return;
-      const ids = Object.entries(states).filter(([id, state]) => !state || state.phase === 'running' || state.phase === 'starting' || launchFailureKind(failures['app:' + id]) === 'alreadyOpen').map(([id]) => id);
-      if (!ids.length || polling.current) return;
-      void checkStates(ids);
-    };
-    window.addEventListener('focus', onReturn);
-    document.addEventListener('visibilitychange', onReturn);
-    return () => { window.removeEventListener('focus', onReturn); document.removeEventListener('visibilitychange', onReturn); };
-  }, [states, failures, checkStates]);
-  useEffect(() => {
     const timer = setInterval(() => {
       if (document.visibilityState !== "visible") return;
-      const ids = Object.entries(states).filter(([, state]) =>
+      const ids = Object.entries(latestLaunch.current.states).filter(([, state]) =>
         state?.phase === "starting" || state?.phase === "running").map(([id]) => id);
       void checkStates(ids);
     }, 15000);
     return () => clearInterval(timer);
-  }, [states, checkStates]);
+  }, [checkStates]);
   // Mirror the RTL-capable inventory into the tray menu so quick launches stay
   // available while the window is hidden. Pushed only when the payload changes.
   const catalog = useCatalog();

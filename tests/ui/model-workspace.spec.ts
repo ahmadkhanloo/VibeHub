@@ -18,14 +18,12 @@ for (const lang of ['en', 'fa']) {
     await detail.getByRole('button', { name: /^(Save|ذخیره)$/ }).click();
     await page.reload();
     await expect(detail).toContainText('NVIDIA note یادداشت');
-    await page.getByRole('button', { name: /^(My notes|یادداشت‌های من)$/ }).click();
-    await expect(page.getByTestId('provider-nvidia-build')).toBeVisible();
-    const noteList = page.locator('.model-workspace-list');
-    await expect(noteList).toContainText('NVIDIA note یادداشت');
-    await noteList.getByRole('button', { name: /^(Edit|ویرایش)$/ }).click();
-    await noteList.locator('textarea').fill('Updated note');
-    await noteList.getByRole('button', { name: /^(Save|ذخیره)$/ }).click();
-    await expect(noteList).toContainText('Updated note');
+    await expect(page.getByTestId('connection-tile-nvidia-1')).toBeVisible();
+    await expect(page.getByTestId('connection-tile-nvidia-2')).toBeVisible();
+    await detail.getByRole('button', { name: /^(Edit|ویرایش)$/ }).first().click();
+    await detail.locator('textarea').fill('Updated note');
+    await detail.getByRole('button', { name: /^(Save|ذخیره)$/ }).click();
+    await expect(detail).toContainText('Updated note');
     await page.getByRole('button', { name: /^(Try a custom URL|آزمایش آدرس دلخواه)$/ }).click();
     const dialog = page.getByRole('dialog');
     await dialog.locator('input[id$="-url"]').fill('https://fixture.invalid/v1');
@@ -37,55 +35,35 @@ for (const lang of ['en', 'fa']) {
   });
 }
 
-test('provider details are navigable on a narrow screen', async ({ page }) => {
+test('saved connections and suggested providers stay on the same page, including on narrow screens', async ({ page }) => {
   await mockNative(page);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/connections/api?view=providers');
-  await page.getByRole('searchbox', { name: 'Search providers and notes' }).fill('NVIDIA');
-  await page.getByTestId('provider-nvidia-build').click();
-  await expect(page.locator('.model-workspace-detail')).toBeVisible();
-  await expect(page.locator('.model-workspace-list')).toBeHidden();
-  await page.getByRole('button', { name: 'Back to list' }).click();
-  await expect(page.locator('.model-workspace-list')).toBeVisible();
-});
-
-test('wide screens keep the two-panel workspace and the selection in the URL', async ({ page }) => {
-  await mockNative(page);
-  await page.setViewportSize({ width: 1280, height: 860 });
-  await page.goto('/connections/api?view=providers');
-  const list = page.locator('.model-workspace-list');
-  await expect(list).toHaveCSS('display', 'grid');
-  await page.getByRole('searchbox', { name: 'Search providers and notes' }).fill('NVIDIA');
+  await page.goto('/connections/api');
+  await expect(page.getByTestId('saved-connections')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Suggested providers' })).toBeVisible();
   const provider = page.getByTestId('provider-nvidia-build');
-  await expect(provider.locator('img')).toBeVisible();
-  await provider.click();
-  await expect(page.locator('.model-workspace-detail')).toContainText('NVIDIA API Catalog');
-  // The list stays visible next to the detail panel; Back to list only exists below 960px.
-  await expect(list).toBeVisible();
-  await expect(page.locator('.model-back')).toBeHidden();
-  await expect(page).toHaveURL(/provider=nvidia-build/);
-  // Browser Back undoes the selection and restores the searched list state.
-  await page.goBack();
-  await expect(page).toHaveURL(/connections\/api\?view=providers&q=NVIDIA$/);
-  await expect(provider).not.toHaveAttribute('aria-selected', 'true');
-  // Reloading a deep link restores the same selection.
-  await page.goto('/connections/api?provider=nvidia-build');
-  await expect(provider).toHaveAttribute('aria-selected', 'true');
+  await provider.focus();
+  await page.keyboard.press('Enter');
+  const detail = page.locator('.model-workspace-detail');
+  await expect(detail.getByRole('heading', { name: 'NVIDIA API Catalog' })).toBeFocused();
+  await expect(page.getByTestId('provider-list')).toBeVisible();
+  await detail.getByRole('button', { name: 'Close' }).click();
+  await expect(provider).toBeFocused();
+  await expect(detail).toHaveCount(0);
 });
 
-test('search covers connection names and model ids, not just provider names', async ({ page }) => {
-  await page.addInitScript(() => sessionStorage.setItem('vibehub.fixture.connections', JSON.stringify([
-    {id:'nvidia-1',name:'First NVIDIA gateway',providerId:'nvidia',baseUrl:'https://integrate.api.nvidia.com/v1',modelId:'model-one',hasKey:true},
-  ])));
-  await mockNative(page, 'model-discovery');
-  await page.goto('/connections/api?view=providers');
-  const search = page.getByRole('searchbox', { name: 'Search providers and notes' });
-  await search.fill('First NVIDIA gateway');
-  await expect(page.getByTestId('provider-nvidia-build')).toBeVisible();
-  await search.fill('model-one');
-  await expect(page.getByTestId('provider-nvidia-build')).toBeVisible();
-  await search.fill('no-such-thing-anywhere');
-  await expect(page.locator('.model-workspace-list')).toContainText('No matching providers.');
+test('provider links and browser Back preserve the one-page notebook', async ({ page }) => {
+  await mockNative(page);
+  await page.goto('/connections/api');
+  const provider = page.getByTestId('provider-nvidia-build');
+  await provider.click();
+  await expect(page).toHaveURL(/provider=nvidia-build/);
+  await expect(provider).toHaveAttribute('aria-pressed', 'true');
+  await page.goBack();
+  await expect(page).toHaveURL(/connections\/api$/);
+  await expect(provider).toHaveAttribute('aria-pressed', 'false');
+  await page.goto('/connections/api?provider=nvidia-build');
+  await expect(provider).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('editing a saved keyed connection reuses the vault key for its model list', async ({ page }) => {
@@ -108,29 +86,27 @@ test('editing a saved keyed connection reuses the vault key for its model list',
   expect(calls).toEqual(['provider_connection_models']);
 });
 
-test('empty saved and notes views get their own guidance', async ({ page }) => {
+test('an empty notebook still suggests providers and does not add catalogue filters', async ({ page }) => {
   await page.addInitScript(() => sessionStorage.setItem('vibehub.fixture.connections', JSON.stringify([])));
   await mockNative(page, 'model-discovery');
-  await page.goto('/connections/api?view=providers');
-  await page.getByRole('button', { name: 'Saved', exact: true }).click();
-  await expect(page.getByText('No connections saved yet.')).toBeVisible();
-  await expect(page.getByText(/Add a connection to keep its endpoint/)).toBeVisible();
-  await page.getByRole('button', { name: 'My notes', exact: true }).click();
-  await expect(page.getByText('No notes yet.')).toBeVisible();
+  await page.goto('/connections/api');
+  await expect(page.getByTestId('saved-connections')).toContainText('No connections saved yet.');
+  await expect(page.getByTestId('provider-cerebras')).toBeVisible();
+  await expect(page.getByTestId('provider-ollama')).toBeVisible();
+  await expect(page.getByRole('searchbox')).toHaveCount(0);
 });
 
-test('provider tiles form a listbox with arrow-key navigation', async ({ page }) => {
+test('adding two connections to the same provider creates distinct records', async ({ page }) => {
   await mockNative(page);
-  await page.goto('/connections/api?view=providers');
-  const list = page.getByRole('listbox', { name: 'Providers' });
-  await expect(list).toBeVisible();
-  await list.getByTestId('provider-google').focus();
-  await page.keyboard.press('Home');
-  // Priority providers lead the list, so Home lands on OpenRouter rather than the alphabetical first row.
-  await expect(page.getByTestId('provider-openrouter')).toHaveAttribute('aria-selected', 'true');
-  await expect(page.locator('.model-workspace-detail')).toContainText('OpenRouter');
-  await page.keyboard.press('ArrowRight');
-  await expect(page.getByTestId('provider-radeon-cloud')).toHaveAttribute('aria-selected', 'true');
-  // Exactly one option stays selected.
-  await expect(list.locator('[aria-selected="true"]')).toHaveCount(1);
+  await page.goto('/connections/api?provider=groq');
+  for (const name of ['Groq work', 'Groq personal']) {
+    await page.getByRole('button', { name: 'Add connection', exact: true }).click();
+    const editor = page.getByRole('dialog');
+    await editor.locator('input[id$="-name"]').fill(name);
+    await editor.getByRole('button', { name: 'Save connection', exact: true }).click();
+    await expect(editor).toHaveCount(0);
+  }
+  const saved = page.getByTestId('saved-connections');
+  await expect(saved.getByRole('button', { name: /Groq work/ })).toBeVisible();
+  await expect(saved.getByRole('button', { name: /Groq personal/ })).toBeVisible();
 });

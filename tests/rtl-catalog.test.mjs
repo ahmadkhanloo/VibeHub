@@ -72,7 +72,7 @@ test('shared AppId covers the supported Windows catalog IDs', async () => {
 });
 
 test('shared AppId is the exact unique Windows host catalog allowlist', () => {
-  assert.deepEqual([...APP_IDS], ['zcode', 'qoder', 'deepseek-harness', 'opencode', 'mimocode', 'freebuff', 'freebuff-desktop', 'copilot-cli', 'antigravity-ide', 'chatgpt', 'claude-code', 'claude-desktop', 'minimax-code']);
+  assert.deepEqual([...APP_IDS], ['zcode', 'qoder', 'deepseek-harness', 'opencode', 'mimocode', 'freebuff', 'freebuff-desktop', 'copilot-cli', 'antigravity-ide', 'chatgpt', 'claude-code', 'claude-desktop', 'minimax-code', 'pi']);
   assert.equal(new Set(APP_IDS).size, APP_IDS.length);
 });
 

@@ -12,6 +12,13 @@ test('normal and RTL actions are separate and do not depend on a saved launch mo
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('vibehub.settings.v1')!).launchModeByApp.zcode)).toBe('normal');
 });
 
+test('workspace inventory renders while proxy settings are still loading', async ({ page }) => {
+  await mockNative(page, 'pending-proxy');
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: 'Run ZCode', exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => (window as any).__mock.calls.some((call: any) => call.cmd === 'proxy_config'))).toBe(true);
+});
+
 test('catalog apps render local images or icon fallbacks with external requests blocked', async ({ page }) => {
   await mockNative(page);
   await page.route('https://**/*', route => route.abort());
@@ -58,11 +65,18 @@ for (const language of ['fa', 'en']) for (const mode of ['light', 'dark']) {
           return { page: document.documentElement.scrollWidth > innerWidth, main: main.scrollWidth > main.clientWidth + 1 };
         }), { message: `${route} at ${width}px` }).toEqual({ page: false, main: false });
         if (route === '/') {
-          const grids = page.locator('.vh-app-grid');
+          const grids = page.locator('.vh-installed-grid');
           await expect(grids.first()).toBeVisible();
-          const columns = await grids.evaluateAll(elements => elements.map(grid => getComputedStyle(grid).gridTemplateColumns.split(' ').length));
-          const expected = width === 320 ? 1 : width < 900 ? 2 : width < 1600 ? 3 : 4;
-          expect(columns).toEqual(columns.map(() => expected));
+          const columns = await grids.evaluateAll(elements => elements.map(grid => {
+            const style = getComputedStyle(grid);
+            const gap = parseFloat(style.columnGap);
+            const minimum = 13.5 * parseFloat(getComputedStyle(document.documentElement).fontSize);
+            return {
+              actual: style.gridTemplateColumns.split(' ').length,
+              expected: Math.max(1, Math.floor((grid.clientWidth + gap) / (minimum + gap))),
+            };
+          }));
+          expect(columns.map(grid => grid.actual)).toEqual(columns.map(grid => grid.expected));
         }
       }
       const scan = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
@@ -97,6 +111,7 @@ test('project launch uses the selected app and records only accepted folders', a
   await mockNative(page);
   await page.goto('/app/zcode');
   await page.evaluate(() => { (window as any).__mock.selectedFolder = 'C:\\Projects\\پروژه با فاصله'; });
+  await page.locator('#app-projects > summary').click();
   await page.getByRole('button', { name: 'Choose project folder', exact: true }).click();
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('vibehub.settings.v1')!).recentProjects.length)).toBe(1);
   const calls = await page.evaluate(() => (window as any).__mock.calls.filter((call: any) => call.cmd === 'launch_app'));
@@ -109,6 +124,7 @@ test('failed project launch shows recovery and does not pollute recent projects'
   await mockNative(page, 'launchFailed');
   await page.goto('/app/zcode');
   await page.evaluate(() => { (window as any).__mock.selectedFolder = 'C:\\Missing'; });
+  await page.locator('#app-projects > summary').click();
   await page.getByRole('button', { name: 'Choose project folder', exact: true }).click();
   await expect(page.getByRole('alert').first()).toBeVisible();
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('vibehub.settings.v1')!).recentProjects)).toEqual([]);

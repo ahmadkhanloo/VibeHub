@@ -22,6 +22,8 @@
 
 [بازکردن در مرورگر](https://gitbybit.com/)
 
+![در تمرین محلی Git، تغییر فایل واقعی را با git diff ببین و با git status بررسی کن آیا برای کامیت آماده شده است.](../../../../apps/desktop/public/tutorials/screenshots/course-git-diff.webp)
+
 ## وقتی به توضیح یا راه‌حل نیاز داری
 
 ### Pro Git فارسی

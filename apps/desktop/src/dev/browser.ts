@@ -1,23 +1,43 @@
 import { installMockNative } from './mock-native';
 import { apps, bundledCatalog, guideText } from '@/lib/catalog';
+import { version } from '../../package.json';
 
 export function installBrowserPreview() {
   // Browser preview never forwards commands to Windows or a credential store.
-  installMockNative({ scenario: 'ready', language: 'fa', onboardingDone: true });
+  installMockNative({ scenario: 'ready', language: 'fa', onboardingDone: true, version });
   const host = window as unknown as {
     __TAURI_INTERNALS__: { invoke: (cmd: string, args?: any) => Promise<any> };
     __mock: any;
   };
   const invoke = host.__TAURI_INTERNALS__.invoke;
+  const demoAccounts = new URLSearchParams(location.search).get('demo') === 'accounts';
+  const now = () => Math.floor(Date.now() / 1000);
   const accounts: any = { accounts: [], activeId: null, pendingId: null, notice: null,
     settings: { enabled: false, threshold: 1 }, lastSwitch: 0, cliReady: false, nativePreview: true,
     supportedVersion: '0.148.0', desktopRunning: false, desktopVerified: false, loginPending: false };
+  if (demoAccounts) {
+    Object.assign(accounts, { nativePreview: false, cliReady: true, quotaBatchReady: true, activeId: 'demo-1' });
+    accounts.accounts = ['اصلی', 'پروژه', 'آزمایش', 'پژوهش'].map((name, index) => ({
+      id: 'demo-' + (index + 1), name, email: 'demo-' + (index + 1) + '@example.invalid',
+      plan: 'plus', checkedAt: now() - 1800, windows: [
+        { bucket: 'codex', name: 'primary', minutes: 300, remaining: 90 - index * 20, resetsAt: now() + 3600 },
+      ],
+    }));
+  }
   host.__TAURI_INTERNALS__.invoke = async (cmd, args = {}) => {
     if (cmd === 'detect_apps') return apps.filter(app => ['zcode','qoder','deepseek-harness','antigravity','minimax-code','chatgpt','claude-desktop','opencode'].includes(app.id)).map(app => ({ id: app.id, installed: true, via: 'browser-preview' }));
-    if (cmd === 'rtl_components') return ['qoder','zcode','deepseek-harness','antigravity','minimax-code'].map(id => ({id,available:true,configured:true}));
+    if (cmd === 'rtl_components') return ['qoder','zcode','deepseek-harness','antigravity','minimax-code','opencode'].map(id => ({id,available:true,configured:true}));
     if (cmd === 'feed_sync') return { ok: true, updated: false, detail: 'Bundled preview catalog', catalog: structuredClone(bundledCatalog), guides: await (async () => { const guides: Record<string, string> = {}; for (const id of [...apps.map(app => app.id), 'code-review']) for (const lang of ['fa', 'en'] as const) guides[id + '/' + lang] = await guideText(id, lang) ?? ''; return guides; })() };
     if (cmd === 'codex_accounts') {
       if (args.action === 'settings') accounts.settings = { enabled: args.payload.enabled, threshold: args.payload.threshold };
+      else if (demoAccounts && args.action === 'subscriptionDate') {
+        const selected = accounts.accounts.find((account: { id: string }) => account.id === args.payload.id);
+        if (selected) selected.subscriptionDate = args.payload.date;
+      }
+      else if (demoAccounts && ['refresh', 'refreshQuota'].includes(args.action)) {
+        const selected = accounts.accounts.find((account: { id: string }) => account.id === args.payload.id);
+        if (selected) selected.checkedAt = now();
+      }
       else if (!['list','dismiss'].includes(args.action)) throw Error('Browser preview has no access to real accounts.');
       return structuredClone(accounts);
     }

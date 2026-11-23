@@ -1,7 +1,7 @@
 /* Semantic desktop palettes. Each accent has a measured foreground in both modes. */
 :root { --font-mono:'Cascadia Code','JetBrains Mono',Consolas,monospace; }
-[data-theme='graphite'][data-mode='light'] { --bg:#f7f7f8;--surface:#ffffff;--surface-alt:#f2f3f5;--text:#16181c;--muted:#4d5561;--border:#e2e4e8;--accent-auto:#1d4ed8; }
-[data-theme='graphite'][data-mode='dark'] { --bg:#0e1013;--surface:#15181c;--surface-alt:#1c2025;--text:#e9ebee;--muted:#b0b7c0;--border:#2a2f36;--accent-auto:#93c5fd; }
+[data-theme='graphite'][data-mode='light'] { --bg:#f7f7f8;--surface:#ffffff;--surface-alt:#f2f3f5;--text:#16181c;--muted:#4d5561;--border:#e2e4e8;--accent-auto:#315ee8;--control-border:#767d88; }
+[data-theme='graphite'][data-mode='dark'] { --bg:#0e1013;--surface:#15181c;--surface-alt:#1c2025;--text:#e9ebee;--muted:#b0b7c0;--border:#2a2f36;--accent-auto:#abc3ff;--control-border:#7d8894; }
 [data-theme='nord'][data-mode='light'] { --bg:#eceff4;--surface:#fbfcfe;--surface-alt:#e3e8ef;--text:#2e3440;--muted:#4b586b;--border:#cbd3df;--accent-auto:#365779; }
 [data-theme='nord'][data-mode='dark'] { --bg:#2e3440;--surface:#3b4252;--surface-alt:#434c5e;--text:#f2f4f8;--muted:#d4dae4;--border:#64728b;--accent-auto:#b5e2ee; }
 [data-theme='catppuccin'][data-mode='light'] { --bg:#eff1f5;--surface:#fcfdfe;--surface-alt:#e6e9ef;--text:#34364c;--muted:#55586c;--border:#c5cad7;--accent-auto:#6043a5; }

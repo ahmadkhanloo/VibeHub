@@ -339,7 +339,10 @@ pub fn provider_credentials_clear_with(
 pub fn load(path: &Path) -> Result<Value> {
     let value = read(
         path,
-        json!({"profiles":[],"config":{"globalProfileId":"","requireProxy":false,"perApp":{}}}),
+        json!({
+            "profiles":[{"id":"v2ray","name":"V2Ray","mode":"mixed","host":"127.0.0.1","port":10808}],
+            "config":{"globalProfileId":"","requireProxy":false,"perApp":{}}
+        }),
     )?;
     let profiles = value["profiles"]
         .as_array()
@@ -401,7 +404,7 @@ pub fn save_profile(path: &Path, mut profile: Value, password: Option<String>) -
     let mut state = load(path)?;
     let profiles = state["profiles"].as_array_mut().ok_or("Invalid profiles")?;
     let service = format!("vibehub.proxy.{id}");
-    if profile["mode"] == "socks5" {
+    if matches!(profile["mode"].as_str(), Some("socks5" | "mixed")) {
         if !profile["username"].as_str().unwrap_or("").is_empty() && profile["hasPassword"] != true
         {
             return Err("Enter both SOCKS5 username and password".into());
@@ -480,7 +483,7 @@ pub fn selected_profile(
         || (required
             && !matches!(
                 profile.as_ref().and_then(|p| p["mode"].as_str()),
-                Some("http" | "socks5")
+                Some("http" | "socks5" | "mixed")
             ))
     {
         return Err("Required proxy is missing; refusing direct fallback".into());

@@ -1,4 +1,4 @@
-Lesson 1 of 3 · Suggested time: 20–30 minutes with practice
+Suggested time: 20–30 minutes with practice
 
 By the end you can record two file versions and compare them.
 
@@ -83,6 +83,8 @@ Inspect the added line. Press q if a pager opens:
 ```powershell
 git diff
 ```
+
+![Git shows Second note as an added line. The unstaged status shows that saving the file did not stage it.](../../../../apps/desktop/public/tutorials/screenshots/course-git-diff.webp)
 
 Stage the second change:
 

@@ -1,19 +1,17 @@
 {
-  "description": "Appearance, updates and the data VibeHub keeps on this computer.",
   "feedAddress": "Content feed address",
   "contentUpdated": "The catalog and guides were updated.",
-  "manualUpdates": "Automatic update checks are not available in this version. Use the check buttons above.",
   "notificationsUnavailable": "System notifications are not available in this version.",
-  "notificationsHint": "Allow verified, active offers to send a system notification when you open Offers. Permission is requested only when you enable this option.",
+  "notificationsHint": "Active, verified offers may send notifications while the app is running, including periodic checks. Permission is requested when you enable this option.",
   "notificationPermissionDenied": "Windows notification permission was not granted. Enable notifications in Windows settings, then try again.",
   "quietHours": "Quiet hours",
   "quietFrom": "Start time",
   "quietTo": "End time",
   "dataTitle": "Data and privacy",
-  "cacheHint": "Removes downloaded catalog and guide content. Your preferences, connections and keys stay saved. The bundled catalog remains available offline.",
+  "cacheHint": "Clears downloaded content and the last sync record. The bundled catalog remains available, and content may be downloaded again automatically.",
   "resetTitle": "Reset interface preferences",
-  "resetHint": "Resets language, theme, launch preferences and the welcome flow. Native proxy profiles and credentials stay saved.",
-  "resetConfirm": "Reset your language, appearance and preferred launch modes and show the welcome flow again? Proxy profiles, model connections and stored keys will remain saved.",
+  "resetHint": "Resets all saved preferences, including language, appearance, recent projects, per-tool model connection selections and the welcome flow. Proxy profiles, model connections and credentials remain saved.",
+  "resetConfirm": "Clear all interface preferences, recent projects and per-tool model connection selections and show the welcome flow again? Proxy profiles, model connections and credentials remain saved.",
   "clearCredentials": "Delete model connections and keys",
   "credentialsHint": "Review saved model connections and older provider keys before deleting them. Proxy passwords are not included.",
   "reviewDeletion": "Review items to delete",
@@ -31,5 +29,8 @@
     "vaultDeleteFailed": "The Windows credential vault could not delete this key. Try again after checking access to the vault.",
     "legacyDeleteBlocked": "Kept until the older provider key is deleted, to prevent the key from returning.",
     "connectionDeleteFailed": "The connection could not be completely removed. Refresh the inventory and retry."
-  }
+  },
+  "contentTitle": "App content",
+  "contentHint": "The catalog, guides and offers are checked periodically while the app is open.",
+  "feedSaved": "Content feed address saved."
 }

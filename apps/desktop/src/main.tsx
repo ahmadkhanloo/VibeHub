@@ -15,12 +15,15 @@ import "@/styles/day-night.css";
 import i18n from "@/i18n";
 import { SettingsProvider } from "@/app/settings";
 import { ToolProvider } from "@/app/tool-context";
+import { AppShell } from "@/app/shell";
 const SearchPage = lazy(async () => ({
   default: (await import("@/features/explore/Search")).SearchPage,
 }));
-import { AppShell } from "@/app/shell";
 const HomePage = lazy(async () => ({
   default: (await import("@/features/home/Home")).HomePage,
+}));
+const ToolLibraryPage = lazy(async () => ({
+  default: (await import("@/components/ToolCards")).ToolLibraryPage,
 }));
 const AppDetailsPage = lazy(async () => ({
   default: (await import("@/features/explore/AppDetails")).AppDetailsPage,
@@ -31,9 +34,6 @@ const ProxyPage = lazy(async () => ({
 const ModelsPage = lazy(async () => ({
   default: (await import("@/features/models/Models")).ModelsPage,
 }));
-const DoctorPage = lazy(async () => ({
-  default: (await import("@/features/doctor/Doctor")).DoctorPage,
-}));
 const SettingsPage = lazy(async () => ({
   default: (await import("@/features/settings/Settings")).SettingsPage,
 }));
@@ -43,7 +43,6 @@ const LearningPage = lazy(async () => ({default: (await import('@/features/learn
 const WorkshopPage = lazy(async () => ({default: (await import('@/features/workshop/Workshop')).WorkshopPage}));
 const Onboarding = lazy(async () => ({default: (await import('@/features/onboarding/Onboarding')).Onboarding}));
 const AccountsHubPage = lazy(async () => ({default: (await import('@/features/accounts/AccountsHub')).AccountsHubPage}));
-const HelpersPage = lazy(async () => ({default: (await import('@/features/helpers/Helpers')).HelpersPage}));
 
 function LegacyModels() { const { search } = useLocation(); return <Navigate to={"/connections/api" + search} replace />; }
 function LegacyGuide() { const { appId } = useParams(); return <Navigate to={`/learning/${appId ?? ''}`} replace />; }
@@ -60,8 +59,7 @@ function Gate() {
         }
       >
         <Route path="/" element={<HomePage />} />
-        {/* Tools and discovery folded into the workspace; news folded into learning. */}
-        <Route path="/tools" element={<Navigate to="/" replace />} />
+        <Route path="/tools" element={<ToolLibraryPage />} />
         <Route path="/discover" element={<Navigate to="/?view=available" replace />} />
         <Route path="/offers" element={<Navigate to="/learning?view=news" replace />} />
         <Route path="/app/:appId" element={<AppDetailsPage />} />
@@ -84,13 +82,13 @@ function Gate() {
         <Route path="/guides" element={<Navigate to="/learning?category=applications" replace />} />
         <Route path="/guides/extensions" element={<Navigate to="/learning?category=skills" replace />} />
         <Route path="/accounts" element={<AccountsHubPage />} />
-        <Route path="/helpers" element={<HelpersPage />} />
+        <Route path="/helpers" element={<Navigate to="/tools" replace />} />
         <Route path="/guides/:appId" element={<LegacyGuide />} />
         <Route path="/learning" element={<LearningPage />} />
         <Route path="/learning/:articleId" element={<LearningPage />} />
         <Route path="/workshop" element={<WorkshopPage />} />
         <Route path="/models" element={<LegacyModels />} />
-        <Route path="/doctor" element={<DoctorPage />} />
+        <Route path="/doctor" element={<Navigate to="/settings?section=support" replace />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

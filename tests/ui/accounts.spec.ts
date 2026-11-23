@@ -27,7 +27,7 @@ test('standalone tutorials stay available alongside external documentation', asy
   await page.goto('/guides/extensions');
   await expect(page).toHaveURL(/learning\?category=skills$/);
   await expect(page.locator('h1')).toBeVisible();
-  await page.goto('/settings?section=data');
+  await page.goto('/settings?section=support');
   await page.getByRole('button', { name: 'Open documentation', exact: true }).click();
   expect(await page.evaluate(() => (window as any).__mock.calls.some((call: any) => call.cmd === 'plugin:opener|open_url' && call.args.url.includes('/docs/tutorials')))).toBe(true);
 });

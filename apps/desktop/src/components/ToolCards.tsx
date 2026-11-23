@@ -1,19 +1,15 @@
+import playwrightLogo from '@/assets/playwright-logo.svg';
+import ponytailLogo from '@/assets/ponytail-logo.png';
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Brain, Drama, FlaskConical, Palette, PenLine, Radar, Ribbon, Sparkles, Terminal, Wrench } from 'lucide-react';
+import { Brain, ClipboardList, Drama, FlaskConical, Palette, PenLine, Radar, Ribbon, Sparkles, Terminal, Wrench, PlugZap } from 'lucide-react';
 import { ipc, type ToolchainStatus } from '@/services/ipc';
+import { PageHeader, Tabs } from './ui';
 
-/**
- * Helper tools and personal skills are documented, not launched: each entry is a
- * small, low-key chip in the workspace that links to its own learning article,
- * where the full explanation lives. Machine-level facts only — launch state
- * stays on the app tiles.
- */
 const HELPER_TOOLS = [
   { id: 'playwright', key: 'playwright', Icon: FlaskConical },
   { id: 'repowise', key: 'repowise', Icon: Radar },
-  { id: 'superpowers', key: 'superpowers', Icon: Sparkles },
   { id: 'hindsight', key: 'hindsight', Icon: Brain },
   { id: 'dsh-workspace-hygiene', key: 'dsh', Icon: Wrench },
 ] as const;
@@ -24,27 +20,16 @@ const SKILL_TOOLS = [
   { id: 'unslop', key: 'unslop', Icon: PenLine },
   { id: 'stageshow', key: 'stageshow', Icon: Drama },
 ] as const;
+const PLUGIN_TOOLS = [
+  { id: 'superpowers', key: 'superpowers', Icon: Sparkles },
+] as const;
 
-type HelperTool = (typeof HELPER_TOOLS)[number] | (typeof SKILL_TOOLS)[number];
+type HelperTool = (typeof HELPER_TOOLS)[number] | (typeof SKILL_TOOLS)[number] | (typeof PLUGIN_TOOLS)[number];
 
-export function useToolchainStatus(): ToolchainStatus | null {
+function useToolchainStatus(): ToolchainStatus | null {
   const [status, setStatus] = useState<ToolchainStatus | null>(null);
   useEffect(() => { void ipc.toolchainStatus().then(setStatus).catch(() => setStatus(null)); }, []);
   return status;
-}
-
-export function TerminalCard() {
-  const { t } = useTranslation(['tools']);
-
-  return (
-    <Link className="vh-tool-card" to="/terminal">
-      <span className="vh-tool-icon"><Terminal size={20} aria-hidden="true" /></span>
-      <div>
-        <h3>{t('terminalHeading')}</h3>
-        <p>{t('terminalHint')}</p>
-      </div>
-    </Link>
-  );
 }
 
 function chipOk(tool: HelperTool, status: ToolchainStatus | null): boolean | null {
@@ -81,40 +66,50 @@ function chipStatus(tool: HelperTool, status: ToolchainStatus | null, t: (key: s
   }
 }
 
-function ToolChip({ tool, status }: { tool: HelperTool; status: ToolchainStatus | null }) {
+function ToolRow({ tool, status }: { tool: HelperTool; status: ToolchainStatus | null }) {
   const { t } = useTranslation(['tools']);
   const found = chipStatus(tool, status, t);
-  const title = `${t(`${tool.key}Summary`)}${found.label ? ' — ' + found.label : ''}`;
+  const logo = tool.key === 'playwright' ? playwrightLogo : tool.key === 'ponytail' ? ponytailLogo : null;
   return (
-    <Link className="vh-tool-chip" to={'/learning/' + tool.id} title={title} aria-label={t(`${tool.key}Name`)}>
-      <tool.Icon size={14} aria-hidden="true" />
-      <span>{t(`${tool.key}Name`)}</span>
-      {found.ok !== null && <i className={'vh-chip-dot' + (found.ok ? ' is-ok' : ' is-missing')} aria-hidden="true" />}
+    <Link className="vh-tool-row" to={'/learning/' + tool.id} aria-label={t(`${tool.key}Name`)} aria-describedby={`tool-copy-${tool.id}`}>
+      {logo ? <img className="vh-helper-logo" src={logo} alt="" width={24} height={24} /> : <tool.Icon size={24} aria-hidden="true" />}
+      <div className="min-w-0">
+        <h3 className="font-semibold"><bdi>{t(`${tool.key}Name`)}</bdi></h3>
+        <p id={`tool-copy-${tool.id}`} className="text-sm text-muted">{t(`${tool.key}Summary`)}</p>
+        {found.label && <p className="mt-1 text-xs text-muted">{found.label}</p>}
+      </div>
     </Link>
   );
 }
 
-/**
- * The chip rows follow the workspace's installed/available split: installed-view
- * shows the detected ones, available-view the missing ones. With a null status
- * (detection failed) nothing is hidden, so the facts stay visible.
- */
-export function ToolChipSection({ status, filter }: { status: ToolchainStatus | null; filter?: 'installed' | 'missing' }) {
-  const { t } = useTranslation(['tools', 'ux']);
-  const pick = (tools: readonly HelperTool[]) => tools.filter(tool => {
-    if (!filter) return true;
-    const ok = chipOk(tool, status);
-    return ok !== null && (filter === 'installed' ? ok : !ok);
-  });
-  const helpers = pick(HELPER_TOOLS);
-  const skills = pick(SKILL_TOOLS);
-  if (!helpers.length && !skills.length) return null;
-  const row = (title: string, tools: readonly HelperTool[]) => tools.length > 0 && <div className="space-y-2">
-    <h2 className="vh-section-title mb-1">{title} <span className="vh-section-count">({tools.length})</span></h2>
-    <div className="vh-chip-row">{tools.map(tool => <ToolChip key={tool.id} tool={tool} status={status} />)}</div>
+export function ToolLibraryPage() {
+  const { t } = useTranslation(['tools', 'ux', 'nav']);
+  const status = useToolchainStatus();
+  const [tab, setTab] = useState<'helpers' | 'skills' | 'plugins'>('skills');
+  const rows = tab === 'helpers' ? HELPER_TOOLS : tab === 'skills' ? SKILL_TOOLS : PLUGIN_TOOLS;
+  return <div className="space-y-5">
+    <PageHeader title={t('libraryTitle')} description={t('libraryHint')} actions={<Link to="/learning" className="vh-link">{t('nav:learning')}</Link>} />
+    <Tabs panelId="tool-library-panel" label={t('libraryTitle')} value={tab} onChange={setTab} items={[
+      { value: 'helpers', label: t('helpersTab'), icon: <Wrench size={16} aria-hidden="true" /> },
+      { value: 'skills', label: t('skillsTab'), icon: <Palette size={16} aria-hidden="true" /> },
+      { value: 'plugins', label: t('pluginsTab'), icon: <PlugZap size={16} aria-hidden="true" /> },
+    ]} />
+    <div className="vh-tool-library">
+      <section className="vh-tool-group" id="tool-library-panel" role="tabpanel" aria-labelledby={'tool-library-panel-tab-' + tab}>
+        <h2 className="sr-only">{t(tab === 'helpers' ? 'helpersTab' : tab === 'skills' ? 'skillsTab' : 'pluginsTab')}</h2>
+        <div className="vh-card vh-tool-list">
+          {rows.map(tool => <ToolRow key={tool.id} tool={tool} status={status} />)}
+          {tab === 'skills' && <Link className="vh-tool-row" to="/learning/spec-kit?view=reference">
+            <ClipboardList size={24} aria-hidden="true" />
+            <div><h3 className="font-semibold">Spec Kit</h3><p className="text-sm text-muted">{t('specKitSummary')}</p></div>
+          </Link>}
+          {tab === 'helpers' && <Link className="vh-tool-row" to="/terminal" aria-label={t('terminalHeading')} aria-describedby="tool-copy-terminal">
+            <Terminal size={24} aria-hidden="true" />
+            <div><h3 className="font-semibold">{t('terminalHeading')}</h3><p id="tool-copy-terminal" className="text-sm text-muted">{t('terminalHint')}</p></div>
+          </Link>}
+        </div>
+        {tab === 'plugins' && <p className="text-sm text-muted">{t('pluginsHint')}</p>}
+      </section>
+    </div>
   </div>;
-  return <section aria-label={t('ux:groupHelpers')} className="space-y-3">
-    {row(t('ux:groupHelpers'), helpers)}
-    {row(t('ux:groupSkills'), skills)}
-  </section>;
 }

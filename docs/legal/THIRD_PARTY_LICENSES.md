@@ -10,6 +10,10 @@ VibeHub's own source is MIT licensed (see the root `LICENSE`). Runtime and build
 |---|---|---|
 | Vazirmatn | Bundled Persian UI font files | SIL Open Font License 1.1; notice is included beside the font files under `apps/desktop/src/assets/fonts/OFL.txt` |
 
+## Tool identification marks
+
+The helper links use the [Playwright project mark](https://playwright.dev/img/playwright-logo.svg) and the [Ponytail icon](https://github.com/DietrichGebert/ponytail/blob/5def46b/assets/codex-icon.png) to identify their respective guides. Playwright's repository license is [Apache-2.0](https://github.com/microsoft/playwright/blob/main/LICENSE), and Ponytail's repository license is [MIT](https://github.com/DietrichGebert/ponytail/blob/5def46b/LICENSE). The marks identify the upstream projects.
+
 ## Private Windows runtime
 
 The Windows Setup includes the Node.js 24.22.1 x64 executable for the RTL injectors. The build downloads the official Node.js archive, verifies its SHA-256, and includes the upstream `LICENSE` file as `NODE-LICENSE.md`. The runtime is installed privately under VibeHub and does not modify the system PATH. Confirm the exact release artifact and its complete upstream notices as part of the release SBOM review.
@@ -44,3 +48,7 @@ The animated day/night switch in the top bar adapts the visual scene and motion 
 ## Bundled Claude terminal RTL plugin
 
 VibeHub bundles rtl-terminal 1.0.7 from https://github.com/MohammedSaud404/rtl-terminal at commit c0572309deeec3695c0d82e5eae0d54459422373 under MIT. Its hooks, plugin manifest, upstream LICENSE and VIBEHUB-PROVENANCE.json are distributed in apps/ClaudeRtlPlugin. The vendored bidi-js notices remain beside its source. This is a rendering extension; Claude Code itself is not bundled. No RtlTerminal fork is required for this launch path.
+
+## GitHub Docs tutorial screenshots
+
+GitHub's Compare & pull request and Files changed screenshots come from [Creating a pull request](https://docs.github.com/en/pull-requests/how-tos/create-pull-requests/creating-a-pull-request). GitHub Docs is licensed under [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/). The bundled copies were converted from PNG to lossless WebP. The screenshot manifest records each original image URL.

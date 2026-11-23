@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "cerebras",
+  "name": "Cerebras",
+  "officialUrl": "https://www.cerebras.ai/inference",
+  "keyUrl": "https://cloud.cerebras.ai/",
+  "modelsDocUrl": "https://inference-docs.cerebras.ai/",
+  "usageTermsUrl": "https://www.cerebras.ai/pricing",
+  "notes": {
+    "fa": "سرویس API سازگار با OpenAI است. طرح توسعه‌دهنده اعتبار شروع دارد؛ شرایط دریافت اعتبار، مدل‌ها و هزینهٔ ادامهٔ مصرف را در صفحهٔ قیمت‌گذاری بررسی کنید.",
+    "en": "OpenAI-compatible API. The developer plan advertises starting credit; check the pricing page for eligibility, models, and usage charges."
+  },
+  "endpoint": {
+    "baseUrl": "https://api.cerebras.ai/v1",
+    "kind": "openai-compatible"
+  },
+  "freeAccess": "trial",
+  "requiresAccount": true,
+  "requiresApiKey": true,
+  "supportedApps": {},
+  "eligibilityStatus": "unknown",
+  "lastVerified": "2026-11-22"
+}

@@ -105,6 +105,27 @@ fn http_connect_handles_fragmented_status_and_authentication() {
     worker.join().unwrap();
 }
 
+#[test]
+fn mixed_profile_checks_https_connect_and_socks5_on_one_port() {
+    let server = listener();
+    let port = server.local_addr().unwrap().port();
+    let worker = thread::spawn(move || {
+        let (mut http, _) = server.accept().unwrap();
+        assert!(request(&mut http).starts_with("CONNECT example.com:443 HTTP/1.1"));
+        http.write_all(b"HTTP/1.1 200 Connection established\r\n\r\n").unwrap();
+        let (mut socks, _) = server.accept().unwrap();
+        socks.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+        let mut greeting = [0; 3];
+        socks.read_exact(&mut greeting).unwrap();
+        assert_eq!(greeting, [5, 1, 0]);
+        socks.write_all(&[5, 0]).unwrap();
+    });
+    let mixed = profile("mixed", port);
+    assert_eq!(proxy_url(&mixed).unwrap(), format!("http://127.0.0.1:{port}"));
+    handshake_with_password(&mixed, None).unwrap();
+    worker.join().unwrap();
+}
+
 fn socks_auth(stream: &mut TcpStream, authenticated: bool, accept: bool) {
     stream
         .set_read_timeout(Some(Duration::from_secs(5)))

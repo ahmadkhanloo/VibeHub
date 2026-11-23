@@ -6,6 +6,7 @@ import { loadCatalog, classifyOffers, type Catalog, type OfferView } from '@cata
 import { assertNoExecutablePayload, parseLearningIndex, parseLearningFeed, parseNewsFeed, type LearningArticle, type LearningCategory, type AppManifest, type ProviderManifest } from '@core';
 import bundledLearningIndex from '../../../../content/learning/index.json';
 import bundledNews from '../../../../content/news/index.json';
+import { curriculum } from './learning-curriculum';
 
 const appModules = import.meta.glob('../../../../content/apps/*.json', { eager: true, import: 'default' });
 const providerModules = import.meta.glob('../../../../content/providers/*.json', { eager: true, import: 'default' });
@@ -89,6 +90,7 @@ export function useCatalog() {
 }
 export function clearContentCache() {
  localStorage.removeItem('vibehub.content.v1');
+ cachedLearningFeed = undefined;
  bodyCache.clear();
  apps.splice(0,apps.length,...initialCatalog.apps);
  providers.splice(0,providers.length,...initialCatalog.providers);
@@ -100,7 +102,13 @@ export function clearContentCache() {
  revision++;listeners.forEach(listener=>listener());
 }
 const initialCatalog = {apps: [...apps], providers: [...providers], offers: [...bundledCatalog.offers]};
-const bundledAppIds = new Set(['antigravity-ide', 'claude-code', 'claude-desktop', 'copilot-cli', 'minimax-code']);
+const bundledAppIds = new Set(['antigravity-ide', 'claude-code', 'claude-desktop', 'copilot-cli', 'minimax-code', 'opencode', 'pi']);
+const bundledLearningIds = new Set([
+  ...bundledAppIds, ...curriculum, 'getting-started', 'rtl-setup',
+  'code-review', 'debugging-with-agent', 'long-running', 'git-practice-resources',
+]);
+const newProviderIds = new Set(['ollama', 'cerebras']);
+let cachedLearningFeed: ReturnType<typeof parseLearningFeed> | undefined;
 
 export function validateRemoteGuides(raw: unknown, catalog: Catalog): Record<string, string> {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('Incomplete guide feed');
@@ -130,12 +138,14 @@ export function applyRemoteCatalog(catalog: Catalog, guides: Record<string, stri
   const bundledApps = initialCatalog.apps.filter(app => bundledAppIds.has(app.id));
   const nextApps = [...catalog.apps.filter(app => !bundledAppIds.has(app.id)), ...bundledApps];
   apps.splice(0, apps.length, ...nextApps);
-  providers.splice(0, providers.length, ...catalog.providers);
+  const bundledProviders = initialCatalog.providers.filter(provider => newProviderIds.has(provider.id) && !catalog.providers.some(item => item.id === provider.id));
+  providers.splice(0, providers.length, ...catalog.providers, ...bundledProviders);
   bundledCatalog.offers.splice(0, bundledCatalog.offers.length, ...catalog.offers);
   for (const key of Object.keys(remoteGuides)) delete remoteGuides[key];
   Object.assign(remoteGuides, guides);
   if (nextArticles !== undefined) {
-    articles = [...nextArticles.articles.filter(article => article.id !== 'antigravity' && !bundledAppIds.has(article.id)), ...initialLearningFeed.articles.filter(article => bundledAppIds.has(article.id))];
+    cachedLearningFeed = nextArticles;
+    articles = [...nextArticles.articles.filter(article => article.id !== 'antigravity' && !bundledLearningIds.has(article.id)), ...initialLearningFeed.articles.filter(article => bundledLearningIds.has(article.id))];
     categories = nextArticles.categories;
     // The bundled replacement guides use the existing apps category.
     for (const category of initialLearningCategories) if (!categories.some(item => item.id === category.id) && articles.some(article => article.category === category.id)) categories = [...categories, category];
@@ -143,7 +153,8 @@ export function applyRemoteCatalog(catalog: Catalog, guides: Record<string, stri
   if (nextNews !== undefined) news = nextNews;
   revision++; listeners.forEach(listener=>listener());
   window.dispatchEvent(new Event('vibehub:catalog-updated'));
-  try { localStorage.setItem('vibehub.content.v1', JSON.stringify({ catalog, guides, learningArticles: { schemaVersion: 1, categories, articles }, news: { schemaVersion: 1, news } })); } catch { /* Current in-memory content remains usable. */ }
+  // Bundled articles load locally and lack the inline body required by the remote schema.
+  try { localStorage.setItem('vibehub.content.v1', JSON.stringify({ catalog, guides, learningArticles: cachedLearningFeed, news: { schemaVersion: 1, news } })); } catch { /* Current in-memory content remains usable. */ }
 }
 
 try {

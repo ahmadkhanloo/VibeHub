@@ -25,7 +25,7 @@ export function TerminalPage() {
   const detect = useCallback(async () => {
     setDetecting(true); setError(null);
     try { setState(await ipc.terminalDetect()); }
-    catch (cause) { setError(cause); }
+    catch (cause) { setState(null); setError(cause); }
     finally { setDetecting(false); }
   }, []);
   useEffect(() => { void detect(); }, [detect]);
@@ -59,7 +59,7 @@ export function TerminalPage() {
     : !state.themeApplied ? t('terminal:nextAction.applyTheme') : t('terminal:nextAction.ready');
 
   return <section className="vh-terminal-page space-y-5" aria-busy={detecting || !!busy}>
-    <PageHeader title={t('terminal:title')} description={t('terminal:subtitle')} actions={<Button size="sm" variant="ghost" loading={detecting} disabled={!!busy} onClick={() => void detect()}>{t('journeyUx:terminal.retry')}</Button>} />
+    <PageHeader title={t('terminal:title')} description={t('terminal:subtitle')} actions={error == null && <Button size="sm" variant="ghost" loading={detecting} disabled={!!busy} onClick={() => void detect()}>{t('journeyUx:terminal.retry')}</Button>} />
     {error != null && confirmation === null && <ErrorNotice error={error} onRetry={() => void detect()} />}
     {completed && <p role="status" className="text-sm text-success">{t('journeyUx:terminal.actionComplete')}</p>}
 
@@ -85,7 +85,7 @@ export function TerminalPage() {
       <Card className="space-y-4">
         <div><h2 className="vh-terminal-heading">{t('terminal:persian.title')}</h2><p className="mt-1 text-sm leading-7 text-muted">{t('terminal:persian.description')}</p></div>
         <div className="flex flex-wrap items-center gap-2">
-          <Badge tone={state?.hasPersianTerminal ? 'success' : 'muted'}>{state?.hasPersianTerminal ? t('terminal:persian.installedNeedsCheck') : t('terminal:status.notInstalled')}</Badge>
+          <Badge tone={state?.hasPersianTerminal ? 'success' : 'muted'}>{detecting ? t('common:loading') : !state || state.hasPersianTerminal === undefined ? t('terminal:status.unknown') : state.hasPersianTerminal ? t('terminal:persian.installedNeedsCheck') : t('terminal:status.notInstalled')}</Badge>
           <Button size="sm" variant="primary" onClick={() => void openUrl('https://github.com/mirbehnam/RtlTerminal/releases/latest').catch(setError)}><ExternalLink size={16} aria-hidden="true" />{t('terminal:persian.install')}</Button>
         </div>
         <p className="text-xs leading-6 text-muted">{t('terminal:persian.requirements')}</p>

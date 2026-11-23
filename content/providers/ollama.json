@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "ollama",
+  "name": "Ollama",
+  "officialUrl": "https://ollama.com/",
+  "modelsDocUrl": "https://ollama.com/search",
+  "usageTermsUrl": "https://docs.ollama.com/api/openai-compatibility",
+  "notes": {
+    "fa": "مدل محلی Ollama روی رایانهٔ خودتان اجرا می‌شود و برای اتصال به نشانی پیش‌فرض کلید API لازم نیست.",
+    "en": "Local Ollama models run on your computer. The default local endpoint needs no API key."
+  },
+  "endpoint": {
+    "baseUrl": "http://127.0.0.1:11434/v1",
+    "kind": "ollama"
+  },
+  "freeAccess": "free_forever",
+  "requiresAccount": false,
+  "requiresApiKey": false,
+  "supportedApps": {},
+  "eligibilityStatus": "unknown",
+  "lastVerified": "2026-11-22"
+}

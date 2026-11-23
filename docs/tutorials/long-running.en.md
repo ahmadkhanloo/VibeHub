@@ -8,6 +8,8 @@ This is an educational example specifically for Claude Code, not a ready-made sy
 
 Write acceptance criteria before starting; leave each one incomplete until you inspect evidence.
 
+![Claude Code shows the proposed plan before execution. Use this checkpoint to verify the deliverables and the order of work.](../../apps/desktop/public/tutorials/screenshots/claude-plan-review.webp)
+
 ## Finish one step at a time
 
 Keep each turn focused on one small, complete piece of work.

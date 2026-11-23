@@ -25,7 +25,9 @@
     "radeon-cloud",
     "google",
     "cloudflare-workers-ai",
-    "groq"
+    "groq",
+    "ollama",
+    "cerebras"
   ],
   "offers": [
     "qoder-daily-credits",

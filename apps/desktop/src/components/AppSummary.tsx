@@ -1,10 +1,11 @@
-import { Plug } from 'lucide-react';
+import { AlignLeft, AlignRight, Network, Plug } from 'lucide-react';
 import { preferredLaunchMode, rtlAdapterConfigured } from '@core';
 import { useCatalog } from '@/lib/catalog';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useSettings } from '@/app/settings';
 import { useToolContext } from '@/app/tool-context';
+import { Tooltip } from './Tooltip';
 
 /**
  * The tile's single metadata strip: proxy target, launch mode and API
@@ -26,7 +27,7 @@ export function AppSummary({ appId }: { appId: string }) {
     : effectiveId && !profile
       ? 'missing'
       : profile?.mode ?? 'direct';
-  const proxied = profile?.mode === 'http' || profile?.mode === 'socks5';
+  const proxied = profile?.mode === 'http' || profile?.mode === 'socks5' || profile?.mode === 'mixed';
   const effectiveProxy = proxyState === 'unavailable'
     ? t('connectionsUx:proxyReadFailed')
     : proxyState === 'missing'
@@ -39,11 +40,6 @@ export function AppSummary({ appId }: { appId: string }) {
     : inherits
       ? t('connectionsUx:inheritEffective', { name: effectiveProxy })
       : effectiveProxy;
-  // The strip shows a dot plus one short word; the sentence above stays in the
-  // title and the screen-reader text, so nothing is lost to the shortening.
-  const proxyTone = proxyState === 'unavailable' || proxyState === 'missing'
-    ? 'is-warning'
-    : proxied ? 'is-primary' : proxyState === 'system' ? '' : 'is-ok';
   const proxyShort = proxyState === 'unavailable'
     ? t('connectionsUx:proxyReadFailedShort')
     : proxyState === 'missing'
@@ -61,28 +57,35 @@ export function AppSummary({ appId }: { appId: string }) {
   const apiLabel = ctx.connections === null
     ? ctx.connectionsError ? t('connectionsUx:apiReferenceUnavailable') : t('ux:accountSummary.loading')
     : apiConnectionInvalid ? t('connectionsUx:apiReferenceUnavailable') : apiConnection?.name ?? t('ux:accountSummary.noApiReference');
-  const modeLabel = rtl ? 'RTL' : t('ux:modeNormalShort');
+  const modeLabel = rtl ? t('ux:alignmentRtl') : t('ux:alignmentNormal');
+  const AlignmentIcon = rtl ? AlignRight : AlignLeft;
   const detailsPath = `/app/${appId}?tab=connections`;
   // "No API reference" is the default, so printing it on every tile only adds noise and
   // pushes the strip onto a second line. It stays in the accessibility tree either way.
   const apiNotable = !!apiConnection || apiConnectionInvalid || !!ctx.connectionsError;
 
-  return <Link className="vh-app-meta" to={detailsPath}>
-    <span className="vh-meta-item" title={proxyLabel} data-status={proxyState} data-testid={`proxy-summary-${appId}`}>
-      <i className={'vh-meta-dot ' + proxyTone} aria-hidden="true" />
-      <span className="sr-only">{t('connectionsUx:nextLaunchProxy')}: </span>
+  const tooltip = [
+    `${t('connectionsUx:nextLaunchProxy')}: ${proxyLabel}. ${t('ux:proxyRouteHelp')}`,
+    t(rtl ? 'ux:alignmentRtlHelp' : 'ux:alignmentNormalHelp'),
+    apiNotable ? `${t('connectionsUx:apiReferenceShort')}: ${apiLabel}` : '',
+  ].filter(Boolean).join('\n');
+
+  return <Tooltip text={tooltip}><Link className="vh-app-meta" to={detailsPath}>
+    <span className="vh-meta-item" data-status={proxyState} data-testid={`proxy-summary-${appId}`}>
+      <Network size={14} aria-hidden="true" />
+      <span className="vh-meta-topic">{t('ux:proxy')}</span>
       <bdi className="vh-meta-value">{proxyShort}</bdi>
     </span>
-    <span className="vh-meta-item" title={modeLabel}>
-      <i className={'vh-meta-dot' + (rtl ? ' is-primary' : '')} aria-hidden="true" />
+    <span className="vh-meta-item">
+      <AlignmentIcon size={14} aria-hidden="true" />
       <span className="vh-meta-value" data-mode={rtl ? 'rtl' : 'normal'}>{modeLabel}</span>
     </span>
     {apiNotable
-      ? <span className="vh-meta-item" title={apiLabel} data-testid={`api-reference-${appId}`}>
+      ? <span className="vh-meta-item" data-testid={`api-reference-${appId}`}>
           <Plug size={13} aria-hidden="true" />
           <span className="sr-only">{t('connectionsUx:apiReferenceShort')}: </span>
           <bdi className="vh-meta-value">{apiLabel}</bdi>
         </span>
       : <span className="sr-only" data-testid={`api-reference-${appId}`}>{t('connectionsUx:apiReferenceShort')}: {apiLabel}</span>}
-  </Link>;
+  </Link></Tooltip>;
 }

@@ -14,7 +14,7 @@ Open VibeHub when the install finishes. The first run picks a language and goes 
 
 If you have no app yet, pick one from the catalog and install it from its official source; free-tier apps with daily credit are enough to start. Then press **Refresh** in VibeHub.
 
-Checkpoint: the app card shows an "Installed" badge and a detected path. If it does not appear, enter the custom executable path on that app's page.
+Detected apps appear in the Installed list. If yours is missing, select its executable on the app's page.
 
 ## 3. Read that app's guide
 
@@ -22,9 +22,11 @@ Accounts, models, and access differ by service. Open the guide for the app you u
 
 ## 4. Try a small task
 
-Open a low-risk folder and make your first request. The simplest start: a single-file HTML page. The full path is in the [first project with an assistant](/learning/first-project?category=start) lesson.
+Try building a single-file HTML page in a practice folder. The next lesson walks through the exercise.
 
 Before accepting any change, read the file diff yourself, and keep API keys and login details out of project files and reports.
+
+![In OpenCode Desktop, verify the selected model below the prompt box before you send your first practice request.](../../../apps/desktop/public/tutorials/screenshots/opencode-desktop.webp)
 
 ## Persian text
 

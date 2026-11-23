@@ -1,8 +1,10 @@
 import { Disclosure } from '@/components/Disclosure';
+import { Tooltip } from '@/components/Tooltip';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, Plus, RefreshCw, Trash2, XCircle } from 'lucide-react';
+import { CheckCircle2, Network, Plus, RefreshCw, Trash2, XCircle } from 'lucide-react';
+import { AppLogo } from '@/components/AppLogo';
 import { Badge, Button, Card, EmptyState, ErrorNotice, Modal, PageHeader, SectionTitle, Select, Toggle } from '@/components/ui';
 import { useToolContext } from '@/app/tool-context';
 import { useCatalog } from '@/lib/catalog';
@@ -10,10 +12,12 @@ import { ipc } from '@/services/ipc';
 import { newProxyProfile, ProxyProfileEditor } from './ToolProxy';
 import type { ProxyConfig, ProxyProfile, ProxyTestResult } from '@core';
 
+const V2RAY: ProxyProfile = { id: 'v2ray', name: 'V2Ray', mode: 'mixed', host: '127.0.0.1', port: 10808 };
+
 export function ProxyPage() {
   const { t } = useTranslation(['proxy', 'connectionsUx', 'common']);
-  const { profiles, proxyConfig: config, refreshProxy, editors } = useToolContext();
-  const { apps } = useCatalog();
+  const { profiles, proxyConfig: config, apps: detectedApps, editors, refreshProxy, saveToolProxy } = useToolContext();
+  const { apps: catalogApps } = useCatalog();
   const [editing, setEditing] = useState<ProxyProfile | null>(null);
   const [deleting, setDeleting] = useState<ProxyProfile | null>(null);
   const [testing, setTesting] = useState<ProxyProfile | null>(null);
@@ -32,41 +36,83 @@ export function ProxyPage() {
     const latest = await ipc.proxyConfig();
     const next = { ...latest, ...change };
     const selected = profiles.find((p) => p.id === next.globalProfileId);
-    if (next.requireProxy && (!selected || !['http', 'socks5'].includes(selected.mode))) throw new Error(t('proxy:chooseDefaultFirst'));
+    if (next.requireProxy && (!selected || selected.mode === 'direct' || selected.mode === 'system')) throw new Error(t('proxy:chooseDefaultFirst'));
     await ipc.proxySetConfig(next);
     await refreshProxy(); setMessage(t('connectionsUx:proxyConfigSaved'));
   });
-  const defaultProfile = profiles.find((p) => p.id === config?.globalProfileId);
-  const affectedTools = deleting && config ? Object.entries(config.perApp).filter(([, value]) => value === deleting.id).map(([id]) => ({ id, name: apps.find((a) => a.id === id)?.name ?? editors.find((e) => e.id === id)?.name ?? id, app: apps.some((a) => a.id === id) })) : [];
+  const installedIds = new Set(detectedApps.filter(app => app.installed).map(app => app.id));
+  const installedCliTools = catalogApps
+    .filter(app => installedIds.has(app.id) && app.kind === 'cli_agent')
+    .map(app => ({ id: app.id, name: app.name, app: true }));
+  const tools = installedCliTools.sort((a, b) => a.name.localeCompare(b.name));
+  const affectedTools = deleting && config ? Object.entries(config.perApp).filter(([, value]) => value === deleting.id).map(([id]) => ({ id, name: catalogApps.find((a) => a.id === id)?.name ?? editors.find((e) => e.id === id)?.name ?? id, app: catalogApps.some((a) => a.id === id) })) : [];
   const usedAsDefault = !!deleting && config?.globalProfileId === deleting.id;
   const inUse = usedAsDefault || affectedTools.length > 0;
+  const hasV2Ray = profiles.some(profile => profile.id === V2RAY.id);
   return <div className="space-y-8">
-    <PageHeader title={t('proxy:title')} actions={<Button disabled={busy !== null} variant="primary" onClick={() => setEditing(newProxyProfile())}><Plus size={16} aria-hidden="true" />{t('proxy:newProfile')}</Button>} />
+    <PageHeader title={t('proxy:title')} titleAside={<Tooltip text={t('proxy:scopeNote')} />} actions={<>
+      {config && !hasV2Ray && <Button loading={busy === 'v2ray'} disabled={busy !== null} onClick={() => void act('v2ray', async () => {
+        if (!(await ipc.proxyProfiles()).some(profile => profile.id === V2RAY.id)) await ipc.proxySave(V2RAY);
+        await refreshProxy();
+      })}>{t('proxy:addV2Ray')}</Button>}
+      <Button disabled={busy !== null} variant="primary" onClick={() => setEditing(newProxyProfile())}><Plus size={16} aria-hidden="true" />{t('proxy:newProfile')}</Button>
+    </>} />
     {error != null && !deleting && !testing && <ErrorNotice error={error} />}
     {message && <p role="status" className="text-sm text-success">{message}</p>}
     {!config ? <ErrorNotice error={t('connectionsUx:proxyReadFailed')} onRetry={() => { void act('refresh', async () => { await refreshProxy(); }); }} /> : <Card className="space-y-4" as="section" id="proxy-default-route">
       <SectionTitle>{t('proxy:defaultRoute')}</SectionTitle>
-      <div className="max-w-xl space-y-4">
-        <label className="block space-y-2 text-sm"><span className="block font-medium">{t('proxy:globalProfile')}</span><Select value={config.globalProfileId} disabled={busy !== null} onChange={(globalProfileId) => { void saveConfig({ globalProfileId }); }} options={[{ value: '', label: t('proxy:noDefault') }, ...profiles.filter((p) => !config.requireProxy || p.mode === 'http' || p.mode === 'socks5').map((p) => ({ value: p.id, label: p.name }))]} /></label>
-        {defaultProfile && <div className="flex flex-wrap items-center gap-2"><Badge tone="primary">{t('proxy:defaultProfile')}</Badge><span className="text-sm">{defaultProfile.name}</span><Badge tone="muted">{t(`proxy:mode.${defaultProfile.mode}`)}</Badge></div>}
-        <Toggle checked={config.requireProxy} disabled={busy !== null} onChange={(requireProxy) => { void saveConfig({ requireProxy }); }} label={t('proxy:requireProxy')} />
+      <div className="flex flex-wrap items-end gap-4">
+        <label className="block w-full max-w-sm space-y-2 text-sm"><span className="block font-medium">{t('proxy:globalProfile')}</span><Select value={config.globalProfileId} disabled={busy !== null} onChange={(globalProfileId) => { void saveConfig({ globalProfileId }); }} options={[{ value: '', label: t('proxy:noDefault') }, ...profiles.filter((p) => !config.requireProxy || (p.mode !== 'direct' && p.mode !== 'system')).map((p) => ({ value: p.id, label: p.name }))]} /></label>
+        <div className="flex min-h-10 items-center gap-1">
+          <Toggle checked={config.requireProxy} disabled={busy !== null} onChange={(requireProxy) => { void saveConfig({ requireProxy }); }} label={t('proxy:requireProxy')} />
+          <Tooltip text={t('proxy:requireProxyHint') + '\n' + t('proxy:editorProxyHint')} />
+        </div>
       </div>
-      <p className="max-w-3xl text-sm leading-7 text-muted">{t('proxy:requireProxyHint')}</p>
-      <details className="text-sm"><summary className="cursor-pointer font-medium">{t('connectionsUx:proxyLimitations')}</summary><p className="mt-2 max-w-3xl leading-7 text-muted">{t('proxy:editorProxyHint')}</p></details>
     </Card>}
     <section aria-labelledby="proxy-profiles-heading"><SectionTitle action={<Button size="sm" disabled={busy !== null} onClick={() => void act('refresh', async () => { await refreshProxy(); })}><RefreshCw size={16} aria-hidden="true" />{t('connectionsUx:refreshProfiles')}</Button>}><span id="proxy-profiles-heading">{t('proxy:profiles')}</span></SectionTitle>
-      {profiles.length === 0 ? <EmptyState title={t('proxy:noProfiles')} sub={t('proxy:addFirstProfile')} /> : <div className="vh-record-list">{profiles.map((profile) => {
+      {profiles.length === 0 ? <EmptyState title={t('proxy:noProfiles')} /> : <div className="grid gap-3">{profiles.map((profile) => {
         const results = tests[profile.id] ?? [];
-        const testable = profile.mode === 'http' || profile.mode === 'socks5';
+        const testable = profile.mode !== 'direct' && profile.mode !== 'system';
+        const assignedTools = tools.filter(tool => config?.perApp[tool.id] === profile.id);
         const status = results.some((r) => !r.ok) ? 'failed' : results.length === 3 ? 'healthy' : results.length ? 'partial' : 'untested';
         return <Card key={profile.id} className="space-y-4" data-testid={`proxy-profile-${profile.id}`}>
-          <div className="flex flex-wrap items-start gap-4"><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h3 className="break-words text-base font-bold" dir="auto">{profile.name}</h3>{config?.globalProfileId === profile.id && <Badge tone="primary">{t('proxy:defaultProfile')}</Badge>}</div><div className="mt-2 flex flex-wrap items-center gap-2"><Badge tone="muted">{t(`proxy:mode.${profile.mode}`)}</Badge>{profile.hasPassword && <Badge tone="muted">{t('common:secureVault')}</Badge>}<Badge tone={!testable || status === 'untested' ? 'muted' : status === 'healthy' ? 'success' : status === 'failed' ? 'danger' : 'warning'}>{t(testable ? `proxy:${status}` : 'proxy:notTestable')}</Badge></div>{testable && <p className="ltr-tech mt-2 break-all text-sm text-muted">{profile.host}:{profile.port}</p>}</div><div className="flex gap-2"><Button size="sm" disabled={busy !== null} onClick={() => setEditing(profile)}>{t('common:edit')}</Button><Button size="sm" variant="ghost" disabled={busy !== null} aria-label={t('proxy:deleteNamedProfile', { name: profile.name })} onClick={() => { setError(null); setDeleting(profile); }}><Trash2 size={16} aria-hidden="true" />{t('common:delete')}</Button></div></div>
-          {testable && <Button size="sm" disabled={busy !== null} loading={busy === `test:${profile.id}`} onClick={() => { setError(null); setTesting(profile); }}>{t('proxy:testAll')}</Button>}
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-surface-alt text-primary"><Network size={18} aria-hidden="true" /></span>
+            <div className="min-w-0 flex-1 basis-40">
+              <h3 className="break-words font-bold"><bdi>{profile.name}</bdi></h3>
+              <div className="flex flex-wrap items-center gap-x-2 text-sm text-muted">
+                <span>{t(`proxy:mode.${profile.mode}`)}</span>
+                {testable && <bdi dir="ltr" className="break-all font-mono text-xs">{profile.host}:{profile.port}</bdi>}
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {config?.globalProfileId === profile.id && <Badge tone="primary">{t('proxy:defaultProfile')}</Badge>}
+              {testable && <Badge tone={status === 'healthy' ? 'success' : status === 'failed' ? 'danger' : 'muted'}>{t(`proxy:${status}`)}</Badge>}
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {testable && <Button size="sm" disabled={busy !== null} loading={busy === `test:${profile.id}`} onClick={() => { setError(null); setTesting(profile); }}>{t('proxy:testAll')}</Button>}
+              <Button size="sm" variant="ghost" disabled={busy !== null} onClick={() => setEditing(profile)}>{t('common:edit')}</Button>
+              <Button size="sm" variant="ghost" disabled={busy !== null} aria-label={t('proxy:deleteNamedProfile', { name: profile.name })} onClick={() => { setError(null); setDeleting(profile); }}><Trash2 size={16} aria-hidden="true" /></Button>
+            </div>
+          </div>
+          {config && <Disclosure defaultOpen={profile.id === V2RAY.id} title={t('connectionsUx:assignTools')}><div className="space-y-3 border-t border-border pt-3">
+            <p className="text-sm text-muted">{t('connectionsUx:assignToolsHint')}</p>
+            <fieldset className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              <legend className="sr-only">{t('connectionsUx:assignTools')}</legend>
+              {tools.map((tool) => {
+              const assigned = config.perApp[tool.id] === profile.id;
+              return <label key={tool.id} className="flex min-h-10 items-center gap-2 rounded-lg border border-border px-3 text-sm">
+                <input type="checkbox" checked={assigned} disabled={busy !== null || (!assigned && config.requireProxy && !testable)} onChange={(event) => { const value = event.target.checked ? profile.id : 'inherit'; void act(`assign:${tool.id}`, async () => { await saveToolProxy(tool.id, value); setMessage(t('connectionsUx:toolProxySaved')); }); }} />
+                <AppLogo appId={tool.id} name={tool.name} size={24} /><bdi>{tool.name}</bdi>
+              </label>;
+            })}</fieldset>
+            {config.requireProxy && !testable && <p className="text-sm text-muted">{t('connectionsUx:assignmentRequiresProxy')}</p>}
+          </div></Disclosure>}
+          {assignedTools.length > 0 && <div className="flex flex-wrap gap-2">{assignedTools.map(tool => <Badge key={tool.id} tone="primary"><bdi>{tool.name}</bdi></Badge>)}</div>}
           {results.length > 0 && <Disclosure title={t('ux:details')} defaultOpen={status !== 'healthy'}><div className="space-y-2 border-t border-border pt-3" aria-live="polite">{results.map((result) => <div key={result.level} className="flex items-start gap-2 text-sm">{result.ok ? <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-success" aria-hidden="true" /> : <XCircle size={16} className="mt-0.5 shrink-0 text-danger" aria-hidden="true" />}<span>{t(`proxy:${result.level}`)}: {t(result.ok ? 'connectionsUx:confirmed' : 'connectionsUx:notConfirmed')}</span></div>)}</div></Disclosure>}
         </Card>;
       })}</div>}
     </section>
-    <Disclosure title={t('ux:help')}><p className="max-w-3xl text-sm leading-7 text-muted">{t('proxy:scopeNote')}</p><p className="max-w-3xl text-sm leading-7 text-muted">{t('proxy:termsNote')}</p></Disclosure>
     {editing && <ProxyProfileEditor key={editing.id} profile={editing} onClose={() => setEditing(null)} onSaved={async (profile) => { await refreshProxy(); setTests((current) => { const next = { ...current }; delete next[profile.id]; return next; }); setMessage(t('connectionsUx:profileSaved')); }} />}
     <Modal open={!!deleting} title={t(inUse ? 'connectionsUx:profileInUse' : 'connectionsUx:deleteProxy')} onClose={() => setDeleting(null)} busy={busy !== null}>
       <p className="text-sm leading-7">{t(inUse ? 'connectionsUx:profileInUseHint' : 'connectionsUx:deleteProxyHint', { name: deleting?.name })}</p>

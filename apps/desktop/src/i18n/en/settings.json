@@ -2,22 +2,33 @@
   "title": "Settings",
   "workshop": {
     "title": "Workshop mode",
-    "description": "Narrows the sidebar to the beginner workshop path: workspace, workshop steps, lessons, and connections. Turn it off to bring the full tool surface back."
+    "description": "Limits the sidebar to workspace, workshop, lessons and API connections. Settings remains available."
   },
   "appearance": {
     "title": "Appearance",
     "language": "Language",
-      "followSystem": "Use the system light or dark setting",
+    "followSystem": "Use the system light or dark setting",
     "mode": "Mode",
     "modeSystem": "System",
     "modeLight": "Light",
     "modeDark": "Dark",
     "family": "Theme family",
-    "families": { "graphite": "Default (Graphite)", "nord": "Nord", "catppuccin": "Catppuccin", "solarized": "Solarized" },
+    "families": {
+      "graphite": "Default (Graphite)",
+      "nord": "Nord",
+      "catppuccin": "Catppuccin",
+      "solarized": "Solarized"
+    },
     "resolvedMode": "Active appearance: {{mode}}",
     "accent": "Accent",
-    "accents": { "auto": "Auto", "indigo": "Indigo", "emerald": "Emerald", "violet": "Violet", "amber": "Amber" },
-    "gallery": "Theme gallery (live preview)",
+    "accents": {
+      "auto": "Auto",
+      "indigo": "Indigo",
+      "emerald": "Emerald",
+      "violet": "Violet",
+      "amber": "Amber"
+    },
+    "gallery": "Theme gallery",
     "density": "Density",
     "textSize": "Text size"
   },
@@ -39,8 +50,8 @@
     "downloadInstall": "Download & install",
     "later": "Later",
     "currentVersion": "Current version",
-    "contentCheck": "Check content updates (catalog/guides/offers)",
-    "lastSynced": "Content last synced",
+    "contentCheck": "Check for content updates",
+    "lastSynced": "Downloaded content publication date",
     "autoCheck": "Check automatically at startup (notify only; install needs consent)",
     "updatePolicy": "Only signed update files are installed; a forged version is rejected."
   },

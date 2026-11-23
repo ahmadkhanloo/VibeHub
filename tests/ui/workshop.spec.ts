@@ -30,7 +30,7 @@ test('workshop mode narrows the sidebar and survives reload', async ({ page }) =
 
   await page.getByRole('switch', { name: 'Workshop mode' }).click();
   await expect(sidebar.getByRole('link', { name: 'Two-day workshop path' })).toBeVisible();
-  await expect(sidebar.getByRole('link', { name: 'Learn', exact: true })).toBeVisible();
+  await expect(sidebar.getByRole('link', { name: 'Learning path', exact: true })).toBeVisible();
   await expect(sidebar.getByRole('link', { name: 'API notebook', exact: true })).toBeVisible();
   await expect(sidebar.getByRole('link', { name: 'Proxy', exact: true })).toHaveCount(0);
   await expect(sidebar.getByRole('link', { name: 'Diagnostics', exact: true })).toHaveCount(0);
@@ -40,7 +40,7 @@ test('workshop mode narrows the sidebar and survives reload', async ({ page }) =
   await expect(sidebar.getByRole('link', { name: 'Diagnostics', exact: true })).toHaveCount(0);
 
   await page.getByRole('switch', { name: 'Workshop mode' }).click();
-  await expect(sidebar.getByRole('link', { name: 'Diagnostics', exact: true })).toBeVisible();
+  await expect(sidebar.getByRole('link', { name: 'Proxy', exact: true })).toBeVisible();
 });
 
 test('lesson progress marks from the learning list persist in local storage', async ({ page }) => {

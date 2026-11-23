@@ -1,5 +1,7 @@
 # Claude Code: the complete CLI handbook
 
+To use a third-party model or gateway, see [Connect an external model with an API](/learning/external-model-api) for setup and verification.
+
 Claude Code is a command-line tool, not a separate windowed app: you run it inside a project folder, it works with that project's context, and everything is driven by commands and config files. This page holds every topic in one place; each section stands alone, so jump to what you need.
 
 ## 1. Working on a real project
