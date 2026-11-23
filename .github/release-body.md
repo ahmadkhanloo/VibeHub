@@ -2,7 +2,7 @@
 
 > Download `VibeHub-Setup.exe` from this Release. The [acceptance matrix](https://github.com/ahmadkhanloo/VibeHub/blob/{{TAG}}/docs/validation/VibeHub_Release_Acceptance_Matrix.md) is the source for what has actually been verified.
 
-VibeHub is a free, open-source desktop workspace for AI coding tools. It does not host models or provide a proxy service. Clean Windows 10 and 11 installation, upgrade and removal acceptance remain open unless the matrix records a passing run for the exact published build.
+VibeHub is a free, open-source desktop workspace for AI coding tools. It does not host models or provide a proxy service. Clean Windows 10 and 11 installation, upgrade and removal acceptance remain open unless the matrix records a passing run for the exact published build. Gate 18 also tracks installation modes, real vendor launches, Persian Windows environments, and signed-updater failure cases.
 
 | File | Purpose |
 |---|---|
@@ -22,7 +22,7 @@ Updates are manual: open **Settings → Updates → Check now**. The updater arc
 
 > فایل `VibeHub-Setup.exe` را از همین صفحهٔ Release بگیرید. [ماتریس پذیرش](https://github.com/ahmadkhanloo/VibeHub/blob/{{TAG}}/docs/validation/VibeHub_Release_Acceptance_Matrix.md) مرجع وضعیت واقعاً آزموده‌شده است.
 
-VibeHub یک میزکار دسکتاپ رایگان و متن‌باز برای ابزارهای AI Coding است؛ میزبان مدل یا سرویس پروکسی نیست. پذیرش نصب، ارتقا و حذف روی ویندوز ۱۰ و ۱۱ تمیز باز است، مگر اینکه ماتریس برای همین build منتشرشده اجرای موفقی ثبت کرده باشد.
+VibeHub یک میزکار دسکتاپ رایگان و متن‌باز برای ابزارهای AI Coding است؛ میزبان مدل یا سرویس پروکسی نیست. پذیرش نصب، ارتقا و حذف روی ویندوز ۱۰ و ۱۱ تمیز باز است، مگر اینکه ماتریس برای همین build منتشرشده اجرای موفقی ثبت کرده باشد. وضعیت حالت‌های نصب، اجرای برنامه‌های واقعی، محیط فارسی ویندوز و سناریوهای خطای به‌روزرسانی امضاشده در Gate 18 ثبت شده است.
 
 | فایل | کاربرد |
 |---|---|

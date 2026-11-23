@@ -61,5 +61,8 @@
     "rtlAdapters": "Check bundled components for installed apps; live injection is not tested.",
     "proxyConfig": "Read the selected profile; no network request is sent.",
     "modelConnections": "Read saved connections; keys and model responses are not tested."
-  }
+  },
+  "windowsPrereqs": "Windows prerequisites",
+  "windowsPrereqsHint": "Check that Node.js and WinGet are available for installing tools.",
+  "nativeUnavailable": "The prerequisite check is unavailable. Open the desktop app."
 }

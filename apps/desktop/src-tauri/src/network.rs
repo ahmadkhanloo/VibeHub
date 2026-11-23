@@ -28,7 +28,7 @@ pub fn client(profile: Option<&Value>) -> Result<reqwest::Client> {
         validate_profile(profile)?;
     }
     let password = match profile {
-        Some(p) if matches!(p["mode"].as_str(), Some("http" | "socks5")) => {
+        Some(p) if matches!(p["mode"].as_str(), Some("http" | "socks5" | "mixed")) => {
             storage::vault_get(&format!("vibehub.proxy.{}", field(p, "id")?))?
         }
         _ => None,
@@ -50,7 +50,7 @@ fn client_with_password(
         validate_profile(p)?;
         match field(p, "mode")? {
             "direct" => builder = builder.no_proxy(),
-            "http" | "socks5" => {
+            "http" | "socks5" | "mixed" => {
                 let mut proxy = reqwest::Proxy::all(proxy_url(p)?).map_err(|_| "Invalid proxy")?;
                 if p["hasPassword"] == true && password.is_none() {
                     return Err("Stored proxy password is unavailable".into());
@@ -100,6 +100,13 @@ fn handshake(profile: &Value) -> Result<()> {
 }
 
 fn handshake_with_password(profile: &Value, password: Option<&str>) -> Result<()> {
+    if profile["mode"] == "mixed" {
+        let mut split = profile.clone();
+        split["mode"] = json!("http");
+        handshake_with_password(&split, password)?;
+        split["mode"] = json!("socks5");
+        return handshake_with_password(&split, password);
+    }
     use std::io::{BufRead, Read, Write};
     if profile["hasPassword"] == true && password.is_none() {
         return Err("Stored proxy password is unavailable".into());

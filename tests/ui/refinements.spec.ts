@@ -5,7 +5,10 @@ test('global search keeps Ctrl+K and appearance uses the preview gallery and ind
   await mockNative(page); await page.goto('/settings');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await page.keyboard.press('Control+k');
-  await expect(page.getByRole('searchbox').first()).toBeFocused();
+  const search = page.getByRole('dialog', { name: 'Search…' });
+  await expect(search.getByRole('searchbox')).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(search).toHaveCount(0);
   await expect(page.locator('.vh-theme-preview')).toHaveCount(8);
   await expect(page.getByRole('combobox', {name:'Mode', exact:true})).toHaveCount(0);
   await expect(page.getByRole('combobox', {name:'Theme family', exact:true})).toHaveCount(0);

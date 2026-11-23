@@ -67,7 +67,7 @@ export function LaunchControls({
           <Link className="vh-link" to={`/app/${id}?tab=connections`}>{t('connections')}</Link>
         </>}
         {kind === 'editor' && <Link className="vh-link" to="/connections/proxy">{t('connections')}</Link>}
-        <Link className="vh-button vh-button-ghost text-sm" to={`/doctor?tool=${encodeURIComponent(id)}&kind=${kind}`}>{t('doctor')}</Link>
+        <Link className="vh-button vh-button-ghost text-sm" to={kind === 'app' ? `/app/${encodeURIComponent(id)}#app-status` : `/#tool-${encodeURIComponent(id)}`}>{t('doctor')}</Link>
       </div>
     </details>}
   </div>;

@@ -489,7 +489,7 @@ fn launch_request(app: &tauri::AppHandle, id: &str, override_id: Option<&str>) -
     let mut request = json!({});
     if let Some(profile) = profile {
         match profile["mode"].as_str() {
-            Some("http" | "socks5") => {
+            Some("http" | "socks5" | "mixed") => {
                 if required {
                     return Err("Required-proxy launch is blocked: this tool has no validated proxy adapter".into());
                 }

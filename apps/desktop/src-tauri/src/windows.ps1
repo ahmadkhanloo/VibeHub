@@ -1106,6 +1106,7 @@ try {
             $names = @{qoder=@('Qoder.exe','Qoder IDE.exe','QoderAI.exe');zcode=@('ZCode.exe');'deepseek-harness'=@('DeepSeek Harness.exe','DeepSeek.exe');'antigravity-ide'=@('Antigravity IDE.exe');opencode=@('OpenCode.exe');chatgpt=@('ChatGPT.exe','Codex.exe');'claude-code'=@('claude.exe','claude.cmd','claude.bat');mimocode=@('mimocode.exe','mimocode.cmd','mimocode.bat');freebuff=@('freebuff.exe','freebuff.cmd','freebuff.bat');'freebuff-desktop'=@('Freebuff.exe');'minimax-code'=@('MiniMax Code.exe')}
             $id = [string]$request.appId
             $path = [string]$request.path
+            $names['pi'] = @('pi.exe','pi.cmd','pi.bat')
             if (-not $names.ContainsKey($id) -or -not [IO.Path]::IsPathRooted($path) -or -not (Test-Path -LiteralPath $path -PathType Leaf) -or [IO.Path]::GetFileName($path) -notin $names[$id]) { throw 'Select the executable belonging to this application.' }
             if ($id -eq 'antigravity-ide' -and -not (Test-AntigravityIdePath $path)) { throw 'Choose the Antigravity IDE installation, with its resources/app/product.json; the standalone App is not this product.' }
             if ($id -eq 'freebuff-desktop' -and -not (Test-Path -LiteralPath (Join-Path (Split-Path -Parent $path) 'resources\app.asar') -PathType Leaf)) { throw 'Choose the installed Freebuff Desktop executable.' }
@@ -1140,7 +1141,7 @@ try {
         }
         'launch' {
             $id = [string]$request.req.appId
-            if ($id -notin @('zcode','qoder','deepseek-harness','antigravity','opencode','minimax-code','mimocode','freebuff','freebuff-desktop','copilot-cli','antigravity-ide','chatgpt','claude-code','claude-desktop')) { throw 'Unknown app' }
+            if ($id -notin @('zcode','qoder','deepseek-harness','antigravity','opencode','minimax-code','mimocode','freebuff','freebuff-desktop','copilot-cli','antigravity-ide','chatgpt','claude-code','claude-desktop','pi')) { throw 'Unknown app' }
             if ($id -in @('antigravity-ide','claude-desktop') -and $request.req.rtl) { throw 'RTL is not verified for this tool.' }
             if ($id -eq 'claude-code' -and $request.req.rtl) {
                 $claudePlugin = Join-Path $root 'apps\ClaudeRtlPlugin'

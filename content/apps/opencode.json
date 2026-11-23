@@ -35,8 +35,8 @@
   },
   "installMethods": [
     {
-      "method": "guide",
-      "idOrUrl": "https://dev.opencode.ai/v2/docs",
+      "method": "official-installer",
+      "idOrUrl": "https://opencode.ai/download",
       "note": {
         "fa": "نسخهٔ دسکتاپ را طبق مستندات رسمی نصب کنید.",
         "en": "Install the desktop app using the official instructions."

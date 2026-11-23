@@ -51,7 +51,8 @@ fn error_code(reason: &str) -> String {
             code,
             "loginRequired" | "network" | "timeout" | "requestFailed" | "protocol" |
             "externalChanged" | "unsupportedVersion" | "configuration" | "storage" |
-            "vault" | "busy" | "desktopAmbiguous"
+            "vault" | "busy" | "desktopAmbiguous" | "rateLimited" | "accessDenied" |
+            "quotaBatchSkipped" | "quotaAuthRejected"
         ) => code.to_owned(),
         _ => "requestFailed".to_owned(),
     }
@@ -61,10 +62,16 @@ fn error_code(reason: &str) -> String {
 /// response text (which may quote credentials or URLs) stays out of the webview.
 fn app_server_error_code(message: &str) -> &'static str {
     let lower = message.to_lowercase();
-    if lower.contains("401")
-        || lower.contains("unauthorized")
-        || lower.contains("oauth")
-        || lower.contains("login")
+    if lower.contains("status 429") || lower.contains("429 too many requests") {
+        "rateLimited"
+    } else if lower.contains("status 403") || lower.contains("403 forbidden") {
+        "accessDenied"
+    } else if lower.contains("401 unauthorized")
+        || lower.contains("status 401")
+        || lower.contains("invalidated oauth token")
+        || lower.contains("login required")
+        || lower.contains("authentication required to read rate limits")
+        || lower.contains("please log out and sign in again")
     {
         "loginRequired"
     } else if lower.contains("timed out") || lower.contains("timeout") {
@@ -84,8 +91,55 @@ fn app_server_error_code(message: &str) -> &'static str {
 fn now() -> i64 {
     chrono::Utc::now().timestamp()
 }
+fn valid_subscription_date(value: &str) -> bool {
+    value.len() == 10 && chrono::NaiveDate::parse_from_str(value, "%Y-%m-%d")
+        .is_ok_and(|date| date.format("%Y-%m-%d").to_string() == value && !value.starts_with("0000"))
+}
 fn fingerprint(v: &Value) -> String {
     format!("{:x}", Sha256::digest(v.to_string().as_bytes()))
+}
+
+fn read_account_and_quota(
+    mut call: impl FnMut(&str, Value) -> Result<Value>,
+    renew: bool,
+) -> Result<(Value, Result<Value>)> {
+    let mut read_account = |refresh_token| {
+        let account = call("account/read", json!({"refreshToken":refresh_token}))?;
+        if account["account"]["type"] != "chatgpt" {
+            return Err(err("loginRequired"));
+        }
+        Ok(account)
+    };
+    let (mut account, renewed) = match read_account(false) {
+        Err(reason) if renew && reason == "accounts:loginRequired" => (read_account(true)?, true),
+        result => (result?, false),
+    };
+    let mut quota = call("account/rateLimits/read", json!({}));
+    let requires_login = |result: &Result<Value>| {
+        result.as_ref().is_err_and(|reason| reason == "accounts:loginRequired")
+    };
+    if renew && !renewed && requires_login(&quota) {
+        account = call("account/read", json!({"refreshToken":true}))?;
+        if account["account"]["type"] != "chatgpt" {
+            return Err(err("loginRequired"));
+        }
+        quota = call("account/rateLimits/read", json!({}));
+    }
+    if requires_login(&quota) {
+        quota = Err(err("quotaAuthRejected"));
+    }
+    Ok((account, quota))
+}
+
+fn batch_token_is_fresh(auth: &Value, timestamp: i64) -> bool {
+    auth["tokens"]["access_token"]
+        .as_str()
+        .and_then(|token| token.split('.').nth(1))
+        .and_then(|payload| URL_SAFE_NO_PAD.decode(payload.trim_end_matches('=')).ok())
+        .and_then(|bytes| serde_json::from_slice::<Value>(&bytes).ok())
+        .and_then(|claims| claims["exp"].as_i64())
+        // Codex 0.148 can proactively renew at five minutes before expiry.
+        .is_some_and(|expires| expires > timestamp + 600)
 }
 
 struct Rpc {
@@ -171,7 +225,7 @@ impl Rpc {
         };
         rpc.call(
             "initialize",
-            json!({"clientInfo":{"name":"vibehub","version":"0.1.0"},"capabilities":{}}),
+            json!({"clientInfo":{"name":"vibehub","version":env!("CARGO_PKG_VERSION")},"capabilities":{}}),
         )?;
         rpc.send(json!({"method":"initialized"}))?;
         Ok(rpc)
@@ -624,6 +678,7 @@ impl Broker {
         }
         if !self.state["fingerprint"].is_null() && !same_account {
             self.state["notice"] = json!("externalChanged");
+            self.state["noticeAt"] = json!(now());
         }
         self.state["fingerprint"] = json!(fp);
         self.state["pendingId"] = Value::Null;
@@ -741,6 +796,12 @@ impl Broker {
         Ok(())
     }
     fn refresh(&mut self, id: &str) -> Result<()> {
+        self.refresh_quota(id, true).map(|_| ())
+    }
+    fn batch_ready(&self) -> bool {
+        self.cli.as_ref().is_some_and(|cli| cli.version == (0, 148, 0))
+    }
+    fn refresh_quota(&mut self, id: &str, renew: bool) -> Result<Option<String>> {
         let i = self.index(id)?;
         let active =
             self.state["activeId"] == id && self.state["accounts"][i]["recoveredLogin"] != true;
@@ -749,37 +810,42 @@ impl Broker {
         } else {
             self.home(id)?
         };
-        self.state["accounts"][i]["errorCode"] = Value::Null;
-        self.state["accounts"][i]["quotaErrorCode"] = Value::Null;
-        // refreshToken: true lets the CLI heal a stale or expired access token from
-        // the stored refresh token before anything reads it. A token the server no
-        // longer accepts (revoked) comes back as account: null, which maps to
-        // loginRequired below; the stored credentials themselves stay untouched.
         let mut quota_error: Option<String> = None;
-        let result = (|| {
-            let mut rpc = self.rpc(&home, !active)?;
-            let account = rpc.call("account/read", json!({"refreshToken":true}))?;
-            if account["account"]["type"] != "chatgpt" {
-                return Err(err("loginRequired"));
-            }
-            let auth = if active {
-                read_global(&home)?
-            } else {
-                read_vault(&home)?.ok_or_else(|| err("loginRequired"))?
+        let result: Result<()> = (|| {
+            let read_auth = || {
+                let auth = if active {
+                    read_global(&home)?
+                } else {
+                    read_vault(&home)?.ok_or_else(|| err("loginRequired"))?
+                };
+                if auth.is_null() {
+                    return Err(err("loginRequired"));
+                }
+                if identity(&auth)?.0 != id {
+                    return Err(err("externalChanged"));
+                }
+                Ok(auth)
             };
-            if identity(&auth)?.0 != id {
-                return Err(err("externalChanged"));
+            let initial = read_auth()?;
+            if !renew && !batch_token_is_fresh(&initial, now()) {
+                return Err(err("quotaBatchSkipped"));
             }
+            let mut rpc = self.rpc(&home, !active)?;
+            if !renew && read_auth()? != initial {
+                return Err(err("quotaBatchSkipped"));
+            }
+            let (account, quota) = read_account_and_quota(|method, params| rpc.call(method, params), renew)?;
+            let auth = read_auth()?;
             self.state["accounts"][i]["plan"] = account["account"]["planType"].clone();
             self.state["accounts"][i]["accountCheckedAt"] = json!(now());
             if active {
-                self.state["fingerprint"] = json!(fingerprint(&auth));
-                write_vault(&self.home(id)?, &auth)?;
+                let fp = fingerprint(&auth);
+                if self.state["fingerprint"].as_str() != Some(&fp) {
+                    write_vault(&self.home(id)?, &auth)?;
+                    self.state["fingerprint"] = json!(fp);
+                }
             }
-            // Quota is supplementary: account/read already proved the login and the
-            // identity, so a failed rate-limit read only marks the quota stale
-            // instead of branding the whole account broken.
-            match rpc.call("account/rateLimits/read", json!({})) {
+            match quota {
                 Ok(quotas) => {
                     self.state["accounts"][i]["windows"] = json!(quota_windows(&quotas));
                     self.state["accounts"][i]["checkedAt"] = json!(now());
@@ -788,23 +854,27 @@ impl Broker {
             }
             Ok(())
         })();
+        if result.as_ref().is_err_and(|reason| reason == "accounts:quotaBatchSkipped") {
+            return result.map(|_| None);
+        }
         match &result {
             Err(reason) => {
                 let code = error_code(reason);
                 self.state["accounts"][i]["error"] = json!(code);
                 self.state["accounts"][i]["errorCode"] = json!(code);
+                self.state["accounts"][i]["quotaErrorCode"] = Value::Null;
             }
             Ok(()) => {
                 self.state["accounts"][i]["error"] = Value::Null;
                 self.state["accounts"][i]["errorCode"] = Value::Null;
-                self.state["accounts"][i]["quotaErrorCode"] = match quota_error {
+                self.state["accounts"][i]["quotaErrorCode"] = match &quota_error {
                     Some(code) => json!(code),
                     None => Value::Null,
                 };
             }
         }
         self.save()?;
-        result
+        result.map(|_| quota_error)
     }
     fn switch(&mut self, app: &tauri::AppHandle, id: &str, confirmed: bool) -> Result<()> {
         let index = self.index(id)?;
@@ -819,13 +889,15 @@ impl Broker {
         if self.desktop["ambiguous"] == true {
             return Err(err("desktopAmbiguous"));
         }
+        let next = read_vault(&self.home(id)?)?.ok_or_else(|| err("loginRequired"))?;
+        if identity(&next)?.0 != id {
+            return Err(err("externalChanged"));
+        }
         if self.desktop["running"] == true && !confirmed {
             self.state["pendingId"] = json!(id);
             self.state["notice"] = json!("restartRequired");
             return self.save();
         }
-        let next = read_vault(&self.home(id)?)?.ok_or_else(|| err("loginRequired"))?;
-        identity(&next)?;
         let recovered = self.state["accounts"][index]["recoveredLogin"] == true;
         let before = read_global(&self.global)?;
         let cfg = config(&self.global)?;
@@ -889,6 +961,7 @@ impl Broker {
             committed["pendingId"] = Value::Null;
             committed["lastSwitch"] = json!(now());
             committed["notice"] = json!("switched");
+            committed["noticeAt"] = committed["lastSwitch"].clone();
             committed["accounts"][index]["recoveredLogin"] = Value::Null;
             let selected = if !recovered && outgoing_id.as_deref() == Some(id) {
                 &outgoing
@@ -902,6 +975,13 @@ impl Broker {
                 let applied = read_global(&self.global)?;
                 if account["account"]["type"] != "chatgpt" || identity(&applied)?.0 != id {
                     return Err(err("switchFailed"));
+                }
+                let applied_profile = &mut committed["accounts"][index];
+                applied_profile["accountCheckedAt"] = json!(now());
+                if applied_profile["errorCode"] == "loginRequired" || applied_profile["error"] == "loginRequired" {
+                    applied_profile["error"] = Value::Null;
+                    applied_profile["errorCode"] = Value::Null;
+                    applied_profile["quotaErrorCode"] = json!("quotaReadFailed");
                 }
                 committed["fingerprint"] = json!(fingerprint(&applied));
                 storage::write(&self.path, &committed).map_err(|_| err("storage"))
@@ -1023,14 +1103,16 @@ impl Broker {
                 json!({
             "id":a["id"],"name":a["name"],"email":a["email"],"plan":a["plan"],
             "windows":a["windows"],"checkedAt":a["checkedAt"],"accountCheckedAt":a["accountCheckedAt"],
+            "subscriptionDate":a["subscriptionDate"],
             "error":a["error"],"errorCode":a["errorCode"],"quotaErrorCode":a["quotaErrorCode"],
             "recoveredLogin":a["recoveredLogin"] == true})
             })
             .collect();
         let mut value = json!({"accounts":accounts,"activeId":self.state["activeId"],"pendingId":self.state["pendingId"],
-            "previousId":self.state["previousId"],"settings":self.state["settings"],"lastSwitch":self.state["lastSwitch"],"notice":self.state["notice"]});
+            "previousId":self.state["previousId"],"settings":self.state["settings"],"lastSwitch":self.state["lastSwitch"],"notice":self.state["notice"],"noticeAt":self.state["noticeAt"]});
         value["errorCode"] = self.state["summaryErrorCode"].clone();
         value["cliReady"] = json!(self.cli.is_some());
+        value["quotaBatchReady"] = json!(self.batch_ready());
         value["cliVersion"] = self
             .cli
             .as_ref()
@@ -1257,7 +1339,7 @@ pub fn handle(app: &tauri::AppHandle, action: &str, payload: Value) -> Result<Va
     }
     if matches!(
         action,
-        "login" | "import" | "importJson" | "refresh" | "switch"
+        "login" | "import" | "importJson" | "refresh" | "refreshQuota" | "switch"
     ) {
         // A broken proxy profile for this app is a configuration problem, not a
         // generic failure; give it a translated, specific error.
@@ -1377,6 +1459,33 @@ pub fn handle(app: &tauri::AppHandle, action: &str, payload: Value) -> Result<Va
             if !result.as_ref().is_err_and(|e| e == "accounts:loginRequired") {
                 result?;
             }
+        }
+        "refreshQuota" => {
+            if !broker.batch_ready() || broker.login.is_some() {
+                return Err(err("quotaBatchSkipped"));
+            }
+            broker.reconcile()?;
+            let id = payload["id"].as_str().ok_or_else(|| err("unknownAccount"))?;
+            let index = broker.index(id)?;
+            if broker.state["accounts"][index]["errorCode"] == "loginRequired" {
+                return Err(err("quotaBatchSkipped"));
+            }
+            let code = match broker.refresh_quota(id, false) {
+                Ok(code) => code,
+                Err(reason) => Some(error_code(&reason)),
+            };
+            let mut snapshot = broker.snapshot();
+            snapshot["quotaBatchCode"] = json!(code);
+            return Ok(snapshot);
+        }
+        "subscriptionDate" => {
+            let id = payload["id"].as_str().ok_or_else(|| err("unknownAccount"))?;
+            let i = broker.index(id)?;
+            let date = payload.get("date").ok_or_else(|| err("subscriptionDateInvalid"))?;
+            if !date.is_null() && !date.as_str().is_some_and(valid_subscription_date) {
+                return Err(err("subscriptionDateInvalid"));
+            }
+            broker.state["accounts"][i]["subscriptionDate"] = date.clone();
         }
         "rename" => {
             let i = broker.index(payload["id"].as_str().unwrap_or(""))?;
@@ -1703,6 +1812,7 @@ mod tests {
         }
         for network in [
             "error sending request for url (https://chatgpt.com/backend-api/)",
+            "OAuth token refresh failed: error sending request",
             "stream disconnected before completion: connection reset",
             "dns lookup failed for chatgpt.com",
         ] {
@@ -1710,6 +1820,129 @@ mod tests {
         }
         assert_eq!(app_server_error_code("request timed out after 25s"), "timeout");
         assert_eq!(app_server_error_code("synthetic-secret"), "requestFailed");
+    }
+    #[test]
+    fn manual_subscription_dates_require_an_exact_calendar_day() {
+        assert!(valid_subscription_date("2028-02-29"));
+        for invalid in ["2027-02-29", "2028-2-29", "0000-01-01", "2028-02-29T00:00:00Z"] {
+            assert!(!valid_subscription_date(invalid));
+        }
+    }
+    #[test]
+    fn quota_refresh_uses_current_login_and_only_renews_on_auth_failure() {
+        let account = json!({"account":{"type":"chatgpt","planType":"plus"}});
+        let quota = json!({"rateLimits":{"primary":{"usedPercent":20}}});
+        for (first_quota, retry_quota, expected) in [
+            (Ok(quota.clone()), None, Ok(Ok(quota.clone()))),
+            (Err(err("network")), None, Ok(Err(err("network")))),
+            (
+                Err(err("loginRequired")),
+                Some(Ok(quota.clone())),
+                Ok(Ok(quota.clone())),
+            ),
+            (
+                Err(err("loginRequired")),
+                Some(Err(err("loginRequired"))),
+                Ok(Err(err("quotaAuthRejected"))),
+            ),
+        ] {
+            let mut steps = VecDeque::from([
+                ("account/read", json!({"refreshToken":false}), Ok(account.clone())),
+                ("account/rateLimits/read", json!({}), first_quota),
+            ]);
+            if let Some(retry) = retry_quota {
+                steps.extend([
+                    ("account/read", json!({"refreshToken":true}), Ok(account.clone())),
+                    ("account/rateLimits/read", json!({}), retry),
+                ]);
+            }
+            let result = read_account_and_quota(|method, params| {
+                let (expected_method, expected_params, response) = steps.pop_front().unwrap();
+                assert_eq!((method, params), (expected_method, expected_params));
+                response
+            }, true);
+            assert_eq!(result, expected.map(|quota| (account.clone(), quota)));
+            assert!(steps.is_empty());
+        }
+        let mut methods = vec![];
+        let result = read_account_and_quota(|method, params| {
+            methods.push(method.to_owned());
+            assert_ne!(params["refreshToken"], true);
+            if method == "account/read" { Ok(account.clone()) } else { Err(err("loginRequired")) }
+        }, false);
+        assert_eq!(result, Ok((account, Err(err("quotaAuthRejected")))));
+        assert_eq!(methods, ["account/read", "account/rateLimits/read"]);
+    }
+    #[test]
+    fn quota_refresh_can_recover_when_the_initial_account_read_requires_login() {
+        let account = json!({"account":{"type":"chatgpt","planType":"plus"}});
+        let quota = json!({"rateLimits":{"primary":{"usedPercent":20}}});
+        for initial in [Err(err("loginRequired")), Ok(json!({"account":null}))] {
+            let mut steps = VecDeque::from([
+                ("account/read", json!({"refreshToken":false}), initial),
+                ("account/read", json!({"refreshToken":true}), Ok(account.clone())),
+                ("account/rateLimits/read", json!({}), Ok(quota.clone())),
+            ]);
+            let result = read_account_and_quota(|method, params| {
+                let (expected_method, expected_params, response) = steps.pop_front().unwrap();
+                assert_eq!((method, params), (expected_method, expected_params));
+                response
+            }, true);
+            assert_eq!(result, Ok((account.clone(), Ok(quota.clone()))));
+            assert!(steps.is_empty());
+        }
+    }
+    #[test]
+    #[ignore = "Opt-in compatibility check with the installed CLI, synthetic credentials and loopback only"]
+    fn installed_cli_batch_quota_does_not_contact_oauth() {
+        use std::net::TcpListener;
+        let cli = find_cli().expect("Codex CLI must be installed");
+        assert_eq!(cli.version, (0, 148, 0));
+        let home = Sandbox::new();
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let base = format!("http://{}", listener.local_addr().unwrap());
+        fs::write(home.0.join("config.toml"), format!(
+            "chatgpt_base_url = '{base}/backend-api'\nopenai_base_url = '{base}/v1'\ncheck_for_update_on_startup = false\n"
+        )).unwrap();
+        let mut auth = synthetic_auth("fixture");
+        let claims = URL_SAFE_NO_PAD.encode(json!({"exp":now() + 3600}).to_string());
+        auth["tokens"]["access_token"] = json!(format!("e30.{claims}.e30"));
+        assert!(batch_token_is_fresh(&auth, now()));
+        assert!(!batch_token_is_fresh(&auth, now() + 3500));
+        write_vault(&home.0, &auth).unwrap();
+        let (sent, received) = mpsc::channel::<()>();
+        let worker = std::thread::spawn(move || {
+            let mut requests = Vec::new();
+            while received.recv_timeout(Duration::from_millis(10)) == Err(mpsc::RecvTimeoutError::Timeout) {
+                if let Ok((mut socket, _)) = listener.accept() {
+                    socket.set_nonblocking(false).unwrap();
+                    socket.set_read_timeout(Some(Duration::from_secs(1))).unwrap();
+                    let mut line = String::new();
+                    BufReader::new(&mut socket).read_line(&mut line).unwrap();
+                    socket.write_all(b"HTTP/1.1 429 Too Many Requests\r\nConnection: close\r\nContent-Length: 0\r\n\r\n").unwrap();
+                    requests.push(line);
+                }
+            }
+            requests
+        });
+        let mut command = Command::new(cli.path);
+        command.args(["app-server", "--listen", "stdio://", "-c", "cli_auth_credentials_store=\"keyring\"", "--enable", "secret_auth_storage"])
+            .env("CODEX_HOME", &home.0)
+            .env("CODEX_REFRESH_TOKEN_URL_OVERRIDE", format!("{base}/oauth/token"))
+            .envs(["HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY"].map(|key| (key, "http://127.0.0.1:9")))
+            .env("NO_PROXY", "localhost,127.0.0.1,::1")
+            .env_remove("OPENAI_API_KEY").env_remove("CODEX_API_KEY").env_remove("CODEX_ACCESS_TOKEN")
+            .current_dir(&home.0).stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::null());
+        let mut rpc = Rpc::from_command(command).unwrap();
+        let result = read_account_and_quota(|method, params| rpc.call(method, params), false);
+        drop(rpc);
+        drop(sent);
+        let requests = worker.join().unwrap();
+        assert_eq!(result.unwrap().1, Err(err("rateLimited")));
+        assert!(requests.iter().any(|line| line.contains("/wham/usage")));
+        assert!(requests.iter().all(|line| !line.contains("/oauth/token")));
+        assert_eq!(read_vault(&home.0).unwrap(), Some(auth));
     }
     #[test]
     #[ignore = "Opt-in installed Codex CLI compatibility check, using isolated synthetic credentials and loopback-only endpoints"]

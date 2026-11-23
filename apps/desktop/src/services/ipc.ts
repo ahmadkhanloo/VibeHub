@@ -286,17 +286,19 @@ export interface ClaudeAccountsSnapshot {
   nativePreview?: boolean;
 }
 
-export type AccountsAction = 'list' | 'login' | 'cancel' | 'import' | 'importJson' | 'refresh' | 'rename' | 'delete' | 'switch' | 'dismiss' | 'settings';
+export type AccountsAction = 'list' | 'login' | 'cancel' | 'import' | 'importJson' | 'refresh' | 'refreshQuota' | 'rename' | 'delete' | 'switch' | 'dismiss' | 'settings' | 'subscriptionDate';
 export interface CodexAccount {
   id: string; name: string; email: string; plan: string | null; checkedAt: number | null; error: string | null;
   recoveredLogin?: boolean;
+  subscriptionDate?: string | null;
   errorCode?: string | null; quotaErrorCode?: string | null; accountCheckedAt?: number | null;
   windows: { bucket: string; name: string; remaining: number | null; minutes: number | null; resetsAt: number | null }[];
 }
 export interface AccountsSnapshot {
   previousId?: string | null;
   errorCode?: string | null;
-  accounts: CodexAccount[]; activeId: string | null; pendingId: string | null; notice: string | null;
+  quotaBatchReady?: boolean; quotaBatchCode?: string | null;
+  accounts: CodexAccount[]; activeId: string | null; pendingId: string | null; notice: string | null; noticeAt?: number | null;
   settings: { enabled: boolean; threshold: number }; lastSwitch: number; cliReady: boolean; nativePreview?: boolean;
   supportedVersion: string; cliVersion?: string | null; desktopRunning: boolean; desktopVerified: boolean; loginPending: boolean;
 }

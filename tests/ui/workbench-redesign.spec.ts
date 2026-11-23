@@ -5,7 +5,7 @@ test('main sidebar links directly to the tools and learning areas', async ({ pag
   await mockNative(page);
   await page.goto('/');
   const sidebar = page.getByRole('navigation', { name: 'Main navigation' });
-  for (const label of ['Apps', 'Helper tools', 'Accounts', 'API notebook', 'Proxy', 'Diagnostics', 'Learn']) {
+  for (const label of ['Apps', 'Accounts', 'API notebook', 'Proxy', 'Learning path']) {
     await expect(sidebar.getByRole('link', { name: label, exact: true })).toBeVisible();
   }
   await expect(page.getByRole('link', { name: 'Settings' })).toBeVisible();
@@ -35,9 +35,8 @@ test('the API notebook keeps compact provider cards in its catalogue view and pr
   await page.goto('/connections/api?view=providers');
   const list = page.locator('.model-workspace-list');
   await expect(list).toBeVisible();
-  await expect(list.getByRole('option')).toHaveCount(7);
+  await expect(list.getByRole('button')).toHaveCount(8);
   await expect(page.getByRole('tab', { name: 'Proxy', exact: true })).toHaveCount(0);
-  await page.getByRole('searchbox').last().fill('Google');
   await page.getByTestId('provider-google').click();
   await page.locator('.model-workspace-detail').getByRole('button', { name: 'Open API key page', exact: true }).click();
   await expect.poll(() => page.evaluate(() => (window as any).__mock.calls.some((call: any) => call.cmd === 'plugin:opener|open_url' && call.args.url === 'https://aistudio.google.com/apikey'))).toBe(true);
@@ -65,4 +64,16 @@ test('installed app keeps normal launch available and hides unsupported RTL setu
   await expect(zcode.getByRole('button', { name: 'Run ZCode' })).toBeVisible();
   await expect(zcode.getByRole('button', { name: 'Set up RTL for ZCode' })).toHaveCount(0);
   await expect(zcode.getByRole('link', { name: 'Prepare ZCode' })).toBeVisible();
+});
+
+test('MiMo and Freebuff are grouped as apps, with Pi installation on its CLI page', async ({ page }) => {
+  await mockNative(page);
+  await page.goto('/?view=available');
+  const apps = page.getByRole('region', { name: 'Apps', exact: true });
+  await expect(apps.getByRole('link', { name: /MiMo Code/ })).toBeVisible();
+  await expect(apps.getByRole('link', { name: /Freebuff/ }).first()).toBeVisible();
+  await page.getByRole('region', { name: 'Terminal tools', exact: true }).getByRole('link', { name: /Pi CLI/ }).click();
+  await expect(page.getByText('npm install -g --ignore-scripts @earendil-works/pi-coding-agent')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Manual guide', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open official website', exact: true })).toHaveCount(0);
 });

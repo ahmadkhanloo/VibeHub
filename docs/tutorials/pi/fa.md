@@ -4,10 +4,10 @@ Pi یک عامل کدنویسی مینیمال خط فرمان است: سبک و
 
 ابتدا Node.js را داشته باشید و سپس فرمان زیر را اجرا کنید:
 
-`npm install -g @mariozechner/pi`
+`npm install -g --ignore-scripts @earendil-works/pi-coding-agent`
 
 در VibeHub فهرست برنامه‌ها را تازه‌سازی کنید تا Pi در گروه ابزارهای ترمینال دیده شود؛ اجرای آن یک پنجرهٔ ترمینال باز می‌کند.
 
 ![کاشی Pi CLI در فهرست برنامه‌های قابل افزودن پیش‌نمایش مرورگری وایب‌هاب.](../../../apps/desktop/public/tutorials/screenshots/pi-vibehub.webp)
 
-[مخزن رسمی و راهنما](https://github.com/badlogic/pi-mono)
+[مخزن رسمی و راهنما](https://github.com/earendil-works/pi)

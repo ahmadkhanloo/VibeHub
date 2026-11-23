@@ -14,16 +14,17 @@ for (const language of ['fa', 'en']) {
     }
     await page.screenshot({ path: `output/explanatory-tooltips/data-reviewed-${language}.png`, fullPage: true });
   });
-  test(`settings explanations remain accessible on demand (${language})`, async ({ page }) => {
+  test(`launch explanations remain accessible on demand (${language})`, async ({ page }) => {
+    const copy = JSON.parse(readFileSync(`apps/desktop/src/i18n/${language}/ux.json`, 'utf8'));
     await mockNative(page, 'ready', language);
     await page.setViewportSize({ width: 320, height: 900 });
     await page.goto('/');
     const help = page.locator('main .vh-info-button').first();
-    const text = await help.getAttribute('aria-label');
-    expect(text!.length).toBeGreaterThan(15);
+    await expect(help).toHaveAccessibleName(copy.help);
     await expect(page.getByRole('tooltip')).toHaveCount(0);
     await help.focus();
-    await expect(page.getByRole('tooltip')).toHaveText(text!);
+    await expect(page.getByRole('tooltip')).toHaveText(copy.launchNote);
+    await expect(help).toHaveAccessibleDescription(copy.launchNote);
     const rect = await page.getByRole('tooltip').boundingBox();
     expect(rect!.x).toBeGreaterThanOrEqual(0);
     expect(rect!.x + rect!.width).toBeLessThanOrEqual(320);

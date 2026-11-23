@@ -1,10 +1,11 @@
 {
   "title": "Proxy Center",
   "subtitle": "Register your own local proxy (e.g. v2rayN); VibeHub is not a VPN and does not guarantee tunneling all traffic.",
-  "workflow": "Create profiles and review connection status here; choose a default from the list, then assign a profile to each tool from its Home card.",
+  "workflow": "Choose a global default or assign a profile to individual apps from its card.",
   "defaultRoute": "Default profile for tools",
   "profiles": "Profiles",
   "newProfile": "New profile",
+  "addV2Ray": "Add V2Ray",
   "noProfiles": "No profiles yet",
   "addFirstProfile": "Create a profile to select it for your tools and test its connection.",
   "untested": "Not tested yet",
@@ -16,7 +17,8 @@
     "direct": "Direct",
     "system": "System",
     "http": "Local HTTP",
-    "socks5": "Local SOCKS5"
+    "socks5": "Local SOCKS5",
+    "mixed": "HTTP/HTTPS + SOCKS5"
   },
   "host": "Host",
   "port": "Port",

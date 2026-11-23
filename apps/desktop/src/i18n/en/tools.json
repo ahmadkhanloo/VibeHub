@@ -1,4 +1,11 @@
 {
+  "libraryTitle": "Tools and skills",
+  "libraryHint": "Find tools for testing and inspecting projects, and skills that guide your coding agent.",
+  "helpersTab": "Helpers",
+  "skillsTab": "Skills",
+  "specKitSummary": "GitHub's toolkit for turning requirements into a specification, plan and tasks.",
+  "pluginsTab": "Plugins",
+  "pluginsHint": "Plugins extend the agent with repeatable workflows. Superpowers is the installed plugin currently surfaced here.",
   "installed": "Installed",
   "notInstalled": "Not detected",
   "terminalHeading": "Terminal and Persian text",

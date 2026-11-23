@@ -12,9 +12,9 @@
   "linux",
   "macos"
  ],
- "websiteUrl": "https://github.com/badlogic/pi-mono",
- "docsUrl": "https://github.com/badlogic/pi-mono/tree/main/packages/pi",
- "sourceRepoUrl": "https://github.com/badlogic/pi-mono",
+ "websiteUrl": "https://github.com/earendil-works/pi",
+ "docsUrl": "https://docs.pi.dev/",
+ "sourceRepoUrl": "https://github.com/earendil-works/pi",
  "isOpenSource": true,
  "freeAccess": "free_tier",
  "freeAccessDetails": {
@@ -23,7 +23,7 @@
  },
  "requiresSignup": false,
  "requiresPaymentCard": null,
- "sourceOfFreeAccess": "https://github.com/badlogic/pi-mono",
+ "sourceOfFreeAccess": "https://github.com/earendil-works/pi",
  "lastVerified": "2026-11-21",
  "capabilities": {
   "install": "reported",
@@ -36,10 +36,10 @@
  "installMethods": [
   {
    "method": "npm",
-   "idOrUrl": "@mariozechner/pi",
+   "idOrUrl": "@earendil-works/pi-coding-agent",
    "note": {
-    "fa": "دستور نصب: npm install -g @mariozechner/pi",
-    "en": "Install with npm install -g @mariozechner/pi"
+    "fa": "دستور نصب: npm install -g --ignore-scripts @earendil-works/pi-coding-agent",
+    "en": "Install with npm install -g --ignore-scripts @earendil-works/pi-coding-agent"
    }
   }
  ]

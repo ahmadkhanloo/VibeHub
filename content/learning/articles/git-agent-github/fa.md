@@ -1,4 +1,4 @@
-درس ۲ از ۳ · زمان پیشنهادی: ۲۵ تا ۳۵ دقیقه، همراه تمرین
+زمان پیشنهادی: ۲۵ تا ۳۵ دقیقه، همراه تمرین
 
 در پایان می‌توانی تغییرات دستیار را بررسی کنی، روی شاخه ثبت کنی و به GitHub بفرستی.
 
@@ -27,6 +27,8 @@ git branch --show-current
 ```powershell
 git diff
 ```
+
+![PowerShell نام شاخهٔ تمرینی و تغییر یک‌خطی را پیش از وارد کردن به Stage نشان می‌دهد.](../../../../apps/desktop/public/tutorials/screenshots/course-git-branch.webp)
 
 فقط فایل بررسی‌شده را انتخاب کن:
 
@@ -86,6 +88,10 @@ fetch اطلاعات راه دور را دریافت می‌کند؛ pull دری
 
 افزونهٔ GitHub در ابزار هوش مصنوعی فقط یک اتصال با مجوز حساب است؛ جای خود Git یا بررسی تغییرات را نمی‌گیرد.
 
+![بعد از ارسال شاخه، برای ساخت Pull Request روی Compare & pull request در GitHub بزن.](../../../../apps/desktop/public/tutorials/screenshots/course-github-compare.webp)
+
+![در نمونهٔ رسمی GitHub، زبانهٔ Files changed محل بررسی تغییرهای شاخه است.](../../../../apps/desktop/public/tutorials/screenshots/course-github.webp)
+
 ## وقتی اشتباه کردی
 
 - فایل اشتباهی stage شده: `git restore --staged notes.txt`؛ ویرایش فایل باقی می‌ماند.
@@ -93,6 +99,6 @@ fetch اطلاعات راه دور را دریافت می‌کند؛ pull دری
 - کامیت منتشرشدهٔ اشتباه: `git revert HEAD` یک کامیت جبرانی می‌سازد؛ ابتدا مطمئن شو HEAD همان کامیت موردنظر است. برای خروج از ویرایشگر پیام کامیت باید پیام را ذخیره کنی و ویرایشگر را ببندی.
 - conflict: توقف کن، status و فایل‌های تعارض را بخوان و هر دو تغییر را بررسی کن؛ بدون فهم نتیجه «قبول همه» را انتخاب نکن. برای ادامه از بخش رفع مشکل درس بعد کمک بگیر.
 
-**[قدم بعدی: درس ۳؛ تمرین و منابع پیشنهادی](/learning/git-practice-resources?category=git)**
+**[تمرین تکمیلی: منابع و تمرین‌های Git](/learning/git-practice-resources?category=git)**
 
 [درس قبل](/learning/git-first-commit?category=git)

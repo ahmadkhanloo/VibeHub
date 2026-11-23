@@ -1,4 +1,4 @@
-export function installMockNative({ scenario, language, onboardingDone }: { scenario: string; language: string; onboardingDone: boolean }) {
+export function installMockNative({ scenario, language, onboardingDone, version }: { scenario: string; language: string; onboardingDone: boolean; version: string }) {
       if (!sessionStorage.getItem("vibehub.fixture.seeded") && !localStorage.getItem("vibehub.settings.v1"))
         localStorage.setItem(
           "vibehub.settings.v1",
@@ -59,6 +59,9 @@ export function installMockNative({ scenario, language, onboardingDone }: { scen
       (window as any).__TAURI_INTERNALS__ = {
         invoke: async (cmd: string, args: any = {}) => {
           state.calls.push({ cmd, args });
+          if (state.scenario === "pending-proxy" && cmd === "proxy_config") {
+            await new Promise(() => {});
+          }
           if (
             (state.scenario === "failed" &&
               ["detect_apps", "detect_editors", "rtl_components"].includes(
@@ -158,7 +161,7 @@ export function installMockNative({ scenario, language, onboardingDone }: { scen
               // Preview values: the browser has no PATH or Program Files to inspect.
               return { repowise: { installed: true, version: '0.45.0' }, browsers: { edge: true, chrome: false }, plugins: { superpowers: true }, skills: { hindsight: true, dsh: true, ponytail: true, uiuxProMax: true, unslop: true, stageshow: true } };
             case "app_version":
-              return "0.1.0";
+              return version;
             case "detect_apps":
               return state.scenario === "empty"
                 ? []

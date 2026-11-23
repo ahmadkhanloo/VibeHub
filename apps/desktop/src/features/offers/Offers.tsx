@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom';
 import { Disclosure } from '@/components/Disclosure';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -37,11 +38,31 @@ export function NewsAndOffers({ embedded = false }: { embedded?: boolean }) {
   const { settings, update } = useSettings();
   const catalog = useCatalog();
   const offers = useMemo(() => classifyOffers(catalog.offers), [catalog.offers]);
+  const [params, setParams] = useSearchParams();
+  const chosenNews = params.get('news');
+  const chosenOffer = params.get('offer');
+  useEffect(() => {
+    const id = chosenOffer ? 'offer-' + chosenOffer : chosenNews ? 'news-' + chosenNews : null;
+    if (!id) return;
+    const frame = requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: 'start' }));
+    return () => cancelAnimationFrame(frame);
+  }, [chosenOffer, chosenNews, catalog]);
+  const changeTab = (value: Tab) => {
+    setTab(value);
+    if (chosenNews || chosenOffer) setParams(previous => {
+      const next = new URLSearchParams(previous);
+      next.delete('news');
+      next.delete('offer');
+      return next;
+    });
+  };
   const [tab, setTab] = useState<Tab>('news');
   // An empty news feed gets no tab: the toggle would only advertise a (0) badge.
   const showNewsTab = catalog.news.length > 0;
-  const activeTab: Tab = tab === 'news' && !showNewsTab ? 'offers' : tab;
+  const activeTab: Tab = chosenOffer ? 'offers' : chosenNews && showNewsTab ? 'news' : tab === 'news' && !showNewsTab ? 'offers' : tab;
   const [offerFilter, setOfferFilter] = useState<OfferState>('active');
+  const selectedOfferState = offers.find(offer => offer.offerId === chosenOffer)?.state;
+  const activeOfferFilter = selectedOfferState ?? offerFilter;
   const [readOffers, setReadOffers] = useState<string[]>(() => readIds('vibehub.readOffers'));
   const [readNews, setReadNews] = useState<string[]>(() => readIds('vibehub.readNews.v1'));
   const [syncing, setSyncing] = useState(false);
@@ -99,7 +120,7 @@ export function NewsAndOffers({ embedded = false }: { embedded?: boolean }) {
     finally { setPermissionBusy(false); }
   };
 
-  const filteredOffers = offers.filter(offer => offer.state === offerFilter);
+  const filteredOffers = offers.filter(offer => offer.state === activeOfferFilter);
   const unreadNews = catalog.news.filter(item => !readNews.includes(`${item.id}:${item.checkedAt}`));
   const unreadOffers = offers.filter(offer => !readOffers.includes(offer.offerId));
 
@@ -116,9 +137,9 @@ export function NewsAndOffers({ embedded = false }: { embedded?: boolean }) {
         <details className="vh-news-settings"><summary><BellRing size={15} aria-hidden="true" />{t('notifications.title')}</summary><div><Toggle checked={settings.nativeNotifications} disabled={permissionBusy} onChange={enabled => void toggleNotifications(enabled)} label={t('notifications.native')} /><p>{t('notifications.nativeHint')}</p></div></details>
       </div>
     </div>
-    <nav className="vh-news-tabs" aria-label={t('sections')}>
-      {showNewsTab && <button type="button" aria-pressed={activeTab === 'news'} onClick={() => setTab('news')}>{t('newsTab')}<Badge tone="muted">{unreadNews.length}</Badge></button>}
-      <button type="button" aria-pressed={activeTab === 'offers'} onClick={() => setTab('offers')}>{t('offersTab')}<Badge tone="muted">{offers.length}</Badge></button>
+    <nav className="vh-news-tabs vh-choice-group" aria-label={t('sections')}>
+      {showNewsTab && <button type="button" aria-pressed={activeTab === 'news'} onClick={() => changeTab('news')}>{t('newsTab')}<Badge tone="muted">{unreadNews.length}</Badge></button>}
+      <button type="button" aria-pressed={activeTab === 'offers'} onClick={() => changeTab('offers')}>{t('offersTab')}<Badge tone="muted">{offers.length}</Badge></button>
     </nav>
 
     {activeTab === 'news' ? <section className="space-y-3" aria-label={t('newsTab')}>
@@ -127,7 +148,7 @@ export function NewsAndOffers({ embedded = false }: { embedded?: boolean }) {
         const key = `${item.id}:${item.checkedAt}`;
         const unread = !readNews.includes(key);
         const appName = item.appId ? catalog.apps.find(app => app.id === item.appId)?.name ?? item.appId : t('appNews');
-        return <Disclosure key={item.id} title={<span className="vh-news-summary"><span><h2>{item.title[lang]}</h2><span className="vh-news-teaser">{item.summary[lang]}</span><span>{t('publishedAt')}: {formatDate(item.publishedAt, lang)}</span></span><span className="flex items-center gap-2"><span>{appName}</span>{unread && <Badge tone="primary">{t('unread')}</Badge>}</span></span>}>
+        return <Disclosure id={'news-' + item.id} key={item.id + (item.id === chosenNews ? "-selected" : "")} defaultOpen={item.id === chosenNews} title={<span className="vh-news-summary"><span><h2>{item.title[lang]}</h2><span className="vh-news-teaser">{item.summary[lang]}</span><span>{t('publishedAt')}: {formatDate(item.publishedAt, lang)}</span></span><span className="flex items-center gap-2"><span>{appName}</span>{unread && <Badge tone="primary">{t('unread')}</Badge>}</span></span>}>
           <div className="vh-news-reader">
             <MarkdownContent source={item.body[lang]} onError={setError} />
             <div><span>{t('sourceChecked')}: {formatDate(item.checkedAt, lang)}</span><button type="button" className="text-primary hover:underline" onClick={() => void openUrl(item.sourceUrl).catch(setError)}>{t('sourceUrl')}</button>{unread && <Button size="sm" variant="ghost" onClick={() => setRead('vibehub.readNews.v1', [...readNews, key], setReadNews)}>{t('markRead')}</Button>}</div>
@@ -136,13 +157,13 @@ export function NewsAndOffers({ embedded = false }: { embedded?: boolean }) {
       })}</div> : <EmptyState icon={<BellRing size={24} aria-hidden="true" />} title={t('newsEmpty')} sub={t('newsEmptyHint')} />}
     </section> : <section className="space-y-3" aria-label={t('offersTab')}>
       <nav className="vh-news-filters" aria-label={t('offerStatus')}>
-        {(['active', 'upcoming', 'expired'] as const).map(state => <button type="button" key={state} aria-pressed={offerFilter === state} onClick={() => setOfferFilter(state)}>{t(state)}<span>{offers.filter(offer => offer.state === state).length}</span></button>)}
+        {(['active', 'upcoming', 'expired'] as const).map(state => <button type="button" key={state} aria-pressed={activeOfferFilter === state} onClick={() => { changeTab('offers'); setOfferFilter(state); }}>{t(state)}<span>{offers.filter(offer => offer.state === state).length}</span></button>)}
       </nav>
       <div className="flex justify-end"><Button size="sm" variant="ghost" disabled={!unreadOffers.length} onClick={markAllOffersRead}><CheckCheck size={15} aria-hidden="true" />{t('markAllRead')}</Button></div>
       {filteredOffers.length ? <div className="vh-news-list">{filteredOffers.map(offer => {
         const unread = !readOffers.includes(offer.offerId);
         const fresh = freshSource(offer);
-        return <Disclosure key={offer.offerId} title={<span className="vh-news-summary"><span><h2>{offer.title[lang]}</h2><span>{t(offer.state)}{offer.endAt ? ` · ${t('expires')}: ${formatDate(offer.endAt, lang)}` : ''}</span>{offer.checkedAt && <span className="vh-news-review-date">{t('sourceChecked')}: {formatDate(offer.checkedAt, lang)}</span>}</span><span className="flex flex-wrap items-center gap-2"><Badge tone={fresh ? 'success' : 'warning'}>{fresh ? t('verified') : t('reportedNeedsCheck')}</Badge>{unread && <Badge tone="primary">{t('unread')}</Badge>}</span></span>}>
+        return <Disclosure id={'offer-' + offer.offerId} key={offer.offerId + (offer.offerId === chosenOffer ? "-selected" : "")} defaultOpen={offer.offerId === chosenOffer} title={<span className="vh-news-summary"><span><h2>{offer.title[lang]}</h2><span>{t(offer.state)}{offer.endAt ? ` · ${t('expires')}: ${formatDate(offer.endAt, lang)}` : ''}</span>{offer.checkedAt && <span className="vh-news-review-date">{t('sourceChecked')}: {formatDate(offer.checkedAt, lang)}</span>}</span><span className="flex flex-wrap items-center gap-2"><Badge tone={fresh ? 'success' : 'warning'}>{fresh ? t('verified') : t('reportedNeedsCheck')}</Badge>{unread && <Badge tone="primary">{t('unread')}</Badge>}</span></span>}>
           <div className="vh-news-reader">
             <p>{offer.summary[lang]}</p>
             {offer.benefit && <p><bdi>{offer.benefit.quantity ?? ''} {offer.benefit.model ?? ''}</bdi> {t('benefitUnits.' + offer.benefit.unit)}</p>}

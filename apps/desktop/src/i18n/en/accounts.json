@@ -53,6 +53,7 @@
     "timeout": "Codex did not respond in time.",
     "loginFailed": "Sign-in failed or expired. Start again.",
     "loginRequired": "Sign in again to refresh this account.",
+    "subscriptionDateInvalid": "Enter a valid calendar date.",
     "reauthMismatch": "You signed in to a different account. Try again with the account shown on the saved profile.",
     "tooMany": "Up to 16 accounts can be saved.",
     "externalChanged": "Codex credentials changed outside VibeHub. Reload and review the active account.",
@@ -76,8 +77,11 @@
     "balanceUnavailable": "The remaining balance could not be verified. Granted quota is shown separately.",
     "readFailed": "Account information could not be read. Previously saved data may be out of date.",
     "quotaReadFailed": "Quota information could not be read. Previously saved usage may be out of date.",
+    "quotaAuthRejected": "Codex recognized the account, but the quota service rejected the request.",
     "restartRequired": "Confirm closing and restarting the original app before switching.",
-    "unsupportedProvider": "This ZCode connection supports ZAI sign-in. The active sign-in provider is different."
+    "unsupportedProvider": "This ZCode connection supports ZAI sign-in. The active sign-in provider is different.",
+    "rateLimited": "The service has temporarily limited quota checks.",
+    "accessDenied": "The service denied the quota check."
   },
   "notices": {
     "externalChanged": "Codex credentials changed outside VibeHub. Reload and review the active account.",
@@ -112,7 +116,6 @@
     "images": "images",
     "units": "units"
   },
-  "undoSwitch": "Return to {{name}}",
   "quota": {
     "title": "Daily quota",
     "intro": "Daily quota for the coding apps, read from inside the app while it runs through VibeHub. Nothing is claimed unless you press the button.",
@@ -158,5 +161,20 @@
       "networkUnavailable": "VibeHub could not reach the app.",
       "busy": "Another quota check is still running."
     }
-  }
+  },
+  "refreshAll": "Refresh all",
+  "batchUnavailable": "Batch checks are unverified for this CLI version. Check accounts individually.",
+  "batchChecking": "Checking quota",
+  "subscriptionTitle": "Subscription date",
+  "subscriptionField": "End or renewal date",
+  "subscriptionHint": "Enter the date shown in the billing settings for this account. Clear the field and save to remove it.",
+  "subscriptionRecordedDate": "Recorded date: {{date}}",
+  "subscriptionDaysLeft_one": "{{days}} day left",
+  "subscriptionDaysLeft_other": "{{days}} days left",
+  "subscriptionToday": "The recorded date is today",
+  "subscriptionPast": "The recorded date has passed",
+  "accountActions": "Actions for {{name}}",
+  "automationSettings": "Automatic switching settings",
+  "fiveHour": "5-hour",
+  "weekly": "Weekly"
 }

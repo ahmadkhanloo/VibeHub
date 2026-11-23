@@ -1,9 +1,16 @@
 # VibeHub Release Acceptance Matrix
 
-**Current snapshot:** 2026-10-31 13:44 +03:30 (Asia/Tehran)
+**Historical public-release baseline:** 2026-10-31 13:44 +03:30 (Asia/Tehran)
 **Branch / source:** `main` at `e8e12c6` (merge of PR #16, tag `v0.2.1`); updater and documentation fixes on `fix/updater-canonical-manifest-urls`.
 **Build:** VibeHub `0.2.1` stable release. The installed upgrade check started from public `0.2.0-beta.4`.
 **Release state:** Stable. `v0.2.0` and `v0.2.1` are published, non-prerelease Releases. Their updater manifests and checksum files were repaired in place on 2026-10-31; no archive was rebuilt or re-signed. See the [updater manifest remediation report](20261031_updater_manifest_remediation.md).
+
+## Local 0.2.8 build and upgrade — 2026-11-23
+
+- Built the Windows x64 NSIS Setup from the working checkout. Upgraded the existing local 0.2.7 installation using `/S /UPDATE` on Windows build 28000. Setup returned 0, the registry and executable both report 0.2.8, and the installed window opened. Six files covering account metadata and encrypted profiles matched their pre-upgrade SHA-256 hashes.
+- Installer SHA-256 `E5C7CA10C2069FB4454A0166E83E7855F51C4E1C762C39C02D3C8649C40A36B9`. TypeScript, bilingual key parity, 105 Node tests, 64 Rust tests, and 18 focused Playwright tests passed. Six opt-in Rust tests were skipped.
+- In the installed app, the inactive Codex profile with a saved sign-in warning refreshed successfully without a new sign-in. Both the five-hour and weekly quotas were recorded, both error fields cleared, and the active profile stayed the same. Desktop account switching was not exercised. The installed Persian Updates tab displayed 0.2.8 with a single tab label and no repeated section heading.
+- Gate 18 is the **public stable-release** acceptance group for clean Windows installation and removal, install modes, real vendor-app launch, Persian environments, and signed updater failure handling. The local upgrade above is recorded separately. The historical Gate 18 rows keep their own evidence and statuses.
 
 ## Owner authorization for 0.2.3 stable — 2026-11-02
 
@@ -17,6 +24,10 @@ After `v0.2.6-beta.6` was published and the outstanding acceptance scenarios wer
 
 The owner requested stable `v0.2.7` after reviewing the accounts hub changes (pinned action notice, compact Codex account cards). Verification in this session: `pnpm check`, `pnpm test` (105 passed), `pnpm i18n:check`, targeted Playwright account specs (13 passed), and `cargo test --lib` (62 passed twice; one unrelated flake in the first run). The clean Windows 10 and 11 install, upgrade, and removal scenarios and the other open Gate 18 scenarios retain their recorded status. This exception applies only to `v0.2.7`.
 
+## Owner authorization for 0.3.0 stable — 2026-11-23
+
+The owner explicitly authorized a stable release exception for `v0.3.0` after disclosure of the open Gate 18 scenarios. The exception applies to this tag. The verification status of each Gate 18 row remains as recorded below.
+
 ## Status meanings
 
 - `PASS` — the stated scenario ran in its recorded environment and its evidence is linked.
@@ -24,7 +35,7 @@ The owner requested stable `v0.2.7` after reviewing the accounts hub changes (pi
 - `UNVERIFIED` — current evidence is missing; do not infer success.
 - `BLOCKED` — a named prerequisite or environment is unavailable.
 
-## Current status by scenario
+## Historical acceptance by scenario
 
 Each row carries its own build and source. The local fixture rows still apply to the `0.2.0` source revision they name; they are not installed-build acceptance. The installed update row applies to the published `0.2.1` release. Snapshot time for the release state: 2026-10-31 13:44 +03:30.
 

@@ -16,8 +16,17 @@ test('browser development exposes separate launch actions and a read-only Codex 
   await expect(page.locator('#browser-preview-banner')).toBeVisible();
   const qoder = page.locator('article').filter({ has: page.getByRole('heading', { name: 'Qoder', exact: true }) });
   await expect(qoder).toBeVisible();
+  await expect(page.getByRole('heading', { name: '۷ برنامهٔ نصب‌شده', exact: true })).toHaveCount(1);
+  const metadata = qoder.locator('.vh-app-meta');
+  await expect(metadata).toContainText('پروکسی');
+  await expect(metadata).toContainText('راست‌چین');
+  await metadata.hover();
+  await expect(page.getByRole('tooltip')).toContainText('وضعیت VPN');
+  await metadata.press('Escape');
+  await expect(page.getByRole('tooltip')).toHaveCount(0);
   await expect(qoder.getByRole('button', {name: 'اجرا Qoder', exact:true})).toBeVisible();
   await expect(qoder.getByRole('button', {name: 'اجرای RTL Qoder', exact:true})).toBeVisible();
+  await expect(page.getByTestId('app-tile-opencode').getByRole('button', { name: 'اجرای RTL OpenCode', exact: true })).toBeEnabled();
   await qoder.getByRole('button', { name: 'اجرای RTL Qoder', exact: true }).click();
   await expect.poll(() => page.evaluate(() => (window as any).__mock.calls.some((call: any) => call.cmd === 'launch_app' && call.args.req.appId === 'qoder' && call.args.req.rtl))).toBe(true);
   await page.locator('a[href="/settings"]').click();

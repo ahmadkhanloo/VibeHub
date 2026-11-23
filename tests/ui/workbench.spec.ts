@@ -5,9 +5,10 @@ test('the sidebar links directly to each destination and legacy routes remain us
   await mockNative(page);
   await page.goto('/');
   const sidebar = page.getByRole('navigation', { name: 'Main navigation' });
-  for (const [label, route] of [['Helper tools','/helpers'],['Accounts','/accounts'],['API notebook','/connections/api'],['Proxy','/connections/proxy'],['Diagnostics','/doctor'],['Learn','/learning']]) {
+  for (const [label, route] of [['Helper tools','/tools'],['Accounts','/accounts'],['API notebook','/connections/api'],['Proxy','/connections/proxy'],['Learning path','/learning'],['Tool guides','/learning?view=reference'],['News','/learning?view=news']]) {
     await expect(sidebar.getByRole('link', { name: label, exact: true })).toHaveAttribute('href', route);
   }
+  await expect(sidebar.getByRole('link', { name: 'Diagnostics', exact: true })).toHaveCount(0);
   // The terminal setup page stays reachable from the workspace cards, not the rail.
   await expect(sidebar.getByRole('link', { name: 'Terminal', exact: true })).toHaveCount(0);
   await expect(sidebar.getByRole('link', { name: /More tools/i })).toHaveCount(0);

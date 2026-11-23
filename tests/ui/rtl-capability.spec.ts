@@ -25,7 +25,8 @@ test('OpenCode controls follow the available adapter while its verification badg
   await page.goto('/app/opencode');
   await expect(page.getByRole('button', { name: 'Run RTL OpenCode', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Run RTL OpenCode', exact: true })).toBeEnabled();
-  await expect(page.getByText('Unknown', { exact: true }).first()).toBeVisible();
+  await page.locator('.vh-details-heading .vh-info-button').hover();
+  await expect(page.getByRole('tooltip')).toContainText('RTL: Unverified');
 });
 
 test('ordinary ChatGPT cannot inherit Codex RTL from the shared app ID', async ({ page }) => {
@@ -41,5 +42,5 @@ test('Codex RTL visibility requires the explicit runtime product variant', async
   await exposeApp(page, 'chatgpt', 'codex');
   await page.goto('/app/chatgpt');
   await expect(page.getByRole('button', { name: 'Run RTL ChatGPT / Codex', exact: true })).toBeVisible();
-  await expect(page.getByText('Unsupported', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Unsupported', { exact: true })).not.toBeVisible();
 });

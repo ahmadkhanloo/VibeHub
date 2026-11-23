@@ -44,5 +44,7 @@ test('new tutorials arrive from the feed, survive offline reload and reject malf
   await page.evaluate(async () => { const data = await import('/src/lib/catalog.ts'); data.clearContentCache(); });
   await page.evaluate(() => sessionStorage.setItem('offline', '1'));
   await page.reload();
+  await expect(page.getByRole('heading', { name: /Superpowers/ })).toBeVisible();
+  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Learning path', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Install and manage skills', exact: true })).toBeVisible();
 });

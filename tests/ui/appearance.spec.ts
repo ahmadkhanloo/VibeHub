@@ -25,7 +25,7 @@ test('the shell is one command bar with a grouped sidebar', async ({ page }) => 
   const sidebar = page.getByRole('navigation', { name: 'Main navigation' });
   await expect(page.locator('.vh-nav .sr-only')).toHaveCount(2);
   await expect(page.locator('.vh-nav-sep')).toHaveCount(2);
-  for (const label of ['Apps', 'Helper tools', 'Accounts', 'API notebook', 'Proxy', 'Learn', 'Diagnostics']) {
+  for (const label of ['Apps', 'Helper tools', 'Accounts', 'API notebook', 'Proxy', 'Learning path', 'Tool guides', 'News']) {
     await expect(sidebar.getByRole('link', { name: label, exact: true })).toBeVisible();
   }
   // Every rail row stays on one line, so the group rhythm is predictable.

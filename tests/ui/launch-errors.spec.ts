@@ -23,7 +23,7 @@ for (const language of ['fa','en']) test(`Qoder port conflict is a localized inl
   const alertBox = await alert.boundingBox();
   const titleBox = await row.getByRole('heading', { name: 'Qoder', exact: true }).boundingBox();
   expect(alertBox && titleBox && (alertBox.y >= titleBox.y + titleBox.height)).toBeTruthy();
-  await expect(row.locator('a[href="/doctor?tool=qoder&kind=app"]')).toBeVisible();
+  await expect(row.locator('a[href="/app/qoder#app-status"]')).toBeVisible();
   await alert.getByRole('button').click();
   await expect.poll(() => page.evaluate(() => (window as any).__mock.calls.filter((c: any) => c.cmd === 'launch_app').length)).toBe(2);
   await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -61,6 +61,8 @@ test('a transient status-read failure remains unknown and clears on recheck with
   });
   await page.goto('/');
   await expect(page.getByRole('button', {name:'Run RTL ZCode',exact:true})).toBeDisabled();
+  const tile = page.getByTestId('app-tile-zcode');
+  await expect(tile.getByText('Launch state could not be checked. Check again.', { exact: false })).toHaveCount(1);
   await expect(page.getByRole('alert')).toHaveCount(0);
   await page.getByRole('button',{name:'Check again ZCode',exact:true}).click();
   await expect(page.getByRole('button',{name:'Run RTL ZCode',exact:true})).toBeEnabled();

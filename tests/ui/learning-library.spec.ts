@@ -1,24 +1,59 @@
 import { test, expect } from '@playwright/test';
 import { mockNative } from './mock';
 
-test('learning library shows compact article summaries and reads full content on a separate route', async ({ page }) => {
+test('the ordered learning path and product reference open the right articles', async ({ page }) => {
   await mockNative(page);
   await page.goto('/learning');
-  await expect(page.getByRole('heading', { name: 'Learn', exact: true })).toBeVisible();
-  const card = page.getByRole('link', { name: /Install and manage skills/ });
+  await expect(page.getByRole('heading', { name: 'Learning path', level: 1 })).toBeVisible();
+  const path = page.getByRole('region', { name: 'Learning path', exact: true }).locator('.vh-learning-row');
+  await expect(path).toHaveCount(14);
+  expect(await path.evaluateAll(rows => rows.map(row => row.getAttribute('data-article')))).toEqual([
+    'programming-basics', 'first-project', 'cli-basics', 'desktop-agent-basics',
+    'design-basics', 'testing-basics', 'clean-code', 'git-first-commit', 'git-agent-github', 'skill-basics',
+    'claude-code-handbook', 'external-model-api', 'config-deploy', 'release-basics',
+  ]);
+  for (const [name, start, count] of [['Beginner', 1, 4], ['Intermediate', 5, 6], ['Advanced', 11, 4]] as const) {
+    const level = page.getByRole('region', { name, exact: true });
+    await expect(level.getByRole('list')).toHaveAttribute('start', String(start));
+    await expect(level.getByRole('listitem')).toHaveCount(count);
+  }
+  await path.first().getByRole('link').click();
+  await expect(page.getByText('Lesson 1 of 14')).toBeVisible();
+  const courseNav = page.getByRole('navigation', { name: 'Learning path' });
+  await expect(courseNav.getByRole('link')).toHaveCount(1);
+  await courseNav.getByRole('link', { name: /Next lesson/ }).click();
+  await expect(page).toHaveURL(/\/learning\/first-project$/);
+  await expect(page.getByText('Lesson 2 of 14')).toBeVisible();
+  await expect(courseNav.getByRole('link', { name: /Previous lesson/ })).toHaveAttribute('href', '/learning/programming-basics');
+  await page.getByRole('link', { name: 'Back to learning' }).click();
+  await expect(page.getByRole('link', { name: /Install and manage skills/ })).toBeVisible();
+  await path.getByRole('link', { name: /Connect an external model/ }).click();
+  await expect(page.getByRole('heading', { name: /Claude Code CLI: use an Anthropic Messages gateway/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /OpenCode: connect a listed provider/ })).toBeVisible();
+  const nav = page.getByRole('navigation', { name: 'Main navigation' });
+  await nav.getByRole('link', { name: 'News', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'News', level: 1 })).toBeVisible();
+  await expect(nav.getByRole('link', { name: 'News', exact: true })).toHaveAttribute('aria-current', 'page');
+  await nav.getByRole('link', { name: 'Tool guides', exact: true }).click();
+  await expect(nav.getByRole('link', { name: 'Tool guides', exact: true })).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByRole('link', { name: /Install and manage skills/ })).toHaveCount(0);
+  const card = page.getByRole('link', { name: /Spec Kit: from specification/ });
   await expect(card).toBeVisible();
   await expect(card.getByRole('heading')).toBeVisible();
-  await expect(card).not.toContainText('## Install carefully');
   await card.click();
-  await expect(page.getByRole('heading', { name: 'Install and manage skills', exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Back to learning', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Spec Kit: from specification/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Back to reference', exact: true })).toBeVisible();
   await expect(page.getByText('Original source', { exact: true })).toBeVisible();
-  await page.getByRole('link', { name: 'Back to learning', exact: true }).click();
-  await page.getByRole('link', { name: /skill-creator/ }).click();
-  await expect(page.getByRole('link', { name: 'Install and manage skills', exact: true }).last()).toBeVisible();
+  await page.getByRole('link', { name: 'Back to reference', exact: true }).click();
+  await expect(page.locator('[data-article="skill-creator"]')).toHaveCount(0);
+  await page.locator('[data-article="freebuff"] a').click();
+  await page.getByRole('link', { name: /Open Freebuff.* in Apps/ }).click();
+  await expect(page).toHaveURL(/\/app\/freebuff\?tab=guide$/);
+  await page.getByRole('link', { name: 'Read in Reference' }).click();
+  await expect(page).toHaveURL(/\/learning\/freebuff\?view=reference$/);
 });
 
-test('a new feed lesson and category appear without rebuilding the application', async ({ page }) => {
+test('a feed adds new lessons without displacing the packaged curriculum', async ({ page }) => {
   await mockNative(page);
   await page.addInitScript(() => {
     const host = window as any, original = host.__TAURI_INTERNALS__.invoke;
@@ -36,6 +71,8 @@ test('a new feed lesson and category appear without rebuilding the application',
   });
   await page.goto('/learning');
   await page.getByRole('button', { name: 'Refresh content', exact: true }).click();
+  await expect(page.getByText('New tutorials and news have been downloaded.')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Learning path', exact: true }).getByTestId('learning-row')).toHaveCount(14);
   await page.getByLabel('Learning categories').selectOption({ label: 'New topic' });
   await expect(page).toHaveURL(/category=new-topic/);
   await expect(page.getByRole('link', { name: /New lesson/ })).toBeVisible();
@@ -51,11 +88,36 @@ test('a new feed lesson and category appear without rebuilding the application',
   await expect(page.getByText('Fresh content', { exact: true })).toBeVisible();
 });
 
+for (const language of ['fa', 'en'] as const) {
+  test(`all learning screenshots load in ${language}`, async ({ page }) => {
+    test.setTimeout(120_000);
+    await mockNative(page, 'ready', language);
+    await page.goto('/learning');
+    const rows = page.getByRole('region', { name: language === 'fa' ? 'مسیر آموزشی' : 'Learning path', exact: true })
+      .getByTestId('learning-row');
+    await expect(rows).toHaveCount(14);
+    const links = await page.getByTestId('learning-row').getByRole('link')
+      .evaluateAll(items => items.map(item => item.getAttribute('href')!));
+    for (const href of links) {
+      await page.goto(href);
+      const images = page.locator('.guide figure > button img');
+      await expect(images.first(), href).toBeVisible();
+      const loaded = await images.evaluateAll(elements => Promise.all(elements.map(async element => {
+        const image = element as HTMLImageElement;
+        image.loading = 'eager';
+        await image.decode();
+        return image.naturalWidth > 0 && image.alt.trim().length > 0;
+      })));
+      expect(loaded, href).not.toContain(false);
+    }
+  });
+}
+
 test('app guides show the Claude Code path and inline official screenshots in Persian', async ({ page }) => {
   await mockNative(page, 'ready', 'fa');
   await page.goto('/guides/claude-code');
   await expect(page.getByRole('heading', { name: 'Claude Code CLI', exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'بازگشت به آموزش‌ها', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'بازگشت به مرجع', exact: true })).toBeVisible();
   await expect(page.locator('.guide img').first()).toBeVisible();
   await page.locator('.guide img').first().scrollIntoViewIfNeeded();
   await expect.poll(() => page.locator('.guide img').first().evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);

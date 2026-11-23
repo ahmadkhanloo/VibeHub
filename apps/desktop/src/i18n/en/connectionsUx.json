@@ -33,7 +33,7 @@
     "ad_supported": "Ad-supported",
     "unknown": "Access terms unknown"
   },
-  "proxyIntro": "Manage local proxy profiles here. Assign each tool's route from its setup page; VibeHub does not provide a VPN.",
+  "proxyIntro": "Manage proxy profiles and their tool assignments here; VibeHub does not provide a VPN service.",
   "proxyConfigSaved": "Default proxy settings saved.",
   "proxyLimitations": "How proxy requirements affect editors",
   "refreshProfiles": "Refresh profiles",
@@ -57,5 +57,8 @@
   "apiReferenceShort": "API reference; manual setup",
   "apiReferenceUnavailable": "The saved API reference is unavailable. Choose another connection.",
   "apiReferenceReadFailed": "API references could not be read. Try again from Connections.",
-  "previousApiUnavailable": "The previous API reference no longer exists. Choose an available connection."
+  "previousApiUnavailable": "The previous API reference no longer exists. Choose an available connection.",
+  "assignTools": "Assign to tools",
+  "assignToolsHint": "Ticking an app only saves this choice. Nothing launches now. The next time you open the app from VibeHub, it receives this profile as its proxy setting. Clear the tick to return to the global default.",
+  "assignmentRequiresProxy": "When a proxy is required, only HTTP or SOCKS5 profiles can be assigned."
 }

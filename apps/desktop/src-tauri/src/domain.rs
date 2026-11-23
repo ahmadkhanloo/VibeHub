@@ -1,7 +1,7 @@
 use serde_json::Value;
 
 pub type Result<T> = std::result::Result<T, String>;
-pub const APP_IDS: [&str; 13] = [
+pub const APP_IDS: [&str; 14] = [
     "zcode",
     "qoder",
     "deepseek-harness",
@@ -15,6 +15,7 @@ pub const APP_IDS: [&str; 13] = [
     "claude-code",
     "claude-desktop",
     "minimax-code",
+    "pi",
 ];
 pub const EDITOR_IDS: [&str; 8] = [
     "vscode",
@@ -73,7 +74,7 @@ pub fn validate_profile(v: &Value) -> Result<()> {
     }
     match field(v, "mode")? {
         "direct" | "system" => (),
-        "http" | "socks5" => {
+        "http" | "socks5" | "mixed" => {
             let host = field(v, "host")?;
             if host.is_empty()
                 || host
@@ -94,7 +95,7 @@ pub fn validate_profile(v: &Value) -> Result<()> {
             };
             reqwest::Url::parse(&format!("{scheme}://{host}:{port}"))
                 .map_err(|_| "Invalid proxy address")?;
-            if v["mode"] == "socks5"
+            if matches!(v["mode"].as_str(), Some("socks5" | "mixed"))
                 && v["hasPassword"] == true
                 && v["username"].as_str().unwrap_or("").is_empty()
             {
@@ -127,7 +128,7 @@ pub fn validate_config(cfg: &Value, profiles: &[Value]) -> Result<()> {
             .iter()
             .find(|p| p["id"] == id)
             .ok_or("Proxy profile does not exist")?;
-        if required && !matches!(profile["mode"].as_str(), Some("http" | "socks5")) {
+        if required && !matches!(profile["mode"].as_str(), Some("http" | "socks5" | "mixed")) {
             return Err("Required proxy must use an explicit HTTP or SOCKS5 profile".into());
         }
     }

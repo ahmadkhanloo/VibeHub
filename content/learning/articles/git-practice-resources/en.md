@@ -22,6 +22,8 @@ According to its author, it checks exercise results using real Git in a compatib
 
 [Open in browser](https://gitbybit.com/)
 
+![In a local Git exercise, use git diff to check a change to an actual file and git status to check whether it is staged.](../../../../apps/desktop/public/tutorials/screenshots/course-git-diff.webp)
+
 ## When you need an explanation or solution
 
 ### Pro Git in Persian

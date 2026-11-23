@@ -4,11 +4,8 @@ import { mockNative } from './mock';
 test('free API presets are listed and Workers AI requires an account ID', async ({ page }) => {
   await mockNative(page);
   await page.goto('/connections/api?view=providers');
-  await page.locator('main input[type=search]').first().fill('groq');
   await expect(page.getByTestId('provider-groq')).toBeVisible();
-  await page.locator('main input[type=search]').first().fill('cloudflare');
   await expect(page.getByTestId('provider-cloudflare-workers-ai')).toBeVisible();
-  await page.locator('main input[type=search]').first().fill('');
 
   await page.getByRole('button', { name: 'Try a custom URL', exact: true }).click();
   const dialog = page.getByRole('dialog');
@@ -25,7 +22,7 @@ test('free API presets are listed and Workers AI requires an account ID', async 
   await baseUrl.fill('https://api.cloudflare.com/client/v4/accounts/0123456789abcdef0123456789abcdef/ai/v1');
   await dialog.getByRole('button', { name: 'Save connection' }).click();
   await expect(dialog).toHaveCount(0);
-  await expect(page.locator('[data-testid^="connection-"]').filter({ hasText: 'Cloudflare Workers AI' })).toBeVisible();
+  await expect(page.getByTestId('saved-connections').getByRole('button', { name: /Cloudflare Workers AI/ })).toBeVisible();
 });
 
 test('API test requires confirmation and unauthenticated local models do not claim a key was authenticated', async ({ page }) => {
@@ -86,8 +83,6 @@ for (const lang of ['en', 'fa']) {
     await dialog.locator('button[type=submit]').click();
     await expect(dialog).toBeHidden();
     await page.reload();
-    await page.locator('main input[type=search]').first().fill('models.example.invalid');
-    await page.locator('[data-testid^="provider-custom:"]').click();
 
     const card = page.locator('[data-testid^=connection-]').filter({ hasText: 'OpenAI-compatible' });
     await expect(card.getByRole('button', { name: /Test connection|\u062a\u0633\u062a \u0627\u062a\u0635\u0627\u0644/ })).toBeDisabled();
@@ -109,8 +104,6 @@ for (const lang of ['en', 'fa']) {
       .map((call: any) => Object.keys(call.args)))).toEqual([['id'], ['id'], ['id']]);
     const savedTime = await card.locator('bdi').first().textContent();
     await page.reload();
-    await page.locator('main input[type=search]').first().fill('models.example.invalid');
-    await page.locator('[data-testid^="provider-custom:"]').click();
     await expect(card.getByText('fixture-new', { exact: true })).toBeVisible();
     await expect(card.locator('bdi').first()).toHaveText(savedTime ?? '');
     await expect(card.getByRole('button', { name: refresh })).toBeVisible();

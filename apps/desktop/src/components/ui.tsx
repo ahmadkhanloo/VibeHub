@@ -323,17 +323,19 @@ export function ErrorNotice({
     );
   return (
     <div className="vh-error" role={role}>
-      <div className="flex items-start gap-3">
+      <div className="vh-error-layout flex items-start gap-3">
         <AlertCircle size={19} aria-hidden="true" className="shrink-0" />
         <div className="min-w-0 flex-1">
-            <p className="font-bold">{message ?? t(causeKey)}</p>
-            <p className="mt-1 text-sm">{recovery ?? t("recovery")}</p>
-            {!message && <details className="mt-2 text-xs">
-            <summary>{t("technicalDetails")}</summary>
-            <pre dir="ltr" className="mt-2 whitespace-pre-wrap break-all">
-              {detail}
-            </pre>
-            </details>}
+          <p className="font-bold">{message ?? t(causeKey)}</p>
+          <p className="mt-1 text-sm">{recovery ?? t("recovery")}</p>
+          {!message && (
+            <details className="mt-2 text-xs">
+              <summary>{t("technicalDetails")}</summary>
+              <pre dir="ltr" className="mt-2 whitespace-pre-wrap break-all">
+                {detail}
+              </pre>
+            </details>
+          )}
         </div>
         {onRetry && (
           <Button size="sm" onClick={onRetry}>
@@ -428,7 +430,7 @@ export function Tabs<T extends string>({
 }: {
   value: T;
   onChange: (v: T) => void;
-  items: { value: T; label: string }[];
+  items: { value: T; label: string; icon?: ReactNode }[];
   label: string;
   panelId?: string;
 }) {
@@ -464,6 +466,7 @@ export function Tabs<T extends string>({
             }
           }}
         >
+          {item.icon}
           {item.label}
         </button>
       ))}

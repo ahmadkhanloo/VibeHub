@@ -108,7 +108,6 @@
       "contentPath": "content/learning/articles/first-project",
       "relatedIds": [
         "getting-started",
-        "git-first-commit",
         "rtl-setup"
       ]
     },
@@ -349,8 +348,8 @@
       "kind": "guide",
       "order": 10,
       "title": {
-        "fa": "۱. اولین تغییرت را با Git ثبت کن",
-        "en": "1. Record your first change with Git"
+        "fa": "اولین تغییرت را با Git ثبت کن",
+        "en": "Record your first change with Git"
       },
       "summary": {
         "fa": "از اینجا شروع کن؛ در یک پوشهٔ تمرینی، تغییرها را ببین و اولین کامیتت را بساز.",
@@ -366,8 +365,8 @@
       "kind": "guide",
       "order": 20,
       "title": {
-        "fa": "۲. تغییرات ایجنت و GitHub را مدیریت کن",
-        "en": "2. Manage agent changes and GitHub"
+        "fa": "تغییرات ایجنت و GitHub را مدیریت کن",
+        "en": "Manage agent changes and GitHub"
       },
       "summary": {
         "fa": "تغییرات دستیار را بازبینی کن، روی شاخه کار کن و نتیجه را به GitHub بفرست.",
@@ -383,8 +382,8 @@
       "kind": "guide",
       "order": 30,
       "title": {
-        "fa": "۳. تمرین کن و منبع مناسب را پیدا کن",
-        "en": "3. Practice and find the right resource"
+        "fa": "تمرین‌ها و منابع تکمیلی Git",
+        "en": "Extra Git exercises and resources"
       },
       "summary": {
         "fa": "تمرین فارسی گیت، تمرین با Git واقعی و منابعی برای مرور یا رفع مشکل.",
@@ -518,6 +517,179 @@
       ],
       "contentPath": "content/learning/articles/unslop",
       "sourceUrl": "https://skills.sh"
+    },
+    {
+      "id": "cli-basics",
+      "category": "start",
+      "kind": "guide",
+      "order": 501,
+      "title": {
+        "fa": "کار با ابزارهای خط فرمان",
+        "en": "Working with CLI tools"
+      },
+      "summary": {
+        "fa": "پوشهٔ کاری، آرگومان، وضعیت خروج و نشست دستیار را با یک تمرین بشناسید.",
+        "en": "Practice the working directory, arguments, exit status and agent sessions."
+      },
+      "checkedAt": "2026-11-23",
+      "sourceUrl": "https://learn.microsoft.com/en-us/powershell/scripting/learn/ps101/01-getting-started",
+      "contentPath": "content/learning/articles/cli-basics"
+    },
+    {
+      "id": "desktop-agent-basics",
+      "category": "start",
+      "kind": "guide",
+      "order": 501,
+      "title": {
+        "fa": "کار با اپ‌های کدنویسی",
+        "en": "Working with desktop coding apps"
+      },
+      "summary": {
+        "fa": "باز کردن پروژه، انتخاب مدل، دادن زمینه و بررسی تغییرات را با OpenCode تمرین کنید.",
+        "en": "Practice opening a project, selecting a model, sharing context and reviewing edits with OpenCode."
+      },
+      "checkedAt": "2026-11-23",
+      "sourceUrl": "https://opencode.ai/docs/",
+      "contentPath": "content/learning/articles/desktop-agent-basics"
+    },
+    {
+      "id": "clean-code",
+      "category": "workflows",
+      "kind": "guide",
+      "order": 501,
+      "title": {
+        "fa": "کد تمیز با کمک دستیار",
+        "en": "Clean code with a coding agent"
+      },
+      "summary": {
+        "fa": "به دستیار معیار روشن بدهید و خوانایی و حفظ رفتار را در تغییرات بررسی کنید.",
+        "en": "Give your agent concrete criteria and review the diff for readability and preserved behavior."
+      },
+      "checkedAt": "2026-11-23",
+      "sourceUrl": "https://refactoring.com/",
+      "contentPath": "content/learning/articles/clean-code"
+    },
+    {
+      "id": "config-deploy",
+      "category": "workflows",
+      "kind": "guide",
+      "order": 501,
+      "title": {
+        "fa": "کانفیگ، متغیرهای محیطی و دیپلوی",
+        "en": "Configuration, environment variables and deployment"
+      },
+      "summary": {
+        "fa": "تنظیمات را از کد جدا کنید و برای ساخت، آزمون و بازگشت نسخه آماده شوید.",
+        "en": "Separate configuration from code and prepare to build, smoke-test and roll back."
+      },
+      "checkedAt": "2026-11-23",
+      "sourceUrl": "https://12factor.net/config",
+      "contentPath": "content/learning/articles/config-deploy"
+    },
+    {
+      "id": "external-model-api",
+      "category": "models",
+      "kind": "guide",
+      "order": 15,
+      "title": {
+        "fa": "اتصال مدل بیرونی با API",
+        "en": "Connect an external model with an API"
+      },
+      "summary": {
+        "fa": "تنظیم نشانی، کلید و شناسهٔ مدل در Claude Code و OpenCode و آزمودن اتصال.",
+        "en": "Configure a base URL, key and model ID in Claude Code and OpenCode, then verify the connection."
+      },
+      "checkedAt": "2026-11-23",
+      "sourceUrl": "https://code.claude.com/docs/en/llm-gateway-connect",
+      "relatedIds": [
+        "claude-code-handbook",
+        "desktop-agent-basics",
+        "config-deploy"
+      ],
+      "contentPath": "content/learning/articles/external-model-api"
+    },
+    {
+      "id": "design-basics",
+      "category": "ui",
+      "kind": "guide",
+      "order": 10,
+      "title": {"fa": "اصول طراحی رابط", "en": "Interface design fundamentals"},
+      "summary": {"fa": "فرم، پیام خطا و مسیر صفحه‌کلید را با یک تمرین طراحی کنید.", "en": "Design a form, an error state and a keyboard flow through a practical exercise."},
+      "checkedAt": "2026-11-23",
+      "sourceUrl": "https://www.w3.org/WAI/tutorials/forms/",
+      "contentPath": "content/learning/articles/design-basics"
+    },
+    {
+      "id": "programming-basics",
+      "category": "start",
+      "kind": "guide",
+      "order": 500,
+      "title": {
+        "fa": "اصول برنامه‌نویسی",
+        "en": "Programming fundamentals"
+      },
+      "summary": {
+        "fa": "از ورودی و شرط تا تابع و خطا، با یک تمرین کوچک.",
+        "en": "Learn inputs, conditions, functions and errors with a small exercise."
+      },
+      "sourceUrl": "https://docs.python.org/3/tutorial/controlflow.html",
+      "checkedAt": "2026-11-23",
+      "contentPath": "content/learning/articles/programming-basics"
+    },
+    {
+      "id": "testing-basics",
+      "category": "testing",
+      "kind": "guide",
+      "order": 500,
+      "title": {
+        "fa": "آزمون و رفع خطا",
+        "en": "Testing and debugging"
+      },
+      "summary": {
+        "fa": "برای رفتار عادی، مرزی و نامعتبر آزمون بنویسید.",
+        "en": "Test normal, boundary and invalid inputs."
+      },
+      "sourceUrl": "https://docs.python.org/3/library/unittest.html",
+      "checkedAt": "2026-11-23",
+      "contentPath": "content/learning/articles/testing-basics"
+    },
+    {
+      "id": "release-basics",
+      "category": "workflows",
+      "kind": "guide",
+      "order": 500,
+      "title": {
+        "fa": "نسخه‌گذاری و انتشار",
+        "en": "Versioning and releases"
+      },
+      "summary": {
+        "fa": "تغییرات را با شمارهٔ نسخه، تگ و یادداشت انتشار ثبت کنید.",
+        "en": "Track changes with versions, tags and release notes."
+      },
+      "sourceUrl": "https://semver.org/",
+      "checkedAt": "2026-11-23",
+      "contentPath": "content/learning/articles/release-basics"
+    },
+    {
+      "id": "spec-kit",
+      "category": "skills",
+      "kind": "skill",
+      "order": 500,
+      "title": {
+        "fa": "Spec Kit: از مشخصات تا برنامهٔ اجرا",
+        "en": "Spec Kit: from specification to implementation plan"
+      },
+      "summary": {
+        "fa": "نیازها، معیار پذیرش، طرح فنی و وظایف را پیش از پیاده‌سازی روشن کنید.",
+        "en": "Write requirements, acceptance criteria, a technical plan and tasks before implementation."
+      },
+      "sourceUrl": "https://github.com/github/spec-kit",
+      "checkedAt": "2026-11-23",
+      "contentPath": "content/learning/articles/spec-kit",
+      "relatedIds": [
+        "skill-basics",
+        "superpowers"
+      ]
     },
     {
       "id": "stageshow",

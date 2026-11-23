@@ -97,7 +97,7 @@ export interface GuideMeta {
   sections: string[];
 }
 
-export type ProxyMode = 'direct' | 'system' | 'http' | 'socks5';
+export type ProxyMode = 'direct' | 'system' | 'http' | 'socks5' | 'mixed';
 
 export interface ProxyProfile {
   id: string;
@@ -168,7 +168,7 @@ export interface TerminalSetupState {
 }
 
 export const CAPABILITY_KEYS: Capability[] = ['install', 'launch', 'rtl', 'proxy', 'terminal', 'byok'];
-export const APP_IDS = ['zcode', 'qoder', 'deepseek-harness', 'opencode', 'mimocode', 'freebuff', 'freebuff-desktop', 'copilot-cli', 'antigravity-ide', 'chatgpt', 'claude-code', 'claude-desktop', 'minimax-code'] as const;
+export const APP_IDS = ['zcode', 'qoder', 'deepseek-harness', 'opencode', 'mimocode', 'freebuff', 'freebuff-desktop', 'copilot-cli', 'antigravity-ide', 'chatgpt', 'claude-code', 'claude-desktop', 'minimax-code', 'pi'] as const;
 export type AppId = (typeof APP_IDS)[number];
 
 export { appManifestSchema, providerManifestSchema, offerSchema, feedIndexSchema, assertNoExecutablePayload } from './schemas.ts';

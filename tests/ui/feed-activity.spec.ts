@@ -31,7 +31,7 @@ test('startup refresh, concurrent manual requests and failed refresh retain vali
   const before = await page.evaluate(() => localStorage.getItem('vibehub.content.v1'));
   await page.evaluate(() => { (window as any).__mock.failFeed = true; });
   await page.locator('summary').filter({hasText:/^Advanced$/}).click();
-  await page.getByRole('button', { name: 'Check content updates (catalog/guides/offers)', exact: true }).click();
+  await page.getByRole('button', { name: 'Check for content updates', exact: true }).click();
   await expect(page.getByRole('alert')).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('vibehub.content.v1'))).toBe(before);
 });

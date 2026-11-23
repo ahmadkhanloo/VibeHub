@@ -6,21 +6,26 @@ test('one compact learning destination keeps legacy guide links active and only 
   await page.goto('/guides/qoder');
   const nav = page.getByRole('navigation', { name: 'Main navigation' });
   await expect(nav.getByRole('link', { name: 'Guides', exact: true })).toHaveCount(0);
-  const learn = nav.getByRole('link', { name: 'Learn', exact: true });
+  const learn = nav.getByRole('link', { name: 'Tool guides', exact: true });
   await expect(learn).toHaveClass(/is-active/);
   await learn.hover();
   await expect(page.getByRole('tooltip')).toHaveCount(0);
   await page.getByRole('button', { name: 'Collapse sidebar', exact: true }).click();
   await learn.hover();
-  await expect(page.getByRole('tooltip')).toHaveText('Learn');
+  await expect(page.getByRole('tooltip')).toHaveText('Tool guides');
   await page.goto('/learning');
-  await expect(page.getByRole('heading', { name: 'Learn', exact: true })).toBeVisible();
-  await expect(page.getByRole('searchbox', { name: 'Search learning guides' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Learning path', level: 1 })).toBeVisible();
+  await expect(page.getByRole('searchbox', { name: 'Search…' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Search…', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Search scope' }).selectOption('learning');
+  await expect(page.getByRole('searchbox', { name: 'Search…' })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await learn.click();
   await expect(page.getByLabel('Learning categories').locator('option', { hasText: 'App guides' })).toHaveCount(1);
   await expect(page.getByRole('link', { name: /Qoder/ }).first()).toBeVisible();
 });
 
-test('diagnostic groups are visible before running and settle independently including failures and reruns', async ({ page }) => {
+test('Windows prerequisites can be retried after failure', async ({ page }) => {
   await mockNative(page);
   await page.addInitScript(() => {
     const host = window as any, original = host.__TAURI_INTERNALS__.invoke;
@@ -38,20 +43,15 @@ test('diagnostic groups are visible before running and settle independently incl
     };
   });
   await page.goto('/doctor');
-  const native = page.locator('[data-check-group="native"]');
-  const apps = page.locator('[data-check-group="apps"]');
-  await expect(native.getByText('Ready', { exact: true })).toBeVisible();
-  await expect(apps.getByText('Ready', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Run checks', exact: true }).click();
-  await expect(native.getByText('Checking…', { exact: true })).toBeVisible();
-  await expect(apps.getByText('Ready', { exact: true })).toHaveCount(0);
-  await expect(apps.getByRole('heading', { name: 'Installed apps and paths', exact: true })).toBeVisible();
-  await expect(native.getByText('Checking…', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Windows prerequisites' })).toBeVisible();
+  const run = page.getByRole('button', { name: 'Run checks', exact: true });
+  await run.click();
+  await expect(run).toBeDisabled();
   await page.evaluate(() => (window as any).__finishDoctor());
-  await expect(native.getByText('Error: Fixture prerequisite failure', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Run checks', exact: true }).click();
-  await expect(native.getByText('Error: Fixture prerequisite failure', { exact: true })).toHaveCount(0);
-  await expect(native.getByRole('heading', { name: 'node', exact: true })).toBeVisible();
+  await expect(page.getByRole('alert')).toContainText('The prerequisite check is unavailable');
+  await run.click();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect(page.getByText('node', { exact: true })).toBeVisible();
 });
 
 test('Persian host links to the official download and reports detected installations', async ({ page }) => {
