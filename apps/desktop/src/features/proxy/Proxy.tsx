@@ -41,10 +41,9 @@ export function ProxyPage() {
     await refreshProxy(); setMessage(t('connectionsUx:proxyConfigSaved'));
   });
   const installedIds = new Set(detectedApps.filter(app => app.installed).map(app => app.id));
-  const installedCliTools = catalogApps
-    .filter(app => installedIds.has(app.id) && app.kind === 'cli_agent')
-    .map(app => ({ id: app.id, name: app.name, app: true }));
-  const tools = installedCliTools.sort((a, b) => a.name.localeCompare(b.name));
+  const tools = catalogApps
+    .filter(app => installedIds.has(app.id))
+    .sort((a, b) => a.name.localeCompare(b.name));
   const affectedTools = deleting && config ? Object.entries(config.perApp).filter(([, value]) => value === deleting.id).map(([id]) => ({ id, name: catalogApps.find((a) => a.id === id)?.name ?? editors.find((e) => e.id === id)?.name ?? id, app: catalogApps.some((a) => a.id === id) })) : [];
   const usedAsDefault = !!deleting && config?.globalProfileId === deleting.id;
   const inUse = usedAsDefault || affectedTools.length > 0;
@@ -95,7 +94,7 @@ export function ProxyPage() {
               <Button size="sm" variant="ghost" disabled={busy !== null} aria-label={t('proxy:deleteNamedProfile', { name: profile.name })} onClick={() => { setError(null); setDeleting(profile); }}><Trash2 size={16} aria-hidden="true" /></Button>
             </div>
           </div>
-          {config && <Disclosure defaultOpen={profile.id === V2RAY.id} title={t('connectionsUx:assignTools')}><div className="space-y-3 border-t border-border pt-3">
+          {config && tools.length > 0 && <Disclosure defaultOpen={profile.id === V2RAY.id} title={t('connectionsUx:assignTools')}><div className="space-y-3 border-t border-border pt-3">
             <p className="text-sm text-muted">{t('connectionsUx:assignToolsHint')}</p>
             <fieldset className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               <legend className="sr-only">{t('connectionsUx:assignTools')}</legend>
